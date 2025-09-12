@@ -1,0 +1,1 @@
+// fastify() bootstrap, health route

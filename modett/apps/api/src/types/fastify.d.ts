@@ -1,0 +1,1 @@
+// module augmentation for typings
