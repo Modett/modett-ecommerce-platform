@@ -28,7 +28,7 @@
     "apps/**/*",
     "modules/**/*",
     "packages/**/*",
-    "prisma/**/*",
+    "db/**/*",
     "scripts/**/*"
   ],
   "exclude": [
