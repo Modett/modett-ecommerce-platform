@@ -4,7 +4,7 @@ generator client{
 
 datasource db{
     provider="postgresql"
-    url=env("postgresql://postgres:JackCM@3003@localhost:5432/modett_ecommerce")
+    url=env("postgresql://postgres:JackCM%403003@localhost:5432/modett_ecommerce")
 }
 
 enum UserStatus{
@@ -21,13 +21,30 @@ model User{
     status UserStatus @default(active)
     emailVerified Boolean @default(false) @map("email_verified")
     phoneVerified Boolean @default(false) @map("phone_verified")
-    isGuest Boolean @default(flase) @map("is_guest")
+    isGuest Boolean @default(false) @map("is_guest")
     createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
     updatedAt DateTime @map("updated_at") @db.TimeStamptz
+
+    // Relations
+    socialLogins SocialLogin[]
+    addresses UserAddress[]
+    paymentMethods PaymentMethod[]
+    profile UserProfile?
+
+    @@map("users")
+    @@schema("user_management")
 }
 
-// Relations
-socailLogins SocialLogin[]
-addresses UserAddress[]
-paymentMethods PaymentMethod[]
-profile UserProfile?
+model SocialLogin {
+    id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid @map("social_id")
+    userId         String   @map("user_id") @db.Uuid
+    provider       String
+    providerUserId String   @unique @map("provider_user_id")
+    createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+    // Relations
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("social_logins")
+    @@schema("user_management")
+}
