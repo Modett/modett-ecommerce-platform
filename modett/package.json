@@ -9,10 +9,10 @@
     "start": "node dist/apps/api/src/index.js",
     "test": "vitest",
     "lint": "eslint . --ext .ts --fix",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate --schema=modules/user-management/infra/persistence/models/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=modules/user-management/infra/persistence/models/schema.prisma",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio --schema=modules/user-management/infra/persistence/models/schema.prisma"
   },
   "keywords": [],
   "author": "",
