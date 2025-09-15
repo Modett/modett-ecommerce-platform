@@ -8,6 +8,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["public", "user_management"]
 }
 
 
@@ -17,6 +18,7 @@ enum UserStatus {
   blocked
 
   @@map("user_status_enum")
+  @@schema("user_management")
 }
 
 model User {
