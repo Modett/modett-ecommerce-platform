@@ -1,106 +1,33 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-generator client {
-  provider = "prisma-client-js"
+generator client{
+    provider="prisma-client-js"
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+datasource db{
+    provider="postgresql"
+    url=env("postgresql://postgres:JackCM@3003@localhost:5432/modett_ecommerce")
 }
 
-// User Management Module
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      String   @default("customer")
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  profile        UserProfile?
-  addresses      Address[]
-  paymentMethods PaymentMethod[]
-  socialLogins   SocialLogin[]
-
-  @@map("users")
+enum UserStatus{
+    active
+    inactive
+    blocked
 }
 
-model UserProfile {
-  id          String    @id @default(cuid())
-  userId      String    @unique
-  firstName   String?
-  lastName    String?
-  phone       String?
-  birthDate   DateTime?
-  gender      String?
-  preferences Json?
-  avatar      String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("user_profiles")
+model User{
+    id  String @id @default(dbgenerated("gen_random_uuid()")) @db.uuid
+    email String @unique
+    passwordHash String? @map("password_hash")
+    phone String?
+    status UserStatus @default(active)
+    emailVerified Boolean @default(false) @map("email_verified")
+    phoneVerified Boolean @default(false) @map("phone_verified")
+    isGuest Boolean @default(flase) @map("is_guest")
+    createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+    updatedAt DateTime @map("updated_at") @db.TimeStamptz
 }
 
-model SocialLogin {
-  id         String   @id @default(cuid())
-  userId     String
-  provider   String   // google, facebook, apple
-  providerId String
-  email      String?
-  name       String?
-  createdAt  DateTime @default(now())
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerId])
-  @@map("social_logins")
-}
-
-model Address {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String   @default("shipping") // shipping, billing
-  name      String?
-  street    String
-  city      String
-  state     String
-  zip       String
-  country   String
-  isDefault Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("addresses")
-}
-
-model PaymentMethod {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String   // card, paypal, bank_transfer
-  provider  String   // stripe, paypal, razorpay
-  last4     String?
-  brand     String?
-  expiryMonth Int?
-  expiryYear  Int?
-  isDefault Boolean  @default(false)
-  metadata  Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("payment_methods")
-}
+// Relations
+socailLogins SocialLogin[]
+addresses UserAddress[]
+paymentMethods PaymentMethod[]
+profile UserProfile?

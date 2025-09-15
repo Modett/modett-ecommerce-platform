@@ -1,9 +1,9 @@
 import fastify, { FastifyInstance } from "fastify";
-import { logger } from "./utils/logger";
+import { loggerConfig } from "./utils/logger";
 
 export async function createServer(): Promise<FastifyInstance> {
   const server = fastify({
-    logger: logger,
+    logger: loggerConfig,
     trustProxy: true,
   });
 
