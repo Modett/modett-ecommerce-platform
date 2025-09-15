@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,32 +8,20 @@ datasource db {
   schemas  = ["public", "user_management"]
 }
 
-
-enum UserStatus {
-  active
-  inactive
-  blocked
-
-  @@map("user_status_enum")
-  @@schema("user_management")
-}
-
 model User {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @map("user_id") @db.Uuid
-  email          String    @unique
-  passwordHash   String?   @map("password_hash")
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @map("user_id") @db.Uuid
+  email          String          @unique
+  passwordHash   String?         @map("password_hash")
   phone          String?
-  status         UserStatus @default(active)
-  emailVerified  Boolean   @default(false) @map("email_verified")
-  phoneVerified  Boolean   @default(false) @map("phone_verified")
-  isGuest        Boolean   @default(false) @map("is_guest")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-
-  // Relations
+  status         UserStatus      @default(active)
+  emailVerified  Boolean         @default(false) @map("email_verified")
+  phoneVerified  Boolean         @default(false) @map("phone_verified")
+  isGuest        Boolean         @default(false) @map("is_guest")
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  paymentMethods PaymentMethod[]
   socialLogins   SocialLogin[]
   addresses      UserAddress[]
-  paymentMethods PaymentMethod[]
   profile        UserProfile?
 
   @@map("users")
@@ -48,80 +33,81 @@ model SocialLogin {
   userId         String   @map("user_id") @db.Uuid
   provider       String
   providerUserId String   @unique @map("provider_user_id")
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("social_logins")
   @@schema("user_management")
 }
 
 model UserAddress {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @map("address_id") @db.Uuid
-  userId       String   @map("user_id") @db.Uuid
-  type         String   // 'billing' or 'shipping'
-  isDefault    Boolean  @default(false) @map("is_default")
-  firstName    String?  @map("first_name")
-  lastName     String?  @map("last_name")
-  company      String?
-  addressLine1 String   @map("address_line_1")
-  addressLine2 String?  @map("address_line_2")
-  city         String
-  state        String?
-  postalCode   String?  @map("postal_code")
-  country      String
-  phone        String?
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  user                 User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  paymentMethods       PaymentMethod[]
-  defaultUserProfiles  UserProfile[]   @relation("DefaultAddress")
+  id                  String          @id @default(dbgenerated("gen_random_uuid()")) @map("address_id") @db.Uuid
+  userId              String          @map("user_id") @db.Uuid
+  type                String
+  isDefault           Boolean         @default(false) @map("is_default")
+  firstName           String?         @map("first_name")
+  lastName            String?         @map("last_name")
+  company             String?
+  addressLine1        String          @map("address_line_1")
+  addressLine2        String?         @map("address_line_2")
+  city                String
+  state               String?
+  postalCode          String?         @map("postal_code")
+  country             String
+  phone               String?
+  createdAt           DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  paymentMethods      PaymentMethod[]
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  defaultUserProfiles UserProfile[]   @relation("DefaultAddress")
 
   @@map("user_addresses")
   @@schema("user_management")
 }
 
 model PaymentMethod {
-  id               String       @id @default(dbgenerated("gen_random_uuid()")) @map("payment_method_id") @db.Uuid
-  userId           String       @map("user_id") @db.Uuid
-  type             String       // 'card', 'wallet', 'bank', 'cod', 'gift_card'
-  brand            String?
-  last4            String?
-  expMonth         Int?         @map("exp_month")
-  expYear          Int?         @map("exp_year")
-  billingAddressId String?      @map("billing_address_id") @db.Uuid
-  providerRef      String?      @map("provider_ref")
-  isDefault        Boolean      @default(false) @map("is_default")
-  createdAt        DateTime     @default(now()) @map("created_at")
-  updatedAt        DateTime     @updatedAt @map("updated_at")
-
-  // Relations
-  user                       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  billingAddress             UserAddress?  @relation(fields: [billingAddressId], references: [id], onDelete: SetNull)
-  defaultUserProfiles        UserProfile[] @relation("DefaultPaymentMethod")
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @map("payment_method_id") @db.Uuid
+  userId              String        @map("user_id") @db.Uuid
+  type                String
+  brand               String?
+  last4               String?
+  expMonth            Int?          @map("exp_month")
+  expYear             Int?          @map("exp_year")
+  billingAddressId    String?       @map("billing_address_id") @db.Uuid
+  providerRef         String?       @map("provider_ref")
+  isDefault           Boolean       @default(false) @map("is_default")
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  billingAddress      UserAddress?  @relation(fields: [billingAddressId], references: [id], onUpdate: NoAction)
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  defaultUserProfiles UserProfile[] @relation("DefaultPaymentMethod")
 
   @@map("payment_methods")
   @@schema("user_management")
 }
 
 model UserProfile {
-  userId                   String         @id @map("user_id") @db.Uuid
-  defaultAddressId         String?        @map("default_address_id") @db.Uuid
-  defaultPaymentMethodId   String?        @map("default_payment_method_id") @db.Uuid
-  prefs                    Json           @default("{}")
-  locale                   String?
-  currency                 String?
-  stylePreferences         Json           @default("{}") @map("style_preferences")
-  preferredSizes          Json           @default("{}") @map("preferred_sizes")
-
-  // Relations
-  user                   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  defaultAddress         UserAddress?   @relation("DefaultAddress", fields: [defaultAddressId], references: [id], onDelete: SetNull)
-  defaultPaymentMethod   PaymentMethod? @relation("DefaultPaymentMethod", fields: [defaultPaymentMethodId], references: [id], onDelete: SetNull)
+  userId                 String         @id @map("user_id") @db.Uuid
+  defaultAddressId       String?        @map("default_address_id") @db.Uuid
+  defaultPaymentMethodId String?        @map("default_payment_method_id") @db.Uuid
+  prefs                  Json           @default("{}")
+  locale                 String?
+  currency               String?
+  stylePreferences       Json           @default("{}") @map("style_preferences")
+  preferredSizes         Json           @default("{}") @map("preferred_sizes")
+  defaultAddress         UserAddress?   @relation("DefaultAddress", fields: [defaultAddressId], references: [id], onUpdate: NoAction)
+  defaultPaymentMethod   PaymentMethod? @relation("DefaultPaymentMethod", fields: [defaultPaymentMethodId], references: [id], onUpdate: NoAction)
+  user                   User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("user_profiles")
+  @@schema("user_management")
+}
+
+enum UserStatus {
+  active
+  inactive
+  blocked
+
+  @@map("user_status_enum")
   @@schema("user_management")
 }
