@@ -24,7 +24,7 @@ export class SocialLogin {
     const userId = UserId.fromString(data.userId);
     const now = new Date();
 
-    return new SocialLogin(
+    const socialLogin = new SocialLogin(
       socialLoginId,
       userId,
       data.provider,
@@ -40,10 +40,13 @@ export class SocialLogin {
       now,
       now
     );
+
+    socialLogin.validate();
+    return socialLogin;
   }
 
   static reconstitute(data: SocialLoginEntityData): SocialLogin {
-    return new SocialLogin(
+    const socialLogin = new SocialLogin(
       data.id,
       UserId.fromString(data.userId),
       data.provider,
@@ -59,6 +62,34 @@ export class SocialLogin {
       data.createdAt,
       data.updatedAt
     );
+
+    socialLogin.validate();
+    return socialLogin;
+  }
+
+  // Factory method from database row
+  static fromDatabaseRow(row: SocialLoginRow): SocialLogin {
+    const provider = SocialProvider.fromString(row.provider);
+
+    const socialLogin = new SocialLogin(
+      row.social_id,
+      UserId.fromString(row.user_id),
+      provider,
+      row.provider_user_id,
+      null, // providerEmail - not in database
+      null, // providerDisplayName - not in database
+      null, // providerAvatarUrl - not in database
+      null, // accessToken - not in database
+      null, // refreshToken - not in database
+      null, // tokenExpiresAt - not in database
+      true, // isActive - default to true
+      {}, // metadata - empty object
+      row.created_at,
+      row.created_at // updatedAt same as createdAt initially
+    );
+
+    socialLogin.validate();
+    return socialLogin;
   }
 
   // Getters
@@ -373,6 +404,17 @@ export class SocialLogin {
     this.updatedAt = new Date();
   }
 
+  // Database-compatible persistence method
+  toDatabaseRow(): SocialLoginRow {
+    return {
+      social_id: this.id,
+      user_id: this.userId.getValue(),
+      provider: this.provider.toString(),
+      provider_user_id: this.providerUserId,
+      created_at: this.createdAt,
+    };
+  }
+
   // Convert to data for persistence
   toData(): SocialLoginEntityData {
     return {
@@ -397,6 +439,22 @@ export class SocialLogin {
     return this.id === other.id;
   }
 
+  // Validation methods
+  validate(): void {
+    // Validate provider matches database constraints
+    if (!SocialProvider.getAllValues().includes(this.provider)) {
+      throw new Error(`Invalid social provider: ${this.provider}`);
+    }
+
+    // Validate provider_user_id is not empty (required field)
+    if (!this.providerUserId || this.providerUserId.trim() === '') {
+      throw new Error('Provider user ID cannot be empty');
+    }
+
+    // Note: provider_user_id uniqueness constraint is enforced at database level
+    // The application should handle unique constraint violations when persisting
+  }
+
   // For finding duplicate connections
   isSameProviderConnection(provider: SocialProvider, providerUserId: string): boolean {
     return this.provider === provider && this.providerUserId === providerUserId;
@@ -412,6 +470,45 @@ export enum SocialProvider {
   LINKEDIN = "linkedin",
   GITHUB = "github",
   MICROSOFT = "microsoft",
+}
+
+export namespace SocialProvider {
+  export function fromString(provider: string): SocialProvider {
+    if (!provider || typeof provider !== 'string') {
+      throw new Error('Social provider must be a non-empty string');
+    }
+
+    switch (provider.toLowerCase()) {
+      case "google":
+        return SocialProvider.GOOGLE;
+      case "facebook":
+        return SocialProvider.FACEBOOK;
+      case "apple":
+        return SocialProvider.APPLE;
+      case "twitter":
+        return SocialProvider.TWITTER;
+      case "linkedin":
+        return SocialProvider.LINKEDIN;
+      case "github":
+        return SocialProvider.GITHUB;
+      case "microsoft":
+        return SocialProvider.MICROSOFT;
+      default:
+        throw new Error(`Invalid social provider: ${provider}`);
+    }
+  }
+
+  export function getAllValues(): SocialProvider[] {
+    return [
+      SocialProvider.GOOGLE,
+      SocialProvider.FACEBOOK,
+      SocialProvider.APPLE,
+      SocialProvider.TWITTER,
+      SocialProvider.LINKEDIN,
+      SocialProvider.GITHUB,
+      SocialProvider.MICROSOFT,
+    ];
+  }
 }
 
 export interface SocialLoginMetadata {
@@ -483,4 +580,13 @@ export interface TokenInfo {
   isExpired: boolean;
   isExpiringSoon: boolean;
   canRefresh: boolean;
+}
+
+// Database row interface matching PostgreSQL schema
+export interface SocialLoginRow {
+  social_id: string;
+  user_id: string;
+  provider: string;
+  provider_user_id: string;
+  created_at: Date;
 }
