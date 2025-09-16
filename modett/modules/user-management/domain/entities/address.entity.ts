@@ -46,6 +46,31 @@ export class Address {
     );
   }
 
+  // Factory method from database row
+  static fromDatabaseRow(row: UserAddressRow): Address {
+    return new Address(
+      row.address_id,
+      UserId.fromString(row.user_id),
+      // Map flat database columns to nested VO
+      AddressVO.fromData({
+        firstName: row.first_name || undefined,
+        lastName: row.last_name || undefined,
+        company: row.company || undefined,
+        addressLine1: row.address_line_1,
+        addressLine2: row.address_line_2 || undefined,
+        city: row.city,
+        state: row.state || undefined,
+        postalCode: row.postal_code || undefined,
+        country: row.country,
+        phone: row.phone || undefined,
+      }),
+      row.type as AddressType,
+      row.is_default,
+      row.created_at,
+      row.updated_at
+    );
+  }
+
   // Getters
   getId(): string {
     return this.id;
@@ -219,7 +244,32 @@ export class Address {
     this.updatedAt = new Date();
   }
 
-  // Convert to data for persistence
+  // ✅ NEW: Database-compatible persistence method
+  toDatabaseRow(): UserAddressRow {
+    const addressData = this.addressValue.toData();
+
+    return {
+      address_id: this.id,
+      user_id: this.userId.getValue(),
+      type: this.type,
+      is_default: this.isDefault,
+      // Map nested VO to flat database columns
+      first_name: addressData.firstName || null,
+      last_name: addressData.lastName || null,
+      company: addressData.company || null,
+      address_line_1: addressData.addressLine1,
+      address_line_2: addressData.addressLine2 || null,
+      city: addressData.city,
+      state: addressData.state || null,
+      postal_code: addressData.postalCode || null,
+      country: addressData.country,
+      phone: addressData.phone || null,
+      created_at: this.createdAt,
+      updated_at: this.updatedAt,
+    };
+  }
+
+  // ✅ KEEP: Original toData() for domain use
   toData(): AddressEntityData {
     return {
       id: this.id,
@@ -268,4 +318,24 @@ export interface AddressLabel {
   cityStateZip: string;
   country: string;
   type: "SHIPPING" | "BILLING";
+}
+
+// ✅ NEW: Database row interface matching PostgreSQL schema
+export interface UserAddressRow {
+  address_id: string;
+  user_id: string;
+  type: string;
+  is_default: boolean;
+  first_name: string | null;
+  last_name: string | null;
+  company: string | null;
+  address_line_1: string;
+  address_line_2: string | null;
+  city: string;
+  state: string | null;
+  postal_code: string | null;
+  country: string;
+  phone: string | null;
+  created_at: Date;
+  updated_at: Date;
 }
