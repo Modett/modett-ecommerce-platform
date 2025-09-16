@@ -41,6 +41,20 @@ export class UserProfile {
     );
   }
 
+  // Add this method to map database row to UserProfile
+  static fromDatabaseRow(row: UserProfileRow): UserProfile {
+    return new UserProfile(
+      UserId.fromString(row.user_id),
+      row.default_address_id,
+      row.default_payment_method_id,
+      row.prefs, // Maps database "prefs" to entity "preferences"
+      row.locale,
+      row.currency,
+      row.style_preferences,
+      row.preferred_sizes
+    );
+  }
+
   // Getters
   getUserId(): UserId {
     return this.userId;
@@ -319,6 +333,20 @@ export class UserProfile {
     };
   }
 
+  // Add this method for database-compatible persistence
+  toDatabaseRow(): UserProfileRow {
+    return {
+      user_id: this.userId.getValue(),
+      default_address_id: this.defaultAddressId,
+      default_payment_method_id: this.defaultPaymentMethodId,
+      prefs: this.preferences, // Maps entity "preferences" to database "prefs"
+      locale: this.locale,
+      currency: this.currency,
+      style_preferences: this.stylePreferences,
+      preferred_sizes: this.preferredSizes,
+    };
+  }
+
   equals(other: UserProfile): boolean {
     return this.userId.equals(other.userId);
   }
@@ -390,3 +418,15 @@ export interface PreferredSizes {
 }
 
 export type SizeSystem = "US" | "EU" | "UK" | "Asian";
+
+// ✅ ADD: Database row interface (add at the end of file)
+export interface UserProfileRow {
+  user_id: string;
+  default_address_id: string | null;
+  default_payment_method_id: string | null;
+  prefs: UserPreferences; // Maps to database "prefs" column
+  locale: string | null;
+  currency: string | null;
+  style_preferences: StylePreferences;
+  preferred_sizes: PreferredSizes;
+}
