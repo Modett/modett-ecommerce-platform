@@ -5,15 +5,13 @@ export class PaymentMethod {
     private readonly id: string,
     private readonly userId: UserId,
     private type: PaymentMethodType,
-    private provider: PaymentProvider,
-    private maskedNumber: string,
-    private expiryMonth: number,
-    private expiryYear: number,
-    private cardholderName: string,
+    private brand: string | null,
+    private last4: string | null,
+    private expMonth: number | null,
+    private expYear: number | null,
     private billingAddressId: string | null,
+    private providerRef: string | null,
     private isDefault: boolean,
-    private isActive: boolean,
-    private providerTokens: ProviderTokens,
     private readonly createdAt: Date,
     private updatedAt: Date
   ) {}
@@ -22,43 +20,66 @@ export class PaymentMethod {
   static create(data: CreatePaymentMethodData): PaymentMethod {
     const paymentMethodId = crypto.randomUUID();
     const userId = UserId.fromString(data.userId);
-    const now = new Date();
+    const now = PaymentMethod.createTimestamp();
 
-    return new PaymentMethod(
+    const paymentMethod = new PaymentMethod(
       paymentMethodId,
       userId,
       data.type,
-      data.provider,
-      data.maskedNumber,
-      data.expiryMonth,
-      data.expiryYear,
-      data.cardholderName,
+      data.brand || null,
+      data.last4 || null,
+      data.expMonth || null,
+      data.expYear || null,
       data.billingAddressId || null,
+      data.providerRef || null,
       data.isDefault || false,
-      true, // Active by default
-      data.providerTokens,
       now,
       now
     );
+
+    paymentMethod.validate();
+    return paymentMethod;
   }
 
   static reconstitute(data: PaymentMethodEntityData): PaymentMethod {
-    return new PaymentMethod(
+    const paymentMethod = new PaymentMethod(
       data.id,
       UserId.fromString(data.userId),
       data.type,
-      data.provider,
-      data.maskedNumber,
-      data.expiryMonth,
-      data.expiryYear,
-      data.cardholderName,
+      data.brand,
+      data.last4,
+      data.expMonth,
+      data.expYear,
       data.billingAddressId,
+      data.providerRef,
       data.isDefault,
-      data.isActive,
-      data.providerTokens,
       data.createdAt,
       data.updatedAt
     );
+
+    paymentMethod.validate();
+    return paymentMethod;
+  }
+
+  // Factory method from database row
+  static fromDatabaseRow(row: PaymentMethodRow): PaymentMethod {
+    const paymentMethod = new PaymentMethod(
+      row.payment_method_id,
+      UserId.fromString(row.user_id),
+      PaymentMethodType.fromString(row.type),
+      row.brand,
+      row.last4,
+      row.exp_month,
+      row.exp_year,
+      row.billing_address_id,
+      row.provider_ref,
+      row.is_default,
+      row.created_at,
+      row.updated_at
+    );
+
+    paymentMethod.validate();
+    return paymentMethod;
   }
 
   // Getters
@@ -71,32 +92,26 @@ export class PaymentMethod {
   getType(): PaymentMethodType {
     return this.type;
   }
-  getProvider(): PaymentProvider {
-    return this.provider;
+  getBrand(): string | null {
+    return this.brand;
   }
-  getMaskedNumber(): string {
-    return this.maskedNumber;
+  getLast4(): string | null {
+    return this.last4;
   }
-  getExpiryMonth(): number {
-    return this.expiryMonth;
+  getExpMonth(): number | null {
+    return this.expMonth;
   }
-  getExpiryYear(): number {
-    return this.expiryYear;
-  }
-  getCardholderName(): string {
-    return this.cardholderName;
+  getExpYear(): number | null {
+    return this.expYear;
   }
   getBillingAddressId(): string | null {
     return this.billingAddressId;
   }
+  getProviderRef(): string | null {
+    return this.providerRef;
+  }
   getIsDefault(): boolean {
     return this.isDefault;
-  }
-  getIsActive(): boolean {
-    return this.isActive;
-  }
-  getProviderTokens(): ProviderTokens {
-    return this.providerTokens;
   }
   getCreatedAt(): Date {
     return this.createdAt;
@@ -106,8 +121,8 @@ export class PaymentMethod {
   }
 
   // Business logic methods
-  updateExpiryDate(month: number, year: number): void {
-    if (this.expiryMonth === month && this.expiryYear === year) {
+  updateExpiry(month: number, year: number): void {
+    if (this.expMonth === month && this.expYear === year) {
       return; // No change needed
     }
 
@@ -119,22 +134,8 @@ export class PaymentMethod {
       throw new Error("Expiry year cannot be in the past");
     }
 
-    this.expiryMonth = month;
-    this.expiryYear = year;
-    this.touch();
-  }
-
-  updateCardholderName(newName: string): void {
-    if (!newName || newName.trim().length === 0) {
-      throw new Error("Cardholder name is required");
-    }
-
-    const trimmedName = newName.trim();
-    if (this.cardholderName === trimmedName) {
-      return; // No change needed
-    }
-
-    this.cardholderName = trimmedName;
+    this.expMonth = month;
+    this.expYear = year;
     this.touch();
   }
 
@@ -144,6 +145,15 @@ export class PaymentMethod {
     }
 
     this.billingAddressId = addressId;
+    this.touch();
+  }
+
+  updateProviderRef(providerRef: string | null): void {
+    if (this.providerRef === providerRef) {
+      return; // No change needed
+    }
+
+    this.providerRef = providerRef;
     this.touch();
   }
 
@@ -165,41 +175,21 @@ export class PaymentMethod {
     this.touch();
   }
 
-  activate(): void {
-    if (this.isActive) {
-      return; // Already active
-    }
-
-    this.isActive = true;
-    this.touch();
-  }
-
-  deactivate(): void {
-    if (!this.isActive) {
-      return; // Already inactive
-    }
-
-    this.isActive = false;
-    this.isDefault = false; // Inactive payment methods cannot be default
-    this.touch();
-  }
-
-  updateProviderTokens(tokens: ProviderTokens): void {
-    this.providerTokens = { ...tokens };
-    this.touch();
-  }
-
   // Validation methods
   isExpired(): boolean {
+    if (!this.expMonth || !this.expYear) {
+      return false; // No expiry date set
+    }
+
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1; // getMonth() returns 0-11
 
-    if (this.expiryYear < currentYear) {
+    if (this.expYear < currentYear) {
       return true;
     }
 
-    if (this.expiryYear === currentYear && this.expiryMonth < currentMonth) {
+    if (this.expYear === currentYear && this.expMonth < currentMonth) {
       return true;
     }
 
@@ -207,24 +197,32 @@ export class PaymentMethod {
   }
 
   isExpiringThisMonth(): boolean {
+    if (!this.expMonth || !this.expYear) {
+      return false;
+    }
+
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
 
-    return this.expiryYear === currentYear && this.expiryMonth === currentMonth;
+    return this.expYear === currentYear && this.expMonth === currentMonth;
   }
 
   isExpiringSoon(monthsAhead: number = 3): boolean {
+    if (!this.expMonth || !this.expYear) {
+      return false;
+    }
+
     const now = new Date();
-    const futureDate = new Date(now.setMonth(now.getMonth() + monthsAhead));
+    const futureDate = new Date(now.getFullYear(), now.getMonth() + monthsAhead, now.getDate());
     const futureYear = futureDate.getFullYear();
     const futureMonth = futureDate.getMonth() + 1;
 
-    if (this.expiryYear < futureYear) {
+    if (this.expYear < futureYear) {
       return true;
     }
 
-    if (this.expiryYear === futureYear && this.expiryMonth <= futureMonth) {
+    if (this.expYear === futureYear && this.expMonth <= futureMonth) {
       return true;
     }
 
@@ -232,7 +230,7 @@ export class PaymentMethod {
   }
 
   canBeUsedForPayment(): boolean {
-    return this.isActive && !this.isExpired();
+    return !this.isExpired();
   }
 
   belongsToUser(userId: UserId): boolean {
@@ -246,82 +244,95 @@ export class PaymentMethod {
   }
 
   requiresBillingAddress(): boolean {
-    return this.type === PaymentMethodType.CREDIT_CARD ||
-           this.type === PaymentMethodType.DEBIT_CARD;
+    return this.type === PaymentMethodType.CARD;
   }
 
-  // Payment processing methods
-  getDisplayName(): string {
-    const typeDisplay = this.type.replace('_', ' ').toLowerCase();
-    const capitalizedType = typeDisplay.charAt(0).toUpperCase() + typeDisplay.slice(1);
+  // Validation methods
+  validate(): void {
+    // Validate type matches database constraints
+    if (!PaymentMethodType.getAllValues().includes(this.type)) {
+      throw new Error(`Invalid payment method type: ${this.type}`);
+    }
 
-    return `${capitalizedType} ending in ${this.maskedNumber.slice(-4)}`;
+    // Validate last4 format if present
+    if (this.last4 && (!/^\d{4}$/.test(this.last4))) {
+      throw new Error('last4 must be exactly 4 digits');
+    }
+
+    // Validate expiry month if present
+    if (this.expMonth && (this.expMonth < 1 || this.expMonth > 12)) {
+      throw new Error('Expiry month must be between 1 and 12');
+    }
+
+    // Validate expiry year if present
+    if (this.expYear && this.expYear < 1900) {
+      throw new Error('Expiry year must be a valid year');
+    }
+
+    // Validate card-specific fields
+    if (this.type === PaymentMethodType.CARD) {
+      if (!this.last4) {
+        throw new Error('Card payment methods must have last4 digits');
+      }
+      if (!this.expMonth || !this.expYear) {
+        throw new Error('Card payment methods must have expiry date');
+      }
+    }
+  }
+
+  // Display methods
+  getDisplayName(): string {
+    if (this.type === PaymentMethodType.CARD && this.last4) {
+      const brandDisplay = this.brand ? `${this.brand} ` : '';
+      return `${brandDisplay}****${this.last4}`;
+    }
+
+    return this.type.toString().replace('_', ' ').toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   }
 
   getExpiryDisplay(): string {
-    const month = this.expiryMonth.toString().padStart(2, '0');
-    const year = this.expiryYear.toString().slice(-2);
+    if (!this.expMonth || !this.expYear) {
+      return '';
+    }
+
+    const month = this.expMonth.toString().padStart(2, '0');
+    const year = this.expYear.toString().slice(-2);
     return `${month}/${year}`;
-  }
-
-  getCardBrand(): string {
-    const firstDigit = this.maskedNumber.replace(/\*/g, '').charAt(0);
-
-    switch (firstDigit) {
-      case '4':
-        return 'Visa';
-      case '5':
-        return 'Mastercard';
-      case '3':
-        return 'American Express';
-      case '6':
-        return 'Discover';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  isSecureTokenAvailable(): boolean {
-    return !!this.providerTokens.paymentMethodToken;
-  }
-
-  getPaymentProcessingData(): PaymentProcessingData {
-    if (!this.canBeUsedForPayment()) {
-      throw new Error("Payment method cannot be used for payment");
-    }
-
-    return {
-      paymentMethodId: this.id,
-      provider: this.provider,
-      tokens: this.providerTokens,
-      type: this.type,
-      billingAddressId: this.billingAddressId,
-    };
-  }
-
-  // Security methods
-  maskSensitiveData(): Partial<PaymentMethodEntityData> {
-    return {
-      id: this.id,
-      userId: this.userId.getValue(),
-      type: this.type,
-      provider: this.provider,
-      maskedNumber: this.maskedNumber,
-      expiryMonth: this.expiryMonth,
-      expiryYear: this.expiryYear,
-      cardholderName: this.cardholderName,
-      billingAddressId: this.billingAddressId,
-      isDefault: this.isDefault,
-      isActive: this.isActive,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
-      // Intentionally exclude providerTokens for security
-    };
   }
 
   // Internal methods
   private touch(): void {
-    this.updatedAt = new Date();
+    // Note: Database uses TIMESTAMPTZ, JavaScript Date automatically uses local timezone
+    // PostgreSQL will handle timezone conversion when storing/retrieving
+    this.updatedAt = PaymentMethod.createTimestamp();
+  }
+
+  // Utility method for consistent date handling
+  private static createTimestamp(): Date {
+    // Note: Database uses TIMESTAMPTZ, JavaScript Date automatically uses local timezone
+    // PostgreSQL will handle timezone conversion when storing/retrieving
+    return new Date();
+  }
+
+  // Database-compatible persistence method
+  toDatabaseRow(): PaymentMethodRow {
+    return {
+      payment_method_id: this.id,
+      user_id: this.userId.getValue(),
+      type: this.type.toString(),
+      brand: this.brand,
+      last4: this.last4,
+      exp_month: this.expMonth,
+      exp_year: this.expYear,
+      billing_address_id: this.billingAddressId,
+      provider_ref: this.providerRef,
+      is_default: this.isDefault,
+      created_at: this.createdAt,
+      updated_at: this.updatedAt,
+    };
   }
 
   // Convert to data for persistence
@@ -330,15 +341,13 @@ export class PaymentMethod {
       id: this.id,
       userId: this.userId.getValue(),
       type: this.type,
-      provider: this.provider,
-      maskedNumber: this.maskedNumber,
-      expiryMonth: this.expiryMonth,
-      expiryYear: this.expiryYear,
-      cardholderName: this.cardholderName,
+      brand: this.brand,
+      last4: this.last4,
+      expMonth: this.expMonth,
+      expYear: this.expYear,
       billingAddressId: this.billingAddressId,
+      providerRef: this.providerRef,
       isDefault: this.isDefault,
-      isActive: this.isActive,
-      providerTokens: this.providerTokens,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
@@ -351,65 +360,104 @@ export class PaymentMethod {
 
 // Supporting types and enums
 export enum PaymentMethodType {
-  CREDIT_CARD = "credit_card",
-  DEBIT_CARD = "debit_card",
-  DIGITAL_WALLET = "digital_wallet",
-  BANK_TRANSFER = "bank_transfer",
-  BUY_NOW_PAY_LATER = "buy_now_pay_later",
+  CARD = "card",
+  WALLET = "wallet",
+  BANK = "bank",
+  COD = "cod", // Cash on Delivery
+  GIFT_CARD = "gift_card",
 }
 
-export enum PaymentProvider {
-  STRIPE = "stripe",
-  PAYPAL = "paypal",
-  SQUARE = "square",
-  BRAINTREE = "braintree",
-  ADYEN = "adyen",
-  KLARNA = "klarna",
-  AFTERPAY = "afterpay",
-}
+export namespace PaymentMethodType {
+  export function fromString(type: string): PaymentMethodType {
+    if (!type || typeof type !== 'string') {
+      throw new Error('Payment method type must be a non-empty string');
+    }
 
-export interface ProviderTokens {
-  paymentMethodToken?: string;
-  customerId?: string;
-  setupIntentId?: string;
-  fingerprint?: string;
-  metadata?: Record<string, string>;
+    switch (type.toLowerCase()) {
+      case "card":
+        return PaymentMethodType.CARD;
+      case "wallet":
+        return PaymentMethodType.WALLET;
+      case "bank":
+        return PaymentMethodType.BANK;
+      case "cod":
+        return PaymentMethodType.COD;
+      case "gift_card":
+        return PaymentMethodType.GIFT_CARD;
+      default:
+        throw new Error(`Invalid payment method type: ${type}`);
+    }
+  }
+
+  export function toString(type: PaymentMethodType): string {
+    return type;
+  }
+
+  export function getAllValues(): PaymentMethodType[] {
+    return [
+      PaymentMethodType.CARD,
+      PaymentMethodType.WALLET,
+      PaymentMethodType.BANK,
+      PaymentMethodType.COD,
+      PaymentMethodType.GIFT_CARD,
+    ];
+  }
+
+  export function getDisplayName(type: PaymentMethodType): string {
+    switch (type) {
+      case PaymentMethodType.CARD:
+        return "Credit/Debit Card";
+      case PaymentMethodType.WALLET:
+        return "Digital Wallet";
+      case PaymentMethodType.BANK:
+        return "Bank Transfer";
+      case PaymentMethodType.COD:
+        return "Cash on Delivery";
+      case PaymentMethodType.GIFT_CARD:
+        return "Gift Card";
+    }
+  }
 }
 
 export interface CreatePaymentMethodData {
   userId: string;
   type: PaymentMethodType;
-  provider: PaymentProvider;
-  maskedNumber: string;
-  expiryMonth: number;
-  expiryYear: number;
-  cardholderName: string;
+  brand?: string;
+  last4?: string;
+  expMonth?: number;
+  expYear?: number;
   billingAddressId?: string;
+  providerRef?: string;
   isDefault?: boolean;
-  providerTokens: ProviderTokens;
 }
 
 export interface PaymentMethodEntityData {
   id: string;
   userId: string;
   type: PaymentMethodType;
-  provider: PaymentProvider;
-  maskedNumber: string;
-  expiryMonth: number;
-  expiryYear: number;
-  cardholderName: string;
+  brand: string | null;
+  last4: string | null;
+  expMonth: number | null;
+  expYear: number | null;
   billingAddressId: string | null;
+  providerRef: string | null;
   isDefault: boolean;
-  isActive: boolean;
-  providerTokens: ProviderTokens;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface PaymentProcessingData {
-  paymentMethodId: string;
-  provider: PaymentProvider;
-  tokens: ProviderTokens;
-  type: PaymentMethodType;
-  billingAddressId: string | null;
+// Database row interface matching PostgreSQL schema
+export interface PaymentMethodRow {
+  payment_method_id: string;
+  user_id: string;
+  type: string;
+  brand: string | null;
+  last4: string | null;
+  exp_month: number | null;
+  exp_year: number | null;
+  billing_address_id: string | null;
+  provider_ref: string | null; // vaulted token / PSP reference
+  is_default: boolean;
+  created_at: Date;
+  updated_at: Date;
 }

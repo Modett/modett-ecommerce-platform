@@ -9,12 +9,15 @@ export class UserProfile {
     private locale: string | null,
     private currency: string | null,
     private stylePreferences: StylePreferences,
-    private preferredSizes: PreferredSizes
+    private preferredSizes: PreferredSizes,
+    private readonly createdAt: Date,
+    private updatedAt: Date
   ) {}
 
   // Factory methods
   static create(data: CreateUserProfileData): UserProfile {
     const userId = UserId.fromString(data.userId);
+    const now = new Date();
 
     return new UserProfile(
       userId,
@@ -24,7 +27,9 @@ export class UserProfile {
       data.locale || null,
       data.currency || "USD", // Default currency
       data.stylePreferences || {},
-      data.preferredSizes || {}
+      data.preferredSizes || {},
+      now,
+      now
     );
   }
 
@@ -37,7 +42,25 @@ export class UserProfile {
       data.locale,
       data.currency,
       data.stylePreferences,
-      data.preferredSizes
+      data.preferredSizes,
+      data.createdAt,
+      data.updatedAt
+    );
+  }
+
+  // Add this method to map database row to UserProfile
+  static fromDatabaseRow(row: UserProfileRow): UserProfile {
+    return new UserProfile(
+      UserId.fromString(row.user_id),
+      row.default_address_id,
+      row.default_payment_method_id,
+      row.prefs, // Maps database "prefs" to entity "preferences"
+      row.locale,
+      row.currency,
+      row.style_preferences,
+      row.preferred_sizes,
+      row.created_at,
+      row.updated_at
     );
   }
 
@@ -66,6 +89,12 @@ export class UserProfile {
   getPreferredSizes(): PreferredSizes {
     return { ...this.preferredSizes };
   }
+  getCreatedAt(): Date {
+    return this.createdAt;
+  }
+  getUpdatedAt(): Date {
+    return this.updatedAt;
+  }
 
   // Address management
   setDefaultAddress(addressId: string): void {
@@ -74,10 +103,12 @@ export class UserProfile {
     }
 
     this.defaultAddressId = addressId;
+    this.touch();
   }
 
   removeDefaultAddress(): void {
     this.defaultAddressId = null;
+    this.touch();
   }
 
   hasDefaultAddress(): boolean {
@@ -91,10 +122,12 @@ export class UserProfile {
     }
 
     this.defaultPaymentMethodId = paymentMethodId;
+    this.touch();
   }
 
   removeDefaultPaymentMethod(): void {
     this.defaultPaymentMethodId = null;
+    this.touch();
   }
 
   hasDefaultPaymentMethod(): boolean {
@@ -108,6 +141,7 @@ export class UserProfile {
     }
 
     this.locale = locale;
+    this.touch();
   }
 
   setCurrency(currency: string): void {
@@ -118,6 +152,7 @@ export class UserProfile {
     }
 
     this.currency = currency.toUpperCase();
+    this.touch();
   }
 
   private isValidLocale(locale: string): boolean {
@@ -163,6 +198,7 @@ export class UserProfile {
       ...this.preferences,
       [key]: value,
     };
+    this.touch();
   }
 
   removePreference(key: string): void {
@@ -172,6 +208,7 @@ export class UserProfile {
 
     const { [key]: removed, ...remainingPreferences } = this.preferences;
     this.preferences = remainingPreferences;
+    this.touch();
   }
 
   getPreference(key: string): any {
@@ -188,6 +225,7 @@ export class UserProfile {
       ...this.stylePreferences,
       [category]: preferences,
     };
+    this.touch();
   }
 
   getStylePreference(category: string): any {
@@ -229,6 +267,7 @@ export class UserProfile {
       ...this.preferredSizes,
       [category]: size,
     };
+    this.touch();
   }
 
   getPreferredSize(category: string): string | undefined {
@@ -305,6 +344,11 @@ export class UserProfile {
     return !!(this.defaultAddressId && this.defaultPaymentMethodId);
   }
 
+  // Internal methods
+  private touch(): void {
+    this.updatedAt = new Date();
+  }
+
   // Convert to data for persistence
   toData(): UserProfileData {
     return {
@@ -316,6 +360,24 @@ export class UserProfile {
       currency: this.currency,
       stylePreferences: this.stylePreferences,
       preferredSizes: this.preferredSizes,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+    };
+  }
+
+  // Add this method for database-compatible persistence
+  toDatabaseRow(): UserProfileRow {
+    return {
+      user_id: this.userId.getValue(),
+      default_address_id: this.defaultAddressId,
+      default_payment_method_id: this.defaultPaymentMethodId,
+      prefs: this.preferences, // Maps entity "preferences" to database "prefs"
+      locale: this.locale,
+      currency: this.currency,
+      style_preferences: this.stylePreferences,
+      preferred_sizes: this.preferredSizes,
+      created_at: this.createdAt,
+      updated_at: this.updatedAt,
     };
   }
 
@@ -345,6 +407,8 @@ export interface UserProfileData {
   currency: string | null;
   stylePreferences: StylePreferences;
   preferredSizes: PreferredSizes;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface UserPreferences {
@@ -390,3 +454,17 @@ export interface PreferredSizes {
 }
 
 export type SizeSystem = "US" | "EU" | "UK" | "Asian";
+
+// Database row interface matching PostgreSQL schema
+export interface UserProfileRow {
+  user_id: string;
+  default_address_id: string | null;
+  default_payment_method_id: string | null;
+  prefs: UserPreferences; // Maps to database "prefs" column (JSONB)
+  locale: string | null;
+  currency: string | null;
+  style_preferences: StylePreferences; // JSONB
+  preferred_sizes: PreferredSizes; // JSONB
+  created_at: Date;
+  updated_at: Date;
+}

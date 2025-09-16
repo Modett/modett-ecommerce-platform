@@ -72,6 +72,22 @@ export class User {
     );
   }
 
+  // Factory method from database row
+  static fromDatabaseRow(row: UserRow): User {
+    return new User(
+      UserId.fromString(row.user_id),
+      new Email(row.email),
+      row.password_hash || "", // Handle nullable password_hash for guests
+      row.phone ? new Phone(row.phone) : null,
+      row.status,
+      row.email_verified,
+      row.phone_verified,
+      row.is_guest,
+      row.created_at,
+      row.updated_at
+    );
+  }
+
   // Getters
   getId(): UserId {
     return this.id;
@@ -271,6 +287,22 @@ export class User {
     };
   }
 
+  // Database-compatible persistence method
+  toDatabaseRow(): UserRow {
+    return {
+      user_id: this.id.getValue(),
+      email: this.email.getValue(),
+      password_hash: this.passwordHash || null,
+      phone: this.phone?.getValue() || null,
+      status: this.status,
+      email_verified: this.emailVerified,
+      phone_verified: this.phoneVerified,
+      is_guest: this.isGuest,
+      created_at: this.createdAt,
+      updated_at: this.updatedAt,
+    };
+  }
+
   equals(other: User): boolean {
     return this.id.equals(other.id);
   }
@@ -301,4 +333,18 @@ export interface UserData {
   isGuest: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Database row interface matching PostgreSQL schema
+export interface UserRow {
+  user_id: string;
+  email: string;
+  password_hash: string | null; // Nullable for guest users
+  phone: string | null;
+  status: UserStatus;
+  email_verified: boolean;
+  phone_verified: boolean;
+  is_guest: boolean;
+  created_at: Date;
+  updated_at: Date;
 }
