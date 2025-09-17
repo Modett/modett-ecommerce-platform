@@ -155,8 +155,8 @@ export interface CreateVerificationTokenData {
   userId: string;
   token: string;
   type: VerificationType;
-  email?: string;
-  phone?: string;
+  email?: string | null;
+  phone?: string | null;
   expiresAt: Date;
 }
 
