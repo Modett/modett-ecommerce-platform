@@ -107,13 +107,13 @@ export enum VerificationAction {
 }
 
 export interface CreateVerificationAuditLogData {
-  userId?: string;
-  email?: string;
-  phone?: string;
+  userId?: string | null;
+  email?: string | null;
+  phone?: string | null;
   type: VerificationType;
   action: VerificationAction;
-  ipAddress?: string;
-  userAgent?: string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
 }
 
 export interface VerificationAuditLogRow {

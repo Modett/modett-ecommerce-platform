@@ -101,9 +101,9 @@ export enum VerificationType {
 }
 
 export interface CreateVerificationRateLimitData {
-  userId?: string;
-  email?: string;
-  phone?: string;
+  userId?: string | null;
+  email?: string | null;
+  phone?: string | null;
   type: VerificationType;
   resetAt: Date;
 }
