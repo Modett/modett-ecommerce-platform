@@ -226,3 +226,49 @@ export enum AddressType {
   BILLING = "billing",
   SHIPPING = "shipping",
 }
+
+// ✅ ADD: Namespace with helper methods for database conversion
+export namespace AddressType {
+  export function fromString(type: string): AddressType {
+    const normalized = type.toLowerCase().trim();
+
+    switch (normalized) {
+      case "billing":
+        return AddressType.BILLING;
+      case "shipping":
+        return AddressType.SHIPPING;
+      default:
+        throw new Error(
+          `Invalid address type: '${type}'. Must be 'billing' or 'shipping'`
+        );
+    }
+  }
+
+  export function toString(type: AddressType): string {
+    return type.valueOf();
+  }
+
+  export function isValid(type: string): boolean {
+    try {
+      fromString(type);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  export function getAllValues(): AddressType[] {
+    return [AddressType.BILLING, AddressType.SHIPPING];
+  }
+
+  export function getDisplayName(type: AddressType): string {
+    switch (type) {
+      case AddressType.BILLING:
+        return "Billing Address";
+      case AddressType.SHIPPING:
+        return "Shipping Address";
+      default:
+        return type;
+    }
+  }
+}

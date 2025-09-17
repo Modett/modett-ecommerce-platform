@@ -1,4 +1,5 @@
-import { Address, AddressType } from "../entities/address.entity";
+import { Address } from "../entities/address.entity";
+import { AddressType } from "../value-objects/address.vo";
 import { UserId } from "../value-objects/user-id.vo";
 
 export interface IAddressRepository {

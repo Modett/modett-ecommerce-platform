@@ -64,7 +64,7 @@ export class Address {
         country: row.country,
         phone: row.phone || undefined,
       }),
-      row.type as AddressType,
+      AddressType.fromString(row.type),
       row.is_default,
       row.created_at,
       row.updated_at
@@ -244,14 +244,14 @@ export class Address {
     this.updatedAt = new Date();
   }
 
-  // ✅ NEW: Database-compatible persistence method
+  // Database-compatible persistence method
   toDatabaseRow(): UserAddressRow {
     const addressData = this.addressValue.toData();
 
     return {
       address_id: this.id,
       user_id: this.userId.getValue(),
-      type: this.type,
+      type: this.type.toString(),
       is_default: this.isDefault,
       // Map nested VO to flat database columns
       first_name: addressData.firstName || null,
@@ -320,7 +320,7 @@ export interface AddressLabel {
   type: "SHIPPING" | "BILLING";
 }
 
-// ✅ NEW: Database row interface matching PostgreSQL schema
+// Database row interface matching PostgreSQL schema
 export interface UserAddressRow {
   address_id: string;
   user_id: string;
