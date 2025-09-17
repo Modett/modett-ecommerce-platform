@@ -112,6 +112,7 @@ export class AuthenticationService {
       } else {
         user = User.create({
           email: email,
+          passwordHash: "", // Guest users don't have passwords
           isGuest: true,
         });
         await this.userRepository.save(user);
@@ -120,6 +121,7 @@ export class AuthenticationService {
       const guestEmail = this.generateGuestEmail();
       user = User.create({
         email: guestEmail,
+        passwordHash: "", // Guest users don't have passwords
         isGuest: true,
       });
       await this.userRepository.save(user);
@@ -272,8 +274,8 @@ export class AuthenticationService {
         id: user.getId().getValue(),
         email: user.getEmail().getValue(),
         isGuest: user.getIsGuest(),
-        emailVerified: user.getEmailVerified(),
-        phoneVerified: user.getPhoneVerified(),
+        emailVerified: user.isEmailVerified(),
+        phoneVerified: user.isPhoneVerified(),
       },
       expiresIn: this.getTokenExpirationTime(this.accessTokenExpiresIn),
     };
@@ -288,7 +290,7 @@ export class AuthenticationService {
 
     return jwt.sign(payload, this.accessTokenSecret, {
       expiresIn: this.accessTokenExpiresIn,
-    });
+    } as jwt.SignOptions);
   }
 
   private generateRefreshToken(user: User): string {
@@ -300,7 +302,7 @@ export class AuthenticationService {
 
     return jwt.sign(payload, this.refreshTokenSecret, {
       expiresIn: this.refreshTokenExpiresIn,
-    });
+    } as jwt.SignOptions);
   }
 
   private generateGuestEmail(): string {
