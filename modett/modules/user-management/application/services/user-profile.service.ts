@@ -7,11 +7,11 @@ import { UserId } from '../../domain/value-objects/user-id.vo';
 
 export interface UserProfileDto {
   userId: string;
-  defaultAddressId?: string;
-  defaultPaymentMethodId?: string;
+  defaultAddressId?: string | null;
+  defaultPaymentMethodId?: string | null;
   prefs: Record<string, any>;
-  locale?: string;
-  currency?: string;
+  locale?: string | null;
+  currency?: string | null;
   stylePreferences: Record<string, any>;
   preferredSizes: Record<string, any>;
 }
@@ -107,8 +107,8 @@ export class UserProfileService {
         result.defaultPaymentMethod = {
           id: paymentMethod.getId(),
           type: paymentMethod.getType(),
-          brand: paymentMethod.getBrand(),
-          last4: paymentMethod.getLast4(),
+          brand: paymentMethod.getBrand() || undefined,
+          last4: paymentMethod.getLast4() || undefined,
           isDefault: paymentMethod.getIsDefault(),
         };
       }
@@ -132,7 +132,7 @@ export class UserProfileService {
       // Create profile if it doesn't exist
       profile = UserProfile.create({
         userId: userId,
-        prefs: dto.prefs || {},
+        preferences: dto.prefs || {},
         stylePreferences: dto.stylePreferences || {},
         preferredSizes: dto.preferredSizes || {},
         locale: dto.locale,
@@ -147,45 +147,60 @@ export class UserProfileService {
       if (dto.defaultAddressId !== undefined) {
         if (dto.defaultAddressId) {
           await this.validateAddressBelongsToUser(dto.defaultAddressId, userIdVo);
-          profile.updateDefaultAddress(dto.defaultAddressId);
+          profile.setDefaultAddress(dto.defaultAddressId);
         } else {
-          profile.clearDefaultAddress();
+          profile.removeDefaultAddress();
         }
       }
 
       if (dto.defaultPaymentMethodId !== undefined) {
         if (dto.defaultPaymentMethodId) {
           await this.validatePaymentMethodBelongsToUser(dto.defaultPaymentMethodId, userIdVo);
-          profile.updateDefaultPaymentMethod(dto.defaultPaymentMethodId);
+          profile.setDefaultPaymentMethod(dto.defaultPaymentMethodId);
         } else {
-          profile.clearDefaultPaymentMethod();
+          profile.removeDefaultPaymentMethod();
         }
       }
 
       if (dto.prefs !== undefined) {
-        profile.updatePreferences(dto.prefs);
+        // Update preferences one by one using the entity's method
+        Object.entries(dto.prefs).forEach(([key, value]) => {
+          profile!.updatePreference(key, value);
+        });
       }
 
       if (dto.locale !== undefined) {
-        profile.updateLocale(dto.locale);
+        if (dto.locale) {
+          profile!.setLocale(dto.locale);
+        }
       }
 
       if (dto.currency !== undefined) {
-        profile.updateCurrency(dto.currency);
+        if (dto.currency) {
+          profile!.setCurrency(dto.currency);
+        }
       }
 
       if (dto.stylePreferences !== undefined) {
-        profile.updateStylePreferences(dto.stylePreferences);
+        // Update style preferences one by one using the entity's method
+        Object.entries(dto.stylePreferences).forEach(([category, preferences]) => {
+          profile!.updateStylePreference(category, preferences);
+        });
       }
 
       if (dto.preferredSizes !== undefined) {
-        profile.updatePreferredSizes(dto.preferredSizes);
+        // Update preferred sizes one by one using the entity's method
+        Object.entries(dto.preferredSizes).forEach(([category, size]) => {
+          if (typeof size === 'string') {
+            profile!.updatePreferredSize(category, size);
+          }
+        });
       }
 
-      await this.userProfileRepository.update(profile);
+      await this.userProfileRepository.update(profile!);
     }
 
-    return this.mapToDto(profile);
+    return this.mapToDto(profile!);
   }
 
   async setDefaultAddress(userId: string, addressId: string): Promise<void> {
@@ -198,7 +213,7 @@ export class UserProfileService {
     if (!profile) {
       profile = UserProfile.create({
         userId: userId,
-        prefs: {},
+        preferences: {},
         stylePreferences: {},
         preferredSizes: {},
         defaultAddressId: addressId,
@@ -206,7 +221,7 @@ export class UserProfileService {
 
       await this.userProfileRepository.save(profile);
     } else {
-      profile.updateDefaultAddress(addressId);
+      profile.setDefaultAddress(addressId);
       await this.userProfileRepository.update(profile);
     }
   }
@@ -221,7 +236,7 @@ export class UserProfileService {
     if (!profile) {
       profile = UserProfile.create({
         userId: userId,
-        prefs: {},
+        preferences: {},
         stylePreferences: {},
         preferredSizes: {},
         defaultPaymentMethodId: paymentMethodId,
@@ -229,7 +244,7 @@ export class UserProfileService {
 
       await this.userProfileRepository.save(profile);
     } else {
-      profile.updateDefaultPaymentMethod(paymentMethodId);
+      profile.setDefaultPaymentMethod(paymentMethodId);
       await this.userProfileRepository.update(profile);
     }
   }
@@ -330,7 +345,7 @@ export class UserProfileService {
 
     const profile = UserProfile.create({
       userId: userId,
-      prefs: {},
+      preferences: {},
       stylePreferences: {},
       preferredSizes: {},
     });
@@ -369,7 +384,7 @@ export class UserProfileService {
       userId: profile.getUserId().getValue(),
       defaultAddressId: profile.getDefaultAddressId(),
       defaultPaymentMethodId: profile.getDefaultPaymentMethodId(),
-      prefs: profile.getPrefs(),
+      prefs: profile.getPreferences(),
       locale: profile.getLocale(),
       currency: profile.getCurrency(),
       stylePreferences: profile.getStylePreferences(),
