@@ -1,6 +1,6 @@
 import * as jwt from 'jsonwebtoken';
 import { IUserRepository } from '../../domain/repositories/iuser.repository';
-import { IPasswordHasherService } from './password-hasher.service';
+import { IPasswordHasherService, PasswordHasherService } from './password-hasher.service';
 import { Email } from '../../domain/value-objects/email.vo';
 import { UserId } from '../../domain/value-objects/user-id.vo';
 import { User } from '../../domain/entities/user.entity';
@@ -37,6 +37,12 @@ export interface RefreshTokenResult {
   expiresIn: number;
 }
 
+export interface RegisterUserData {
+  email: string;
+  password: string;
+  phone?: string;
+}
+
 export class AuthenticationService {
   private readonly accessTokenSecret: string;
   private readonly refreshTokenSecret: string;
@@ -53,6 +59,9 @@ export class AuthenticationService {
       refreshTokenExpiresIn?: string;
     }
   ) {
+    if (!config.accessTokenSecret || !config.refreshTokenSecret) {
+      throw new Error('JWT secrets are required');
+    }
     this.accessTokenSecret = config.accessTokenSecret;
     this.refreshTokenSecret = config.refreshTokenSecret;
     this.accessTokenExpiresIn = config.accessTokenExpiresIn || '15m';
@@ -85,11 +94,11 @@ export class AuthenticationService {
       throw new Error('Invalid email or password');
     }
 
-    if (user.getStatus().toString() === 'blocked') {
+    if (user.getStatus() === 'blocked') {
       throw new Error('Account is blocked');
     }
 
-    if (user.getStatus().toString() === 'inactive') {
+    if (user.getStatus() === 'inactive') {
       throw new Error('Account is inactive');
     }
 
@@ -145,7 +154,7 @@ export class AuthenticationService {
         throw new Error('User not found');
       }
 
-      if (user.getStatus().toString() === 'blocked') {
+      if (user.getStatus() === 'blocked') {
         throw new Error('Account is blocked');
       }
 
@@ -177,7 +186,7 @@ export class AuthenticationService {
         throw new Error('User not found');
       }
 
-      if (user.getStatus().toString() === 'blocked') {
+      if (user.getStatus() === 'blocked') {
         throw new Error('Account is blocked');
       }
 
@@ -188,15 +197,19 @@ export class AuthenticationService {
   }
 
   async logout(userId: string): Promise<void> {
-    // In a full implementation, you might want to invalidate tokens
-    // by maintaining a blacklist or using a different token strategy
-    // For now, we'll just validate the user exists
+    // TODO: Implement token blacklisting for complete logout
+    // For now, validate user exists and log the logout
     const userIdVo = UserId.fromString(userId);
     const user = await this.userRepository.findById(userIdVo);
 
     if (!user) {
       throw new Error('User not found');
     }
+
+    // In a production system, you would:
+    // 1. Add tokens to a blacklist
+    // 2. Clear server-side sessions
+    // 3. Log the logout event
   }
 
   async changePassword(
@@ -235,9 +248,57 @@ export class AuthenticationService {
     }
 
     const newPasswordHash = await this.passwordHasher.hash(newPassword);
+    if (!newPasswordHash) {
+      throw new Error('Failed to hash password');
+    }
     user.updatePassword(newPasswordHash);
 
     await this.userRepository.update(user);
+  }
+
+  async register(userData: RegisterUserData): Promise<AuthResult> {
+    const email = new Email(userData.email);
+
+    // Check if user already exists
+    const existingUser = await this.userRepository.findByEmail(email);
+    if (existingUser && !existingUser.getIsGuest()) {
+      throw new Error('User already exists with this email');
+    }
+
+    // Validate password strength
+    const passwordValidation = this.passwordHasher.validatePasswordStrength(userData.password);
+    if (!passwordValidation.isValid) {
+      throw new Error(`Password is not strong enough: ${passwordValidation.feedback.join(', ')}`);
+    }
+
+    // Hash password
+    const passwordHash = await this.passwordHasher.hash(userData.password);
+    if (!passwordHash) {
+      throw new Error('Failed to hash password');
+    }
+
+    // Create or convert user
+    let user: User;
+    if (existingUser && existingUser.getIsGuest()) {
+      // Convert guest to regular user
+      existingUser.convertFromGuest(userData.email, passwordHash);
+      if (userData.phone) {
+        existingUser.updatePhone(userData.phone);
+      }
+      user = existingUser;
+      await this.userRepository.update(user);
+    } else {
+      // Create new user
+      user = User.create({
+        email: userData.email,
+        passwordHash,
+        phone: userData.phone,
+        isGuest: false,
+      });
+      await this.userRepository.save(user);
+    }
+
+    return this.generateAuthResult(user);
   }
 
   async resetPassword(email: string, newPassword: string): Promise<void> {
@@ -258,6 +319,9 @@ export class AuthenticationService {
     }
 
     const newPasswordHash = await this.passwordHasher.hash(newPassword);
+    if (!newPasswordHash) {
+      throw new Error('Failed to hash password');
+    }
     user.updatePassword(newPasswordHash);
 
     await this.userRepository.update(user);
