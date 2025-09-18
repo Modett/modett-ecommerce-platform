@@ -1,41 +1,45 @@
 import { IUserRepository } from '../../domain/repositories/iuser.repository';
+import { IVerificationTokenRepository } from '../../domain/repositories/iverification-token.repository';
+import { IVerificationRateLimitRepository } from '../../domain/repositories/iverification-rate-limit.repository';
+import { IVerificationAuditLogRepository } from '../../domain/repositories/iverification-audit-log.repository';
 import { Email } from '../../domain/value-objects/email.vo';
-import { Phone } from '../../domain/value-objects/phone.vo';
 import { UserId } from '../../domain/value-objects/user-id.vo';
+import { VerificationToken, VerificationType } from '../../domain/entities/verification-token.entity';
+import { VerificationRateLimit } from '../../domain/entities/verification-rate-limit.entity';
+import { VerificationAuditLog, VerificationAction } from '../../domain/entities/verification-audit-log.entity';
 
 export interface EmailService {
   sendVerificationEmail(email: string, token: string): Promise<void>;
   sendPasswordResetEmail(email: string, token: string): Promise<void>;
 }
 
-export interface SmsService {
-  sendVerificationSms(phone: string, code: string): Promise<void>;
-}
-
-export interface VerificationToken {
-  token: string;
-  expiresAt: Date;
-  type: 'email_verification' | 'phone_verification' | 'password_reset';
-}
 
 export interface VerificationResult {
   success: boolean;
   message: string;
+  remainingAttempts?: number;
+}
+
+export interface VerificationContext {
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 export class VerificationService {
-  private readonly tokenStore: Map<string, VerificationToken> = new Map();
   private readonly EMAIL_TOKEN_EXPIRY_HOURS = 24;
-  private readonly PHONE_CODE_EXPIRY_MINUTES = 10;
   private readonly PASSWORD_RESET_EXPIRY_HOURS = 1;
+  private readonly MAX_ATTEMPTS_PER_HOUR = 5;
+  private readonly RATE_LIMIT_RESET_HOURS = 1;
 
   constructor(
     private readonly userRepository: IUserRepository,
+    private readonly tokenRepository: IVerificationTokenRepository,
+    private readonly rateLimitRepository: IVerificationRateLimitRepository,
+    private readonly auditRepository: IVerificationAuditLogRepository,
     private readonly emailService?: EmailService,
-    private readonly smsService?: SmsService
   ) {}
 
-  async sendEmailVerification(userId: string): Promise<VerificationResult> {
+  async sendEmailVerification(userId: string, context?: VerificationContext): Promise<VerificationResult> {
     if (!this.emailService) {
       throw new Error('Email service not configured');
     }
@@ -48,42 +52,54 @@ export class VerificationService {
     }
 
     if (user.isEmailVerified()) {
+      await this.logAudit(userId, user.getEmail().getValue(), null, VerificationType.EMAIL_VERIFICATION, VerificationAction.FAILED, context);
       return {
         success: false,
         message: 'Email is already verified',
       };
     }
 
+    const rateLimitCheck = await this.checkRateLimit(userId, user.getEmail().getValue(), null, VerificationType.EMAIL_VERIFICATION);
+    if (!rateLimitCheck.allowed) {
+      await this.logAudit(userId, user.getEmail().getValue(), null, VerificationType.EMAIL_VERIFICATION, VerificationAction.FAILED, context);
+      return {
+        success: false,
+        message: `Too many attempts. Try again in ${rateLimitCheck.resetInMinutes} minutes.`,
+        remainingAttempts: 0,
+      };
+    }
+
+    await this.tokenRepository.deleteByUserIdAndType(userId, VerificationType.EMAIL_VERIFICATION);
+
     const token = this.generateEmailToken();
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + this.EMAIL_TOKEN_EXPIRY_HOURS);
 
-    const verificationToken: VerificationToken = {
+    const verificationToken = VerificationToken.create({
+      userId,
       token,
+      type: VerificationType.EMAIL_VERIFICATION,
+      email: user.getEmail().getValue(),
       expiresAt,
-      type: 'email_verification',
-    };
-
-    const key = this.createTokenKey(userId, 'email_verification');
-    this.tokenStore.set(key, verificationToken);
+    });
 
     try {
-      await this.emailService.sendVerificationEmail(
-        user.getEmail().getValue(),
-        token
-      );
+      await this.tokenRepository.save(verificationToken);
+      await this.emailService.sendVerificationEmail(user.getEmail().getValue(), token);
+      await this.updateRateLimit(userId, user.getEmail().getValue(), null, VerificationType.EMAIL_VERIFICATION);
+      await this.logAudit(userId, user.getEmail().getValue(), null, VerificationType.EMAIL_VERIFICATION, VerificationAction.SENT, context);
 
       return {
         success: true,
         message: 'Verification email sent successfully',
       };
     } catch (error) {
-      this.tokenStore.delete(key);
+      await this.logAudit(userId, user.getEmail().getValue(), null, VerificationType.EMAIL_VERIFICATION, VerificationAction.FAILED, context);
       throw new Error('Failed to send verification email');
     }
   }
 
-  async verifyEmail(userId: string, token: string): Promise<VerificationResult> {
+  async verifyEmail(userId: string, token: string, context?: VerificationContext): Promise<VerificationResult> {
     const userIdVo = UserId.fromString(userId);
     const user = await this.userRepository.findById(userIdVo);
 
@@ -92,40 +108,37 @@ export class VerificationService {
     }
 
     if (user.isEmailVerified()) {
+      await this.logAudit(userId, user.getEmail().getValue(), null, VerificationType.EMAIL_VERIFICATION, VerificationAction.FAILED, context);
       return {
         success: false,
         message: 'Email is already verified',
       };
     }
 
-    const key = this.createTokenKey(userId, 'email_verification');
-    const verificationToken = this.tokenStore.get(key);
+    const verificationToken = await this.tokenRepository.findByToken(token, VerificationType.EMAIL_VERIFICATION);
 
-    if (!verificationToken) {
-      return {
-        success: false,
-        message: 'Invalid or expired verification token',
-      };
-    }
-
-    if (verificationToken.token !== token) {
+    if (!verificationToken || verificationToken.getUserId() !== userId) {
+      await this.logAudit(userId, user.getEmail().getValue(), null, VerificationType.EMAIL_VERIFICATION, VerificationAction.FAILED, context);
       return {
         success: false,
         message: 'Invalid verification token',
       };
     }
 
-    if (new Date() > verificationToken.expiresAt) {
-      this.tokenStore.delete(key);
+    if (!verificationToken.isValid()) {
+      await this.logAudit(userId, user.getEmail().getValue(), null, VerificationType.EMAIL_VERIFICATION, VerificationAction.EXPIRED, context);
       return {
         success: false,
-        message: 'Verification token has expired',
+        message: verificationToken.isExpired() ? 'Verification token has expired' : 'Token has already been used',
       };
     }
 
+    verificationToken.markAsUsed();
+    await this.tokenRepository.save(verificationToken);
+
     user.verifyEmail();
     await this.userRepository.update(user);
-    this.tokenStore.delete(key);
+    await this.logAudit(userId, user.getEmail().getValue(), null, VerificationType.EMAIL_VERIFICATION, VerificationAction.VERIFIED, context);
 
     return {
       success: true,
@@ -133,109 +146,9 @@ export class VerificationService {
     };
   }
 
-  async sendPhoneVerification(userId: string): Promise<VerificationResult> {
-    if (!this.smsService) {
-      throw new Error('SMS service not configured');
-    }
 
-    const userIdVo = UserId.fromString(userId);
-    const user = await this.userRepository.findById(userIdVo);
 
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    const phoneObject = user.getPhone();
-    if (!phoneObject) {
-      throw new Error('User has no phone number');
-    }
-
-    const phoneNumber = phoneObject.getValue();
-
-    if (user.isPhoneVerified()) {
-      return {
-        success: false,
-        message: 'Phone is already verified',
-      };
-    }
-
-    const code = this.generatePhoneCode();
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + this.PHONE_CODE_EXPIRY_MINUTES);
-
-    const verificationToken: VerificationToken = {
-      token: code,
-      expiresAt,
-      type: 'phone_verification',
-    };
-
-    const key = this.createTokenKey(userId, 'phone_verification');
-    this.tokenStore.set(key, verificationToken);
-
-    try {
-      await this.smsService.sendVerificationSms(phoneNumber, code);
-
-      return {
-        success: true,
-        message: 'Verification code sent successfully',
-      };
-    } catch (error) {
-      this.tokenStore.delete(key);
-      throw new Error('Failed to send verification SMS');
-    }
-  }
-
-  async verifyPhone(userId: string, code: string): Promise<VerificationResult> {
-    const userIdVo = UserId.fromString(userId);
-    const user = await this.userRepository.findById(userIdVo);
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    if (user.isPhoneVerified()) {
-      return {
-        success: false,
-        message: 'Phone is already verified',
-      };
-    }
-
-    const key = this.createTokenKey(userId, 'phone_verification');
-    const verificationToken = this.tokenStore.get(key);
-
-    if (!verificationToken) {
-      return {
-        success: false,
-        message: 'Invalid or expired verification code',
-      };
-    }
-
-    if (verificationToken.token !== code) {
-      return {
-        success: false,
-        message: 'Invalid verification code',
-      };
-    }
-
-    if (new Date() > verificationToken.expiresAt) {
-      this.tokenStore.delete(key);
-      return {
-        success: false,
-        message: 'Verification code has expired',
-      };
-    }
-
-    user.verifyPhone();
-    await this.userRepository.update(user);
-    this.tokenStore.delete(key);
-
-    return {
-      success: true,
-      message: 'Phone verified successfully',
-    };
-  }
-
-  async sendPasswordResetEmail(email: string): Promise<VerificationResult> {
+  async sendPasswordResetEmail(email: string, context?: VerificationContext): Promise<VerificationResult> {
     if (!this.emailService) {
       throw new Error('Email service not configured');
     }
@@ -245,6 +158,7 @@ export class VerificationService {
 
     if (!user) {
       // Don't reveal if user exists or not for security
+      await this.logAudit(null, email, null, VerificationType.PASSWORD_RESET, VerificationAction.FAILED, context);
       return {
         success: true,
         message: 'If an account with that email exists, a password reset link has been sent',
@@ -252,34 +166,50 @@ export class VerificationService {
     }
 
     if (user.getIsGuest()) {
+      await this.logAudit(user.getId().getValue(), email, null, VerificationType.PASSWORD_RESET, VerificationAction.FAILED, context);
       return {
         success: false,
         message: 'Guest users cannot reset password',
       };
     }
 
+    const userId = user.getId().getValue();
+    const rateLimitCheck = await this.checkRateLimit(userId, email, null, VerificationType.PASSWORD_RESET);
+    if (!rateLimitCheck.allowed) {
+      await this.logAudit(userId, email, null, VerificationType.PASSWORD_RESET, VerificationAction.FAILED, context);
+      return {
+        success: false,
+        message: `Too many attempts. Try again in ${rateLimitCheck.resetInMinutes} minutes.`,
+        remainingAttempts: 0,
+      };
+    }
+
+    await this.tokenRepository.deleteByUserIdAndType(userId, VerificationType.PASSWORD_RESET);
+
     const token = this.generateEmailToken();
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + this.PASSWORD_RESET_EXPIRY_HOURS);
 
-    const verificationToken: VerificationToken = {
+    const verificationToken = VerificationToken.create({
+      userId,
       token,
+      type: VerificationType.PASSWORD_RESET,
+      email,
       expiresAt,
-      type: 'password_reset',
-    };
-
-    const key = this.createTokenKey(user.getId().getValue(), 'password_reset');
-    this.tokenStore.set(key, verificationToken);
+    });
 
     try {
+      await this.tokenRepository.save(verificationToken);
       await this.emailService.sendPasswordResetEmail(email, token);
+      await this.updateRateLimit(userId, email, null, VerificationType.PASSWORD_RESET);
+      await this.logAudit(userId, email, null, VerificationType.PASSWORD_RESET, VerificationAction.SENT, context);
 
       return {
         success: true,
         message: 'Password reset email sent successfully',
       };
     } catch (error) {
-      this.tokenStore.delete(key);
+      await this.logAudit(userId, email, null, VerificationType.PASSWORD_RESET, VerificationAction.FAILED, context);
       throw new Error('Failed to send password reset email');
     }
   }
@@ -292,19 +222,13 @@ export class VerificationService {
       return null;
     }
 
-    const key = this.createTokenKey(user.getId().getValue(), 'password_reset');
-    const verificationToken = this.tokenStore.get(key);
+    const verificationToken = await this.tokenRepository.findByToken(token, VerificationType.PASSWORD_RESET);
 
-    if (!verificationToken) {
+    if (!verificationToken || verificationToken.getUserId() !== user.getId().getValue()) {
       return null;
     }
 
-    if (verificationToken.token !== token) {
-      return null;
-    }
-
-    if (new Date() > verificationToken.expiresAt) {
-      this.tokenStore.delete(key);
+    if (!verificationToken.isValid()) {
       return null;
     }
 
@@ -312,46 +236,29 @@ export class VerificationService {
   }
 
   async consumePasswordResetToken(userId: string, token: string): Promise<boolean> {
-    const key = this.createTokenKey(userId, 'password_reset');
-    const verificationToken = this.tokenStore.get(key);
+    const verificationToken = await this.tokenRepository.findByToken(token, VerificationType.PASSWORD_RESET);
 
-    if (!verificationToken) {
+    if (!verificationToken || verificationToken.getUserId() !== userId) {
       return false;
     }
 
-    if (verificationToken.token !== token) {
+    if (!verificationToken.isValid()) {
       return false;
     }
 
-    if (new Date() > verificationToken.expiresAt) {
-      this.tokenStore.delete(key);
-      return false;
-    }
-
-    this.tokenStore.delete(key);
+    verificationToken.markAsUsed();
+    await this.tokenRepository.save(verificationToken);
     return true;
   }
 
-  async resendVerification(userId: string, type: 'email' | 'phone'): Promise<VerificationResult> {
-    // Clear existing verification token
-    const key = this.createTokenKey(userId, `${type}_verification` as any);
-    this.tokenStore.delete(key);
-
-    if (type === 'email') {
-      return this.sendEmailVerification(userId);
-    } else {
-      return this.sendPhoneVerification(userId);
-    }
+  async resendEmailVerification(userId: string, context?: VerificationContext): Promise<VerificationResult> {
+    await this.tokenRepository.deleteByUserIdAndType(userId, VerificationType.EMAIL_VERIFICATION);
+    return this.sendEmailVerification(userId, context);
   }
 
   async cleanupExpiredTokens(): Promise<void> {
-    const now = new Date();
-
-    for (const [key, token] of this.tokenStore.entries()) {
-      if (now > token.expiresAt) {
-        this.tokenStore.delete(key);
-      }
-    }
+    await this.tokenRepository.deleteExpired();
+    await this.rateLimitRepository.deleteExpired();
   }
 
   private generateEmailToken(): string {
@@ -366,12 +273,74 @@ export class VerificationService {
     return token;
   }
 
-  private generatePhoneCode(): string {
-    // Generate a 6-digit numeric code for phone verification
-    return Math.floor(100000 + Math.random() * 900000).toString();
+
+  private async checkRateLimit(userId: string, _email: string | null, _phone: string | null, type: VerificationType): Promise<{
+    allowed: boolean;
+    resetInMinutes?: number;
+  }> {
+    const rateLimit = await this.rateLimitRepository.findByUserIdAndType(userId, type);
+
+    if (!rateLimit) {
+      return { allowed: true };
+    }
+
+    if (rateLimit.isExpired()) {
+      return { allowed: true };
+    }
+
+    if (rateLimit.getAttempts() >= this.MAX_ATTEMPTS_PER_HOUR) {
+      const resetAt = rateLimit.getResetAt();
+      const now = new Date();
+      const resetInMinutes = Math.ceil((resetAt.getTime() - now.getTime()) / (1000 * 60));
+
+      return {
+        allowed: false,
+        resetInMinutes: Math.max(0, resetInMinutes),
+      };
+    }
+
+    return { allowed: true };
   }
 
-  private createTokenKey(userId: string, type: string): string {
-    return `${userId}:${type}`;
+  private async updateRateLimit(userId: string, email: string | null, phone: string | null, type: VerificationType): Promise<void> {
+    let rateLimit = await this.rateLimitRepository.findByUserIdAndType(userId, type);
+
+    if (!rateLimit || rateLimit.isExpired()) {
+      const resetAt = new Date();
+      resetAt.setHours(resetAt.getHours() + this.RATE_LIMIT_RESET_HOURS);
+
+      rateLimit = VerificationRateLimit.create({
+        userId,
+        email,
+        phone,
+        type,
+        resetAt,
+      });
+    } else {
+      rateLimit.incrementAttempts();
+    }
+
+    await this.rateLimitRepository.save(rateLimit);
+  }
+
+  private async logAudit(
+    userId: string | null,
+    email: string | null,
+    phone: string | null,
+    type: VerificationType,
+    action: VerificationAction,
+    context?: VerificationContext
+  ): Promise<void> {
+    const auditLog = VerificationAuditLog.create({
+      userId,
+      email,
+      phone,
+      type,
+      action,
+      ipAddress: context?.ipAddress,
+      userAgent: context?.userAgent,
+    });
+
+    await this.auditRepository.save(auditLog);
   }
 }

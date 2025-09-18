@@ -1,4 +1,6 @@
 import { UserId } from "../value-objects/user-id.vo";
+import { Currency } from "../value-objects/currency.vo";
+import { Locale } from "../value-objects/locale.vo";
 
 export class UserProfile {
   private constructor(
@@ -6,30 +8,25 @@ export class UserProfile {
     private defaultAddressId: string | null,
     private defaultPaymentMethodId: string | null,
     private preferences: UserPreferences,
-    private locale: string | null,
-    private currency: string | null,
+    private locale: Locale | null,
+    private currency: Currency | null,
     private stylePreferences: StylePreferences,
-    private preferredSizes: PreferredSizes,
-    private readonly createdAt: Date,
-    private updatedAt: Date
+    private preferredSizes: PreferredSizes
   ) {}
 
   // Factory methods
   static create(data: CreateUserProfileData): UserProfile {
     const userId = UserId.fromString(data.userId);
-    const now = new Date();
 
     return new UserProfile(
       userId,
       data.defaultAddressId || null,
       data.defaultPaymentMethodId || null,
       data.preferences || {},
-      data.locale || null,
-      data.currency || "USD", // Default currency
+      data.locale ? new Locale(data.locale) : null,
+      data.currency ? new Currency(data.currency) : Currency.getDefaultCurrency(), // Default currency
       data.stylePreferences || {},
-      data.preferredSizes || {},
-      now,
-      now
+      data.preferredSizes || {}
     );
   }
 
@@ -39,12 +36,10 @@ export class UserProfile {
       data.defaultAddressId,
       data.defaultPaymentMethodId,
       data.preferences,
-      data.locale,
-      data.currency,
+      data.locale ? new Locale(data.locale) : null,
+      data.currency ? new Currency(data.currency) : null,
       data.stylePreferences,
-      data.preferredSizes,
-      data.createdAt,
-      data.updatedAt
+      data.preferredSizes
     );
   }
 
@@ -55,12 +50,10 @@ export class UserProfile {
       row.default_address_id,
       row.default_payment_method_id,
       row.prefs, // Maps database "prefs" to entity "preferences"
-      row.locale,
-      row.currency,
+      row.locale ? new Locale(row.locale) : null,
+      row.currency ? new Currency(row.currency) : null,
       row.style_preferences,
-      row.preferred_sizes,
-      row.created_at,
-      row.updated_at
+      row.preferred_sizes
     );
   }
 
@@ -77,10 +70,10 @@ export class UserProfile {
   getPreferences(): UserPreferences {
     return { ...this.preferences };
   }
-  getLocale(): string | null {
+  getLocale(): Locale | null {
     return this.locale;
   }
-  getCurrency(): string | null {
+  getCurrency(): Currency | null {
     return this.currency;
   }
   getStylePreferences(): StylePreferences {
@@ -88,12 +81,6 @@ export class UserProfile {
   }
   getPreferredSizes(): PreferredSizes {
     return { ...this.preferredSizes };
-  }
-  getCreatedAt(): Date {
-    return this.createdAt;
-  }
-  getUpdatedAt(): Date {
-    return this.updatedAt;
   }
 
   // Address management
@@ -103,12 +90,10 @@ export class UserProfile {
     }
 
     this.defaultAddressId = addressId;
-    this.touch();
   }
 
   removeDefaultAddress(): void {
     this.defaultAddressId = null;
-    this.touch();
   }
 
   hasDefaultAddress(): boolean {
@@ -122,12 +107,10 @@ export class UserProfile {
     }
 
     this.defaultPaymentMethodId = paymentMethodId;
-    this.touch();
   }
 
   removeDefaultPaymentMethod(): void {
     this.defaultPaymentMethodId = null;
-    this.touch();
   }
 
   hasDefaultPaymentMethod(): boolean {
@@ -136,57 +119,15 @@ export class UserProfile {
 
   // Locale and currency management
   setLocale(locale: string): void {
-    if (!locale || !this.isValidLocale(locale)) {
-      throw new Error('Invalid locale format. Use format like "en-US","fr-FR"');
-    }
-
-    this.locale = locale;
-    this.touch();
+    const localeVO = new Locale(locale);
+    this.locale = localeVO;
   }
 
   setCurrency(currency: string): void {
-    if (!currency || !this.isValidCurrency(currency)) {
-      throw new Error(
-        'Invalid currency code. Use ISO 4217 format like "USD", "EUR"'
-      );
-    }
-
-    this.currency = currency.toUpperCase();
-    this.touch();
+    const currencyVO = new Currency(currency);
+    this.currency = currencyVO;
   }
 
-  private isValidLocale(locale: string): boolean {
-    // Basic locale validation (language-country format)
-    const localeRegex = /^[a-z]{2}-[A-Z]{2}$/;
-    return localeRegex.test(locale);
-  }
-
-  private isValidCurrency(currency: string): boolean {
-    // Common currencies for validation
-    const validCurrencies = [
-      "USD",
-      "EUR",
-      "GBP",
-      "JPY",
-      "AUD",
-      "CAD",
-      "CHF",
-      "CNY",
-      "SEK",
-      "NZD",
-      "MXN",
-      "SGD",
-      "HKD",
-      "NOK",
-      "TRY",
-      "ZAR",
-      "BRL",
-      "INR",
-      "KRW",
-      "PLN",
-    ];
-    return validCurrencies.includes(currency.toUpperCase());
-  }
 
   // Preferences management
   updatePreference(key: string, value: any): void {
@@ -198,7 +139,6 @@ export class UserProfile {
       ...this.preferences,
       [key]: value,
     };
-    this.touch();
   }
 
   removePreference(key: string): void {
@@ -208,7 +148,6 @@ export class UserProfile {
 
     const { [key]: removed, ...remainingPreferences } = this.preferences;
     this.preferences = remainingPreferences;
-    this.touch();
   }
 
   getPreference(key: string): any {
@@ -225,7 +164,6 @@ export class UserProfile {
       ...this.stylePreferences,
       [category]: preferences,
     };
-    this.touch();
   }
 
   getStylePreference(category: string): any {
@@ -267,7 +205,6 @@ export class UserProfile {
       ...this.preferredSizes,
       [category]: size,
     };
-    this.touch();
   }
 
   getPreferredSize(category: string): string | undefined {
@@ -344,10 +281,6 @@ export class UserProfile {
     return !!(this.defaultAddressId && this.defaultPaymentMethodId);
   }
 
-  // Internal methods
-  private touch(): void {
-    this.updatedAt = new Date();
-  }
 
   // Convert to data for persistence
   toData(): UserProfileData {
@@ -356,12 +289,10 @@ export class UserProfile {
       defaultAddressId: this.defaultAddressId,
       defaultPaymentMethodId: this.defaultPaymentMethodId,
       preferences: this.preferences,
-      locale: this.locale,
-      currency: this.currency,
+      locale: this.locale?.getValue() || null,
+      currency: this.currency?.getValue() || null,
       stylePreferences: this.stylePreferences,
       preferredSizes: this.preferredSizes,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
     };
   }
 
@@ -372,12 +303,10 @@ export class UserProfile {
       default_address_id: this.defaultAddressId,
       default_payment_method_id: this.defaultPaymentMethodId,
       prefs: this.preferences, // Maps entity "preferences" to database "prefs"
-      locale: this.locale,
-      currency: this.currency,
+      locale: this.locale?.getValue() || null,
+      currency: this.currency?.getValue() || null,
       style_preferences: this.stylePreferences,
       preferred_sizes: this.preferredSizes,
-      created_at: this.createdAt,
-      updated_at: this.updatedAt,
     };
   }
 
@@ -407,8 +336,6 @@ export interface UserProfileData {
   currency: string | null;
   stylePreferences: StylePreferences;
   preferredSizes: PreferredSizes;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface UserPreferences {
@@ -465,6 +392,4 @@ export interface UserProfileRow {
   currency: string | null;
   style_preferences: StylePreferences; // JSONB
   preferred_sizes: PreferredSizes; // JSONB
-  created_at: Date;
-  updated_at: Date;
 }

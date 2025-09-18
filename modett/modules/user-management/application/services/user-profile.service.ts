@@ -385,8 +385,8 @@ export class UserProfileService {
       defaultAddressId: profile.getDefaultAddressId(),
       defaultPaymentMethodId: profile.getDefaultPaymentMethodId(),
       prefs: profile.getPreferences(),
-      locale: profile.getLocale(),
-      currency: profile.getCurrency(),
+      locale: profile.getLocale()?.getValue() ?? null,
+      currency: profile.getCurrency()?.getValue() ?? null,
       stylePreferences: profile.getStylePreferences(),
       preferredSizes: profile.getPreferredSizes(),
     };
