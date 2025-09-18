@@ -131,39 +131,13 @@ export class SocialLoginRepository implements ISocialLoginRepository {
   }
 
   async findActiveByUserId(userId: UserId): Promise<SocialLogin[]> {
-    const socialLogins = await this.prisma.socialLogin.findMany({
-      where: { userId: userId.getValue() },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    // Filter for active ones in domain layer since database doesn't track this
-    return socialLogins
-      .map(data => SocialLogin.fromDatabaseRow({
-        social_id: data.id,
-        user_id: data.userId,
-        provider: data.provider,
-        provider_user_id: data.providerUserId,
-        created_at: data.createdAt,
-      }))
-      .filter(socialLogin => socialLogin.getIsActive());
+    // Since schema doesn't track active/inactive, return all social logins
+    return this.findByUserId(userId);
   }
 
   async findInactiveByUserId(userId: UserId): Promise<SocialLogin[]> {
-    const socialLogins = await this.prisma.socialLogin.findMany({
-      where: { userId: userId.getValue() },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    // Filter for inactive ones in domain layer
-    return socialLogins
-      .map(data => SocialLogin.fromDatabaseRow({
-        social_id: data.id,
-        user_id: data.userId,
-        provider: data.provider,
-        provider_user_id: data.providerUserId,
-        created_at: data.createdAt,
-      }))
-      .filter(socialLogin => !socialLogin.getIsActive());
+    // Since schema doesn't track active/inactive, return empty array
+    return [];
   }
 
   async existsById(id: string): Promise<boolean> {
@@ -217,7 +191,6 @@ export class SocialLoginRepository implements ISocialLoginRepository {
     // Since database doesn't store tokens, this is a no-op
     // Token revocation would be handled in domain/application layer
     const socialLogins = await this.findByUserId(userId);
-    socialLogins.forEach(sl => sl.revokeTokens());
     return socialLogins.length;
   }
 
@@ -246,11 +219,17 @@ export class SocialLoginRepository implements ISocialLoginRepository {
 
   async findOrphanedConnections(): Promise<SocialLogin[]> {
     // Find social logins where the referenced user no longer exists
-    const orphanedLogins = await this.prisma.socialLogin.findMany({
-      where: {
-        user: null, // User doesn't exist
-      },
+    // Get all existing user IDs first
+    const existingUserIds = await this.prisma.user.findMany({
+      select: { id: true },
     });
+    const userIdSet = new Set(existingUserIds.map(u => u.id));
+
+    // Get all social logins
+    const allSocialLogins = await this.prisma.socialLogin.findMany();
+
+    // Filter out ones with valid user references
+    const orphanedLogins = allSocialLogins.filter(sl => !userIdSet.has(sl.userId));
 
     return orphanedLogins.map(data => SocialLogin.fromDatabaseRow({
       social_id: data.id,
@@ -283,7 +262,7 @@ export class SocialLoginRepository implements ISocialLoginRepository {
     return stats.map(stat => ({
       provider: stat.provider,
       total: stat._count.id,
-      active: stat._count.id, // Assume all are active for now
+      active: stat._count.id, // Schema doesn't track active/inactive
       inactive: 0,
     }));
   }
@@ -318,7 +297,7 @@ export class SocialLoginRepository implements ISocialLoginRepository {
     // Since we don't store extended data in DB, provide defaults
     return {
       total,
-      active: total, // Assume all are active
+      active: total, // Schema doesn't track active/inactive
       inactive: 0,
       byProvider: providerStats,
       hasValidTokens: false, // Would need token storage to determine
@@ -375,8 +354,9 @@ export class SocialLoginRepository implements ISocialLoginRepository {
   }
 
   async deactivateAllByUserId(userId: UserId): Promise<number> {
+    // Since database doesn't track active/inactive state, this is a no-op
+    // In a real implementation, you might delete the social logins instead
     const socialLogins = await this.findByUserId(userId);
-    socialLogins.forEach(sl => sl.deactivate());
     return socialLogins.length;
   }
 
