@@ -183,7 +183,6 @@ export class UserProfileRepository implements IUserProfileRepository {
 
   // Helper method to map Prisma result to domain row format
   private mapPrismaToRow(profileData: any): any {
-    const now = new Date();
     return {
       user_id: profileData.userId,
       default_address_id: profileData.defaultAddressId,
@@ -193,8 +192,6 @@ export class UserProfileRepository implements IUserProfileRepository {
       currency: profileData.currency,
       style_preferences: profileData.stylePreferences,
       preferred_sizes: profileData.preferredSizes,
-      created_at: now, // Default since not in schema
-      updated_at: now, // Default since not in schema
     };
   }
 }
