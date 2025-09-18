@@ -13,9 +13,6 @@ export interface EmailService {
   sendPasswordResetEmail(email: string, token: string): Promise<void>;
 }
 
-export interface SmsService {
-  sendVerificationSms(phone: string, code: string): Promise<void>;
-}
 
 export interface VerificationResult {
   success: boolean;
@@ -30,7 +27,6 @@ export interface VerificationContext {
 
 export class VerificationService {
   private readonly EMAIL_TOKEN_EXPIRY_HOURS = 24;
-  private readonly PHONE_CODE_EXPIRY_MINUTES = 10;
   private readonly PASSWORD_RESET_EXPIRY_HOURS = 1;
   private readonly MAX_ATTEMPTS_PER_HOUR = 5;
   private readonly RATE_LIMIT_RESET_HOURS = 1;
@@ -41,7 +37,6 @@ export class VerificationService {
     private readonly rateLimitRepository: IVerificationRateLimitRepository,
     private readonly auditRepository: IVerificationAuditLogRepository,
     private readonly emailService?: EmailService,
-    private readonly smsService?: SmsService
   ) {}
 
   async sendEmailVerification(userId: string, context?: VerificationContext): Promise<VerificationResult> {
@@ -151,122 +146,7 @@ export class VerificationService {
     };
   }
 
-  async sendPhoneVerification(userId: string, context?: VerificationContext): Promise<VerificationResult> {
-    if (!this.smsService) {
-      throw new Error('SMS service not configured');
-    }
 
-    const userIdVo = UserId.fromString(userId);
-    const user = await this.userRepository.findById(userIdVo);
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    const phoneObject = user.getPhone();
-    if (!phoneObject) {
-      throw new Error('User has no phone number');
-    }
-
-    const phoneNumber = phoneObject.getValue();
-
-    if (user.isPhoneVerified()) {
-      await this.logAudit(userId, null, phoneNumber, VerificationType.PHONE_VERIFICATION, VerificationAction.FAILED, context);
-      return {
-        success: false,
-        message: 'Phone is already verified',
-      };
-    }
-
-    const rateLimitCheck = await this.checkRateLimit(userId, null, phoneNumber, VerificationType.PHONE_VERIFICATION);
-    if (!rateLimitCheck.allowed) {
-      await this.logAudit(userId, null, phoneNumber, VerificationType.PHONE_VERIFICATION, VerificationAction.FAILED, context);
-      return {
-        success: false,
-        message: `Too many attempts. Try again in ${rateLimitCheck.resetInMinutes} minutes.`,
-        remainingAttempts: 0,
-      };
-    }
-
-    await this.tokenRepository.deleteByUserIdAndType(userId, VerificationType.PHONE_VERIFICATION);
-
-    const code = this.generatePhoneCode();
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + this.PHONE_CODE_EXPIRY_MINUTES);
-
-    const verificationToken = VerificationToken.create({
-      userId,
-      token: code,
-      type: VerificationType.PHONE_VERIFICATION,
-      phone: phoneNumber,
-      expiresAt,
-    });
-
-    try {
-      await this.tokenRepository.save(verificationToken);
-      await this.smsService.sendVerificationSms(phoneNumber, code);
-      await this.updateRateLimit(userId, null, phoneNumber, VerificationType.PHONE_VERIFICATION);
-      await this.logAudit(userId, null, phoneNumber, VerificationType.PHONE_VERIFICATION, VerificationAction.SENT, context);
-
-      return {
-        success: true,
-        message: 'Verification code sent successfully',
-      };
-    } catch (error) {
-      await this.logAudit(userId, null, phoneNumber, VerificationType.PHONE_VERIFICATION, VerificationAction.FAILED, context);
-      throw new Error('Failed to send verification SMS');
-    }
-  }
-
-  async verifyPhone(userId: string, code: string, context?: VerificationContext): Promise<VerificationResult> {
-    const userIdVo = UserId.fromString(userId);
-    const user = await this.userRepository.findById(userIdVo);
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    const phoneObject = user.getPhone();
-    const phoneNumber = phoneObject?.getValue() || null;
-
-    if (user.isPhoneVerified()) {
-      await this.logAudit(userId, null, phoneNumber, VerificationType.PHONE_VERIFICATION, VerificationAction.FAILED, context);
-      return {
-        success: false,
-        message: 'Phone is already verified',
-      };
-    }
-
-    const verificationToken = await this.tokenRepository.findByToken(code, VerificationType.PHONE_VERIFICATION);
-
-    if (!verificationToken || verificationToken.getUserId() !== userId) {
-      await this.logAudit(userId, null, phoneNumber, VerificationType.PHONE_VERIFICATION, VerificationAction.FAILED, context);
-      return {
-        success: false,
-        message: 'Invalid verification code',
-      };
-    }
-
-    if (!verificationToken.isValid()) {
-      await this.logAudit(userId, null, phoneNumber, VerificationType.PHONE_VERIFICATION, VerificationAction.EXPIRED, context);
-      return {
-        success: false,
-        message: verificationToken.isExpired() ? 'Verification code has expired' : 'Code has already been used',
-      };
-    }
-
-    verificationToken.markAsUsed();
-    await this.tokenRepository.save(verificationToken);
-
-    user.verifyPhone();
-    await this.userRepository.update(user);
-    await this.logAudit(userId, null, phoneNumber, VerificationType.PHONE_VERIFICATION, VerificationAction.VERIFIED, context);
-
-    return {
-      success: true,
-      message: 'Phone verified successfully',
-    };
-  }
 
   async sendPasswordResetEmail(email: string, context?: VerificationContext): Promise<VerificationResult> {
     if (!this.emailService) {
@@ -371,16 +251,9 @@ export class VerificationService {
     return true;
   }
 
-  async resendVerification(userId: string, type: 'email' | 'phone', context?: VerificationContext): Promise<VerificationResult> {
-    // Clear existing verification token
-    const verificationType = type === 'email' ? VerificationType.EMAIL_VERIFICATION : VerificationType.PHONE_VERIFICATION;
-    await this.tokenRepository.deleteByUserIdAndType(userId, verificationType);
-
-    if (type === 'email') {
-      return this.sendEmailVerification(userId, context);
-    } else {
-      return this.sendPhoneVerification(userId, context);
-    }
+  async resendEmailVerification(userId: string, context?: VerificationContext): Promise<VerificationResult> {
+    await this.tokenRepository.deleteByUserIdAndType(userId, VerificationType.EMAIL_VERIFICATION);
+    return this.sendEmailVerification(userId, context);
   }
 
   async cleanupExpiredTokens(): Promise<void> {
@@ -400,10 +273,6 @@ export class VerificationService {
     return token;
   }
 
-  private generatePhoneCode(): string {
-    // Generate a 6-digit numeric code for phone verification
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  }
 
   private async checkRateLimit(userId: string, _email: string | null, _phone: string | null, type: VerificationType): Promise<{
     allowed: boolean;
