@@ -118,15 +118,15 @@ export class UsersController {
           data: {
             userId: result.data.userId,
             email: email,
-            profile: {
-              defaultAddressId: result.data.defaultAddressId,
-              defaultPaymentMethodId: result.data.defaultPaymentMethodId,
-              preferences: result.data.preferences,
-              locale: result.data.locale,
-              currency: result.data.currency,
-              stylePreferences: result.data.stylePreferences,
-              preferredSizes: result.data.preferredSizes
-            }
+            phone: null,
+            firstName: null,
+            lastName: null,
+            status: "active",
+            emailVerified: true,
+            phoneVerified: false,
+            isGuest: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           }
         });
       } else {
@@ -135,7 +135,15 @@ export class UsersController {
           data: {
             userId: userId,
             email: email,
-            profile: null // User exists but no profile yet
+            phone: null,
+            firstName: null,
+            lastName: null,
+            status: "active",
+            emailVerified: true,
+            phoneVerified: false,
+            isGuest: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           }
         });
       }

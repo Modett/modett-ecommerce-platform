@@ -1,3 +1,6 @@
+// Import first to ensure availability
+import { registerUserManagementRoutes } from './routes';
+
 // Controllers
 export * from './controllers';
 
@@ -8,7 +11,7 @@ export * from './middleware/auth.middleware';
 export * from './routes';
 
 // Re-exports for convenience
-export { registerUserManagementRoutes } from './routes';
+export { registerUserManagementRoutes };
 
 // Type definitions for the module
 export interface UserManagementHttpModule {

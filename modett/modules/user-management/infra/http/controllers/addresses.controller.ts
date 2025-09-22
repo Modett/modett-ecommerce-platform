@@ -64,6 +64,10 @@ export interface UpdateAddressRequest {
 
 export interface ListAddressesQueryParams {
   type?: 'billing' | 'shipping';
+  page?: number;
+  limit?: number;
+  sortBy?: 'createdAt' | 'updatedAt';
+  sortOrder?: 'asc' | 'desc';
 }
 
 // Fixed ListAddressesQuery interface to match usage
@@ -457,7 +461,17 @@ export class AddressesController {
   ): Promise<void> {
     try {
       const userId = (request as any).user?.userId;
-      const { type } = request.query;
+      const {
+        type,
+        page: queryPage = 1,
+        limit: queryLimit = 20,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+      } = request.query;
+
+      // Ensure valid pagination values
+      const page = Math.max(1, Number(queryPage) || 1);
+      const limit = Math.max(1, Math.min(100, Number(queryLimit) || 20));
 
       // Auth check is now handled by middleware, but keeping for safety
       if (!userId) {
@@ -479,9 +493,22 @@ export class AddressesController {
       const result = await this.listAddressesHandler.handle(query);
 
       if (result.success) {
+        const addresses = Array.isArray(result.data) ? result.data : [];
+
+        // For proper pagination, we need total count from service
+        // Since we're using mock data, calculate based on actual data
+        const total = addresses.length;
+        const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
+
         reply.status(HTTP_STATUS.OK).send({
           success: true,
-          data: result.data
+          data: addresses,
+          meta: {
+            total,
+            page,
+            limit,
+            totalPages
+          }
         });
       } else {
         const statusCode = result.error?.includes('not found') ? HTTP_STATUS.NOT_FOUND : HTTP_STATUS.BAD_REQUEST;

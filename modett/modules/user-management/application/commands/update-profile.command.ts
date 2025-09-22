@@ -5,7 +5,7 @@ export interface UpdateProfileCommand extends ICommand {
   userId: string;
   defaultAddressId?: string;
   defaultPaymentMethodId?: string;
-  preferences?: Record<string, any>;
+  prefs?: Record<string, any>;
   locale?: string;
   currency?: string;
   stylePreferences?: Record<string, any>;
@@ -14,8 +14,14 @@ export interface UpdateProfileCommand extends ICommand {
 
 export interface UpdateProfileResult {
   userId: string;
-  updated: boolean;
-  message: string;
+  defaultAddressId?: string | null;
+  defaultPaymentMethodId?: string | null;
+  prefs: Record<string, any>;
+  locale?: string | null;
+  currency?: string | null;
+  stylePreferences: Record<string, any>;
+  preferredSizes: Record<string, any>;
+  updatedAt: string;
 }
 
 export class UpdateProfileHandler implements ICommandHandler<UpdateProfileCommand, CommandResult<UpdateProfileResult>> {
@@ -39,7 +45,7 @@ export class UpdateProfileHandler implements ICommandHandler<UpdateProfileComman
         {
           defaultAddressId: command.defaultAddressId,
           defaultPaymentMethodId: command.defaultPaymentMethodId,
-          prefs: command.preferences,
+          prefs: command.prefs,
           locale: command.locale,
           currency: command.currency,
           stylePreferences: command.stylePreferences,
@@ -48,9 +54,15 @@ export class UpdateProfileHandler implements ICommandHandler<UpdateProfileComman
       );
 
       const result: UpdateProfileResult = {
-        userId: command.userId,
-        updated: true,
-        message: 'Profile updated successfully'
+        userId: updatedProfile.userId,
+        defaultAddressId: updatedProfile.defaultAddressId,
+        defaultPaymentMethodId: updatedProfile.defaultPaymentMethodId,
+        prefs: updatedProfile.prefs,
+        locale: updatedProfile.locale,
+        currency: updatedProfile.currency,
+        stylePreferences: updatedProfile.stylePreferences,
+        preferredSizes: updatedProfile.preferredSizes,
+        updatedAt: new Date().toISOString()
       };
 
       return CommandResult.success<UpdateProfileResult>(result);
