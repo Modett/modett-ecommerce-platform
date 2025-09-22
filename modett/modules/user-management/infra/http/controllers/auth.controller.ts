@@ -330,14 +330,14 @@ export class AuthController {
       const missingFields: string[] = [];
       if (!email) missingFields.push('email');
       if (!rawData.password) missingFields.push('password');
-      if (!rawData.confirmPassword) missingFields.push('confirmPassword');
-      if (!rawData.acceptTerms) missingFields.push('acceptTerms');
 
       if (missingFields.length > 0) {
         reply.status(HTTP_STATUS.BAD_REQUEST).send({
           success: false,
           error: 'Required fields are missing',
-          errors: missingFields
+          errors: missingFields,
+          code: 'VALIDATION_ERROR',
+          timestamp: new Date().toISOString()
         });
         return;
       }
@@ -347,7 +347,9 @@ export class AuthController {
         reply.status(HTTP_STATUS.BAD_REQUEST).send({
           success: false,
           error: ERROR_MESSAGES.INVALID_EMAIL,
-          errors: ['email']
+          errors: ['email'],
+          code: 'VALIDATION_ERROR',
+          timestamp: new Date().toISOString()
         });
         return;
       }
@@ -358,30 +360,14 @@ export class AuthController {
         reply.status(HTTP_STATUS.BAD_REQUEST).send({
           success: false,
           error: ERROR_MESSAGES.WEAK_PASSWORD,
-          errors: passwordValidation.errors
+          errors: passwordValidation.errors,
+          code: 'VALIDATION_ERROR',
+          timestamp: new Date().toISOString()
         });
         return;
       }
 
-      // Validate password confirmation
-      if (rawData.password !== rawData.confirmPassword) {
-        reply.status(HTTP_STATUS.BAD_REQUEST).send({
-          success: false,
-          error: 'Password confirmation does not match',
-          errors: ['confirmPassword']
-        });
-        return;
-      }
 
-      // Validate terms acceptance
-      if (!rawData.acceptTerms) {
-        reply.status(HTTP_STATUS.BAD_REQUEST).send({
-          success: false,
-          error: 'You must accept the terms and conditions',
-          errors: ['acceptTerms']
-        });
-        return;
-      }
 
       // Create command
       const command: RegisterUserCommand = {
@@ -413,10 +399,9 @@ export class AuthController {
         reply.status(HTTP_STATUS.CREATED).send({
           success: true,
           data: {
-            message: 'Account created successfully. Please check your email to verify your account.',
-            action: 'registration_complete',
-            requiresAction: true,
-            nextStep: 'email_verification'
+            userId: result.data.user.id,
+            email: email,
+            message: 'Registration successful'
           }
         });
       } else {
@@ -461,7 +446,9 @@ export class AuthController {
         reply.status(HTTP_STATUS.BAD_REQUEST).send({
           success: false,
           error: ERROR_MESSAGES.INVALID_EMAIL,
-          errors: ['email']
+          errors: ['email'],
+          code: 'VALIDATION_ERROR',
+          timestamp: new Date().toISOString()
         });
         return;
       }
@@ -714,7 +701,9 @@ export class AuthController {
         reply.status(HTTP_STATUS.BAD_REQUEST).send({
           success: false,
           error: ERROR_MESSAGES.INVALID_EMAIL,
-          errors: ['email']
+          errors: ['email'],
+          code: 'VALIDATION_ERROR',
+          timestamp: new Date().toISOString()
         });
         return;
       }
@@ -785,7 +774,9 @@ export class AuthController {
         reply.status(HTTP_STATUS.BAD_REQUEST).send({
           success: false,
           error: ERROR_MESSAGES.WEAK_PASSWORD,
-          errors: passwordValidation.errors
+          errors: passwordValidation.errors,
+          code: 'VALIDATION_ERROR',
+          timestamp: new Date().toISOString()
         });
         return;
       }
@@ -905,7 +896,9 @@ export class AuthController {
         reply.status(HTTP_STATUS.BAD_REQUEST).send({
           success: false,
           error: ERROR_MESSAGES.INVALID_EMAIL,
-          errors: ['email']
+          errors: ['email'],
+          code: 'VALIDATION_ERROR',
+          timestamp: new Date().toISOString()
         });
         return;
       }
@@ -984,7 +977,9 @@ export class AuthController {
         reply.status(HTTP_STATUS.BAD_REQUEST).send({
           success: false,
           error: ERROR_MESSAGES.WEAK_PASSWORD,
-          errors: passwordValidation.errors
+          errors: passwordValidation.errors,
+          code: 'VALIDATION_ERROR',
+          timestamp: new Date().toISOString()
         });
         return;
       }
