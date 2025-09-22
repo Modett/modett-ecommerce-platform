@@ -902,139 +902,24 @@ All errors follow a consistent format with success flags, error messages, and er
 
   // Register user management routes
   try {
-    // ✅ FIXED: Correct import path
+    // ✅ Import route registration and services
     const { registerUserManagementRoutes } = await import(
       "../../../modules/user-management/infra/http/routes"
     );
+    const { createServiceContainer } = await import("./container");
 
-    // Create placeholder services for testing
+    // ✅ Initialize real services with database repositories
+    const serviceContainer = createServiceContainer();
+
+    // Extract services for route registration
     const services = {
-      authService: {
-        register: async (data: any) => ({
-          accessToken: "mock-access-token-123",
-          refreshToken: "mock-refresh-token-456",
-          user: {
-            id: "temp-123",
-            email: data.email,
-            isGuest: false,
-            emailVerified: false,
-            phoneVerified: false
-          },
-          expiresIn: 900
-        }),
-        login: async (data: any) => ({
-          success: true,
-          accessToken: "jwt-token-here",
-          user: { id: "temp-123", email: data.email },
-        }),
-      } as any,
-      userProfileService: {
-        getCurrentUser: async () => ({
-          userId: "temp-123",
-          email: "user@example.com",
-          phone: null,
-          firstName: null,
-          lastName: null,
-          status: "active",
-          emailVerified: true,
-          phoneVerified: false,
-          isGuest: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }),
-        getProfile: async () => ({
-          userId: "temp-123",
-          preferences: {},
-          stylePreferences: {},
-        }),
-        getUserProfile: async () => ({
-          userId: "temp-123",
-          defaultAddressId: null,
-          defaultPaymentMethodId: null,
-          prefs: {},
-          locale: null,
-          currency: null,
-          stylePreferences: {},
-          preferredSizes: {},
-        }),
-        updateUserProfile: async () => ({
-          userId: "temp-123",
-          defaultAddressId: null,
-          defaultPaymentMethodId: null,
-          prefs: {},
-          locale: null,
-          currency: null,
-          stylePreferences: {},
-          preferredSizes: {},
-          updatedAt: new Date().toISOString(),
-        }),
-      } as any,
-      addressService: {
-        getCurrentUserAddresses: async () => [
-          {
-            addressId: "addr-123",
-            userId: "temp-123",
-            type: "shipping",
-            isDefault: true,
-            firstName: "Elena",
-            lastName: "Rodriguez",
-            company: null,
-            addressLine1: "123 Main Street",
-            addressLine2: "Apt 4B",
-            city: "New York",
-            state: "NY",
-            postalCode: "10001",
-            country: "US",
-            phone: "+1888234567",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-        ],
-        getUserAddresses: async () => [
-          {
-            addressId: "addr-123",
-            userId: "temp-123",
-            type: "shipping",
-            isDefault: true,
-            firstName: "Elena",
-            lastName: "Rodriguez",
-            company: null,
-            addressLine1: "123 Main Street",
-            addressLine2: "Apt 4B",
-            city: "New York",
-            state: "NY",
-            postalCode: "10001",
-            country: "US",
-            phone: "+1888234567",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-          {
-            addressId: "addr-456",
-            userId: "temp-123",
-            type: "billing",
-            isDefault: false,
-            firstName: "Elena",
-            lastName: "Rodriguez",
-            company: "Tech Corp",
-            addressLine1: "456 Business Ave",
-            addressLine2: "Suite 200",
-            city: "San Francisco",
-            state: "CA",
-            postalCode: "94105",
-            country: "US",
-            phone: "+1888234567",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          },
-        ],
-      } as any,
-      paymentMethodService: {
-        getCurrentUserPaymentMethods: async () => [
-          { paymentMethodId: "pm-123", type: "card", last4: "4242" },
-        ],
-      } as any,
+      authService: serviceContainer.authService,
+      userProfileService: serviceContainer.userProfileService,
+      addressService: serviceContainer.addressService,
+      paymentMethodService: serviceContainer.paymentMethodService,
     };
+
+    server.log.info("✅ Real services initialized with database repositories");
 
     // Register routes with services
     await server.register(
