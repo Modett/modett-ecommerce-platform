@@ -2,7 +2,9 @@ import { PrismaClient } from '@prisma/client';
 
 // User Management imports
 import { UserRepository } from '../../../modules/user-management/infra/persistence/repositories/user.repository';
+import { AddressRepository } from '../../../modules/user-management/infra/persistence/repositories/address.repository';
 import { AuthenticationService } from '../../../modules/user-management/application/services/authentication.service';
+import { AddressManagementService } from '../../../modules/user-management/application/services/address-management.service';
 import { PasswordHasherService } from '../../../modules/user-management/application/services/password-hasher.service';
 
 export interface ServiceContainer {
@@ -11,11 +13,12 @@ export interface ServiceContainer {
 
   // Repositories
   userRepository: UserRepository;
+  addressRepository: AddressRepository;
 
   // Services
   authService: AuthenticationService;
   userProfileService: any; // Placeholder for now
-  addressService: any; // Placeholder for now
+  addressService: AddressManagementService;
   paymentMethodService: any; // Placeholder for now
   passwordHasher: PasswordHasherService;
 }
@@ -28,6 +31,7 @@ export function createServiceContainer(): ServiceContainer {
 
   // Initialize repositories
   const userRepository = new UserRepository(prisma);
+  const addressRepository = new AddressRepository(prisma);
 
   // Initialize core services
   const passwordHasher = new PasswordHasherService();
@@ -39,10 +43,13 @@ export function createServiceContainer(): ServiceContainer {
     {
       accessTokenSecret: process.env.JWT_SECRET || 'fallback-secret-change-in-production',
       refreshTokenSecret: process.env.JWT_SECRET || 'fallback-secret-change-in-production',
-      accessTokenExpiresIn: process.env.JWT_EXPIRES_IN || '15m',
+      accessTokenExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
       refreshTokenExpiresIn: '7d'
     }
   );
+
+  // Initialize address service
+  const addressService = new AddressManagementService(addressRepository);
 
   // Create simplified placeholder services for now
   const userProfileService = {
@@ -81,13 +88,6 @@ export function createServiceContainer(): ServiceContainer {
     })
   };
 
-  const addressService = {
-    getCurrentUserAddresses: async () => [],
-    getUserAddresses: async () => [],
-    addAddress: async () => ({ success: true }),
-    updateAddress: async () => ({ success: true }),
-    deleteAddress: async () => ({ success: true })
-  };
 
   const paymentMethodService = {
     getCurrentUserPaymentMethods: async () => [],
@@ -102,6 +102,7 @@ export function createServiceContainer(): ServiceContainer {
 
     // Repositories
     userRepository,
+    addressRepository,
 
     // Services
     authService,

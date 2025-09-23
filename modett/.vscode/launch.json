@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "🚀 Debug API (Simple)",
+      "program": "${workspaceFolder}/apps/api/src/index.ts",
+      "runtimeArgs": ["--loader", "ts-node/esm"],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "sourceMaps": true,
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "🔧 Debug with tsx",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["tsx", "--inspect", "apps/api/src/index.ts"],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "cwd": "${workspaceFolder}",
+      "restart": true
+    }
+  ]
+}
