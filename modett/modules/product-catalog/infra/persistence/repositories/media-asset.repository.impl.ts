@@ -99,11 +99,15 @@ export class MediaAssetRepository implements IMediaAssetRepository {
 
     if (hasRenditions !== undefined) {
       if (hasRenditions) {
+        // Check if renditions has any keys (not empty object)
         whereClause.renditions = {
-          not: {},
+          not: { equals: {} },
         };
       } else {
-        whereClause.renditions = {};
+        // Check if renditions is empty object
+        whereClause.renditions = {
+          equals: {},
+        };
       }
     }
 
@@ -403,11 +407,15 @@ export class MediaAssetRepository implements IMediaAssetRepository {
 
     if (options?.hasRenditions !== undefined) {
       if (options.hasRenditions) {
+        // Check if renditions has any keys (not empty object)
         whereClause.renditions = {
-          not: {},
+          not: { equals: {} },
         };
       } else {
-        whereClause.renditions = {};
+        // Check if renditions is empty object
+        whereClause.renditions = {
+          equals: {},
+        };
       }
     }
 
