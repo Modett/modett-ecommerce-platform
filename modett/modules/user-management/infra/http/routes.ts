@@ -672,25 +672,25 @@ export async function registerUserManagementRoutes(
       preHandler: authenticateUser,
       schema: {
         description: "Get user addresses with optional filtering",
-        tags: ["Addresses"], // ✅ ADD
-        summary: "List My Addresses", // ✅ ADD
-        security: [{ bearerAuth: [] }], // ✅ ADD
+        tags: ["Addresses"], 
+        summary: "List My Addresses", 
+        security: [{ bearerAuth: [] }], 
         querystring: {
           type: "object",
           properties: {
             type: { type: "string", enum: ["billing", "shipping"] },
-            page: { type: "integer", minimum: 1, default: 1 }, // ✅ ADD
-            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 }, // ✅ ADD
+            page: { type: "integer", minimum: 1, default: 1 }, 
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 }, 
             sortBy: {
               type: "string",
               enum: ["createdAt", "updatedAt"],
               default: "createdAt",
-            }, // ✅ ADD
+            }, 
             sortOrder: {
               type: "string",
               enum: ["asc", "desc"],
               default: "desc",
-            }, // ✅ ADD
+            }, 
           },
         },
         response: {
@@ -747,24 +747,63 @@ export async function registerUserManagementRoutes(
     {
       preHandler: authenticateUser,
       schema: {
+        description: "Add a new address for the authenticated user",
+        tags: ["Addresses"],
+        summary: "Add My Address",
+        security: [{ bearerAuth: [] }],
         body: {
           type: "object",
           required: ["type", "addressLine1", "city", "country"],
           properties: {
-            type: { type: "string", enum: ["billing", "shipping"] },
-            isDefault: { type: "boolean" },
-            firstName: { type: "string" },
-            lastName: { type: "string" },
-            company: { type: "string" },
-            addressLine1: { type: "string" },
-            addressLine2: { type: "string" },
-            city: { type: "string" },
-            state: { type: "string" },
-            postalCode: { type: "string" },
-            country: { type: "string" },
-            phone: { type: "string" },
+            type: { type: "string", enum: ["billing", "shipping"], description: "Address type" },
+            isDefault: { type: "boolean", description: "Set as default address", default: false },
+            firstName: { type: "string", description: "First name" },
+            lastName: { type: "string", description: "Last name" },
+            company: { type: "string", description: "Company name" },
+            addressLine1: { type: "string", description: "Primary address line" },
+            addressLine2: { type: "string", description: "Secondary address line" },
+            city: { type: "string", description: "City" },
+            state: { type: "string", description: "State/Province" },
+            postalCode: { type: "string", description: "Postal/ZIP code" },
+            country: { type: "string", description: "Country" },
+            phone: { type: "string", description: "Phone number" },
           },
         },
+        response: {
+          201: {
+            description: "Address created successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "object",
+                properties: {
+                  addressId: { type: "string", format: "uuid" },
+                  userId: { type: "string", format: "uuid" },
+                  action: { type: "string", enum: ["created"] },
+                  message: { type: "string" }
+                }
+              }
+            }
+          },
+          400: {
+            description: "Validation error",
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" },
+              errors: { type: "array", items: { type: "string" } }
+            }
+          },
+          401: {
+            description: "Authentication required",
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              error: { type: "string" }
+            }
+          }
+        }
       },
     },
     addressesController.addCurrentUserAddress.bind(addressesController) as any

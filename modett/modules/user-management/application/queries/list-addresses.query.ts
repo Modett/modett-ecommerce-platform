@@ -9,6 +9,7 @@ export interface ListAddressesQuery extends IQuery {
 
 export interface AddressListItem {
   addressId: string;
+  userId: string;
   type: string;
   isDefault: boolean;
   firstName?: string;
@@ -56,6 +57,7 @@ export class ListAddressesHandler implements IQueryHandler<ListAddressesQuery, C
       // Map to result format
       const addressItems: AddressListItem[] = filteredAddresses.map((address: AddressResponseDto) => ({
         addressId: address.id,
+        userId: address.userId,
         type: address.type,
         isDefault: address.isDefault,
         firstName: address.firstName,

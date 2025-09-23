@@ -10,26 +10,34 @@ export class AddressRepository implements IAddressRepository {
   async save(address: Address): Promise<void> {
     const data = address.toDatabaseRow();
 
-    await this.prisma.userAddress.create({
-      data: {
-        id: data.address_id,
-        userId: data.user_id,
-        type: data.type,
-        isDefault: data.is_default,
-        firstName: data.first_name,
-        lastName: data.last_name,
-        company: data.company,
-        addressLine1: data.address_line_1,
-        addressLine2: data.address_line_2,
-        city: data.city,
-        state: data.state,
-        postalCode: data.postal_code,
-        country: data.country,
-        phone: data.phone,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-      },
-    });
+    console.log('🟦 REPOSITORY - save() called with data:', JSON.stringify(data, null, 2));
+
+    try {
+      const result = await this.prisma.userAddress.create({
+        data: {
+          id: data.address_id,
+          userId: data.user_id,
+          type: data.type,
+          isDefault: data.is_default,
+          firstName: data.first_name,
+          lastName: data.last_name,
+          company: data.company,
+          addressLine1: data.address_line_1,
+          addressLine2: data.address_line_2,
+          city: data.city,
+          state: data.state,
+          postalCode: data.postal_code,
+          country: data.country,
+          phone: data.phone,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        },
+      });
+      console.log('✅ REPOSITORY - Address saved successfully to database:', result.id);
+    } catch (error) {
+      console.error('🔴 REPOSITORY - Error saving address to database:', error);
+      throw error;
+    }
   }
 
   async findById(id: string): Promise<Address | null> {

@@ -1,0 +1,223 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "product_catalog"]
+}
+
+enum ProductStatusEnum {
+  draft
+  published
+  scheduled
+
+  @@map("product_status_enum")
+  @@schema("product_catalog")
+}
+
+enum RegionEnum {
+  UK
+  US
+  EU
+
+  @@map("region_enum")
+  @@schema("product_catalog")
+}
+
+model Product {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @map("product_id") @db.Uuid
+  title           String
+  slug            String            @unique
+  brand           String?
+  shortDesc       String?           @map("short_desc")
+  longDescHtml    String?           @map("long_desc_html")
+  status          ProductStatusEnum @default(draft)
+  publishAt       DateTime?         @map("publish_at") @db.Timestamptz(6)
+  countryOfOrigin String?           @map("country_of_origin")
+  seoTitle        String?           @map("seo_title")
+  seoDescription  String?           @map("seo_description")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  variants               ProductVariant[]
+  categories             ProductCategory[]
+  media                  ProductMedia[]
+  tags                   ProductTagAssociation[]
+  editorialLookProducts  EditorialLookProduct[]
+
+  @@map("products")
+  @@schema("product_catalog")
+}
+
+model ProductVariant {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @map("variant_id") @db.Uuid
+  productId      String   @map("product_id") @db.Uuid
+  sku            String   @unique
+  size           String?
+  color          String?
+  barcode        String?
+  price          Decimal  @db.Decimal(12, 2)
+  compareAtPrice Decimal? @map("compare_at_price") @db.Decimal(12, 2)
+  weightG        Int?     @map("weight_g")
+  dims           Json?
+  taxClass       String?  @map("tax_class")
+  allowBackorder Boolean  @default(false) @map("allow_backorder")
+  allowPreorder  Boolean  @default(false) @map("allow_preorder")
+  restockEta     DateTime? @map("restock_eta") @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  product     Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  media       VariantMedia[]
+
+  @@map("product_variants")
+  @@schema("product_catalog")
+}
+
+model Category {
+  id       String  @id @default(dbgenerated("gen_random_uuid()")) @map("category_id") @db.Uuid
+  name     String
+  slug     String  @unique
+  parentId String? @map("parent_id") @db.Uuid
+  position Int?
+
+  // Relations
+  parent     Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children   Category[]        @relation("CategoryHierarchy")
+  products   ProductCategory[]
+
+  @@map("categories")
+  @@schema("product_catalog")
+}
+
+model ProductCategory {
+  productId  String @map("product_id") @db.Uuid
+  categoryId String @map("category_id") @db.Uuid
+
+  // Relations
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@map("product_categories")
+  @@schema("product_catalog")
+}
+
+model MediaAsset {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @map("asset_id") @db.Uuid
+  storageKey  String @unique @map("storage_key")
+  mime        String
+  width       Int?
+  height      Int?
+  bytes       BigInt?
+  altText     String? @map("alt_text")
+  focalX      Int?    @map("focal_x")
+  focalY      Int?    @map("focal_y")
+  renditions  Json    @default("{}")
+  version     Int     @default(1)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  productMedia    ProductMedia[]
+  variantMedia    VariantMedia[]
+  editorialLooks  EditorialLook[]
+
+  @@map("media_assets")
+  @@schema("product_catalog")
+}
+
+model ProductMedia {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @map("product_media_id") @db.Uuid
+  productId String  @map("product_id") @db.Uuid
+  assetId   String  @map("asset_id") @db.Uuid
+  position  Int?
+  isCover   Boolean @default(false) @map("is_cover")
+
+  // Relations
+  product Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  asset   MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@map("product_media")
+  @@schema("product_catalog")
+}
+
+model VariantMedia {
+  variantId String @map("variant_id") @db.Uuid
+  assetId   String @map("asset_id") @db.Uuid
+
+  // Relations
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  asset   MediaAsset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@id([variantId, assetId])
+  @@map("variant_media")
+  @@schema("product_catalog")
+}
+
+model ProductTag {
+  id   String  @id @default(dbgenerated("gen_random_uuid()")) @map("tag_id") @db.Uuid
+  tag  String  @unique
+  kind String?
+
+  // Relations
+  products ProductTagAssociation[]
+
+  @@map("product_tags")
+  @@schema("product_catalog")
+}
+
+model ProductTagAssociation {
+  productId String @map("product_id") @db.Uuid
+  tagId     String @map("tag_id") @db.Uuid
+
+  // Relations
+  product Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tag     ProductTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([productId, tagId])
+  @@map("product_tag_associations")
+  @@schema("product_catalog")
+}
+
+model SizeGuide {
+  id       String     @id @default(dbgenerated("gen_random_uuid()")) @map("size_guide_id") @db.Uuid
+  title    String
+  bodyHtml String?    @map("body_html")
+  region   RegionEnum
+  category String?
+
+  @@map("size_guides")
+  @@schema("product_catalog")
+}
+
+model EditorialLook {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @map("look_id") @db.Uuid
+  title       String
+  storyHtml   String?   @map("story_html")
+  heroAssetId String?   @map("hero_asset_id") @db.Uuid
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(6)
+
+  // Relations
+  heroAsset MediaAsset?            @relation(fields: [heroAssetId], references: [id], onDelete: SetNull)
+  products  EditorialLookProduct[]
+
+  @@map("editorial_looks")
+  @@schema("product_catalog")
+}
+
+model EditorialLookProduct {
+  lookId    String @map("look_id") @db.Uuid
+  productId String @map("product_id") @db.Uuid
+
+  // Relations
+  look    EditorialLook @relation(fields: [lookId], references: [id], onDelete: Cascade)
+  product Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([lookId, productId])
+  @@map("editorial_look_products")
+  @@schema("product_catalog")
+}

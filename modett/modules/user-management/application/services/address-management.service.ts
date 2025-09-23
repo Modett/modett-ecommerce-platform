@@ -47,35 +47,51 @@ export class AddressManagementService {
   constructor(private readonly addressRepository: IAddressRepository) {}
 
   async addAddress(dto: AddAddressDto): Promise<AddressResponseDto> {
+    console.log('🔵 SERVICE - AddAddress called with:', dto);
+
     const userId = UserId.fromString(dto.userId);
+    console.log('🔵 SERVICE - UserId object:', userId);
 
     // Check if user already has addresses
+    console.log('🔵 SERVICE - Checking existing addresses...');
     const existingAddresses = await this.addressRepository.findByUserId(userId);
+    console.log('🔵 SERVICE - Existing addresses count:', existingAddresses.length);
 
     // If this is their first address, make it default regardless of the flag
     const shouldBeDefault = dto.isDefault || existingAddresses.length === 0;
+    console.log('🔵 SERVICE - Should be default:', shouldBeDefault);
 
+    console.log('🔵 SERVICE - Creating Address entity...');
     const address = Address.create({
       userId: dto.userId,
       addressData: dto.addressData,
       type: dto.type,
       isDefault: shouldBeDefault,
     });
+    console.log('🔵 SERVICE - Address entity created:', address.getId());
 
     // Check for conflicting addresses
+    console.log('🔵 SERVICE - Checking for conflicts...');
     const conflictingAddress = await this.addressRepository.findConflictingAddress(userId, address);
     if (conflictingAddress) {
+      console.log('🔴 SERVICE - Conflict found, throwing error');
       throw new Error("A similar address already exists for this user");
     }
+    console.log('🔵 SERVICE - No conflicts found');
 
     // If setting as default, remove default from other addresses
     if (shouldBeDefault) {
+      console.log('🔵 SERVICE - Removing default from other addresses...');
       await this.addressRepository.removeDefault(userId);
     }
 
+    console.log('🔵 SERVICE - About to save address to repository...');
     await this.addressRepository.save(address);
+    console.log('✅ SERVICE - Address saved successfully!');
 
-    return this.mapToResponseDto(address);
+    const result = this.mapToResponseDto(address);
+    console.log('🔵 SERVICE - Mapped response:', result);
+    return result;
   }
 
   async updateAddress(dto: UpdateAddressDto): Promise<AddressResponseDto> {

@@ -460,7 +460,7 @@ export class AddressesController {
     reply: FastifyReply
   ): Promise<void> {
     try {
-      const userId = (request as any).user?.userId;
+      const userId = (request as any). user?.userId;
       const {
         type,
         page: queryPage = 1,
@@ -493,7 +493,9 @@ export class AddressesController {
       const result = await this.listAddressesHandler.handle(query);
 
       if (result.success) {
-        const addresses = Array.isArray(result.data) ? result.data : [];
+        // The result.data should be a ListAddressesResult with an addresses array
+        const addressData = result.data as any;
+        const addresses = addressData?.addresses || [];
 
         // For proper pagination, we need total count from service
         // Since we're using mock data, calculate based on actual data
