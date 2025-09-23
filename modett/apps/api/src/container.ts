@@ -7,20 +7,52 @@ import { AuthenticationService } from '../../../modules/user-management/applicat
 import { AddressManagementService } from '../../../modules/user-management/application/services/address-management.service';
 import { PasswordHasherService } from '../../../modules/user-management/application/services/password-hasher.service';
 
+// Product Catalog imports
+import {
+  ProductRepository,
+  ProductVariantRepository,
+  CategoryRepository,
+  MediaAssetRepository,
+  ProductTagRepository,
+} from '../../../modules/product-catalog/infra/persistence/repositories';
+import {
+  ProductManagementService,
+  CategoryManagementService,
+  MediaManagementService,
+  VariantManagementService,
+  ProductSearchService,
+  SlugGeneratorService,
+} from '../../../modules/product-catalog/application/services';
+
 export interface ServiceContainer {
   // Infrastructure
   prisma: PrismaClient;
 
-  // Repositories
+  // User Management Repositories
   userRepository: UserRepository;
   addressRepository: AddressRepository;
 
-  // Services
+  // Product Catalog Repositories
+  productRepository: ProductRepository;
+  productVariantRepository: ProductVariantRepository;
+  categoryRepository: CategoryRepository;
+  mediaAssetRepository: MediaAssetRepository;
+  productTagRepository: ProductTagRepository;
+
+  // User Management Services
   authService: AuthenticationService;
   userProfileService: any; // Placeholder for now
   addressService: AddressManagementService;
   paymentMethodService: any; // Placeholder for now
   passwordHasher: PasswordHasherService;
+
+  // Product Catalog Services
+  slugGeneratorService: SlugGeneratorService;
+  productManagementService: ProductManagementService;
+  categoryManagementService: CategoryManagementService;
+  mediaManagementService: MediaManagementService;
+  variantManagementService: VariantManagementService;
+  productSearchService: ProductSearchService;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -29,12 +61,20 @@ export function createServiceContainer(): ServiceContainer {
     log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['warn', 'error']
   });
 
-  // Initialize repositories
+  // Initialize User Management repositories
   const userRepository = new UserRepository(prisma);
   const addressRepository = new AddressRepository(prisma);
 
+  // Initialize Product Catalog repositories
+  const productRepository = new ProductRepository(prisma);
+  const productVariantRepository = new ProductVariantRepository(prisma);
+  const categoryRepository = new CategoryRepository(prisma);
+  const mediaAssetRepository = new MediaAssetRepository(prisma);
+  const productTagRepository = new ProductTagRepository(prisma);
+
   // Initialize core services
   const passwordHasher = new PasswordHasherService();
+  const slugGeneratorService = new SlugGeneratorService();
 
   // Initialize authentication service
   const authService = new AuthenticationService(
@@ -43,13 +83,35 @@ export function createServiceContainer(): ServiceContainer {
     {
       accessTokenSecret: process.env.JWT_SECRET || 'fallback-secret-change-in-production',
       refreshTokenSecret: process.env.JWT_SECRET || 'fallback-secret-change-in-production',
-      accessTokenExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
+      accessTokenExpiresIn: process.env.JWT_EXPIRES_IN || '6h',
       refreshTokenExpiresIn: '7d'
     }
   );
 
   // Initialize address service
   const addressService = new AddressManagementService(addressRepository);
+
+  // Initialize Product Catalog services
+  const productManagementService = new ProductManagementService(
+    productRepository,
+    productVariantRepository,
+    slugGeneratorService
+  );
+  const categoryManagementService = new CategoryManagementService(
+    categoryRepository,
+    slugGeneratorService
+  );
+  const mediaManagementService = new MediaManagementService(
+    mediaAssetRepository
+  );
+  const variantManagementService = new VariantManagementService(
+    productVariantRepository,
+    productRepository
+  );
+  const productSearchService = new ProductSearchService(
+    productRepository,
+    categoryRepository
+  );
 
   // Create simplified placeholder services for now
   const userProfileService = {
@@ -100,16 +162,31 @@ export function createServiceContainer(): ServiceContainer {
     // Infrastructure
     prisma,
 
-    // Repositories
+    // User Management Repositories
     userRepository,
     addressRepository,
 
-    // Services
+    // Product Catalog Repositories
+    productRepository,
+    productVariantRepository,
+    categoryRepository,
+    mediaAssetRepository,
+    productTagRepository,
+
+    // User Management Services
     authService,
     userProfileService,
     addressService,
     paymentMethodService,
-    passwordHasher
+    passwordHasher,
+
+    // Product Catalog Services
+    slugGeneratorService,
+    productManagementService,
+    categoryManagementService,
+    mediaManagementService,
+    variantManagementService,
+    productSearchService,
   };
 }
 

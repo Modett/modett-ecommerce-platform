@@ -5,6 +5,16 @@ import { MediaAsset, MediaAssetId } from "../../../domain/entities/media-asset.e
 export class MediaAssetRepository implements IMediaAssetRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
+  private convertBigIntToNumber(value: bigint | null): number | null {
+    if (value === null) return null;
+    // Convert BigInt to number, handling potential overflow
+    const numberValue = Number(value);
+    if (numberValue > Number.MAX_SAFE_INTEGER) {
+      console.warn(`BigInt value ${value} exceeds MAX_SAFE_INTEGER, potential precision loss`);
+    }
+    return numberValue;
+  }
+
   async save(asset: MediaAsset): Promise<void> {
     const data = asset.toDatabaseRow();
 
@@ -41,7 +51,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       mime: assetData.mime,
       width: assetData.width,
       height: assetData.height,
-      bytes: assetData.bytes,
+      bytes: this.convertBigIntToNumber(assetData.bytes),
       alt_text: assetData.altText,
       focal_x: assetData.focalX,
       focal_y: assetData.focalY,
@@ -66,7 +76,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       mime: assetData.mime,
       width: assetData.width,
       height: assetData.height,
-      bytes: assetData.bytes,
+      bytes: this.convertBigIntToNumber(assetData.bytes),
       alt_text: assetData.altText,
       focal_x: assetData.focalX,
       focal_y: assetData.focalY,
@@ -89,11 +99,15 @@ export class MediaAssetRepository implements IMediaAssetRepository {
 
     if (hasRenditions !== undefined) {
       if (hasRenditions) {
+        // Check if renditions has any keys (not empty object)
         whereClause.renditions = {
-          not: {},
+          not: { equals: {} },
         };
       } else {
-        whereClause.renditions = {};
+        // Check if renditions is empty object
+        whereClause.renditions = {
+          equals: {},
+        };
       }
     }
 
@@ -110,7 +124,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       mime: assetData.mime,
       width: assetData.width,
       height: assetData.height,
-      bytes: assetData.bytes,
+      bytes: this.convertBigIntToNumber(assetData.bytes),
       alt_text: assetData.altText,
       focal_x: assetData.focalX,
       focal_y: assetData.focalY,
@@ -141,7 +155,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       mime: assetData.mime,
       width: assetData.width,
       height: assetData.height,
-      bytes: assetData.bytes,
+      bytes: this.convertBigIntToNumber(assetData.bytes),
       alt_text: assetData.altText,
       focal_x: assetData.focalX,
       focal_y: assetData.focalY,
@@ -176,7 +190,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       mime: assetData.mime,
       width: assetData.width,
       height: assetData.height,
-      bytes: assetData.bytes,
+      bytes: this.convertBigIntToNumber(assetData.bytes),
       alt_text: assetData.altText,
       focal_x: assetData.focalX,
       focal_y: assetData.focalY,
@@ -211,7 +225,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       mime: assetData.mime,
       width: assetData.width,
       height: assetData.height,
-      bytes: assetData.bytes,
+      bytes: this.convertBigIntToNumber(assetData.bytes),
       alt_text: assetData.altText,
       focal_x: assetData.focalX,
       focal_y: assetData.focalY,
@@ -245,7 +259,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       mime: assetData.mime,
       width: assetData.width,
       height: assetData.height,
-      bytes: assetData.bytes,
+      bytes: this.convertBigIntToNumber(assetData.bytes),
       alt_text: assetData.altText,
       focal_x: assetData.focalX,
       focal_y: assetData.focalY,
@@ -281,7 +295,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       mime: assetData.mime,
       width: assetData.width,
       height: assetData.height,
-      bytes: assetData.bytes,
+      bytes: this.convertBigIntToNumber(assetData.bytes),
       alt_text: assetData.altText,
       focal_x: assetData.focalX,
       focal_y: assetData.focalY,
@@ -307,7 +321,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
             },
           },
           {
-            editorialLooksAsHero: {
+            editorialLooks: {
               none: {},
             },
           },
@@ -322,7 +336,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       mime: assetData.mime,
       width: assetData.width,
       height: assetData.height,
-      bytes: assetData.bytes,
+      bytes: this.convertBigIntToNumber(assetData.bytes),
       alt_text: assetData.altText,
       focal_x: assetData.focalX,
       focal_y: assetData.focalY,
@@ -393,11 +407,15 @@ export class MediaAssetRepository implements IMediaAssetRepository {
 
     if (options?.hasRenditions !== undefined) {
       if (options.hasRenditions) {
+        // Check if renditions has any keys (not empty object)
         whereClause.renditions = {
-          not: {},
+          not: { equals: {} },
         };
       } else {
-        whereClause.renditions = {};
+        // Check if renditions is empty object
+        whereClause.renditions = {
+          equals: {},
+        };
       }
     }
 
@@ -413,6 +431,6 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       },
     });
 
-    return result._sum.bytes || 0;
+    return this.convertBigIntToNumber(result._sum.bytes) || 0;
   }
 }

@@ -128,7 +128,7 @@ export class ProductRepository implements IProductRepository {
     } = options || {};
 
     const products = await this.prisma.product.findMany({
-      where: { status },
+      where: { status: status as any },
       take: limit,
       skip: offset,
       orderBy: { [sortBy]: sortOrder },

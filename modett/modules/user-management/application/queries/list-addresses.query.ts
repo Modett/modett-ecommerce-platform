@@ -5,6 +5,10 @@ import { IQuery, IQueryHandler } from './get-user-profile.query';
 export interface ListAddressesQuery extends IQuery {
   userId: string;
   type?: 'billing' | 'shipping';
+  page?: number;
+  limit?: number;
+  sortBy?: 'createdAt' | 'updatedAt';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface AddressListItem {
@@ -46,16 +50,40 @@ export class ListAddressesHandler implements IQueryHandler<ListAddressesQuery, C
         );
       }
 
-      // Get addresses through service
+      // Get addresses through service with pagination
       const addresses = await this.addressService.getUserAddresses(query.userId);
 
       // Filter by type if specified
-      const filteredAddresses = query.type
+      let filteredAddresses = query.type
         ? addresses.filter((addr: AddressResponseDto) => addr.type === query.type)
         : addresses;
 
+      // Apply sorting
+      if (query.sortBy) {
+        const sortOrder = query.sortOrder || 'desc';
+        filteredAddresses.sort((a, b) => {
+          const aValue = a[query.sortBy as keyof AddressResponseDto];
+          const bValue = b[query.sortBy as keyof AddressResponseDto];
+
+          if (aValue instanceof Date && bValue instanceof Date) {
+            return sortOrder === 'asc' ? aValue.getTime() - bValue.getTime() : bValue.getTime() - aValue.getTime();
+          }
+
+          return 0;
+        });
+      }
+
+      // Get total count before pagination
+      const totalCount = filteredAddresses.length;
+
+      // Apply pagination
+      const page = query.page || 1;
+      const limit = query.limit || 20;
+      const offset = (page - 1) * limit;
+      const paginatedAddresses = filteredAddresses.slice(offset, offset + limit);
+
       // Map to result format
-      const addressItems: AddressListItem[] = filteredAddresses.map((address: AddressResponseDto) => ({
+      const addressItems: AddressListItem[] = paginatedAddresses.map((address: AddressResponseDto) => ({
         addressId: address.id,
         userId: address.userId,
         type: address.type,
@@ -76,7 +104,7 @@ export class ListAddressesHandler implements IQueryHandler<ListAddressesQuery, C
       const result: ListAddressesResult = {
         userId: query.userId,
         addresses: addressItems,
-        totalCount: addressItems.length
+        totalCount: totalCount
       };
 
       return CommandResult.success<ListAddressesResult>(result);
