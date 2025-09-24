@@ -150,7 +150,7 @@ export async function registerUserManagementRoutes(
   fastify.post(
     "/auth/logout",
     {
-      preHandler: authenticateUser,
+      preHandler: optionalAuth,
     },
     authController.logout.bind(authController)
   );
@@ -1530,4 +1530,26 @@ export async function registerUserManagementRoutes(
     },
     socialLoginController.getUserSocialAccounts.bind(socialLoginController)
   );
+
+  // Development/Testing endpoint
+  if (process.env.NODE_ENV !== 'production') {
+    fastify.post(
+      "/auth/generate-test-verification-token",
+      {
+        schema: {
+          description: "Generate test verification token (development only)",
+          tags: ["Testing"],
+          body: {
+            type: "object",
+            required: ["email", "userId"],
+            properties: {
+              email: { type: "string", format: "email" },
+              userId: { type: "string", format: "uuid" }
+            }
+          }
+        }
+      },
+      authController.generateTestVerificationToken.bind(authController)
+    );
+  }
 }
