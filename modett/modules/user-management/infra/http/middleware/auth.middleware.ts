@@ -78,6 +78,17 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
 
       const token = tokenMatch[1];
 
+      // Check if token is blacklisted (logged out)
+      const { TokenBlacklistService } = await import('../security/token-blacklist');
+      if (TokenBlacklistService.isTokenBlacklisted(token)) {
+        reply.status(401).send({
+          success: false,
+          error: 'Token has been revoked',
+          code: 'TOKEN_REVOKED'
+        });
+        return;
+      }
+
       // Verify and decode JWT token
       let decoded: any;
       try {

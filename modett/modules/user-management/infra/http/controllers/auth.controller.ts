@@ -10,6 +10,7 @@ import {
   generateAuthTokens,
   verifyRefreshToken,
 } from "../middleware/auth.middleware";
+import { TokenBlacklistService } from "../security/token-blacklist";
 import crypto from "crypto";
 
 // Constants for better maintainability
@@ -226,114 +227,13 @@ class AuthValidation {
   }
 }
 
-// In-memory stores (should be replaced with Redis in production)
-class AuthSecurityStore {
-  private static failedAttempts = new Map<
-    string,
-    { count: number; lastAttempt: Date; lockedUntil?: Date }
-  >();
-  private static tokenBlacklist = new Set<string>();
-  private static verificationTokens = new Map<
-    string,
-    { userId: string; email: string; expiresAt: Date }
-  >();
-  private static passwordResetTokens = new Map<
-    string,
-    { userId: string; expiresAt: Date }
-  >();
-
-  static recordFailedAttempt(email: string): void {
-    const key = email.toLowerCase();
-    const current = this.failedAttempts.get(key) || {
-      count: 0,
-      lastAttempt: new Date(),
-    };
-
-    current.count += 1;
-    current.lastAttempt = new Date();
-
-    if (current.count >= SECURITY_CONFIG.MAX_LOGIN_ATTEMPTS) {
-      current.lockedUntil = new Date(
-        Date.now() + SECURITY_CONFIG.LOCKOUT_DURATION
-      );
-    }
-
-    this.failedAttempts.set(key, current);
-  }
-
-  static clearFailedAttempts(email: string): void {
-    this.failedAttempts.delete(email.toLowerCase());
-  }
-
-  static isAccountLocked(email: string): boolean {
-    const attempts = this.failedAttempts.get(email.toLowerCase());
-    if (!attempts || !attempts.lockedUntil) return false;
-
-    if (new Date() > attempts.lockedUntil) {
-      this.clearFailedAttempts(email);
-      return false;
-    }
-
-    return true;
-  }
-
-  static blacklistToken(token: string): void {
-    this.tokenBlacklist.add(token);
-  }
-
-  static isTokenBlacklisted(token: string): boolean {
-    return this.tokenBlacklist.has(token);
-  }
-
-  static storeVerificationToken(
-    token: string,
-    userId: string,
-    email: string
-  ): void {
-    this.verificationTokens.set(token, {
-      userId,
-      email,
-      expiresAt: new Date(
-        Date.now() + SECURITY_CONFIG.EMAIL_VERIFICATION_TOKEN_EXPIRY
-      ),
-    });
-  }
-
-  static getVerificationToken(
-    token: string
-  ): { userId: string; email: string } | null {
-    const data = this.verificationTokens.get(token);
-    if (!data || new Date() > data.expiresAt) {
-      this.verificationTokens.delete(token);
-      return null;
-    }
-    return { userId: data.userId, email: data.email };
-  }
-
-  static storePasswordResetToken(token: string, userId: string): void {
-    this.passwordResetTokens.set(token, {
-      userId,
-      expiresAt: new Date(
-        Date.now() + SECURITY_CONFIG.PASSWORD_RESET_TOKEN_EXPIRY
-      ),
-    });
-  }
-
-  static getPasswordResetToken(token: string): { userId: string } | null {
-    const data = this.passwordResetTokens.get(token);
-    if (!data || new Date() > data.expiresAt) {
-      this.passwordResetTokens.delete(token);
-      return null;
-    }
-    return { userId: data.userId };
-  }
-}
+// TokenBlacklistService moved to separate file: ../security/token-blacklist.ts
 
 export class AuthController {
   private registerHandler: RegisterUserHandler;
   private loginHandler: LoginUserHandler;
 
-  constructor(authService: AuthenticationService) {
+  constructor(private readonly authService: AuthenticationService) {
     this.registerHandler = new RegisterUserHandler(authService);
     this.loginHandler = new LoginUserHandler(authService);
   }
@@ -433,7 +333,7 @@ export class AuthController {
       if (result.success && result.data) {
         // Generate email verification token
         const verificationToken = AuthValidation.generateSecureToken();
-        AuthSecurityStore.storeVerificationToken(
+        TokenBlacklistService.storeVerificationToken(
           verificationToken,
           result.data.user.id,
           email
@@ -451,6 +351,7 @@ export class AuthController {
         );
 
         // TODO: Send verification email with token
+        console.log(`Email verification token for ${email}: ${verificationToken}`);
 
         reply.status(HTTP_STATUS.CREATED).send({
           success: true,
@@ -458,6 +359,7 @@ export class AuthController {
             userId: result.data.user.id,
             email: email,
             message: "Registration successful",
+            ...(process.env.NODE_ENV === 'development' && { verificationToken }),
           },
         });
       } else {
@@ -513,7 +415,7 @@ export class AuthController {
       }
 
       // Check if account is locked
-      if (AuthSecurityStore.isAccountLocked(email)) {
+      if (TokenBlacklistService.isAccountLocked(email)) {
         this.logSecurityEvent(
           "LOGIN_ATTEMPT_ON_LOCKED_ACCOUNT",
           { email, deviceInfo },
@@ -540,7 +442,7 @@ export class AuthController {
 
       if (result.success && result.data) {
         // Clear failed attempts on successful login
-        AuthSecurityStore.clearFailedAttempts(email);
+        TokenBlacklistService.clearFailedAttempts(email);
 
         // Generate tokens
         const tokens = generateAuthTokens({
@@ -583,7 +485,7 @@ export class AuthController {
         });
       } else {
         // Record failed attempt
-        AuthSecurityStore.recordFailedAttempt(email);
+        TokenBlacklistService.recordFailedAttempt(email);
 
         // Log failed login attempt
         this.logSecurityEvent(
@@ -616,14 +518,14 @@ export class AuthController {
       const userId = (request as any).user?.userId;
       const deviceInfo = AuthValidation.extractDeviceInfo(request);
 
-      // Extract token from Authorization header
+      // Extract token from Authorization header if present
       if (authHeader) {
         const tokenMatch = authHeader.match(/^Bearer\s+(.+)$/);
         if (tokenMatch) {
           const token = tokenMatch[1];
 
           // Blacklist the token
-          AuthSecurityStore.blacklistToken(token);
+          TokenBlacklistService.blacklistToken(token);
 
           // Log logout event
           if (userId) {
@@ -638,6 +540,15 @@ export class AuthController {
             );
           }
         }
+      } else {
+        // Log logout attempt without token
+        this.logSecurityEvent(
+          "LOGOUT_WITHOUT_TOKEN",
+          {
+            deviceInfo,
+          },
+          request
+        );
       }
 
       // TODO: In production, also:
@@ -679,7 +590,7 @@ export class AuthController {
       }
 
       // Check if token is blacklisted
-      if (AuthSecurityStore.isTokenBlacklisted(refreshToken)) {
+      if (TokenBlacklistService.isTokenBlacklisted(refreshToken)) {
         this.logSecurityEvent(
           "BLACKLISTED_TOKEN_USED",
           { token: refreshToken.substring(0, 10) + "...", deviceInfo },
@@ -718,7 +629,7 @@ export class AuthController {
       const tokens = generateAuthTokens(userData);
 
       // Blacklist old refresh token and use new one
-      AuthSecurityStore.blacklistToken(refreshToken);
+      TokenBlacklistService.blacklistToken(refreshToken);
 
       // Log token refresh
       this.logSecurityEvent(
@@ -788,25 +699,37 @@ export class AuthController {
         return;
       }
 
-      // TODO: Check if user exists in database
-      // For security, always return success even if email doesn't exist
+      // Use authentication service to initiate password reset
+      const resetResult = await this.authService.initiatePasswordReset(email);
 
-      // Generate password reset token
-      const resetToken = AuthValidation.generateSecureToken();
-      const userId = "temp-user-id"; // TODO: Get actual user ID from database
-      AuthSecurityStore.storePasswordResetToken(resetToken, userId);
+      if (resetResult.exists && resetResult.token) {
+        // Store token for later verification (using existing security store for now)
+        TokenBlacklistService.storePasswordResetToken(resetResult.token, "user-id");
 
-      // Log password reset request
-      this.logSecurityEvent(
-        "PASSWORD_RESET_REQUESTED",
-        {
-          email,
-          deviceInfo,
-        },
-        request
-      );
+        // Log password reset request
+        this.logSecurityEvent(
+          "PASSWORD_RESET_REQUESTED",
+          {
+            email,
+            deviceInfo,
+            tokenGenerated: true,
+          },
+          request
+        );
 
-      // TODO: Send password reset email with token
+        // TODO: Send password reset email with resetResult.token
+        console.log(`Password reset token for ${email}: ${resetResult.token}`);
+      } else {
+        // Log failed attempt (email not found)
+        this.logSecurityEvent(
+          "PASSWORD_RESET_REQUESTED_INVALID_EMAIL",
+          {
+            email,
+            deviceInfo,
+          },
+          request
+        );
+      }
 
       reply.status(HTTP_STATUS.OK).send({
         success: true,
@@ -867,7 +790,7 @@ export class AuthController {
       }
 
       // Verify reset token
-      const tokenData = AuthSecurityStore.getPasswordResetToken(token);
+      const tokenData = TokenBlacklistService.getPasswordResetToken(token);
       if (!tokenData) {
         reply.status(HTTP_STATUS.BAD_REQUEST).send({
           success: false,
@@ -880,7 +803,7 @@ export class AuthController {
       // TODO: Invalidate all existing sessions for this user
 
       // Remove used token
-      AuthSecurityStore.getPasswordResetToken(token); // This removes it due to expiry check
+      TokenBlacklistService.getPasswordResetToken(token); // This removes it due to expiry check
 
       // Log password reset
       this.logSecurityEvent(
@@ -927,7 +850,7 @@ export class AuthController {
       }
 
       // Verify email verification token
-      const tokenData = AuthSecurityStore.getVerificationToken(token);
+      const tokenData = TokenBlacklistService.getVerificationToken(token);
       if (!tokenData) {
         reply.status(HTTP_STATUS.BAD_REQUEST).send({
           success: false,
@@ -936,27 +859,40 @@ export class AuthController {
         return;
       }
 
-      // TODO: Update user email_verified status in database
+      try {
+        // Update user email verification status using authentication service
+        await this.authService.verifyEmail(tokenData.userId);
 
-      // Log email verification
-      this.logSecurityEvent(
-        "EMAIL_VERIFIED",
-        {
-          userId: tokenData.userId,
-          email: tokenData.email,
-          deviceInfo,
-        },
-        request
-      );
+        // Log email verification
+        this.logSecurityEvent(
+          "EMAIL_VERIFIED",
+          {
+            userId: tokenData.userId,
+            email: tokenData.email,
+            deviceInfo,
+          },
+          request
+        );
 
-      reply.status(HTTP_STATUS.OK).send({
-        success: true,
-        data: {
-          message:
-            "Email has been verified successfully. You can now access all features.",
-          action: "email_verified",
-        },
-      });
+        reply.status(HTTP_STATUS.OK).send({
+          success: true,
+          data: {
+            message:
+              "Email has been verified successfully. You can now access all features.",
+            action: "email_verified",
+          },
+        });
+      } catch (authError: any) {
+        if (authError.message === 'Email is already verified') {
+          reply.status(HTTP_STATUS.BAD_REQUEST).send({
+            success: false,
+            error: "Email is already verified",
+            code: "ALREADY_VERIFIED",
+          });
+        } else {
+          throw authError; // Re-throw other errors
+        }
+      }
     } catch (error) {
       this.logError("verifyEmail", error);
       reply.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
@@ -1003,7 +939,7 @@ export class AuthController {
       // Generate new verification token
       const verificationToken = AuthValidation.generateSecureToken();
       const userId = "temp-user-id"; // TODO: Get actual user ID from database
-      AuthSecurityStore.storeVerificationToken(
+      TokenBlacklistService.storeVerificationToken(
         verificationToken,
         userId,
         email
@@ -1118,6 +1054,44 @@ export class AuthController {
       reply.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
         success: false,
         error: `${ERROR_MESSAGES.INTERNAL_ERROR} during password change`,
+      });
+    }
+  }
+
+  // Development/Testing helper endpoint
+  async generateTestVerificationToken(
+    request: FastifyRequest<{ Body: { email: string; userId: string } }>,
+    reply: FastifyReply
+  ): Promise<void> {
+    if (process.env.NODE_ENV === 'production') {
+      return reply.status(404).send({ success: false, error: 'Not found' });
+    }
+
+    try {
+      const { email, userId } = request.body;
+
+      if (!email || !userId) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Email and userId are required'
+        });
+      }
+
+      const verificationToken = AuthValidation.generateSecureToken();
+      TokenBlacklistService.storeVerificationToken(verificationToken, userId, email);
+
+      reply.status(200).send({
+        success: true,
+        data: {
+          verificationToken,
+          message: 'Test verification token generated'
+        }
+      });
+    } catch (error) {
+      this.logError('generateTestVerificationToken', error);
+      reply.status(500).send({
+        success: false,
+        error: 'Failed to generate test token'
       });
     }
   }

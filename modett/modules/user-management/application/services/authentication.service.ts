@@ -196,9 +196,7 @@ export class AuthenticationService {
     }
   }
 
-  async logout(userId: string): Promise<void> {
-    // TODO: Implement token blacklisting for complete logout
-    // For now, validate user exists and log the logout
+  async logout(userId: string, refreshToken?: string): Promise<void> {
     const userIdVo = UserId.fromString(userId);
     const user = await this.userRepository.findById(userIdVo);
 
@@ -206,10 +204,26 @@ export class AuthenticationService {
       throw new Error('User not found');
     }
 
-    // In a production system, you would:
-    // 1. Add tokens to a blacklist
-    // 2. Clear server-side sessions
-    // 3. Log the logout event
+    // Validate refresh token if provided
+    if (refreshToken) {
+      try {
+        const payload = jwt.verify(refreshToken, this.refreshTokenSecret) as TokenPayload;
+        if (payload.type !== 'refresh' || payload.userId !== userId) {
+          throw new Error('Invalid refresh token');
+        }
+      } catch (error) {
+        throw new Error('Invalid refresh token');
+      }
+    }
+
+    // Update user's last logout timestamp
+    user.recordLogout();
+    await this.userRepository.update(user);
+
+    // Note: In a production system with token blacklisting, you would:
+    // 1. Add the refresh token to a blacklist/revoked tokens table
+    // 2. Optionally invalidate all user sessions
+    // 3. Clear any server-side session data
   }
 
   async changePassword(
@@ -301,6 +315,24 @@ export class AuthenticationService {
     return this.generateAuthResult(user);
   }
 
+  async initiatePasswordReset(email: string): Promise<{ exists: boolean; token?: string }> {
+    const emailVo = Email.fromString(email);
+    const user = await this.userRepository.findByEmail(emailVo);
+
+    if (!user || user.getIsGuest()) {
+      // For security, don't reveal if email exists
+      return { exists: false };
+    }
+
+    // Generate a secure reset token (in production, store this in database with expiry)
+    const resetToken = this.generateSecureToken();
+
+    // TODO: In production, store token in database with expiry (1 hour)
+    // await this.userRepository.storePasswordResetToken(user.getId(), resetToken, expiresAt);
+
+    return { exists: true, token: resetToken };
+  }
+
   async resetPassword(email: string, newPassword: string): Promise<void> {
     const emailVo = Email.fromString(email);
     const user = await this.userRepository.findByEmail(emailVo);
@@ -325,6 +357,26 @@ export class AuthenticationService {
     user.updatePassword(newPasswordHash);
 
     await this.userRepository.update(user);
+  }
+
+  async verifyEmail(userId: string): Promise<void> {
+    const userIdVo = UserId.fromString(userId);
+    const user = await this.userRepository.findById(userIdVo);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.isEmailVerified()) {
+      throw new Error('Email is already verified');
+    }
+
+    user.verifyEmail();
+    await this.userRepository.update(user);
+  }
+
+  private generateSecureToken(): string {
+    return require('crypto').randomBytes(32).toString('hex');
   }
 
   private generateAuthResult(user: User): AuthResult {

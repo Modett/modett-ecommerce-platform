@@ -266,6 +266,10 @@ export class User {
     return this.emailVerified && !!this.phone && this.phoneVerified;
   }
 
+  recordLogout(): void {
+    this.touch();
+  }
+
   // Internal methods
   private touch(): void {
     this.updatedAt = new Date();
