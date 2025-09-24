@@ -1,6 +1,19 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
+import {
+  CreateProductCommand,
+  CreateProductHandler,
+  UpdateProductCommand,
+  UpdateProductHandler,
+  DeleteProductCommand,
+  DeleteProductHandler,
+  GetProductQuery,
+  GetProductQueryHandler,
+  ListProductsQuery,
+  ListProductsQueryHandler,
+  SearchProductsQuery,
+  SearchProductsQueryHandler,
+} from '../../../application';
 import { ProductManagementService } from '../../../application/services/product-management.service';
-import { ProductSearchService } from '../../../application/services/product-search.service';
 
 interface CreateProductRequest {
   title: string;
@@ -30,12 +43,26 @@ interface ProductQueryParams {
 }
 
 export class ProductController {
-  constructor(
-    private readonly productManagementService: ProductManagementService,
-    private readonly productSearchService: ProductSearchService
-  ) {}
+  private createProductHandler: CreateProductCommandHandler;
+  private updateProductHandler: UpdateProductCommandHandler;
+  private deleteProductHandler: DeleteProductCommandHandler;
+  private getProductHandler: GetProductQueryHandler;
+  private listProductsHandler: ListProductsQueryHandler;
+  private searchProductsHandler: SearchProductsQueryHandler;
 
-  async getProducts(request: FastifyRequest<{ Querystring: ProductQueryParams }>, reply: FastifyReply) {
+  constructor(
+    private readonly productManagementService: ProductManagementService
+  ) {
+    // Initialize CQRS handlers
+    this.createProductHandler = new CreateProductCommandHandler(productManagementService);
+    this.updateProductHandler = new UpdateProductCommandHandler(productManagementService);
+    this.deleteProductHandler = new DeleteProductCommandHandler(productManagementService);
+    this.getProductHandler = new GetProductQueryHandler(productManagementService);
+    this.listProductsHandler = new ListProductsQueryHandler(productManagementService);
+    this.searchProductsHandler = new SearchProductsQueryHandler(productManagementService);
+  }
+
+  async listProducts(request: FastifyRequest<{ Querystring: ProductQueryParams }>, reply: FastifyReply) {
     try {
       const {
         page = 1,
@@ -48,39 +75,60 @@ export class ProductController {
         sortOrder = 'desc'
       } = request.query;
 
-      const options = {
+      // Handle search separately
+      if (search) {
+        const searchQuery: SearchProductsQuery = {
+          searchTerm: search,
+          page: Math.max(1, page),
+          limit: Math.min(100, Math.max(1, limit)),
+          filters: {
+            status,
+            brands: brand ? [brand] : undefined,
+            categoryIds: categoryId ? [categoryId] : undefined,
+          }
+        };
+
+        const searchResult = await this.searchProductsHandler.handle(searchQuery);
+        if (searchResult.success && searchResult.data) {
+          return reply.code(200).send({
+            success: true,
+            data: searchResult.data
+          });
+        } else {
+          return reply.code(500).send({
+            success: false,
+            error: searchResult.error || 'Search failed'
+          });
+        }
+      }
+
+      // Create list products query
+      const query: ListProductsQuery = {
         page: Math.max(1, page),
         limit: Math.min(100, Math.max(1, limit)),
+        status,
+        brand,
+        categoryId,
         sortBy,
         sortOrder
       };
 
-      let products;
+      // Execute query using handler
+      const result = await this.listProductsHandler.handle(query);
 
-      if (search) {
-        products = await this.productSearchService.searchProducts(search, options);
-      } else if (status) {
-        products = await this.productManagementService.getProductsByStatus(status, options);
-      } else if (brand) {
-        products = await this.productManagementService.getProductsByBrand(brand, options);
-      } else if (categoryId) {
-        products = await this.productManagementService.getProductsByCategory(categoryId, options);
+      if (result.success && result.data) {
+        return reply.code(200).send({
+          success: true,
+          data: result.data
+        });
       } else {
-        products = await this.productManagementService.getAllProducts(options);
+        return reply.code(500).send({
+          success: false,
+          error: result.error || 'Failed to list products'
+        });
       }
-
-      return reply.code(200).send({
-        success: true,
-        data: products,
-        meta: {
-          page: options.page,
-          limit: options.limit,
-          sortBy: options.sortBy,
-          sortOrder: options.sortOrder
-        }
-      });
     } catch (error) {
-      request.log.error(error, 'Failed to get products');
+      request.log.error(error, 'Failed to list products');
       return reply.code(500).send({
         success: false,
         error: 'Internal server error',
@@ -89,11 +137,11 @@ export class ProductController {
     }
   }
 
-  async getProduct(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+  async getProduct(request: FastifyRequest<{ Params: { productId: string } }>, reply: FastifyReply) {
     try {
-      const { id } = request.params;
+      const { productId } = request.params;
 
-      if (!id || typeof id !== 'string') {
+      if (!productId || typeof productId !== 'string') {
         return reply.code(400).send({
           success: false,
           error: 'Bad Request',
@@ -101,22 +149,25 @@ export class ProductController {
         });
       }
 
-      const product = await this.productManagementService.getProductById(id);
+      // Create query
+      const query: GetProductQuery = {
+        productId
+      };
 
-      // Note: null check removed temporarily since service throws errors when not implemented
-      // TODO: Re-enable when ProductManagementService is fully implemented
-      // if (!product) {
-      //   return reply.code(404).send({
-      //     success: false,
-      //     error: 'Not Found',
-      //     message: 'Product not found'
-      //   });
-      // }
+      // Execute query using handler
+      const result = await this.getProductHandler.handle(query);
 
-      return reply.code(200).send({
-        success: true,
-        data: product
-      });
+      if (result.success && result.data) {
+        return reply.code(200).send({
+          success: true,
+          data: result.data
+        });
+      } else {
+        return reply.code(404).send({
+          success: false,
+          error: result.error || 'Product not found'
+        });
+      }
     } catch (error) {
       request.log.error(error, 'Failed to get product');
       return reply.code(500).send({

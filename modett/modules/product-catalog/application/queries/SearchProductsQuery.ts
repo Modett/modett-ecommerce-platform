@@ -9,23 +9,14 @@ export interface ProductSearchResult {
   limit: number;
 }
 
-export class SearchProductsQuery implements IQuery<ProductSearchResult> {
-  readonly queryId?: string;
-  readonly timestamp?: Date;
-
-  constructor(
-    public readonly searchTerm: string,
-    public readonly page: number = 1,
-    public readonly limit: number = 20,
-    public readonly filters?: {
-      status?: 'draft' | 'published' | 'scheduled';
-      categoryIds?: string[];
-      brands?: string[];
-      priceRange?: { min?: number; max?: number };
-    },
-    queryId?: string
-  ) {
-    this.queryId = queryId;
-    this.timestamp = new Date();
-  }
+export interface SearchProductsQuery extends IQuery<ProductSearchResult> {
+  searchTerm: string;
+  page?: number;
+  limit?: number;
+  filters?: {
+    status?: 'draft' | 'published' | 'scheduled';
+    categoryIds?: string[];
+    brands?: string[];
+    priceRange?: { min?: number; max?: number };
+  };
 }
