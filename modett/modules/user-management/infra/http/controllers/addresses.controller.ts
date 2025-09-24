@@ -70,12 +70,6 @@ export interface ListAddressesQueryParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-// Fixed ListAddressesQuery interface to match usage
-export interface ListAddressesQueryInternal {
-  userId: string;
-  type?: 'billing' | 'shipping';
-  timestamp: Date;
-}
 
 // Response DTOs
 export interface AddressResponse {
@@ -323,7 +317,17 @@ export class AddressesController {
   ): Promise<void> {
     try {
       const { userId } = request.params;
-      const { type } = request.query;
+      const {
+        type,
+        page: queryPage = 1,
+        limit: queryLimit = 20,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
+      } = request.query;
+
+      // Ensure valid pagination values
+      const page = Math.max(1, Number(queryPage) || 1);
+      const limit = Math.max(1, Math.min(100, Number(queryLimit) || 20));
 
       // Validate UUID format
       if (!this.validateUuidFormat(userId)) {
@@ -335,10 +339,14 @@ export class AddressesController {
         return;
       }
 
-      // Create query - Fixed type mismatch
-      const query: ListAddressesQueryInternal = {
+      // Create query with pagination parameters
+      const query: ListAddressesQuery = {
         userId,
         type,
+        page,
+        limit,
+        sortBy,
+        sortOrder,
         timestamp: new Date()
       };
 
@@ -346,9 +354,24 @@ export class AddressesController {
       const result = await this.listAddressesHandler.handle(query);
 
       if (result.success) {
+        const addressData = result.data as any;
+        const addresses = addressData?.addresses || [];
+        const total = addressData?.totalCount || addresses.length;
+        const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
+
         reply.status(HTTP_STATUS.OK).send({
           success: true,
-          data: result.data
+          data: {
+            userId: addressData?.userId,
+            addresses,
+            totalCount: total
+          },
+          meta: {
+            total,
+            page,
+            limit,
+            totalPages
+          }
         });
       } else {
         const statusCode = result.error?.includes('not found') ? HTTP_STATUS.NOT_FOUND : HTTP_STATUS.BAD_REQUEST;
@@ -482,10 +505,14 @@ export class AddressesController {
         return;
       }
 
-      // Create query - Fixed type mismatch
-      const query: ListAddressesQueryInternal = {
+      // Create query with pagination parameters
+      const query: ListAddressesQuery = {
         userId,
         type,
+        page,
+        limit,
+        sortBy,
+        sortOrder,
         timestamp: new Date()
       };
 
@@ -496,10 +523,7 @@ export class AddressesController {
         // The result.data should be a ListAddressesResult with an addresses array
         const addressData = result.data as any;
         const addresses = addressData?.addresses || [];
-
-        // For proper pagination, we need total count from service
-        // Since we're using mock data, calculate based on actual data
-        const total = addresses.length;
+        const total = addressData?.totalCount || addresses.length;
         const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
 
         reply.status(HTTP_STATUS.OK).send({
