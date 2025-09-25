@@ -1,53 +1,25 @@
 import { VariantManagementService } from '../services/variant-management.service';
 import { ProductVariant } from '../../domain/entities/product-variant.entity';
-
-// Base interfaces
-export interface ICommand {
-  readonly commandId?: string;
-  readonly timestamp?: Date;
-}
-
-export interface ICommandHandler<TCommand extends ICommand, TResult = void> {
-  handle(command: TCommand): Promise<TResult>;
-}
-
-export class CommandResult<T = any> {
-  constructor(
-    public success: boolean,
-    public data?: T,
-    public error?: string,
-    public errors?: string[]
-  ) {}
-
-  static success<T>(data?: T): CommandResult<T> {
-    return new CommandResult(true, data);
-  }
-
-  static failure<T>(error: string, errors?: string[]): CommandResult<T> {
-    return new CommandResult<T>(false, undefined, error, errors);
-  }
-}
+import { ICommand, ICommandHandler, CommandResult } from './create-product.command';
 
 export interface CreateProductVariantCommand extends ICommand {
   productId: string;
   sku: string;
   size?: string;
   color?: string;
-  material?: string;
+  barcode?: string;
   price: number;
   compareAtPrice?: number;
-  costPrice?: number;
-  weight?: number;
-  dimensions?: {
+  weightG?: number;
+  dims?: {
     length?: number;
     width?: number;
     height?: number;
   };
-  inventoryQuantity?: number;
-  inventoryPolicy?: 'deny' | 'continue';
-  requiresShipping?: boolean;
-  barcode?: string;
-  isActive?: boolean;
+  taxClass?: string;
+  allowBackorder?: boolean;
+  allowPreorder?: boolean;
+  restockEta?: Date;
 }
 
 export class CreateProductVariantHandler implements ICommandHandler<CreateProductVariantCommand, CommandResult<ProductVariant>> {
@@ -72,32 +44,36 @@ export class CreateProductVariantHandler implements ICommandHandler<CreateProduc
         );
       }
 
-      if (!command.price || command.price < 0) {
+      if (command.price == null || command.price < 0) {
         return CommandResult.failure<ProductVariant>(
-          'Valid price is required',
+          'Valid price is required and must be >= 0',
           ['price']
         );
       }
 
+      if (command.compareAtPrice != null && command.compareAtPrice < 0) {
+        return CommandResult.failure<ProductVariant>(
+          'Compare at price must be >= 0',
+          ['compareAtPrice']
+        );
+      }
+
       const variantData = {
-        productId: command.productId,
         sku: command.sku,
         size: command.size,
         color: command.color,
-        material: command.material,
+        barcode: command.barcode,
         price: command.price,
         compareAtPrice: command.compareAtPrice,
-        costPrice: command.costPrice,
-        weight: command.weight,
-        dimensions: command.dimensions,
-        inventoryQuantity: command.inventoryQuantity || 0,
-        inventoryPolicy: command.inventoryPolicy || 'deny',
-        requiresShipping: command.requiresShipping ?? true,
-        barcode: command.barcode,
-        isActive: command.isActive ?? true
+        weightG: command.weightG,
+        dims: command.dims,
+        taxClass: command.taxClass,
+        allowBackorder: command.allowBackorder || false,
+        allowPreorder: command.allowPreorder || false,
+        restockEta: command.restockEta
       };
 
-      const variant = await this.variantManagementService.createVariant(variantData);
+      const variant = await this.variantManagementService.createVariant(command.productId, variantData);
       return CommandResult.success<ProductVariant>(variant);
     } catch (error) {
       if (error instanceof Error) {
