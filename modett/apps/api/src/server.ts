@@ -935,5 +935,45 @@ All errors follow a consistent format with success flags, error messages, and er
     server.log.info("⚠️ Continuing with basic endpoints only");
   }
 
+  // Register product catalog routes
+  try {
+    // ✅ Import route registration function
+    const { registerProductCatalogRoutes } = await import(
+      "../../../modules/product-catalog/infra/http/routes"
+    );
+    const { createServiceContainer } = await import("./container");
+
+    // ✅ Initialize service container with database repositories
+    const serviceContainer = createServiceContainer();
+
+    // Extract product catalog services for route registration
+    const productCatalogServices = {
+      productService: serviceContainer.productManagementService,
+      categoryService: serviceContainer.categoryManagementService,
+      variantService: serviceContainer.variantManagementService,
+      mediaAssetService: serviceContainer.mediaManagementService,
+      productMediaService: serviceContainer.productManagementService, // Use product service for now
+      variantMediaService: serviceContainer.variantManagementService, // Use variant service for now
+      productTagService: serviceContainer.productManagementService, // Use product service for now
+      sizeGuideService: serviceContainer.productManagementService, // Use product service for now
+      editorialLookService: serviceContainer.productManagementService, // Use product service for now
+    };
+
+    server.log.info("✅ Product catalog services initialized with database repositories");
+
+    // Register product catalog routes with services
+    await server.register(
+      async function (fastify) {
+        await registerProductCatalogRoutes(fastify, productCatalogServices);
+      },
+      { prefix: "/api/v1/catalog" }
+    );
+
+    server.log.info("✅ Product catalog routes registered successfully");
+  } catch (error) {
+    server.log.error(error as Error, "❌ Failed to register product catalog routes:");
+    server.log.info("⚠️ Continuing with user management endpoints only");
+  }
+
   return server; // ✅ This should be the last line
 }

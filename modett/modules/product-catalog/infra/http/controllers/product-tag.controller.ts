@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { ProductTagManagementService } from '../../../application/services/product-tag-management.service';
+import { ProductTagQueryOptions } from '../../../domain/repositories/product-tag.repository';
 
 interface CreateTagRequest {
   tag: string;
@@ -13,7 +14,7 @@ interface TagQueryParams {
   limit?: number;
   kind?: string;
   search?: string;
-  sortBy?: 'tag' | 'kind' | 'createdAt';
+  sortBy?: 'tag' | 'kind' | 'usage_count';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -41,7 +42,14 @@ export class ProductTagController {
         sortOrder = 'asc'
       } = request.query;
 
-      const options = {
+      const serviceOptions: ProductTagQueryOptions = {
+        limit: Math.min(100, Math.max(1, limit)),
+        offset: (Math.max(1, page) - 1) * Math.min(100, Math.max(1, limit)),
+        sortBy,
+        sortOrder
+      };
+
+      const pageOptions = {
         page: Math.max(1, page),
         limit: Math.min(100, Math.max(1, limit)),
         sortBy,
@@ -51,21 +59,21 @@ export class ProductTagController {
       let tags;
 
       if (search) {
-        tags = await this.productTagManagementService.searchTags(search, options);
+        tags = await this.productTagManagementService.searchTags(search, serviceOptions);
       } else if (kind) {
-        tags = await this.productTagManagementService.getTagsByKind(kind, options);
+        tags = await this.productTagManagementService.getTagsByKind(kind, serviceOptions);
       } else {
-        tags = await this.productTagManagementService.getAllTags(options);
+        tags = await this.productTagManagementService.getAllTags(serviceOptions);
       }
 
       return reply.code(200).send({
         success: true,
         data: tags,
         meta: {
-          page: options.page,
-          limit: options.limit,
-          sortBy: options.sortBy,
-          sortOrder: options.sortOrder
+          page: pageOptions.page,
+          limit: pageOptions.limit,
+          sortBy: pageOptions.sortBy,
+          sortOrder: pageOptions.sortOrder
         }
       });
     } catch (error) {
