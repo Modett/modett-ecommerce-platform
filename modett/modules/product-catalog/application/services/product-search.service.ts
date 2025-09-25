@@ -1,5 +1,6 @@
 import { IProductRepository } from '../../domain/repositories/product.repository';
 import { ICategoryRepository } from '../../domain/repositories/category.repository';
+import { Product } from '../../domain/entities/product.entity';
 
 export interface ProductSearchOptions {
   page?: number;
@@ -54,7 +55,7 @@ export class ProductSearchService {
     private readonly categoryRepository: ICategoryRepository
   ) {}
 
-  async searchProducts(query: string, options: ProductSearchOptions = {}): Promise<any> {
+  async searchProducts(query: string, options: ProductSearchOptions = {}): Promise<{ items: Product[]; totalCount: number; suggestions?: string[] }> {
     // TODO: Implement full-text search with Elasticsearch or similar
     // For now, this is a basic implementation placeholder
 
@@ -86,16 +87,8 @@ export class ProductSearchService {
       });
 
       return {
-        results: products,
-        total: products.length,
-        page,
-        limit,
-        query: query.trim(),
-        facets: {
-          brands: [],
-          categories: [],
-          priceRanges: []
-        }
+        items: products,
+        totalCount: products.length
       };
     } catch (error) {
       throw new Error(`Product search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
