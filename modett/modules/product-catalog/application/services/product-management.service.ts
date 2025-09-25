@@ -1,6 +1,7 @@
 import { IProductRepository } from '../../domain/repositories/product.repository';
 import { IProductVariantRepository } from '../../domain/repositories/product-variant.repository';
 import { SlugGeneratorService } from './slug-generator.service';
+import { Product, CreateProductData } from '../../domain/entities/product.entity';
 
 export class ProductManagementService {
   constructor(
@@ -9,12 +10,12 @@ export class ProductManagementService {
     private readonly slugGeneratorService: SlugGeneratorService
   ) {}
 
-  async createProduct(data: any) {
+  async createProduct(data: CreateProductData): Promise<Product> {
     // TODO: Implement product creation logic
     throw new Error('ProductManagementService.createProduct not yet implemented');
   }
 
-  async getProductById(id: string) {
+  async getProductById(id: string): Promise<Product | null> {
     // TODO: Implement get product by id
     throw new Error('ProductManagementService.getProductById not yet implemented');
   }
@@ -24,7 +25,7 @@ export class ProductManagementService {
     throw new Error('ProductManagementService.getProductBySlug not yet implemented');
   }
 
-  async getAllProducts(options?: any) {
+  async getAllProducts(options?: any): Promise<{ items: Product[]; totalCount: number }> {
     // TODO: Implement get all products
     throw new Error('ProductManagementService.getAllProducts not yet implemented');
   }
@@ -44,7 +45,7 @@ export class ProductManagementService {
     throw new Error('ProductManagementService.getProductsByCategory not yet implemented');
   }
 
-  async updateProduct(id: string, data: any) {
+  async updateProduct(id: string, data: Partial<CreateProductData>): Promise<Product | null> {
     // TODO: Implement product update
     throw new Error('ProductManagementService.updateProduct not yet implemented');
   }
