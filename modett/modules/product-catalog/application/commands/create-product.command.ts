@@ -1,5 +1,5 @@
 import { ProductManagementService } from '../services/product-management.service';
-import { Product } from '../../domain/entities/product.entity';
+import { Product, ProductStatus } from '../../domain/entities/product.entity';
 
 // Base interfaces
 export interface ICommand {
@@ -33,7 +33,7 @@ export interface CreateProductCommand extends ICommand {
   brand?: string;
   shortDesc?: string;
   longDescHtml?: string;
-  status?: 'draft' | 'published' | 'scheduled';
+  status?: ProductStatus;
   publishAt?: Date;
   countryOfOrigin?: string;
   seoTitle?: string;
