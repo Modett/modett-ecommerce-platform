@@ -1,32 +1,6 @@
 import { ProductManagementService } from '../services/product-management.service';
-import { Product } from '../../domain/entities/product.entity';
-
-// Base interfaces
-export interface ICommand {
-  readonly commandId?: string;
-  readonly timestamp?: Date;
-}
-
-export interface ICommandHandler<TCommand extends ICommand, TResult = void> {
-  handle(command: TCommand): Promise<TResult>;
-}
-
-export class CommandResult<T = any> {
-  constructor(
-    public success: boolean,
-    public data?: T,
-    public error?: string,
-    public errors?: string[]
-  ) {}
-
-  static success<T>(data?: T): CommandResult<T> {
-    return new CommandResult(true, data);
-  }
-
-  static failure<T>(error: string, errors?: string[]): CommandResult<T> {
-    return new CommandResult<T>(false, undefined, error, errors);
-  }
-}
+import { Product, ProductStatus } from '../../domain/entities/product.entity';
+import { ICommand, ICommandHandler, CommandResult } from './create-product.command';
 
 export interface UpdateProductCommand extends ICommand {
   productId: string;
@@ -34,7 +8,7 @@ export interface UpdateProductCommand extends ICommand {
   brand?: string;
   shortDesc?: string;
   longDescHtml?: string;
-  status?: 'draft' | 'published' | 'scheduled';
+  status?: ProductStatus;
   publishAt?: Date;
   countryOfOrigin?: string;
   seoTitle?: string;
@@ -81,6 +55,12 @@ export class UpdateProductHandler implements ICommandHandler<UpdateProductComman
         command.productId,
         filteredUpdateData
       );
+
+      if (!product) {
+        return CommandResult.failure<Product>(
+          'Product not found or update failed'
+        );
+      }
 
       return CommandResult.success<Product>(product);
     } catch (error) {
