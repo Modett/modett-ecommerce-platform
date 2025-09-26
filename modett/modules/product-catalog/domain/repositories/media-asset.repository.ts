@@ -17,6 +17,7 @@ export interface IMediaAssetRepository {
   existsByStorageKey(storageKey: string): Promise<boolean>;
   count(options?: MediaAssetCountOptions): Promise<number>;
   getTotalSize(): Promise<number>; // Total size in bytes
+  findWithFilters(filters: any, options?: MediaAssetQueryOptions): Promise<MediaAsset[]>;
 }
 
 export interface MediaAssetQueryOptions {
