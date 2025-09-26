@@ -257,7 +257,7 @@ export function generateAuthTokens(user: Partial<AuthenticatedUser>): {
   // Access token (short-lived)
   const accessToken = jwt.sign(payload, JWT_SECRET, {
     algorithm: JWT_ALGORITHM,
-    expiresIn: '15m' // 15 minutes
+    expiresIn: '60m' // 60 minutes
   });
 
   // Refresh token (long-lived)
