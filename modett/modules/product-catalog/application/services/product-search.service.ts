@@ -56,9 +56,6 @@ export class ProductSearchService {
   ) {}
 
   async searchProducts(query: string, options: ProductSearchOptions = {}): Promise<{ items: Product[]; totalCount: number; suggestions?: string[] }> {
-    // TODO: Implement full-text search with Elasticsearch or similar
-    // For now, this is a basic implementation placeholder
-
     if (!query || query.trim().length === 0) {
       throw new Error('Search query cannot be empty');
     }
@@ -76,23 +73,70 @@ export class ProductSearchService {
       sortOrder = 'desc'
     } = options;
 
-    // Basic search implementation - in production this would use Elasticsearch
+    const offset = (page - 1) * limit;
+
     try {
-      // This would be replaced with proper search implementation
-      const products = await this.productRepository.findAll({
+      // Use the repository's search method for proper text search
+      const searchOptions = {
         limit,
-        offset: (page - 1) * limit,
+        offset,
         sortBy: sortBy === 'relevance' || sortBy === 'price' ? 'createdAt' : sortBy,
-        sortOrder
+        sortOrder,
+        includeDrafts: status === 'draft',
+        brands: brand ? [brand] : undefined,
+        categories: category ? [category] : undefined,
+        tags,
+        priceRange: (minPrice !== undefined || maxPrice !== undefined) ? {
+          min: minPrice,
+          max: maxPrice
+        } : undefined
+      };
+
+      const products = await this.productRepository.search(query.trim(), searchOptions);
+
+      // Get total count for the same search criteria
+      // Note: This is a basic implementation - in production you'd want to optimize this
+      const allResults = await this.productRepository.search(query.trim(), {
+        ...searchOptions,
+        limit: undefined,
+        offset: undefined
       });
 
       return {
         items: products,
-        totalCount: products.length
+        totalCount: allResults.length,
+        // Basic suggestions based on search results
+        suggestions: this.generateSearchSuggestions(query, products)
       };
     } catch (error) {
       throw new Error(`Product search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  private generateSearchSuggestions(query: string, products: Product[]): string[] {
+    const suggestions = new Set<string>();
+    const queryWords = query.toLowerCase().split(/\s+/);
+
+    // Extract potential suggestions from product titles and brands
+    products.forEach(product => {
+      const title = product.getTitle().toLowerCase();
+      const brand = product.getBrand()?.toLowerCase();
+
+      // Add brand suggestions
+      if (brand && !queryWords.includes(brand)) {
+        suggestions.add(brand);
+      }
+
+      // Add title word suggestions
+      const titleWords = title.split(/\s+/);
+      titleWords.forEach(word => {
+        if (word.length > 3 && !queryWords.includes(word)) {
+          suggestions.add(word);
+        }
+      });
+    });
+
+    return Array.from(suggestions).slice(0, 5);
   }
 
   async getSearchSuggestions(query: string, options: SearchSuggestionsOptions = {}): Promise<SearchSuggestion[]> {
