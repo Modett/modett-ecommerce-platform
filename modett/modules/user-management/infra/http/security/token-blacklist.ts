@@ -11,7 +11,7 @@ export class TokenBlacklistService {
   >();
   private static passwordResetTokens = new Map<
     string,
-    { userId: string; expiresAt: Date }
+    { userId: string; email: string; expiresAt: Date }
   >();
 
   static recordFailedAttempt(email: string): void {
@@ -82,20 +82,21 @@ export class TokenBlacklistService {
     return { userId: data.userId, email: data.email };
   }
 
-  static storePasswordResetToken(token: string, userId: string): void {
+  static storePasswordResetToken(token: string, userId: string, email: string): void {
     const PASSWORD_RESET_TOKEN_EXPIRY = 1 * 60 * 60 * 1000; // 1 hour
     this.passwordResetTokens.set(token, {
       userId,
+      email,
       expiresAt: new Date(Date.now() + PASSWORD_RESET_TOKEN_EXPIRY),
     });
   }
 
-  static getPasswordResetToken(token: string): { userId: string } | null {
+  static getPasswordResetToken(token: string): { userId: string; email: string } | null {
     const data = this.passwordResetTokens.get(token);
     if (!data || new Date() > data.expiresAt) {
       this.passwordResetTokens.delete(token);
       return null;
     }
-    return { userId: data.userId };
+    return { userId: data.userId, email: data.email };
   }
 }

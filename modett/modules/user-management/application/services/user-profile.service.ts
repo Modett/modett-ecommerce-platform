@@ -120,6 +120,15 @@ export class UserProfileService {
   async updateUserProfile(userId: string, dto: UpdateUserProfileDto): Promise<UserProfileDto> {
     const userIdVo = UserId.fromString(userId);
 
+    console.log('[DEBUG] UpdateUserProfile called with:', {
+      userId,
+      dto: {
+        prefs: dto.prefs,
+        stylePreferences: dto.stylePreferences,
+        preferredSizes: dto.preferredSizes,
+      }
+    });
+
     // Verify user exists
     const user = await this.userRepository.findById(userIdVo);
     if (!user) {
@@ -127,6 +136,7 @@ export class UserProfileService {
     }
 
     let profile = await this.userProfileRepository.findByUserId(userIdVo);
+    console.log('[DEBUG] Existing profile found:', profile ? 'YES' : 'NO');
 
     if (!profile) {
       // Create profile if it doesn't exist
@@ -163,10 +173,9 @@ export class UserProfileService {
       }
 
       if (dto.prefs !== undefined) {
-        // Update preferences one by one using the entity's method
-        Object.entries(dto.prefs).forEach(([key, value]) => {
-          profile!.updatePreference(key, value);
-        });
+        // Replace entire preferences object
+        console.log('[DEBUG] Updating preferences:', dto.prefs);
+        profile!.setPreferences(dto.prefs);
       }
 
       if (dto.locale !== undefined) {
@@ -182,19 +191,15 @@ export class UserProfileService {
       }
 
       if (dto.stylePreferences !== undefined) {
-        // Update style preferences one by one using the entity's method
-        Object.entries(dto.stylePreferences).forEach(([category, preferences]) => {
-          profile!.updateStylePreference(category, preferences);
-        });
+        // Replace entire style preferences object
+        console.log('[DEBUG] Updating stylePreferences:', dto.stylePreferences);
+        profile!.setStylePreferences(dto.stylePreferences);
       }
 
       if (dto.preferredSizes !== undefined) {
-        // Update preferred sizes one by one using the entity's method
-        Object.entries(dto.preferredSizes).forEach(([category, size]) => {
-          if (typeof size === 'string') {
-            profile!.updatePreferredSize(category, size);
-          }
-        });
+        // Replace entire preferred sizes object
+        console.log('[DEBUG] Updating preferredSizes:', dto.preferredSizes);
+        profile!.setPreferredSizes(dto.preferredSizes);
       }
 
       await this.userProfileRepository.update(profile!);
@@ -380,7 +385,7 @@ export class UserProfileService {
   }
 
   private mapToDto(profile: UserProfile): UserProfileDto {
-    return {
+    const dto = {
       userId: profile.getUserId().getValue(),
       defaultAddressId: profile.getDefaultAddressId(),
       defaultPaymentMethodId: profile.getDefaultPaymentMethodId(),
@@ -390,5 +395,13 @@ export class UserProfileService {
       stylePreferences: profile.getStylePreferences(),
       preferredSizes: profile.getPreferredSizes(),
     };
+
+    console.log('[DEBUG SERVICE] mapToDto output:', {
+      prefs: dto.prefs,
+      stylePreferences: dto.stylePreferences,
+      preferredSizes: dto.preferredSizes
+    });
+
+    return dto;
   }
 }

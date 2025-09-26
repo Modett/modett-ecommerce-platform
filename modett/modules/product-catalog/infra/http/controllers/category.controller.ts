@@ -182,6 +182,8 @@ export class CategoryController {
       request.log.error(error, 'Failed to create category');
 
       if (error instanceof Error) {
+        console.log('Category creation error:', error.message); // Debug log
+
         if (error instanceof Error && (error.message.includes('duplicate') || error.message.includes('unique'))) {
           return reply.code(409).send({
             success: false,
@@ -205,6 +207,21 @@ export class CategoryController {
             message: 'Invalid category hierarchy - would create circular reference'
           });
         }
+
+        if (error.message.includes('UUID') || error.message.includes('uuid')) {
+          return reply.code(400).send({
+            success: false,
+            error: 'Bad Request',
+            message: 'Invalid parent ID format - must be a valid UUID'
+          });
+        }
+
+        // Return the actual error message for debugging
+        return reply.code(500).send({
+          success: false,
+          error: 'Internal server error',
+          message: error.message
+        });
       }
 
       return reply.code(500).send({

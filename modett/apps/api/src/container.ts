@@ -1,11 +1,15 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 // User Management imports
-import { UserRepository } from '../../../modules/user-management/infra/persistence/repositories/user.repository';
-import { AddressRepository } from '../../../modules/user-management/infra/persistence/repositories/address.repository';
-import { AuthenticationService } from '../../../modules/user-management/application/services/authentication.service';
-import { AddressManagementService } from '../../../modules/user-management/application/services/address-management.service';
-import { PasswordHasherService } from '../../../modules/user-management/application/services/password-hasher.service';
+import { UserRepository } from "../../../modules/user-management/infra/persistence/repositories/user.repository";
+import { AddressRepository } from "../../../modules/user-management/infra/persistence/repositories/address.repository";
+import { UserProfileRepository } from "../../../modules/user-management/infra/persistence/repositories/user-profile.repository";
+import { PaymentMethodRepository } from "../../../modules/user-management/infra/persistence/repositories/payment-method.repository";
+import { AuthenticationService } from "../../../modules/user-management/application/services/authentication.service";
+import { AddressManagementService } from "../../../modules/user-management/application/services/address-management.service";
+import { UserProfileService } from "../../../modules/user-management/application/services/user-profile.service";
+import { PaymentMethodService } from "../../../modules/user-management/application/services/payment-method.service";
+import { PasswordHasherService } from "../../../modules/user-management/application/services/password-hasher.service";
 
 // Product Catalog imports
 import {
@@ -14,7 +18,7 @@ import {
   CategoryRepository,
   MediaAssetRepository,
   ProductTagRepository,
-} from '../../../modules/product-catalog/infra/persistence/repositories';
+} from "../../../modules/product-catalog/infra/persistence/repositories";
 import {
   ProductManagementService,
   CategoryManagementService,
@@ -22,7 +26,8 @@ import {
   VariantManagementService,
   ProductSearchService,
   SlugGeneratorService,
-} from '../../../modules/product-catalog/application/services';
+} from "../../../modules/product-catalog/application/services";
+
 
 export interface ServiceContainer {
   // Infrastructure
@@ -31,6 +36,8 @@ export interface ServiceContainer {
   // User Management Repositories
   userRepository: UserRepository;
   addressRepository: AddressRepository;
+  userProfileRepository: UserProfileRepository;
+  paymentMethodRepository: PaymentMethodRepository;
 
   // Product Catalog Repositories
   productRepository: ProductRepository;
@@ -41,9 +48,9 @@ export interface ServiceContainer {
 
   // User Management Services
   authService: AuthenticationService;
-  userProfileService: any; // Placeholder for now
+  userProfileService: UserProfileService;
   addressService: AddressManagementService;
-  paymentMethodService: any; // Placeholder for now
+  paymentMethodService: PaymentMethodService;
   passwordHasher: PasswordHasherService;
 
   // Product Catalog Services
@@ -58,12 +65,17 @@ export interface ServiceContainer {
 export function createServiceContainer(): ServiceContainer {
   // Initialize Prisma client
   const prisma = new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['warn', 'error']
+    log:
+      process.env.NODE_ENV === "development"
+        ? ["query", "info", "warn", "error"]
+        : ["warn", "error"],
   });
 
   // Initialize User Management repositories
   const userRepository = new UserRepository(prisma);
   const addressRepository = new AddressRepository(prisma);
+  const userProfileRepository = new UserProfileRepository(prisma);
+  const paymentMethodRepository = new PaymentMethodRepository(prisma);
 
   // Initialize Product Catalog repositories
   const productRepository = new ProductRepository(prisma);
@@ -81,15 +93,30 @@ export function createServiceContainer(): ServiceContainer {
     userRepository,
     passwordHasher,
     {
-      accessTokenSecret: process.env.JWT_SECRET || 'fallback-secret-change-in-production',
-      refreshTokenSecret: process.env.JWT_SECRET || 'fallback-secret-change-in-production',
-      accessTokenExpiresIn: process.env.JWT_EXPIRES_IN || '6h',
-      refreshTokenExpiresIn: '7d'
+      accessTokenSecret:
+        process.env.JWT_SECRET || "fallback-secret-change-in-production",
+      refreshTokenSecret:
+        process.env.JWT_SECRET || "fallback-secret-change-in-production",
+      accessTokenExpiresIn: process.env.JWT_EXPIRES_IN || "6h",
+      refreshTokenExpiresIn: "7d",
     }
   );
 
   // Initialize address service
   const addressService = new AddressManagementService(addressRepository);
+
+  // Initialize User Profile and Payment Method services
+  const userProfileService = new UserProfileService(
+    userRepository,
+    userProfileRepository,
+    addressRepository,
+    paymentMethodRepository
+  );
+  const paymentMethodService = new PaymentMethodService(
+    paymentMethodRepository,
+    userRepository,
+    addressRepository
+  );
 
   // Initialize Product Catalog services
   const productManagementService = new ProductManagementService(
@@ -111,50 +138,6 @@ export function createServiceContainer(): ServiceContainer {
     categoryRepository
   );
 
-  // Create simplified placeholder services for now
-  const userProfileService = {
-    getCurrentUser: async (userId: string) => {
-      const user = await userRepository.findById({ getValue: () => userId } as any);
-      if (!user) throw new Error('User not found');
-      const userData = user.toData();
-      return {
-        userId: userData.id,
-        email: userData.email,
-        phone: userData.phone,
-        firstName: null, // Not in current schema
-        lastName: null, // Not in current schema
-        status: userData.status,
-        emailVerified: userData.emailVerified,
-        phoneVerified: userData.phoneVerified,
-        isGuest: userData.isGuest,
-        createdAt: userData.createdAt.toISOString(),
-        updatedAt: userData.updatedAt.toISOString()
-      };
-    },
-    getUserProfile: async (userId: string) => ({
-      userId,
-      defaultAddressId: null,
-      defaultPaymentMethodId: null,
-      prefs: {},
-      locale: null,
-      currency: null,
-      stylePreferences: {},
-      preferredSizes: {},
-    }),
-    updateUserProfile: async (userId: string, data: any) => ({
-      userId,
-      ...data,
-      updatedAt: new Date().toISOString(),
-    })
-  };
-
-
-  const paymentMethodService = {
-    getCurrentUserPaymentMethods: async () => [],
-    addPaymentMethod: async () => ({ success: true }),
-    updatePaymentMethod: async () => ({ success: true }),
-    deletePaymentMethod: async () => ({ success: true })
-  };
 
   return {
     // Infrastructure
@@ -163,6 +146,8 @@ export function createServiceContainer(): ServiceContainer {
     // User Management Repositories
     userRepository,
     addressRepository,
+    userProfileRepository,
+    paymentMethodRepository,
 
     // Product Catalog Repositories
     productRepository,
@@ -188,6 +173,8 @@ export function createServiceContainer(): ServiceContainer {
   };
 }
 
-export async function closeServiceContainer(container: ServiceContainer): Promise<void> {
+export async function closeServiceContainer(
+  container: ServiceContainer
+): Promise<void> {
   await container.prisma.$disconnect();
 }

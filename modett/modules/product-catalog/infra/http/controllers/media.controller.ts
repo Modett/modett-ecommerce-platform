@@ -183,6 +183,7 @@ export class MediaController {
       });
     } catch (error) {
       request.log.error(error, 'Failed to create media asset');
+      console.log('Media asset creation error:', error instanceof Error ? error.message : error); // Debug log
 
       if (error instanceof Error && (error.message.includes('duplicate') || error.message.includes('unique'))) {
         return reply.code(409).send({
@@ -192,10 +193,11 @@ export class MediaController {
         });
       }
 
+      // Return the actual error message for debugging
       return reply.code(500).send({
         success: false,
         error: 'Internal server error',
-        message: 'Failed to create media asset'
+        message: error instanceof Error ? error.message : 'Failed to create media asset'
       });
     }
   }

@@ -680,7 +680,7 @@ export async function createServer(): Promise<FastifyInstance> {
     // Register routes with services
     await server.register(
       async function (fastify) {
-        await registerUserManagementRoutes(fastify, services);
+        return await registerUserManagementRoutes(fastify, services);
       },
       { prefix: "/api/v1" }
     );

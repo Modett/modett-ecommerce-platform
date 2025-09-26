@@ -151,6 +151,28 @@ export async function registerUserManagementRoutes(
     "/auth/logout",
     {
       preHandler: optionalAuth,
+      schema: {
+        description: "Logout user and invalidate token",
+        tags: ["Authentication"],
+        summary: "Logout",
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            description: "Logout successful",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  message: { type: "string", example: "Logged out successfully" },
+                  action: { type: "string", example: "logout_complete" }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     authController.logout.bind(authController)
   );
@@ -351,11 +373,11 @@ export async function registerUserManagementRoutes(
                   userId: { type: "string", format: "uuid" },
                   defaultAddressId: { type: "string", format: "uuid", nullable: true },
                   defaultPaymentMethodId: { type: "string", format: "uuid", nullable: true },
-                  preferences: { type: "object", nullable: true },
+                  preferences: { type: "object", nullable: true, additionalProperties: true },
                   locale: { type: "string", nullable: true, example: "en-US" },
                   currency: { type: "string", nullable: true, example: "USD" },
-                  stylePreferences: { type: "object", nullable: true },
-                  preferredSizes: { type: "object", nullable: true },
+                  stylePreferences: { type: "object", nullable: true, additionalProperties: true },
+                  preferredSizes: { type: "object", nullable: true, additionalProperties: true },
                   createdAt: { type: "string", format: "date-time" },
                   updatedAt: { type: "string", format: "date-time" }
                 },
@@ -443,11 +465,11 @@ export async function registerUserManagementRoutes(
                   userId: { type: "string", format: "uuid" },
                   defaultAddressId: { type: "string", format: "uuid", nullable: true },
                   defaultPaymentMethodId: { type: "string", format: "uuid", nullable: true },
-                  preferences: { type: "object", nullable: true },
+                  preferences: { type: "object", nullable: true, additionalProperties: true },
                   locale: { type: "string", nullable: true },
                   currency: { type: "string", nullable: true },
-                  stylePreferences: { type: "object", nullable: true },
-                  preferredSizes: { type: "object", nullable: true },
+                  stylePreferences: { type: "object", nullable: true, additionalProperties: true },
+                  preferredSizes: { type: "object", nullable: true, additionalProperties: true },
                   updatedAt: { type: "string", format: "date-time" }
                 },
                 required: ["userId", "updatedAt"]
@@ -519,11 +541,11 @@ export async function registerUserManagementRoutes(
                   userId: { type: "string", format: "uuid" },
                   defaultAddressId: { type: "string", format: "uuid", nullable: true },
                   defaultPaymentMethodId: { type: "string", format: "uuid", nullable: true },
-                  preferences: { type: "object", nullable: true },
+                  preferences: { type: "object", nullable: true, additionalProperties: true },
                   locale: { type: "string", nullable: true },
                   currency: { type: "string", nullable: true },
-                  stylePreferences: { type: "object", nullable: true },
-                  preferredSizes: { type: "object", nullable: true },
+                  stylePreferences: { type: "object", nullable: true, additionalProperties: true },
+                  preferredSizes: { type: "object", nullable: true, additionalProperties: true },
                   createdAt: { type: "string", format: "date-time" },
                   updatedAt: { type: "string", format: "date-time" }
                 },
@@ -621,11 +643,11 @@ export async function registerUserManagementRoutes(
                   userId: { type: "string", format: "uuid" },
                   defaultAddressId: { type: "string", format: "uuid", nullable: true },
                   defaultPaymentMethodId: { type: "string", format: "uuid", nullable: true },
-                  preferences: { type: "object", nullable: true },
+                  preferences: { type: "object", nullable: true, additionalProperties: true },
                   locale: { type: "string", nullable: true },
                   currency: { type: "string", nullable: true },
-                  stylePreferences: { type: "object", nullable: true },
-                  preferredSizes: { type: "object", nullable: true },
+                  stylePreferences: { type: "object", nullable: true, additionalProperties: true },
+                  preferredSizes: { type: "object", nullable: true, additionalProperties: true },
                   updatedAt: { type: "string", format: "date-time" }
                 },
                 required: ["userId", "updatedAt"]
@@ -988,24 +1010,32 @@ export async function registerUserManagementRoutes(
             properties: {
               success: { type: "boolean", example: true },
               data: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    paymentMethodId: { type: "string", format: "uuid" },
-                    userId: { type: "string", format: "uuid" },
-                    type: { type: "string", enum: ["card", "wallet", "bank", "cod", "gift_card"] },
-                    brand: { type: "string", nullable: true },
-                    last4: { type: "string", nullable: true },
-                    expMonth: { type: "number", nullable: true },
-                    expYear: { type: "number", nullable: true },
-                    billingAddressId: { type: "string", format: "uuid", nullable: true },
-                    isDefault: { type: "boolean" },
-                    createdAt: { type: "string", format: "date-time" },
-                    updatedAt: { type: "string", format: "date-time" }
+                type: "object",
+                properties: {
+                  userId: { type: "string", format: "uuid" },
+                  paymentMethods: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        paymentMethodId: { type: "string", format: "uuid" },
+                        type: { type: "string", enum: ["card", "wallet", "bank", "cod", "gift_card"] },
+                        brand: { type: "string", nullable: true },
+                        last4: { type: "string", nullable: true },
+                        expMonth: { type: "number", nullable: true },
+                        expYear: { type: "number", nullable: true },
+                        billingAddressId: { type: "string", format: "uuid", nullable: true },
+                        providerRef: { type: "string", nullable: true },
+                        isDefault: { type: "boolean" },
+                        createdAt: { type: "string", format: "date-time" },
+                        updatedAt: { type: "string", format: "date-time" }
+                      },
+                      required: ["paymentMethodId", "type", "isDefault"]
+                    }
                   },
-                  required: ["paymentMethodId", "userId", "type", "isDefault"]
-                }
+                  totalCount: { type: "number" }
+                },
+                required: ["userId", "paymentMethods", "totalCount"]
               }
             }
           },
