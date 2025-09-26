@@ -9,45 +9,45 @@ export interface AssociateProductMediaCommand extends ICommand {
   isCover?: boolean;
 }
 
-export class AssociateProductMediaHandler implements ICommandHandler<AssociateProductMediaCommand, CommandResult<ProductMedia>> {
+export class AssociateProductMediaHandler implements ICommandHandler<AssociateProductMediaCommand, CommandResult<string>> {
   constructor(
     private readonly productMediaService: ProductMediaManagementService
   ) {}
 
-  async handle(command: AssociateProductMediaCommand): Promise<CommandResult<ProductMedia>> {
+  async handle(command: AssociateProductMediaCommand): Promise<CommandResult<string>> {
     try {
       if (!command.productId) {
-        return CommandResult.failure<ProductMedia>(
+        return CommandResult.failure<string>(
           'Product ID is required',
           ['productId']
         );
       }
 
       if (!command.assetId) {
-        return CommandResult.failure<ProductMedia>(
+        return CommandResult.failure<string>(
           'Asset ID is required',
           ['assetId']
         );
       }
 
-      const mediaData = {
-        productId: command.productId,
-        assetId: command.assetId,
-        position: command.position,
-        isCover: command.isCover || false
-      };
+      const productMediaId = await this.productMediaService.addMediaToProduct(
+        command.productId,
+        command.assetId,
+        command.position,
+        command.isCover
+      );
 
-      const productMedia = await this.productMediaService.associateMedia(mediaData);
-      return CommandResult.success<ProductMedia>(productMedia);
+      // Return the productMediaId as a success result
+      return CommandResult.success<string>(productMediaId);
     } catch (error) {
       if (error instanceof Error) {
-        return CommandResult.failure<ProductMedia>(
+        return CommandResult.failure<string>(
           'Product media association failed',
           [error.message]
         );
       }
 
-      return CommandResult.failure<ProductMedia>(
+      return CommandResult.failure<string>(
         'An unexpected error occurred during product media association'
       );
     }
