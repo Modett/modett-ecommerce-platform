@@ -40,6 +40,12 @@ export class UpdateCategoryHandler implements ICommandHandler<UpdateCategoryComm
         filteredUpdateData
       );
 
+      if (!category) {
+        return CommandResult.failure<Category>(
+          'Category not found'
+        );
+      }
+
       return CommandResult.success<Category>(category);
     } catch (error) {
       if (error instanceof Error) {
