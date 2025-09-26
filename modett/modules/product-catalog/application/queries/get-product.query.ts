@@ -13,7 +13,8 @@ export interface IQueryHandler<TQuery extends IQuery, TResult = any> {
 }
 
 export interface GetProductQuery extends IQuery {
-  productId: string;
+  productId?: string;
+  slug?: string;
 }
 
 export interface ProductResult {
@@ -39,14 +40,21 @@ export class GetProductHandler implements IQueryHandler<GetProductQuery, Command
 
   async handle(query: GetProductQuery): Promise<CommandResult<ProductResult>> {
     try {
-      if (!query.productId) {
+      // Validate that either productId or slug is provided
+      if (!query.productId && !query.slug) {
         return CommandResult.failure<ProductResult>(
-          'Product ID is required',
-          ['productId']
+          'Either productId or slug is required',
+          ['productId', 'slug']
         );
       }
 
-      const product = await this.productManagementService.getProductById(query.productId);
+      // Get product by ID or slug
+      let product;
+      if (query.productId) {
+        product = await this.productManagementService.getProductById(query.productId);
+      } else if (query.slug) {
+        product = await this.productManagementService.getProductBySlug(query.slug);
+      }
 
       if (!product) {
         return CommandResult.failure<ProductResult>(
