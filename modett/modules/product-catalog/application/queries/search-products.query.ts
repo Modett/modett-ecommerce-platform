@@ -1,7 +1,32 @@
-import { ProductSearchService } from '../services/product-search.service';
-import { Product } from '../../domain/entities/product.entity';
-import { CommandResult } from '../commands/create-product.command';
-import { IQuery, IQueryHandler, ProductResult } from './get-product.query';
+import { ProductSearchService } from "../services/product-search.service";
+import { Product } from "../../domain/entities/product.entity";
+import { CommandResult } from "../commands/create-product.command";
+
+// Query interfaces - duplicated to avoid cross-imports
+export interface IQuery {
+  readonly queryId?: string;
+  readonly timestamp?: Date;
+}
+
+export interface IQueryHandler<TQuery extends IQuery, TResult = any> {
+  handle(query: TQuery): Promise<TResult>;
+}
+
+export interface ProductResult {
+  productId: string;
+  title: string;
+  slug: string;
+  brand?: string;
+  shortDesc?: string;
+  longDescHtml?: string;
+  status: string;
+  publishAt?: Date;
+  countryOfOrigin?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface SearchProductsQuery extends IQuery {
   searchTerm: string;
@@ -11,9 +36,9 @@ export interface SearchProductsQuery extends IQuery {
   minPrice?: number;
   maxPrice?: number;
   brand?: string;
-  status?: 'draft' | 'published' | 'scheduled';
-  sortBy?: 'relevance' | 'price' | 'title' | 'createdAt';
-  sortOrder?: 'asc' | 'desc';
+  status?: "draft" | "published" | "scheduled";
+  sortBy?: "relevance" | "price" | "title" | "createdAt" | "publishAt";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface SearchProductsResult {
@@ -25,17 +50,20 @@ export interface SearchProductsResult {
   suggestions?: string[];
 }
 
-export class SearchProductsHandler implements IQueryHandler<SearchProductsQuery, CommandResult<SearchProductsResult>> {
-  constructor(
-    private readonly productSearchService: ProductSearchService
-  ) {}
+export class SearchProductsHandler
+  implements
+    IQueryHandler<SearchProductsQuery, CommandResult<SearchProductsResult>>
+{
+  constructor(private readonly productSearchService: ProductSearchService) {}
 
-  async handle(query: SearchProductsQuery): Promise<CommandResult<SearchProductsResult>> {
+  async handle(
+    query: SearchProductsQuery
+  ): Promise<CommandResult<SearchProductsResult>> {
     try {
-      if (!query.searchTerm || query.searchTerm.trim() === '') {
+      if (!query.searchTerm || query.searchTerm.trim() === "") {
         return CommandResult.failure<SearchProductsResult>(
-          'Search term is required',
-          ['searchTerm']
+          "Search term is required",
+          ["searchTerm"]
         );
       }
 
@@ -47,31 +75,33 @@ export class SearchProductsHandler implements IQueryHandler<SearchProductsQuery,
         {
           page,
           limit,
-          categoryId: query.categoryId,
+          category: query.categoryId,
           minPrice: query.minPrice,
           maxPrice: query.maxPrice,
           brand: query.brand,
           status: query.status,
-          sortBy: query.sortBy || 'relevance',
-          sortOrder: query.sortOrder || 'desc'
+          sortBy: query.sortBy || "relevance",
+          sortOrder: query.sortOrder || "desc",
         }
       );
 
-      const productResults: ProductResult[] = searchResults.items.map((product: Product) => ({
-        productId: product.getId().toString(),
-        title: product.getTitle(),
-        slug: product.getSlug().toString(),
-        brand: product.getBrand() ?? undefined,
-        shortDesc: product.getShortDesc() ?? undefined,
-        longDescHtml: product.getLongDescHtml() ?? undefined,
-        status: product.getStatus(),
-        publishAt: product.getPublishAt() ?? undefined,
-        countryOfOrigin: product.getCountryOfOrigin() ?? undefined,
-        seoTitle: product.getSeoTitle() ?? undefined,
-        seoDescription: product.getSeoDescription() ?? undefined,
-        createdAt: product.getCreatedAt(),
-        updatedAt: product.getUpdatedAt()
-      }));
+      const productResults: ProductResult[] = searchResults.items.map(
+        (product: Product) => ({
+          productId: product.getId().toString(),
+          title: product.getTitle(),
+          slug: product.getSlug().toString(),
+          brand: product.getBrand() ?? undefined,
+          shortDesc: product.getShortDesc() ?? undefined,
+          longDescHtml: product.getLongDescHtml() ?? undefined,
+          status: product.getStatus(),
+          publishAt: product.getPublishAt() ?? undefined,
+          countryOfOrigin: product.getCountryOfOrigin() ?? undefined,
+          seoTitle: product.getSeoTitle() ?? undefined,
+          seoDescription: product.getSeoDescription() ?? undefined,
+          createdAt: product.getCreatedAt(),
+          updatedAt: product.getUpdatedAt(),
+        })
+      );
 
       const result: SearchProductsResult = {
         products: productResults,
@@ -79,20 +109,20 @@ export class SearchProductsHandler implements IQueryHandler<SearchProductsQuery,
         page,
         limit,
         searchTerm: query.searchTerm,
-        suggestions: searchResults.suggestions
+        suggestions: searchResults.suggestions,
       };
 
       return CommandResult.success<SearchProductsResult>(result);
     } catch (error) {
       if (error instanceof Error) {
         return CommandResult.failure<SearchProductsResult>(
-          'Failed to search products',
+          "Failed to search products",
           [error.message]
         );
       }
 
       return CommandResult.failure<SearchProductsResult>(
-        'An unexpected error occurred while searching products'
+        "An unexpected error occurred while searching products"
       );
     }
   }

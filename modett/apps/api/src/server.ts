@@ -1,8 +1,6 @@
 import fastify, { FastifyInstance } from "fastify";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
-
-// Inline logger configuration
 const loggerConfig = {
   level: process.env.LOG_LEVEL || "info",
   transport:
@@ -22,19 +20,17 @@ export async function createServer(): Promise<FastifyInstance> {
   const server = fastify({
     logger: loggerConfig,
     trustProxy: true,
-    // ✅ FIXED: Add AJV configuration for schema validation
     ajv: {
       customOptions: {
         removeAdditional: "all",
         useDefaults: true,
         coerceTypes: "array",
-        strict: false, // ✅ disables strict unknown keyword errors
+        strict: false,
         keywords: [],
       },
     },
   });
 
-  // ✅ REGISTER CORE PLUGINS
   await server.register(import("@fastify/cors"), {
     origin:
       process.env.NODE_ENV === "production"
@@ -67,38 +63,12 @@ export async function createServer(): Promise<FastifyInstance> {
     },
   });
 
-  // ✅ ENHANCED SWAGGER CONFIGURATION
   await server.register(swagger, {
     openapi: {
       openapi: "3.0.0",
       info: {
-        title: "Modett E-commerce User Management API",
-        description: `
-🚀 **Professional E-commerce User Management System**
-
-## Overview
-Complete enterprise-grade user management API with authentication, profiles, addresses, and payment methods.
-
-## Features
-- 🔐 **JWT Authentication & Authorization**
-- 👤 **Complete User Profile Management**
-- 🏠 **Multi-Address Management (Billing/Shipping)**
-- 💳 **Payment Method Management**
-- 🔗 **Social Login Integration (OAuth 2.0)**
-- 🛡️ **Enterprise Security Features**
-- 📧 **Email/SMS Verification**
-- 🌍 **International Support (Currency/Locale)**
-
-## Authentication
-Most endpoints require Bearer token authentication. Click **Authorize** below to set your JWT token.
-
-## Rate Limiting
-- **${process.env.NODE_ENV === "production" ? "100" : "1000"} requests per minute** per IP
-- **5 login attempts per hour** per user
-
-## Error Handling
-All errors follow a consistent format with success flags, error messages, and error codes.
-        `,
+        title: "Modett E-commerce API",
+        description: "Professional e-commerce platform API with user management, product catalog, and authentication services.",
         version: "1.0.0",
         contact: {
           name: "Modett API Support",
@@ -133,35 +103,19 @@ All errors follow a consistent format with success flags, error messages, and er
           },
         },
         schemas: {
-          // ✅ STANDARD RESPONSE SCHEMAS
+          // Standard response schemas
           ErrorResponse: {
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
-              error: {
-                type: "string",
-                description: "Human-readable error message",
-                example: "Validation failed",
-              },
+              error: { type: "string", example: "Validation failed" },
               errors: {
                 type: "array",
                 items: { type: "string" },
-                description: "Array of specific validation errors",
-                example: [
-                  "email is required",
-                  "password must be at least 8 characters",
-                ],
+                example: ["email is required", "password must be at least 8 characters"]
               },
-              code: {
-                type: "string",
-                description: "Error code for programmatic handling",
-                example: "VALIDATION_ERROR",
-              },
-              timestamp: {
-                type: "string",
-                format: "date-time",
-                description: "Error timestamp",
-              },
+              code: { type: "string", example: "VALIDATION_ERROR" },
+              timestamp: { type: "string", format: "date-time" },
             },
             required: ["success", "error", "code"],
           },
@@ -169,25 +123,14 @@ All errors follow a consistent format with success flags, error messages, and er
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              message: {
-                type: "string",
-                description: "Success message",
-                example: "Operation completed successfully",
-              },
-              data: {
-                type: "object",
-                description: "Response data object",
-              },
-              timestamp: {
-                type: "string",
-                format: "date-time",
-                description: "Response timestamp",
-              },
+              message: { type: "string", example: "Operation completed successfully" },
+              data: { type: "object" },
+              timestamp: { type: "string", format: "date-time" },
             },
             required: ["success"],
           },
 
-          // ✅ USER SCHEMAS
+          // User schemas
           User: {
             type: "object",
             properties: {
@@ -263,64 +206,18 @@ All errors follow a consistent format with success flags, error messages, and er
             ],
           },
 
-          // ✅ USER PROFILE SCHEMA
+          // User profile schema
           UserProfile: {
             type: "object",
             properties: {
               userId: { type: "string", format: "uuid" },
-              defaultAddressId: {
-                type: "string",
-                format: "uuid",
-                nullable: true,
-                description: "Default address ID for the user",
-              },
-              defaultPaymentMethodId: {
-                type: "string",
-                format: "uuid",
-                nullable: true,
-                description: "Default payment method ID",
-              },
-              locale: {
-                type: "string",
-                description: "User locale preference",
-                example: "en-US",
-                nullable: true,
-              },
-              currency: {
-                type: "string",
-                description: "Preferred currency",
-                example: "USD",
-                nullable: true,
-              },
-              preferences: {
-                type: "object",
-                description: "User preferences as key-value pairs",
-                example: {
-                  newsletter: true,
-                  notifications: false,
-                  theme: "light",
-                },
-                additionalProperties: true,
-              },
-              stylePreferences: {
-                type: "object",
-                description: "Style and fashion preferences",
-                example: {
-                  favoriteColors: ["black", "white"],
-                  preferredBrands: ["Nike", "Adidas"],
-                },
-                additionalProperties: true,
-              },
-              preferredSizes: {
-                type: "object",
-                description: "Preferred sizes for different categories",
-                example: {
-                  shirts: "M",
-                  pants: "32/34",
-                  shoes: "10",
-                },
-                additionalProperties: true,
-              },
+              defaultAddressId: { type: "string", format: "uuid", nullable: true },
+              defaultPaymentMethodId: { type: "string", format: "uuid", nullable: true },
+              locale: { type: "string", example: "en-US", nullable: true },
+              currency: { type: "string", example: "USD", nullable: true },
+              preferences: { type: "object", additionalProperties: true },
+              stylePreferences: { type: "object", additionalProperties: true },
+              preferredSizes: { type: "object", additionalProperties: true },
             },
             required: [
               "userId",
@@ -330,7 +227,7 @@ All errors follow a consistent format with success flags, error messages, and er
             ],
           },
 
-          // ✅ ADDRESS SCHEMA
+          // Address schema
           Address: {
             type: "object",
             properties: {
@@ -378,29 +275,10 @@ All errors follow a consistent format with success flags, error messages, and er
                 description: "City name",
                 example: "New York",
               },
-              state: {
-                type: "string",
-                nullable: true,
-                description: "State or province",
-                example: "NY",
-              },
-              postalCode: {
-                type: "string",
-                nullable: true,
-                description: "Postal or ZIP code",
-                example: "10001",
-              },
-              country: {
-                type: "string",
-                description: "Country code (ISO 3166-1 alpha-2)",
-                example: "US",
-              },
-              phone: {
-                type: "string",
-                nullable: true,
-                description: "Contact phone number",
-                example: "+1234567890",
-              },
+              state: { type: "string", nullable: true, example: "NY" },
+              postalCode: { type: "string", nullable: true, example: "10001" },
+              country: { type: "string", example: "US" },
+              phone: { type: "string", nullable: true, example: "+1234567890" },
               createdAt: { type: "string", format: "date-time" },
               updatedAt: { type: "string", format: "date-time" },
             },
@@ -415,7 +293,7 @@ All errors follow a consistent format with success flags, error messages, and er
             ],
           },
 
-          // ✅ PAYMENT METHOD SCHEMA
+          // Payment method schema
           PaymentMethod: {
             type: "object",
             properties: {
@@ -424,61 +302,22 @@ All errors follow a consistent format with success flags, error messages, and er
               type: {
                 type: "string",
                 enum: ["card", "wallet", "bank", "cod", "gift_card"],
-                description: "Payment method type",
-                example: "card",
+                example: "card"
               },
-              brand: {
-                type: "string",
-                nullable: true,
-                description: "Card brand (e.g., Visa, Mastercard)",
-                example: "visa",
-              },
-              last4: {
-                type: "string",
-                nullable: true,
-                description: "Last 4 digits of card number",
-                pattern: "^[0-9]{4}$",
-                example: "4242",
-              },
-              expMonth: {
-                type: "number",
-                nullable: true,
-                minimum: 1,
-                maximum: 12,
-                description: "Card expiration month",
-                example: 12,
-              },
-              expYear: {
-                type: "number",
-                nullable: true,
-                minimum: 2024,
-                description: "Card expiration year",
-                example: 2025,
-              },
-              isDefault: {
-                type: "boolean",
-                description: "Whether this is the default payment method",
-                example: true,
-              },
-              billingAddressId: {
-                type: "string",
-                format: "uuid",
-                nullable: true,
-                description: "Associated billing address ID",
-              },
-              providerRef: {
-                type: "string",
-                nullable: true,
-                description: "Payment provider reference",
-                example: "pm_1234567890",
-              },
+              brand: { type: "string", nullable: true, example: "visa" },
+              last4: { type: "string", nullable: true, pattern: "^[0-9]{4}$", example: "4242" },
+              expMonth: { type: "number", nullable: true, minimum: 1, maximum: 12, example: 12 },
+              expYear: { type: "number", nullable: true, minimum: 2024, example: 2025 },
+              isDefault: { type: "boolean", example: true },
+              billingAddressId: { type: "string", format: "uuid", nullable: true },
+              providerRef: { type: "string", nullable: true, example: "pm_1234567890" },
               createdAt: { type: "string", format: "date-time" },
               updatedAt: { type: "string", format: "date-time" },
             },
             required: ["paymentMethodId", "userId", "type", "isDefault"],
           },
 
-          // ✅ SOCIAL ACCOUNT SCHEMA
+          // Social account schema
           SocialAccount: {
             type: "object",
             properties: {
@@ -487,25 +326,11 @@ All errors follow a consistent format with success flags, error messages, and er
               provider: {
                 type: "string",
                 enum: ["google", "facebook", "apple", "twitter", "github"],
-                description: "Social login provider",
-                example: "google",
+                example: "google"
               },
-              providerUserId: {
-                type: "string",
-                description: "User ID from the social provider",
-                example: "1234567890",
-              },
-              email: {
-                type: "string",
-                format: "email",
-                nullable: true,
-                description: "Email from social provider",
-              },
-              linkedAt: {
-                type: "string",
-                format: "date-time",
-                description: "When the account was linked",
-              },
+              providerUserId: { type: "string", example: "1234567890" },
+              email: { type: "string", format: "email", nullable: true },
+              linkedAt: { type: "string", format: "date-time" },
             },
             required: [
               "socialId",
@@ -516,20 +341,12 @@ All errors follow a consistent format with success flags, error messages, and er
             ],
           },
 
-          // ✅ AUTH TOKEN SCHEMA
+          // Auth token schema
           AuthTokens: {
             type: "object",
             properties: {
-              accessToken: {
-                type: "string",
-                description: "JWT access token (expires in 15 minutes)",
-                example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-              },
-              refreshToken: {
-                type: "string",
-                description: "Refresh token (expires in 7 days)",
-                example: "rt_1234567890abcdef...",
-              },
+              accessToken: { type: "string", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+              refreshToken: { type: "string", example: "rt_1234567890abcdef..." },
               expiresIn: {
                 type: "number",
                 description: "Token expiry in seconds",
@@ -549,27 +366,27 @@ All errors follow a consistent format with success flags, error messages, and er
         {
           name: "Authentication",
           description:
-            "🔐 User authentication, registration, and security operations",
+            "User authentication, registration, and security operations",
         },
         {
           name: "Users",
-          description: "👤 User account information and management",
+          description: "User account information and management",
         },
         {
           name: "Profiles",
-          description: "📋 User profile, preferences, and settings management",
+          description: "User profile, preferences, and settings management",
         },
         {
           name: "Addresses",
-          description: "🏠 User address management for billing and shipping",
+          description: "User address management for billing and shipping",
         },
         {
           name: "Payment Methods",
-          description: "💳 Payment method management and processing",
+          description: "Payment method management and processing",
         },
         {
           name: "Social Login",
-          description: "🔗 OAuth 2.0 integration and social authentication",
+          description: "OAuth 2.0 integration and social authentication",
         },
         {
           name: "System",
@@ -580,7 +397,6 @@ All errors follow a consistent format with success flags, error messages, and er
     },
   });
 
-  // ✅ CORRECTED SWAGGER UI CONFIGURATION
   await server.register(swaggerUi, {
     routePrefix: "/docs",
     uiConfig: {
@@ -629,7 +445,7 @@ All errors follow a consistent format with success flags, error messages, and er
     transformSpecificationClone: true,
   });
 
-  // ✅ SYSTEM ENDPOINTS
+  // System endpoints
   server.get(
     "/health",
     {
@@ -722,63 +538,7 @@ All errors follow a consistent format with success flags, error messages, and er
     }
   );
 
-  // ✅ PLACEHOLDER ROUTES (Remove when implementing actual routes)
-  server.register(
-    async function (fastify) {
-      // Test endpoint to verify API is working
-      fastify.get(
-        "/test",
-        {
-          schema: {
-            description: "Test endpoint to verify API functionality",
-            tags: ["System"],
-            summary: "API Test",
-            response: {
-              200: {
-                description: "Test successful",
-                type: "object",
-                properties: {
-                  success: { type: "boolean", example: true },
-                  message: {
-                    type: "string",
-                    example: "API is working perfectly!",
-                  },
-                  timestamp: { type: "string", format: "date-time" },
-                  endpoints: {
-                    type: "object",
-                    properties: {
-                      documentation: { type: "string" },
-                      health: { type: "string" },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        async (request) => {
-          const protocol =
-            request.headers["x-forwarded-proto"] || request.protocol;
-          const host =
-            request.headers["x-forwarded-host"] || request.headers.host;
-          const baseUrl = `${protocol}://${host}`;
 
-          return {
-            success: true,
-            message: "API is working perfectly!",
-            timestamp: new Date().toISOString(),
-            endpoints: {
-              documentation: `${baseUrl}/docs`,
-              health: `${baseUrl}/health`,
-            },
-          };
-        }
-      );
-    },
-    { prefix: "/api/v1" }
-  );
-
-  // ✅ COMPREHENSIVE ERROR HANDLER
   server.setErrorHandler(async (error, request, reply) => {
     server.log.error(
       {
@@ -871,7 +631,7 @@ All errors follow a consistent format with success flags, error messages, and er
     });
   });
 
-  // ✅ CORRECTED GRACEFUL SHUTDOWN
+  // Graceful shutdown
   const gracefulShutdown = async (signal: string) => {
     server.log.info(`Received ${signal}, starting graceful shutdown...`);
 
@@ -885,7 +645,7 @@ All errors follow a consistent format with success flags, error messages, and er
     }
   };
 
-  // ✅ FIXED: Proper async handling for process events
+  // Proper async handling for process events
   process.on("SIGTERM", () => {
     gracefulShutdown("SIGTERM").catch((error) => {
       console.error("Error during graceful shutdown:", error);
@@ -900,26 +660,22 @@ All errors follow a consistent format with success flags, error messages, and er
     });
   });
 
+  // Initialize service container once
+  const { createServiceContainer } = await import("./container");
+  const serviceContainer = createServiceContainer();
+
   // Register user management routes
   try {
-    // ✅ Import route registration and services
     const { registerUserManagementRoutes } = await import(
       "../../../modules/user-management/infra/http/routes"
     );
-    const { createServiceContainer } = await import("./container");
 
-    // ✅ Initialize real services with database repositories
-    const serviceContainer = createServiceContainer();
-
-    // Extract services for route registration
     const services = {
       authService: serviceContainer.authService,
       userProfileService: serviceContainer.userProfileService,
       addressService: serviceContainer.addressService,
       paymentMethodService: serviceContainer.paymentMethodService,
     };
-
-    server.log.info("✅ Real services initialized with database repositories");
 
     // Register routes with services
     await server.register(
@@ -929,37 +685,25 @@ All errors follow a consistent format with success flags, error messages, and er
       { prefix: "/api/v1" }
     );
 
-    server.log.info("✅ User management routes registered successfully");
+    server.log.info("User management routes registered successfully");
   } catch (error) {
-    server.log.error(error as Error, "❌ Failed to register user routes:"); // ✅ FIXED: Add error parameter
-    server.log.info("⚠️ Continuing with basic endpoints only");
+    server.log.error(error as Error, "Failed to register user routes:");
+    server.log.info("Continuing with basic endpoints only");
   }
 
   // Register product catalog routes
   try {
-    // ✅ Import route registration function
     const { registerProductCatalogRoutes } = await import(
       "../../../modules/product-catalog/infra/http/routes"
     );
-    const { createServiceContainer } = await import("./container");
 
-    // ✅ Initialize service container with database repositories
-    const serviceContainer = createServiceContainer();
-
-    // Extract product catalog services for route registration
     const productCatalogServices = {
       productService: serviceContainer.productManagementService,
+      productSearchService: serviceContainer.productSearchService,
       categoryService: serviceContainer.categoryManagementService,
       variantService: serviceContainer.variantManagementService,
-      mediaAssetService: serviceContainer.mediaManagementService,
-      productMediaService: serviceContainer.productManagementService, // Use product service for now
-      variantMediaService: serviceContainer.variantManagementService, // Use variant service for now
-      productTagService: serviceContainer.productManagementService, // Use product service for now
-      sizeGuideService: serviceContainer.productManagementService, // Use product service for now
-      editorialLookService: serviceContainer.productManagementService, // Use product service for now
+      mediaService: serviceContainer.mediaManagementService,
     };
-
-    server.log.info("✅ Product catalog services initialized with database repositories");
 
     // Register product catalog routes with services
     await server.register(
@@ -969,11 +713,11 @@ All errors follow a consistent format with success flags, error messages, and er
       { prefix: "/api/v1/catalog" }
     );
 
-    server.log.info("✅ Product catalog routes registered successfully");
+    server.log.info("Product catalog routes registered successfully");
   } catch (error) {
-    server.log.error(error as Error, "❌ Failed to register product catalog routes:");
-    server.log.info("⚠️ Continuing with user management endpoints only");
+    server.log.error(error as Error, "Failed to register product catalog routes:");
+    server.log.info("Continuing with user management endpoints only");
   }
 
-  return server; // ✅ This should be the last line
+  return server;
 }

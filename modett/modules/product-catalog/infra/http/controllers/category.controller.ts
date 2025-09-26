@@ -44,19 +44,20 @@ export class CategoryController {
       };
 
       const categories = await this.categoryManagementService.getCategories(options);
+      const mappedData = categories.map(category => category.toData());
 
-      return reply.code(200).send({
+      return {
         success: true,
-        data: categories,
+        data: mappedData,
         meta: {
           page: options.page,
           limit: options.limit,
-          parentId: options.parentId,
+          parentId: options.parentId || null,
           includeChildren: options.includeChildren,
           sortBy: options.sortBy,
           sortOrder: options.sortOrder
         }
-      });
+      };
     } catch (error) {
       request.log.error(error, 'Failed to get categories');
       return reply.code(500).send({
@@ -91,7 +92,7 @@ export class CategoryController {
 
       return reply.code(200).send({
         success: true,
-        data: category
+        data: category.toData()
       });
     } catch (error) {
       request.log.error(error, 'Failed to get category');
@@ -127,7 +128,7 @@ export class CategoryController {
 
       return reply.code(200).send({
         success: true,
-        data: category
+        data: category.toData()
       });
     } catch (error) {
       request.log.error(error, 'Failed to get category by slug');
@@ -174,7 +175,7 @@ export class CategoryController {
 
       return reply.code(201).send({
         success: true,
-        data: category,
+        data: category.toData(),
         message: 'Category created successfully'
       });
     } catch (error) {
@@ -266,7 +267,7 @@ export class CategoryController {
 
       return reply.code(200).send({
         success: true,
-        data: category,
+        data: category.toData(),
         message: 'Category updated successfully'
       });
     } catch (error) {

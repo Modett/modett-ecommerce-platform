@@ -87,7 +87,7 @@ export class ProductRepository implements IProductRepository {
       offset = 0,
       sortBy = 'createdAt',
       sortOrder = 'desc',
-      includeDrafts = false,
+      includeDrafts = true,
     } = options || {};
 
     const whereClause: any = {};
@@ -199,7 +199,7 @@ export class ProductRepository implements IProductRepository {
     } = options || {};
 
     const whereClause: any = {
-      productCategories: {
+      categories: {
         some: {
           categoryId: categoryId,
         },
@@ -279,7 +279,7 @@ export class ProductRepository implements IProductRepository {
     }
 
     if (categories && categories.length > 0) {
-      whereClause.productCategories = {
+      whereClause.categories = {
         some: {
           categoryId: { in: categories },
         },
@@ -287,7 +287,7 @@ export class ProductRepository implements IProductRepository {
     }
 
     if (tags && tags.length > 0) {
-      whereClause.productTagAssociations = {
+      whereClause.tags = {
         some: {
           tag: {
             tag: { in: tags },
@@ -298,7 +298,7 @@ export class ProductRepository implements IProductRepository {
 
     // Note: Price range filtering would require joining with variants
     if (priceRange) {
-      whereClause.productVariants = {
+      whereClause.variants = {
         some: {
           price: {
             gte: priceRange.min,
@@ -385,7 +385,7 @@ export class ProductRepository implements IProductRepository {
     }
 
     if (options?.categoryId) {
-      whereClause.productCategories = {
+      whereClause.categories = {
         some: {
           categoryId: options.categoryId,
         },
@@ -394,6 +394,15 @@ export class ProductRepository implements IProductRepository {
 
     return await this.prisma.product.count({
       where: whereClause,
+    });
+  }
+
+  async addToCategory(productId: string, categoryId: string): Promise<void> {
+    await this.prisma.productCategory.create({
+      data: {
+        productId,
+        categoryId,
+      },
     });
   }
 }

@@ -72,13 +72,20 @@ export class CategoryRepository implements ICategoryRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return categories.map(categoryData => Category.fromDatabaseRow({
-      category_id: categoryData.id,
-      name: categoryData.name,
-      slug: categoryData.slug,
-      parent_id: categoryData.parentId,
-      position: categoryData.position,
-    }));
+    return categories.map(categoryData => {
+      try {
+        return Category.fromDatabaseRow({
+          category_id: categoryData.id,
+          name: categoryData.name,
+          slug: categoryData.slug,
+          parent_id: categoryData.parentId,
+          position: categoryData.position,
+        });
+      } catch (error) {
+        console.error(`Error creating category from database row:`, error, categoryData);
+        throw error;
+      }
+    });
   }
 
   async findRootCategories(options?: CategoryQueryOptions): Promise<Category[]> {
@@ -96,13 +103,20 @@ export class CategoryRepository implements ICategoryRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return categories.map(categoryData => Category.fromDatabaseRow({
-      category_id: categoryData.id,
-      name: categoryData.name,
-      slug: categoryData.slug,
-      parent_id: categoryData.parentId,
-      position: categoryData.position,
-    }));
+    return categories.map(categoryData => {
+      try {
+        return Category.fromDatabaseRow({
+          category_id: categoryData.id,
+          name: categoryData.name,
+          slug: categoryData.slug,
+          parent_id: categoryData.parentId,
+          position: categoryData.position,
+        });
+      } catch (error) {
+        console.error(`Error creating category from database row:`, error, categoryData);
+        throw error;
+      }
+    });
   }
 
   async findByParentId(parentId: CategoryId, options?: CategoryQueryOptions): Promise<Category[]> {
@@ -120,13 +134,20 @@ export class CategoryRepository implements ICategoryRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return categories.map(categoryData => Category.fromDatabaseRow({
-      category_id: categoryData.id,
-      name: categoryData.name,
-      slug: categoryData.slug,
-      parent_id: categoryData.parentId,
-      position: categoryData.position,
-    }));
+    return categories.map(categoryData => {
+      try {
+        return Category.fromDatabaseRow({
+          category_id: categoryData.id,
+          name: categoryData.name,
+          slug: categoryData.slug,
+          parent_id: categoryData.parentId,
+          position: categoryData.position,
+        });
+      } catch (error) {
+        console.error(`Error creating category from database row:`, error, categoryData);
+        throw error;
+      }
+    });
   }
 
   async findChildren(categoryId: CategoryId): Promise<Category[]> {

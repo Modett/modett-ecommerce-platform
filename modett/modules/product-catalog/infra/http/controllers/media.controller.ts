@@ -26,8 +26,10 @@ interface MediaAssetQueryParams {
   sortOrder?: 'asc' | 'desc';
   minBytes?: number;
   maxBytes?: number;
-  width?: number;
-  height?: number;
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
 }
 
 interface AddRenditionRequest {
@@ -53,8 +55,10 @@ export class MediaController {
         sortOrder = 'desc',
         minBytes,
         maxBytes,
-        width,
-        height
+        minWidth,
+        maxWidth,
+        minHeight,
+        maxHeight
       } = request.query;
 
       const options = {
@@ -65,21 +69,21 @@ export class MediaController {
         hasRenditions
       };
 
-      let assets;
+      // Use search assets with filters for more complex filtering
+      const filters = {
+        mimeType,
+        isImage,
+        isVideo,
+        hasRenditions,
+        minBytes,
+        maxBytes,
+        minWidth,
+        maxWidth,
+        minHeight,
+        maxHeight
+      };
 
-      if (minBytes !== undefined && maxBytes !== undefined) {
-        assets = await this.mediaManagementService.getAssetsBySizeRange(minBytes, maxBytes, options);
-      } else if (width !== undefined && height !== undefined) {
-        assets = await this.mediaManagementService.getAssetsByDimensions(width, height, options);
-      } else if (mimeType) {
-        assets = await this.mediaManagementService.getAssetsByMimeType(mimeType, options);
-      } else if (isImage) {
-        assets = await this.mediaManagementService.getImageAssets(options);
-      } else if (isVideo) {
-        assets = await this.mediaManagementService.getVideoAssets(options);
-      } else {
-        assets = await this.mediaManagementService.getAllAssets(options);
-      }
+      const assets = await this.mediaManagementService.searchAssets(filters, options);
 
       return reply.code(200).send({
         success: true,
@@ -96,8 +100,10 @@ export class MediaController {
             hasRenditions,
             minBytes,
             maxBytes,
-            width,
-            height
+            minWidth,
+            maxWidth,
+            minHeight,
+            maxHeight
           }
         }
       });

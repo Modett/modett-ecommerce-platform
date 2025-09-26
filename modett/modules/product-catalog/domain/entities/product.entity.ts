@@ -291,6 +291,8 @@ export interface CreateProductData {
   countryOfOrigin?: string;
   seoTitle?: string;
   seoDescription?: string;
+  categoryIds?: string[];
+  tags?: string[];
 }
 
 export interface ProductData {
