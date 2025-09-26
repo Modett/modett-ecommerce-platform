@@ -324,36 +324,15 @@ export class MediaManagementService {
       sortOrder = 'desc'
     } = options;
 
-    // If size range filter is provided
-    if (filters.minBytes !== undefined && filters.maxBytes !== undefined) {
-      return await this.getAssetsBySizeRange(filters.minBytes, filters.maxBytes, options);
-    }
+    const repositoryOptions = {
+      limit,
+      offset: (page - 1) * limit,
+      sortBy,
+      sortOrder,
+    };
 
-    // If dimensions filter is provided
-    if (filters.width !== undefined && filters.height !== undefined) {
-      return await this.getAssetsByDimensions(filters.width, filters.height, options);
-    }
-
-    // If specific MIME type filter is provided
-    if (filters.mimeType) {
-      return await this.getAssetsByMimeType(filters.mimeType, options);
-    }
-
-    // If image filter is provided
-    if (filters.isImage) {
-      return await this.getImageAssets(options);
-    }
-
-    // If video filter is provided
-    if (filters.isVideo) {
-      return await this.getVideoAssets(options);
-    }
-
-    // Default to all assets with hasRenditions filter
-    return await this.getAllAssets({
-      ...options,
-      hasRenditions: filters.hasRenditions
-    });
+    // Use the repository's findWithFilters method for combined filtering
+    return await this.mediaAssetRepository.findWithFilters(filters, repositoryOptions);
   }
 
   async cleanupOrphanedAssets(): Promise<{ deletedCount: number; totalSize: number }> {
