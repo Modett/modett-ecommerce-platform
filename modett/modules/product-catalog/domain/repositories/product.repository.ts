@@ -16,6 +16,7 @@ export interface IProductRepository {
   exists(id: ProductId): Promise<boolean>;
   existsBySlug(slug: Slug): Promise<boolean>;
   count(options?: ProductCountOptions): Promise<number>;
+  addToCategory(productId: string, categoryId: string): Promise<void>;
 }
 
 export interface ProductQueryOptions {
