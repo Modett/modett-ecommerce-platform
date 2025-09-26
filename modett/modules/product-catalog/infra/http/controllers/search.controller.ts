@@ -94,23 +94,28 @@ export class SearchController {
 
       const searchResults = await this.productSearchService.searchProducts(searchQuery, options);
 
+      // Transform products to the expected format
+      const products = searchResults.items.map(product => ({
+        productId: product.getId().toString(),
+        title: product.getTitle(),
+        slug: product.getSlug().toString(),
+        brand: product.getBrand() ?? undefined,
+        shortDesc: product.getShortDesc() ?? undefined,
+        status: product.getStatus(),
+        publishAt: product.getPublishAt() ?? undefined,
+        createdAt: product.getCreatedAt(),
+        updatedAt: product.getUpdatedAt(),
+      }));
+
       return reply.code(200).send({
         success: true,
-        data: searchResults,
-        meta: {
-          query: searchQuery,
+        data: {
+          products,
+          total: searchResults.totalCount,
           page: options.page,
           limit: options.limit,
-          filters: {
-            category: options.category,
-            brand: options.brand,
-            minPrice: options.minPrice,
-            maxPrice: options.maxPrice,
-            status: options.status,
-            tags: options.tags
-          },
-          sortBy: options.sortBy,
-          sortOrder: options.sortOrder
+          query: searchQuery,
+          suggestions: searchResults.suggestions
         }
       });
     } catch (error) {
