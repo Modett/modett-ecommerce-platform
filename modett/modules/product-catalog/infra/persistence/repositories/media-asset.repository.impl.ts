@@ -62,7 +62,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
   }
 
   async findByStorageKey(storageKey: string): Promise<MediaAsset | null> {
-    const assetData = await this.prisma.mediaAsset.findUnique({
+    const assetData = await this.prisma.mediaAsset.findFirst({
       where: { storageKey },
     });
 
@@ -432,5 +432,93 @@ export class MediaAssetRepository implements IMediaAssetRepository {
     });
 
     return this.convertBigIntToNumber(result._sum.bytes) || 0;
+  }
+
+  async findWithFilters(filters: any, options?: MediaAssetQueryOptions): Promise<MediaAsset[]> {
+    const {
+      limit = 50,
+      offset = 0,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = options || {};
+
+    // Build where clause combining all filters
+    const whereClause: any = {};
+
+    if (filters.mimeType) {
+      whereClause.mime = filters.mimeType;
+    }
+
+    if (filters.isImage) {
+      whereClause.mime = { startsWith: 'image/' };
+    }
+
+    if (filters.isVideo) {
+      whereClause.mime = { startsWith: 'video/' };
+    }
+
+    if (filters.minWidth !== undefined || filters.maxWidth !== undefined) {
+      whereClause.width = {};
+      if (filters.minWidth !== undefined) {
+        whereClause.width.gte = filters.minWidth;
+      }
+      if (filters.maxWidth !== undefined) {
+        whereClause.width.lte = filters.maxWidth;
+      }
+    }
+
+    if (filters.minHeight !== undefined || filters.maxHeight !== undefined) {
+      whereClause.height = {};
+      if (filters.minHeight !== undefined) {
+        whereClause.height.gte = filters.minHeight;
+      }
+      if (filters.maxHeight !== undefined) {
+        whereClause.height.lte = filters.maxHeight;
+      }
+    }
+
+    if (filters.minBytes !== undefined || filters.maxBytes !== undefined) {
+      whereClause.bytes = {};
+      if (filters.minBytes !== undefined) {
+        whereClause.bytes.gte = filters.minBytes;
+      }
+      if (filters.maxBytes !== undefined) {
+        whereClause.bytes.lte = filters.maxBytes;
+      }
+    }
+
+    if (filters.hasRenditions !== undefined) {
+      if (filters.hasRenditions) {
+        whereClause.renditions = { not: {} };
+      } else {
+        whereClause.renditions = {};
+      }
+    }
+
+    console.log("Media search where clause:", JSON.stringify(whereClause, null, 2));
+
+    const assets = await this.prisma.mediaAsset.findMany({
+      where: whereClause,
+      take: limit,
+      skip: offset,
+      orderBy: { [sortBy]: sortOrder },
+    });
+
+    console.log("Found assets:", assets.length);
+
+    return assets.map(assetData => MediaAsset.fromDatabaseRow({
+      asset_id: assetData.id,
+      storage_key: assetData.storageKey,
+      mime: assetData.mime,
+      width: assetData.width,
+      height: assetData.height,
+      bytes: this.convertBigIntToNumber(assetData.bytes),
+      alt_text: assetData.altText,
+      focal_x: assetData.focalX,
+      focal_y: assetData.focalY,
+      renditions: assetData.renditions as any,
+      version: assetData.version,
+      created_at: assetData.createdAt,
+    }));
   }
 }
