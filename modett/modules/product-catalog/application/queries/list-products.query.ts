@@ -1,14 +1,40 @@
 import { ProductManagementService } from "../services/product-management.service";
 import { Product } from "../../domain/entities/product.entity";
 import { CommandResult } from "../commands/create-product.command";
-import { IQuery, IQueryHandler, ProductResult } from "./get-product.query";
+
+// Query interfaces - duplicated to avoid cross-imports
+export interface IQuery {
+  readonly queryId?: string;
+  readonly timestamp?: Date;
+}
+
+export interface IQueryHandler<TQuery extends IQuery, TResult = any> {
+  handle(query: TQuery): Promise<TResult>;
+}
+
+export interface ProductResult {
+  productId: string;
+  title: string;
+  slug: string;
+  brand?: string;
+  shortDesc?: string;
+  longDescHtml?: string;
+  status: string;
+  publishAt?: Date;
+  countryOfOrigin?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface ListProductsQuery extends IQuery {
   page?: number;
   limit?: number;
   categoryId?: string;
-  status?: 'draft' | 'published' | 'scheduled';
-  sortBy?: "title" | "createdAt" | "updatedAt" | "status";
+  brand?: string;
+  status?: "draft" | "published" | "scheduled";
+  sortBy?: "title" | "createdAt" | "updatedAt" | "publishAt";
   sortOrder?: "asc" | "desc";
 }
 
@@ -38,6 +64,7 @@ export class ListProductsHandler
         page,
         limit,
         categoryId: query.categoryId,
+        brand: query.brand,
         status: query.status,
         sortBy: query.sortBy,
         sortOrder: query.sortOrder,
