@@ -93,9 +93,7 @@ export function createServiceContainer(): ServiceContainer {
 
   // Initialize Product Catalog services
   const productManagementService = new ProductManagementService(
-    productRepository,
-    productVariantRepository,
-    slugGeneratorService
+    productRepository
   );
   const categoryManagementService = new CategoryManagementService(
     categoryRepository,
