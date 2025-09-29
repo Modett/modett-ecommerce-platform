@@ -351,7 +351,9 @@ export class AuthController {
         );
 
         // TODO: Send verification email with token
-        console.log(`Email verification token for ${email}: ${verificationToken}`);
+        console.log(
+          `Email verification token for ${email}: ${verificationToken}`
+        );
 
         reply.status(HTTP_STATUS.CREATED).send({
           success: true,
@@ -359,7 +361,9 @@ export class AuthController {
             userId: result.data.user.id,
             email: email,
             message: "Registration successful",
-            ...(process.env.NODE_ENV === 'development' && { verificationToken }),
+            ...(process.env.NODE_ENV === "development" && {
+              verificationToken,
+            }),
           },
         });
       } else {
@@ -524,8 +528,12 @@ export class AuthController {
         if (tokenMatch) {
           const token = tokenMatch[1];
 
+          console.log(
+            `[DEBUG] Logout - Blacklisting token: ${token.substring(0, 10)}...`
+          );
           // Blacklist the token
           TokenBlacklistService.blacklistToken(token);
+          console.log(`[DEBUG] Token blacklisted successfully`);
 
           // Log logout event
           if (userId) {
@@ -604,6 +612,19 @@ export class AuthController {
         return;
       }
 
+      // Extract and blacklist the current access token if present
+      const authHeader = request.headers.authorization;
+      if (authHeader) {
+        const tokenMatch = authHeader.match(/^Bearer\s+(.+)$/);
+        if (tokenMatch) {
+          const currentAccessToken = tokenMatch[1];
+          console.log(
+            `[DEBUG] Refresh - Blacklisting current access token: ${currentAccessToken.substring(0, 10)}...`
+          );
+          TokenBlacklistService.blacklistToken(currentAccessToken);
+        }
+      }
+
       // Verify refresh token
       const tokenData = verifyRefreshToken(refreshToken);
       if (!tokenData) {
@@ -637,6 +658,7 @@ export class AuthController {
         {
           userId: tokenData.userId,
           deviceInfo,
+          oldTokensInvalidated: true,
         },
         request
       );
@@ -702,9 +724,13 @@ export class AuthController {
       // Use authentication service to initiate password reset
       const resetResult = await this.authService.initiatePasswordReset(email);
 
-      if (resetResult.exists && resetResult.token) {
+      if (resetResult.exists && resetResult.token && resetResult.userId) {
         // Store token for later verification (using existing security store for now)
-        TokenBlacklistService.storePasswordResetToken(resetResult.token, "user-id");
+        TokenBlacklistService.storePasswordResetToken(
+          resetResult.token,
+          resetResult.userId,
+          email
+        );
 
         // Log password reset request
         this.logSecurityEvent(
@@ -799,11 +825,13 @@ export class AuthController {
         return;
       }
 
-      // TODO: Update user password in database
-      // TODO: Invalidate all existing sessions for this user
+      // Update user password in database
+      await this.authService.resetPassword(tokenData.email, newPassword);
 
       // Remove used token
       TokenBlacklistService.getPasswordResetToken(token); // This removes it due to expiry check
+
+      // TODO: In production, invalidate all existing sessions/tokens for this user for security
 
       // Log password reset
       this.logSecurityEvent(
@@ -883,7 +911,7 @@ export class AuthController {
           },
         });
       } catch (authError: any) {
-        if (authError.message === 'Email is already verified') {
+        if (authError.message === "Email is already verified") {
           reply.status(HTTP_STATUS.BAD_REQUEST).send({
             success: false,
             error: "Email is already verified",
@@ -934,14 +962,35 @@ export class AuthController {
         return;
       }
 
-      // TODO: Check if user exists and email is not already verified
+      // Check if user exists and get user info
+      const userInfo = await this.authService.getUserByEmail(email);
+      if (!userInfo) {
+        // For security, don't reveal if email exists or not
+        reply.status(HTTP_STATUS.OK).send({
+          success: true,
+          data: {
+            message: "If an account with that email exists, verification email has been sent.",
+            action: "verification_sent",
+          },
+        });
+        return;
+      }
+
+      // Check if email is already verified
+      if (userInfo.emailVerified) {
+        reply.status(HTTP_STATUS.BAD_REQUEST).send({
+          success: false,
+          error: "Email is already verified",
+          code: "ALREADY_VERIFIED",
+        });
+        return;
+      }
 
       // Generate new verification token
       const verificationToken = AuthValidation.generateSecureToken();
-      const userId = "temp-user-id"; // TODO: Get actual user ID from database
       TokenBlacklistService.storeVerificationToken(
         verificationToken,
-        userId,
+        userInfo.userId,
         email
       );
 
@@ -956,6 +1005,7 @@ export class AuthController {
       );
 
       // TODO: Send new verification email
+      console.log(`Resend verification token for ${email}: ${verificationToken}`);
 
       reply.status(HTTP_STATUS.OK).send({
         success: true,
@@ -1026,9 +1076,12 @@ export class AuthController {
         return;
       }
 
-      // TODO: Verify current password
-      // TODO: Update password in database
-      // TODO: Invalidate all other sessions
+      // Actually change the password in the database
+      await this.authService.changePassword(
+        userId,
+        currentPassword,
+        newPassword
+      );
 
       // Log password change
       this.logSecurityEvent(
@@ -1063,8 +1116,8 @@ export class AuthController {
     request: FastifyRequest<{ Body: { email: string; userId: string } }>,
     reply: FastifyReply
   ): Promise<void> {
-    if (process.env.NODE_ENV === 'production') {
-      return reply.status(404).send({ success: false, error: 'Not found' });
+    if (process.env.NODE_ENV === "production") {
+      return reply.status(404).send({ success: false, error: "Not found" });
     }
 
     try {
@@ -1073,25 +1126,29 @@ export class AuthController {
       if (!email || !userId) {
         return reply.status(400).send({
           success: false,
-          error: 'Email and userId are required'
+          error: "Email and userId are required",
         });
       }
 
       const verificationToken = AuthValidation.generateSecureToken();
-      TokenBlacklistService.storeVerificationToken(verificationToken, userId, email);
+      TokenBlacklistService.storeVerificationToken(
+        verificationToken,
+        userId,
+        email
+      );
 
       reply.status(200).send({
         success: true,
         data: {
           verificationToken,
-          message: 'Test verification token generated'
-        }
+          message: "Test verification token generated",
+        },
       });
     } catch (error) {
-      this.logError('generateTestVerificationToken', error);
+      this.logError("generateTestVerificationToken", error);
       reply.status(500).send({
         success: false,
-        error: 'Failed to generate test token'
+        error: "Failed to generate test token",
       });
     }
   }

@@ -1,11 +1,11 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
-import jwt from 'jsonwebtoken';
+import { FastifyRequest, FastifyReply } from "fastify";
+import jwt from "jsonwebtoken";
 
 // User interface for type safety
 export interface AuthenticatedUser {
   userId: string;
   email: string;
-  status: 'active' | 'inactive' | 'blocked';
+  status: "active" | "inactive" | "blocked";
   isGuest: boolean;
   emailVerified: boolean;
   phoneVerified: boolean;
@@ -14,21 +14,21 @@ export interface AuthenticatedUser {
 }
 
 // Extend FastifyRequest to include user
-declare module 'fastify' {
+declare module "fastify" {
   interface FastifyRequest {
     user?: AuthenticatedUser;
   }
 }
 
 // JWT configuration (should be moved to environment variables)
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_ALGORITHM = 'HS256';
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_ALGORITHM = "HS256";
 
 export interface AuthMiddlewareOptions {
   optional?: boolean; // Allow requests without authentication
   requireEmailVerification?: boolean;
   requirePhoneVerification?: boolean;
-  allowedStatuses?: Array<'active' | 'inactive' | 'blocked'>;
+  allowedStatuses?: Array<"active" | "inactive" | "blocked">;
   allowGuests?: boolean;
 }
 
@@ -41,8 +41,8 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
     optional = false,
     requireEmailVerification = false,
     requirePhoneVerification = false,
-    allowedStatuses = ['active'],
-    allowGuests = false
+    allowedStatuses = ["active"],
+    allowGuests = false,
   } = options;
 
   return async function authMiddleware(
@@ -59,8 +59,8 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
         }
         reply.status(401).send({
           success: false,
-          error: 'Authorization header is required',
-          code: 'MISSING_AUTH_HEADER'
+          error: "Authorization header is required",
+          code: "MISSING_AUTH_HEADER",
         });
         return;
       }
@@ -70,8 +70,9 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       if (!tokenMatch) {
         reply.status(401).send({
           success: false,
-          error: 'Invalid authorization header format. Expected: Bearer <token>',
-          code: 'INVALID_AUTH_FORMAT'
+          error:
+            "Invalid authorization header format. Expected: Bearer <token>",
+          code: "INVALID_AUTH_FORMAT",
         });
         return;
       }
@@ -79,12 +80,18 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       const token = tokenMatch[1];
 
       // Check if token is blacklisted (logged out)
-      const { TokenBlacklistService } = await import('../security/token-blacklist');
-      if (TokenBlacklistService.isTokenBlacklisted(token)) {
+      const { TokenBlacklistService } = await import(
+        "../security/token-blacklist"
+      );
+      console.log(`[DEBUG] Checking token blacklist for token: ${token.substring(0, 10)}...`);
+      const isBlacklisted = TokenBlacklistService.isTokenBlacklisted(token);
+      console.log(`[DEBUG] Token blacklisted: ${isBlacklisted}`);
+      if (isBlacklisted) {
+        console.log(`[DEBUG] Token is blacklisted, rejecting request`);
         reply.status(401).send({
           success: false,
-          error: 'Token has been revoked',
-          code: 'TOKEN_REVOKED'
+          error: "Token has been revoked",
+          code: "TOKEN_REVOKED",
         });
         return;
       }
@@ -92,18 +99,21 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       // Verify and decode JWT token
       let decoded: any;
       try {
-        decoded = jwt.verify(token, JWT_SECRET, { algorithms: [JWT_ALGORITHM] });
+        decoded = jwt.verify(token, JWT_SECRET, {
+          algorithms: [JWT_ALGORITHM],
+        });
       } catch (jwtError: any) {
-        const errorMessage = jwtError.name === 'TokenExpiredError'
-          ? 'Token has expired'
-          : jwtError.name === 'JsonWebTokenError'
-          ? 'Invalid token'
-          : 'Token verification failed';
+        const errorMessage =
+          jwtError.name === "TokenExpiredError"
+            ? "Token has expired"
+            : jwtError.name === "JsonWebTokenError"
+              ? "Invalid token"
+              : "Token verification failed";
 
         reply.status(401).send({
           success: false,
           error: errorMessage,
-          code: jwtError.name || 'JWT_ERROR'
+          code: jwtError.name || "JWT_ERROR",
         });
         return;
       }
@@ -112,8 +122,8 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       if (!decoded.userId || !decoded.email) {
         reply.status(401).send({
           success: false,
-          error: 'Invalid token payload',
-          code: 'INVALID_TOKEN_PAYLOAD'
+          error: "Invalid token payload",
+          code: "INVALID_TOKEN_PAYLOAD",
         });
         return;
       }
@@ -122,12 +132,12 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       const user: AuthenticatedUser = {
         userId: decoded.userId,
         email: decoded.email,
-        status: decoded.status || 'active',
+        status: decoded.status || "active",
         isGuest: decoded.isGuest || false,
         emailVerified: decoded.emailVerified || false,
         phoneVerified: decoded.phoneVerified || false,
         iat: decoded.iat,
-        exp: decoded.exp
+        exp: decoded.exp,
       };
 
       // Validate user status
@@ -135,7 +145,7 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
         reply.status(403).send({
           success: false,
           error: `User status '${user.status}' is not allowed to access this resource`,
-          code: 'INVALID_USER_STATUS'
+          code: "INVALID_USER_STATUS",
         });
         return;
       }
@@ -144,8 +154,8 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       if (user.isGuest && !allowGuests) {
         reply.status(403).send({
           success: false,
-          error: 'Guest users are not allowed to access this resource',
-          code: 'GUESTS_NOT_ALLOWED'
+          error: "Guest users are not allowed to access this resource",
+          code: "GUESTS_NOT_ALLOWED",
         });
         return;
       }
@@ -154,8 +164,8 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       if (requireEmailVerification && !user.emailVerified) {
         reply.status(403).send({
           success: false,
-          error: 'Email verification is required to access this resource',
-          code: 'EMAIL_VERIFICATION_REQUIRED'
+          error: "Email verification is required to access this resource",
+          code: "EMAIL_VERIFICATION_REQUIRED",
         });
         return;
       }
@@ -164,8 +174,8 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       if (requirePhoneVerification && !user.phoneVerified) {
         reply.status(403).send({
           success: false,
-          error: 'Phone verification is required to access this resource',
-          code: 'PHONE_VERIFICATION_REQUIRED'
+          error: "Phone verification is required to access this resource",
+          code: "PHONE_VERIFICATION_REQUIRED",
         });
         return;
       }
@@ -183,12 +193,12 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       // Continue to route handler
     } catch (error) {
       // Log error for debugging (use proper logging in production)
-      console.error('Authentication middleware error:', error);
+      console.error("Authentication middleware error:", error);
 
       reply.status(500).send({
         success: false,
-        error: 'Internal server error during authentication',
-        code: 'AUTH_MIDDLEWARE_ERROR'
+        error: "Internal server error during authentication",
+        code: "AUTH_MIDDLEWARE_ERROR",
       });
     }
   };
@@ -199,7 +209,7 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
  */
 export const authenticateUser = createAuthMiddleware({
   optional: false,
-  allowedStatuses: ['active']
+  allowedStatuses: ["active"],
 });
 
 /**
@@ -207,7 +217,7 @@ export const authenticateUser = createAuthMiddleware({
  */
 export const optionalAuth = createAuthMiddleware({
   optional: true,
-  allowedStatuses: ['active', 'inactive']
+  allowedStatuses: ["active", "inactive"],
 });
 
 /**
@@ -216,7 +226,7 @@ export const optionalAuth = createAuthMiddleware({
 export const authenticateVerifiedUser = createAuthMiddleware({
   optional: false,
   requireEmailVerification: true,
-  allowedStatuses: ['active']
+  allowedStatuses: ["active"],
 });
 
 /**
@@ -225,7 +235,7 @@ export const authenticateVerifiedUser = createAuthMiddleware({
 export const authenticateWithGuests = createAuthMiddleware({
   optional: false,
   allowGuests: true,
-  allowedStatuses: ['active']
+  allowedStatuses: ["active"],
 });
 
 /**
@@ -234,7 +244,7 @@ export const authenticateWithGuests = createAuthMiddleware({
 export const authenticateAdmin = createAuthMiddleware({
   optional: false,
   requireEmailVerification: true,
-  allowedStatuses: ['active']
+  allowedStatuses: ["active"],
   // TODO: Add role-based authorization
 });
 
@@ -251,22 +261,22 @@ export function generateAuthTokens(user: Partial<AuthenticatedUser>): {
     status: user.status,
     isGuest: user.isGuest,
     emailVerified: user.emailVerified,
-    phoneVerified: user.phoneVerified
+    phoneVerified: user.phoneVerified,
   };
 
   // Access token (short-lived)
   const accessToken = jwt.sign(payload, JWT_SECRET, {
     algorithm: JWT_ALGORITHM,
-    expiresIn: '60m' // 60 minutes
+    expiresIn: "120m", // 120 minutes
   });
 
   // Refresh token (long-lived)
   const refreshToken = jwt.sign(
-    { userId: user.userId, type: 'refresh' },
+    { userId: user.userId, type: "refresh" },
     JWT_SECRET,
     {
       algorithm: JWT_ALGORITHM,
-      expiresIn: '7d' // 7 days
+      expiresIn: "7d", // 7 days
     }
   );
 
@@ -278,9 +288,11 @@ export function generateAuthTokens(user: Partial<AuthenticatedUser>): {
  */
 export function verifyRefreshToken(token: string): { userId: string } | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: [JWT_ALGORITHM] }) as any;
+    const decoded = jwt.verify(token, JWT_SECRET, {
+      algorithms: [JWT_ALGORITHM],
+    }) as any;
 
-    if (decoded.type !== 'refresh' || !decoded.userId) {
+    if (decoded.type !== "refresh" || !decoded.userId) {
       return null;
     }
 

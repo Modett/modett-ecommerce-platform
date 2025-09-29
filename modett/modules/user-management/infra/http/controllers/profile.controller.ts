@@ -253,22 +253,33 @@ export class ProfileController {
       // Execute command
       const result = await this.updateProfileHandler.handle(command);
 
-      if (result.success) {
+      if (result.success && result.data) {
+        // Map response to match API contract (prefs -> preferences)
+        const responseData = {
+          ...result.data,
+          preferences: result.data.prefs, // Map prefs back to preferences for API response
+        };
+        delete (responseData as any).prefs; // Remove the prefs field from response
+
         reply.status(200).send({
           success: true,
-          data: result.data
+          data: responseData
         });
       } else {
         reply.status(400).send({
           success: false,
-          error: result.error,
-          errors: result.errors
+          error: result.error || "Profile update failed",
+          errors: result.errors,
+          code: "PROFILE_UPDATE_ERROR",
+          timestamp: new Date().toISOString()
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while updating current user profile'
+        error: 'Internal server error while updating current user profile',
+        code: "INTERNAL_SERVER_ERROR",
+        timestamp: new Date().toISOString()
       });
     }
   }

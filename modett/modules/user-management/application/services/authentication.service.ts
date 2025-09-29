@@ -315,7 +315,7 @@ export class AuthenticationService {
     return this.generateAuthResult(user);
   }
 
-  async initiatePasswordReset(email: string): Promise<{ exists: boolean; token?: string }> {
+  async initiatePasswordReset(email: string): Promise<{ exists: boolean; token?: string; userId?: string }> {
     const emailVo = Email.fromString(email);
     const user = await this.userRepository.findByEmail(emailVo);
 
@@ -330,7 +330,7 @@ export class AuthenticationService {
     // TODO: In production, store token in database with expiry (1 hour)
     // await this.userRepository.storePasswordResetToken(user.getId(), resetToken, expiresAt);
 
-    return { exists: true, token: resetToken };
+    return { exists: true, token: resetToken, userId: user.getId().toString() };
   }
 
   async resetPassword(email: string, newPassword: string): Promise<void> {
@@ -357,6 +357,20 @@ export class AuthenticationService {
     user.updatePassword(newPasswordHash);
 
     await this.userRepository.update(user);
+  }
+
+  async getUserByEmail(email: string): Promise<{ userId: string; emailVerified: boolean } | null> {
+    const emailVo = Email.fromString(email);
+    const user = await this.userRepository.findByEmail(emailVo);
+
+    if (!user || user.getIsGuest()) {
+      return null;
+    }
+
+    return {
+      userId: user.getId().toString(),
+      emailVerified: user.isEmailVerified()
+    };
   }
 
   async verifyEmail(userId: string): Promise<void> {

@@ -50,6 +50,12 @@ export class GetUserProfileHandler implements IQueryHandler<GetUserProfileQuery,
         );
       }
 
+      console.log('[DEBUG HANDLER] Profile from service:', {
+        prefs: profile.prefs,
+        stylePreferences: profile.stylePreferences,
+        preferredSizes: profile.preferredSizes
+      });
+
       const result: UserProfileResult = {
         userId: profile.userId,
         defaultAddressId: profile.defaultAddressId ?? undefined,
@@ -60,6 +66,12 @@ export class GetUserProfileHandler implements IQueryHandler<GetUserProfileQuery,
         stylePreferences: profile.stylePreferences,
         preferredSizes: profile.preferredSizes
       };
+
+      console.log('[DEBUG HANDLER] Final result:', {
+        preferences: result.preferences,
+        stylePreferences: result.stylePreferences,
+        preferredSizes: result.preferredSizes
+      });
 
       return CommandResult.success<UserProfileResult>(result);
     } catch (error) {
