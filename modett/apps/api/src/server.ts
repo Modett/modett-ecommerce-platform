@@ -394,6 +394,12 @@ export async function createServer(): Promise<FastifyInstance> {
             "⚙️ System health, monitoring, and information endpoints",
         },
       ],
+      security: [
+        {},
+        {
+          bearerAuth: []
+        }
+      ],
     },
   });
 
