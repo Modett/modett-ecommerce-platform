@@ -1,5 +1,5 @@
-import { ICartRepository } from "../../domain/repositories/icart.repository";
-import { IReservationRepository } from "../../domain/repositories/ireservation.repository";
+import { CartRepository } from "../../domain/repositories/cart.repository";
+import { ReservationRepository } from "../../domain/repositories/reservation.repository";
 import { ShoppingCart, CreateShoppingCartData } from "../../domain/entities/shopping-cart.entity";
 import { CartItem, CreateCartItemData } from "../../domain/entities/cart-item.entity";
 import { CartId } from "../../domain/value-objects/cart-id.vo";
@@ -100,8 +100,8 @@ export interface CartDto {
 
 export class CartManagementService {
   constructor(
-    private readonly cartRepository: ICartRepository,
-    private readonly reservationRepository: IReservationRepository
+    private readonly cartRepository: CartRepository,
+    private readonly reservationRepository: ReservationRepository
   ) {}
 
   // Cart creation
