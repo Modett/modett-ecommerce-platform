@@ -270,6 +270,10 @@ export async function registerUserManagementRoutes(
     {
       preHandler: authenticateUser,
       schema: {
+        tags: ["Authentication"],
+        summary: "Change Password",
+        description: "Change current user's password",
+        security: [{ bearerAuth: [] }],
         body: {
           type: "object",
           required: ["currentPassword", "newPassword", "confirmPassword"],
@@ -279,6 +283,33 @@ export async function registerUserManagementRoutes(
             confirmPassword: { type: "string", minLength: 8 },
           },
         },
+        response: {
+          200: {
+            description: "Password changed successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string", example: "Password changed successfully" }
+            }
+          },
+          400: {
+            description: "Bad request",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+              errors: { type: "array", items: { type: "string" } }
+            }
+          },
+          401: {
+            description: "Unauthorized",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Invalid access token" }
+            }
+          }
+        }
       },
     },
     authController.changePassword.bind(authController) as any
