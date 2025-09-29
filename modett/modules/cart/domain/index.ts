@@ -12,5 +12,5 @@ export { ShoppingCart, CreateShoppingCartData, ShoppingCartEntityData } from "./
 export { Reservation, CreateReservationData, ReservationEntityData } from "./entities/reservation.entity";
 
 // Repository Interfaces
-export { ICartRepository } from "./repositories/icart.repository";
-export { IReservationRepository } from "./repositories/ireservation.repository";
+export { CartRepository } from "./repositories/cart.repository";
+export { ReservationRepository } from "./repositories/reservation.repository";
