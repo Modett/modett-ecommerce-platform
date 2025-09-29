@@ -5,6 +5,9 @@ import {
   VariantController,
   SearchController,
   MediaController,
+  ProductTagController,
+  SizeGuideController,
+  EditorialLookController,
 } from "./controllers";
 import {
   ProductManagementService,
@@ -12,6 +15,8 @@ import {
   CategoryManagementService,
   VariantManagementService,
   MediaManagementService,
+  ProductTagManagementService,
+  SizeGuideManagementService,
 } from "../../application/services";
 import {
   authenticateUser,
@@ -50,6 +55,8 @@ export async function registerProductCatalogRoutes(
     categoryService: CategoryManagementService;
     variantService: VariantManagementService;
     mediaService: MediaManagementService;
+    productTagService: ProductTagManagementService;
+    sizeGuideService: SizeGuideManagementService;
   }
 ) {
   // Initialize controllers
@@ -61,6 +68,12 @@ export async function registerProductCatalogRoutes(
   const variantController = new VariantController(services.variantService);
   const searchController = new SearchController(services.productSearchService);
   const mediaController = new MediaController(services.mediaService);
+  const productTagController = new ProductTagController(
+    services.productTagService
+  );
+  const sizeGuideController = new SizeGuideController(
+    services.sizeGuideService
+  );
 
   // =============================================================================
   // PRODUCT ROUTES
@@ -1107,5 +1120,986 @@ export async function registerProductCatalogRoutes(
       },
     },
     mediaController.deleteMediaAsset.bind(mediaController) as any
+  );
+
+  // =============================================================================
+  // PRODUCT TAG ROUTES
+  // =============================================================================
+
+  // List tags with filtering and pagination
+  fastify.get(
+    "/tags",
+    {
+      schema: {
+        description:
+          "Get paginated list of product tags with filtering options",
+        tags: ["Product Tags"],
+        summary: "List Product Tags",
+        querystring: {
+          type: "object",
+          properties: {
+            page: { type: "integer", minimum: 1, default: 1 },
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+            kind: { type: "string" },
+            search: { type: "string" },
+            sortBy: {
+              type: "string",
+              enum: ["tag", "kind", "usage_count"],
+              default: "tag",
+            },
+            sortOrder: {
+              type: "string",
+              enum: ["asc", "desc"],
+              default: "asc",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "List of tags retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  tags: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        tag: { type: "string" },
+                        kind: { type: "string" },
+                        usage_count: { type: "integer" },
+                        created_at: { type: "string", format: "date-time" },
+                        updated_at: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                  pagination: {
+                    type: "object",
+                    properties: {
+                      page: { type: "integer" },
+                      limit: { type: "integer" },
+                      total: { type: "integer" },
+                      total_pages: { type: "integer" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productTagController.getTags.bind(productTagController) as any
+  );
+
+  // Get single tag by ID
+  fastify.get(
+    "/tags/:id",
+    {
+      schema: {
+        description: "Get a specific product tag by ID",
+        tags: ["Product Tags"],
+        summary: "Get Product Tag",
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+        response: {
+          200: {
+            description: "Tag retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  tag: { type: "string" },
+                  kind: { type: "string" },
+                  usage_count: { type: "integer" },
+                  created_at: { type: "string", format: "date-time" },
+                  updated_at: { type: "string", format: "date-time" },
+                },
+              },
+            },
+          },
+          404: {
+            description: "Tag not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Tag not found" },
+              code: { type: "string", example: "TAG_NOT_FOUND" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productTagController.getTag.bind(productTagController) as any
+  );
+
+  // Create new tag
+  fastify.post(
+    "/tags",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Create a new product tag",
+        tags: ["Product Tags"],
+        summary: "Create Product Tag",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          properties: {
+            tag: { type: "string", minLength: 1 },
+            kind: { type: "string" },
+          },
+          required: ["tag"],
+        },
+        response: {
+          201: {
+            description: "Tag created successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  tag: { type: "string" },
+                  kind: { type: "string" },
+                  usage_count: { type: "integer", example: 0 },
+                  created_at: { type: "string", format: "date-time" },
+                  updated_at: { type: "string", format: "date-time" },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Validation failed" },
+              code: { type: "string", example: "VALIDATION_ERROR" },
+            },
+          },
+          409: {
+            description: "Tag already exists",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Tag already exists" },
+              code: { type: "string", example: "TAG_ALREADY_EXISTS" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productTagController.createTag.bind(productTagController) as any
+  );
+
+  // Update tag
+  fastify.put(
+    "/tags/:id",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Update an existing product tag",
+        tags: ["Product Tags"],
+        summary: "Update Product Tag",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            tag: { type: "string", minLength: 1 },
+            kind: { type: "string" },
+          },
+        },
+        response: {
+          200: {
+            description: "Tag updated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  tag: { type: "string" },
+                  kind: { type: "string" },
+                  usage_count: { type: "integer" },
+                  created_at: { type: "string", format: "date-time" },
+                  updated_at: { type: "string", format: "date-time" },
+                },
+              },
+            },
+          },
+          404: {
+            description: "Tag not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Tag not found" },
+              code: { type: "string", example: "TAG_NOT_FOUND" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productTagController.updateTag.bind(productTagController) as any
+  );
+
+  // Delete tag
+  fastify.delete(
+    "/tags/:id",
+    {
+      preHandler: authenticateAdmin,
+      schema: {
+        description: "Delete a product tag",
+        tags: ["Product Tags"],
+        summary: "Delete Product Tag",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+        response: {
+          200: {
+            description: "Tag deleted successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string", example: "Tag deleted successfully" },
+            },
+          },
+          404: {
+            description: "Tag not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Tag not found" },
+              code: { type: "string", example: "TAG_NOT_FOUND" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productTagController.deleteTag.bind(productTagController) as any
+  );
+
+  // Get tag statistics
+  fastify.get(
+    "/tags/statistics",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Get statistics about product tags",
+        tags: ["Product Tags"],
+        summary: "Get Tag Statistics",
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            description: "Tag statistics retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  total_tags: { type: "integer" },
+                  tags_by_kind: {
+                    type: "object",
+                    additionalProperties: { type: "integer" },
+                  },
+                  most_used_tags: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        tag: { type: "string" },
+                        kind: { type: "string" },
+                        usage_count: { type: "integer" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productTagController.getTagStats.bind(productTagController) as any
+  );
+
+  // Bulk create tags
+  fastify.post(
+    "/tags/bulk",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Create multiple product tags in bulk",
+        tags: ["Product Tags"],
+        summary: "Bulk Create Product Tags",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          properties: {
+            tags: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  tag: { type: "string", minLength: 1 },
+                  kind: { type: "string" },
+                },
+                required: ["tag"],
+              },
+              minItems: 1,
+              maxItems: 100,
+            },
+          },
+          required: ["tags"],
+        },
+        response: {
+          201: {
+            description: "Tags created successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  created: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        tag: { type: "string" },
+                        kind: { type: "string" },
+                        usage_count: { type: "integer", example: 0 },
+                        created_at: { type: "string", format: "date-time" },
+                        updated_at: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                  skipped: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        tag: { type: "string" },
+                        reason: { type: "string" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Validation failed" },
+              code: { type: "string", example: "VALIDATION_ERROR" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productTagController.createBulkTags.bind(productTagController) as any
+  );
+
+  // Bulk delete tags
+  fastify.delete(
+    "/tags/bulk",
+    {
+      preHandler: authenticateAdmin,
+      schema: {
+        description: "Delete multiple product tags in bulk",
+        tags: ["Product Tags"],
+        summary: "Bulk Delete Product Tags",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          properties: {
+            ids: {
+              type: "array",
+              items: { type: "string", format: "uuid" },
+              minItems: 1,
+              maxItems: 100,
+            },
+          },
+          required: ["ids"],
+        },
+        response: {
+          200: {
+            description: "Tags deleted successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  deleted_count: { type: "integer" },
+                  skipped: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        reason: { type: "string" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Validation failed" },
+              code: { type: "string", example: "VALIDATION_ERROR" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productTagController.deleteBulkTags.bind(productTagController) as any
+  );
+
+  // =============================================================================
+  // SIZE GUIDE ROUTES
+  // =============================================================================
+
+  // List size guides with filtering and pagination
+  fastify.get(
+    "/size-guides",
+    {
+      schema: {
+        description: "Get paginated list of size guides with filtering options",
+        tags: ["Size Guides"],
+        summary: "List Size Guides",
+        querystring: {
+          type: "object",
+          properties: {
+            page: { type: "integer", minimum: 1, default: 1 },
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+            region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
+            category: { type: "string" },
+            hasContent: { type: "boolean" },
+            sortBy: {
+              type: "string",
+              enum: ["title", "region", "category"],
+              default: "title",
+            },
+            sortOrder: {
+              type: "string",
+              enum: ["asc", "desc"],
+              default: "asc",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "List of size guides retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  sizeGuides: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        title: { type: "string" },
+                        bodyHtml: { type: "string" },
+                        region: {
+                          type: "string",
+                          enum: ["US", "UK", "EU", "ASIA"],
+                        },
+                        category: { type: "string" },
+                        created_at: { type: "string", format: "date-time" },
+                        updated_at: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                  pagination: {
+                    type: "object",
+                    properties: {
+                      page: { type: "integer" },
+                      limit: { type: "integer" },
+                      total: { type: "integer" },
+                      total_pages: { type: "integer" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    sizeGuideController.getSizeGuides.bind(sizeGuideController) as any
+  );
+
+  // Get single size guide by ID
+  fastify.get(
+    "/size-guides/:id",
+    {
+      schema: {
+        description: "Get a specific size guide by ID",
+        tags: ["Size Guides"],
+        summary: "Get Size Guide",
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+        response: {
+          200: {
+            description: "Size guide retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  title: { type: "string" },
+                  bodyHtml: { type: "string" },
+                  region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
+                  category: { type: "string" },
+                  created_at: { type: "string", format: "date-time" },
+                  updated_at: { type: "string", format: "date-time" },
+                },
+              },
+            },
+          },
+          404: {
+            description: "Size guide not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Size guide not found" },
+              code: { type: "string", example: "SIZE_GUIDE_NOT_FOUND" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    sizeGuideController.getSizeGuide.bind(sizeGuideController) as any
+  );
+
+  // Create new size guide
+  fastify.post(
+    "/size-guides",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Create a new size guide",
+        tags: ["Size Guides"],
+        summary: "Create Size Guide",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          properties: {
+            title: { type: "string", minLength: 1 },
+            bodyHtml: { type: "string" },
+            region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
+            category: { type: "string" },
+          },
+          required: ["title", "region"],
+        },
+        response: {
+          201: {
+            description: "Size guide created successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  title: { type: "string" },
+                  bodyHtml: { type: "string" },
+                  region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
+                  category: { type: "string" },
+                  created_at: { type: "string", format: "date-time" },
+                  updated_at: { type: "string", format: "date-time" },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Validation failed" },
+              code: { type: "string", example: "VALIDATION_ERROR" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    sizeGuideController.createSizeGuide.bind(sizeGuideController) as any
+  );
+
+  // Update size guide
+  fastify.put(
+    "/size-guides/:id",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Update an existing size guide",
+        tags: ["Size Guides"],
+        summary: "Update Size Guide",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            title: { type: "string", minLength: 1 },
+            bodyHtml: { type: "string" },
+            region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
+            category: { type: "string" },
+          },
+        },
+        response: {
+          200: {
+            description: "Size guide updated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  title: { type: "string" },
+                  bodyHtml: { type: "string" },
+                  region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
+                  category: { type: "string" },
+                  created_at: { type: "string", format: "date-time" },
+                  updated_at: { type: "string", format: "date-time" },
+                },
+              },
+            },
+          },
+          404: {
+            description: "Size guide not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Size guide not found" },
+              code: { type: "string", example: "SIZE_GUIDE_NOT_FOUND" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    sizeGuideController.updateSizeGuide.bind(sizeGuideController) as any
+  );
+
+  // Delete size guide
+  fastify.delete(
+    "/size-guides/:id",
+    {
+      preHandler: authenticateAdmin,
+      schema: {
+        description: "Delete a size guide",
+        tags: ["Size Guides"],
+        summary: "Delete Size Guide",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+        response: {
+          200: {
+            description: "Size guide deleted successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: {
+                type: "string",
+                example: "Size guide deleted successfully",
+              },
+            },
+          },
+          404: {
+            description: "Size guide not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Size guide not found" },
+              code: { type: "string", example: "SIZE_GUIDE_NOT_FOUND" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    sizeGuideController.deleteSizeGuide.bind(sizeGuideController) as any
+  );
+
+  // Get regional size guides
+  fastify.get(
+    "/size-guides/regions/:region",
+    {
+      schema: {
+        description: "Get size guides for a specific region",
+        tags: ["Size Guides"],
+        summary: "Get Regional Size Guides",
+        params: {
+          type: "object",
+          properties: {
+            region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
+          },
+          required: ["region"],
+        },
+        querystring: {
+          type: "object",
+          properties: {
+            page: { type: "integer", minimum: 1, default: 1 },
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+            category: { type: "string" },
+            hasContent: { type: "boolean" },
+            sortBy: {
+              type: "string",
+              enum: ["title", "category"],
+              default: "title",
+            },
+            sortOrder: {
+              type: "string",
+              enum: ["asc", "desc"],
+              default: "asc",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Regional size guides retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  sizeGuides: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        title: { type: "string" },
+                        bodyHtml: { type: "string" },
+                        region: {
+                          type: "string",
+                          enum: ["US", "UK", "EU", "ASIA"],
+                        },
+                        category: { type: "string" },
+                        created_at: { type: "string", format: "date-time" },
+                        updated_at: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                  pagination: {
+                    type: "object",
+                    properties: {
+                      page: { type: "integer" },
+                      limit: { type: "integer" },
+                      total: { type: "integer" },
+                      total_pages: { type: "integer" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    sizeGuideController.getRegionalSizeGuides.bind(sizeGuideController) as any
+  );
+
+  // Get size guide statistics
+  fastify.get(
+    "/size-guides/statistics",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Get statistics about size guides",
+        tags: ["Size Guides"],
+        summary: "Get Size Guide Statistics",
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            description: "Size guide statistics retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  total_guides: { type: "integer" },
+                  guides_by_region: {
+                    type: "object",
+                    additionalProperties: { type: "integer" },
+                  },
+                  guides_by_category: {
+                    type: "object",
+                    additionalProperties: { type: "integer" },
+                  },
+                  guides_with_content: { type: "integer" },
+                },
+              },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    sizeGuideController.getSizeGuideStats.bind(sizeGuideController) as any
+  );
+
+  // Bulk create size guides
+  fastify.post(
+    "/size-guides/bulk",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Create multiple size guides in bulk",
+        tags: ["Size Guides"],
+        summary: "Bulk Create Size Guides",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          properties: {
+            guides: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string", minLength: 1 },
+                  bodyHtml: { type: "string" },
+                  region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
+                  category: { type: "string" },
+                },
+                required: ["title", "region"],
+              },
+              minItems: 1,
+              maxItems: 50,
+            },
+          },
+          required: ["guides"],
+        },
+        response: {
+          201: {
+            description: "Size guides created successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  created: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        title: { type: "string" },
+                        bodyHtml: { type: "string" },
+                        region: {
+                          type: "string",
+                          enum: ["US", "UK", "EU", "ASIA"],
+                        },
+                        category: { type: "string" },
+                        created_at: { type: "string", format: "date-time" },
+                        updated_at: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                  skipped: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        title: { type: "string" },
+                        reason: { type: "string" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Validation failed" },
+              code: { type: "string", example: "VALIDATION_ERROR" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    sizeGuideController.createBulkSizeGuides.bind(sizeGuideController) as any
   );
 }
