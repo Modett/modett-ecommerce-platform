@@ -1,5 +1,5 @@
-import { IReservationRepository } from "../../domain/repositories/ireservation.repository";
-import { ICartRepository } from "../../domain/repositories/icart.repository";
+import { ReservationRepository } from "../../domain/repositories/reservation.repository";
+import { CartRepository } from "../../domain/repositories/cart.repository";
 import { Reservation, CreateReservationData } from "../../domain/entities/reservation.entity";
 import { CartId } from "../../domain/value-objects/cart-id.vo";
 import { VariantId } from "../../domain/value-objects/variant-id.vo";
@@ -95,8 +95,8 @@ export interface BulkReservationResultDto {
 
 export class ReservationService {
   constructor(
-    private readonly reservationRepository: IReservationRepository,
-    private readonly cartRepository: ICartRepository
+    private readonly reservationRepository: ReservationRepository,
+    private readonly cartRepository: CartRepository
   ) {}
 
   // Core reservation operations
