@@ -20,7 +20,7 @@ export class ReservationRepositoryImpl implements ReservationRepository {
         id: data.reservationId,
         cartId: data.cartId,
         variantId: data.variantId,
-        quantity: data.quantity,
+        qty: data.quantity,
         expiresAt: data.expiresAt,
       },
     });
@@ -44,7 +44,7 @@ export class ReservationRepositoryImpl implements ReservationRepository {
     await this.prisma.reservation.update({
       where: { id: data.reservationId },
       data: {
-        quantity: data.quantity,
+        qty: data.quantity,
         expiresAt: data.expiresAt,
       },
     });
@@ -127,10 +127,10 @@ export class ReservationRepositoryImpl implements ReservationRepository {
   async getTotalReservedQuantity(variantId: VariantId): Promise<number> {
     const result = await this.prisma.reservation.aggregate({
       where: { variantId: variantId.getValue() },
-      _sum: { quantity: true },
+      _sum: { qty: true },
     });
 
-    return result._sum?.quantity || 0;
+    return result._sum?.qty || 0;
   }
 
   async getActiveReservedQuantity(variantId: VariantId): Promise<number> {
@@ -140,10 +140,10 @@ export class ReservationRepositoryImpl implements ReservationRepository {
         variantId: variantId.getValue(),
         expiresAt: { gt: now },
       },
-      _sum: { quantity: true },
+      _sum: { qty: true },
     });
 
-    return result._sum?.quantity || 0;
+    return result._sum?.qty || 0;
   }
 
   // Cart-Variant specific operations
@@ -270,7 +270,7 @@ export class ReservationRepositoryImpl implements ReservationRepository {
         id: snapshot.reservationId,
         cartId: snapshot.cartId,
         variantId: snapshot.variantId,
-        quantity: snapshot.quantity,
+        qty: snapshot.quantity,
         expiresAt: snapshot.expiresAt,
       };
     });
@@ -288,7 +288,7 @@ export class ReservationRepositoryImpl implements ReservationRepository {
         await tx.reservation.update({
           where: { id: data.reservationId },
           data: {
-            quantity: data.quantity,
+            qty: data.quantity,
             expiresAt: data.expiresAt,
           },
         });
@@ -468,7 +468,7 @@ export class ReservationRepositoryImpl implements ReservationRepository {
 
     await this.prisma.reservation.update({
       where: { id: existingReservation.getReservationId() },
-      data: { quantity: newQuantity },
+      data: { qty: newQuantity },
     });
 
     return this.findById(existingReservation.getReservationId());
@@ -577,14 +577,14 @@ export class ReservationRepositoryImpl implements ReservationRepository {
     if (criteria.cartId) whereConditions.cartId = criteria.cartId;
     if (criteria.variantId) whereConditions.variantId = criteria.variantId;
     if (criteria.minQuantity !== undefined) {
-      whereConditions.quantity = {
-        ...whereConditions.quantity,
+      whereConditions.qty = {
+        ...whereConditions.qty,
         gte: criteria.minQuantity,
       };
     }
     if (criteria.maxQuantity !== undefined) {
-      whereConditions.quantity = {
-        ...whereConditions.quantity,
+      whereConditions.qty = {
+        ...whereConditions.qty,
         lte: criteria.maxQuantity,
       };
     }
@@ -672,23 +672,23 @@ export class ReservationRepositoryImpl implements ReservationRepository {
         where: { expiresAt: { gt: now, lte: soonThreshold } },
       }),
       this.prisma.reservation.aggregate({
-        _sum: { quantity: true },
+        _sum: { qty: true },
       }),
       this.prisma.reservation.groupBy({
         by: ["variantId"],
-        _sum: { quantity: true },
+        _sum: { qty: true },
         _count: { _all: true },
-        orderBy: { _sum: { quantity: "desc" } },
+        orderBy: { _sum: { qty: "desc" } },
         take: 10,
       }),
     ]);
 
-    const totalQuantityReserved = quantityStats._sum?.quantity || 0;
+    const totalQuantityReserved = quantityStats._sum?.qty || 0;
     const averageDurationMinutes = 30; // Would need to calculate from actual data
 
     const mostReservedVariants = variantStats.map((stat) => ({
       variantId: stat.variantId,
-      totalQuantity: stat._sum?.quantity || 0,
+      totalQuantity: stat._sum?.qty || 0,
       reservationCount: stat._count._all,
     }));
 
@@ -896,7 +896,7 @@ export class ReservationRepositoryImpl implements ReservationRepository {
           id: snapshot.reservationId,
           cartId: snapshot.cartId,
           variantId: snapshot.variantId,
-          quantity: snapshot.quantity,
+          qty: snapshot.quantity,
           expiresAt: snapshot.expiresAt,
         };
       });
@@ -968,7 +968,7 @@ export class ReservationRepositoryImpl implements ReservationRepository {
         id: data.reservationId,
         cartId: data.cartId,
         variantId: data.variantId,
-        quantity: data.quantity,
+        qty: data.quantity,
         expiresAt: data.expiresAt,
       },
     });
@@ -979,7 +979,7 @@ export class ReservationRepositoryImpl implements ReservationRepository {
       reservationId: reservationData.id,
       cartId: reservationData.cartId,
       variantId: reservationData.variantId,
-      quantity: reservationData.quantity,
+      quantity: reservationData.qty,
       expiresAt: reservationData.expiresAt,
     };
 
