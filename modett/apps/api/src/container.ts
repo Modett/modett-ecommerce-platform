@@ -31,6 +31,16 @@ import {
   SizeGuideManagementService,
 } from "../../../modules/product-catalog/application/services";
 
+// Cart imports
+import {
+  CartRepositoryImpl,
+  ReservationRepositoryImpl,
+} from "../../../modules/cart/infra/persistence/repositories";
+import {
+  CartManagementService,
+  ReservationService,
+} from "../../../modules/cart/application/services";
+
 
 export interface ServiceContainer {
   // Infrastructure
@@ -50,6 +60,10 @@ export interface ServiceContainer {
   productTagRepository: ProductTagRepository;
   sizeGuideRepository: SizeGuideRepository;
 
+  // Cart Repositories
+  cartRepository: CartRepositoryImpl;
+  reservationRepository: ReservationRepositoryImpl;
+
   // User Management Services
   authService: AuthenticationService;
   userProfileService: UserProfileService;
@@ -66,6 +80,10 @@ export interface ServiceContainer {
   productSearchService: ProductSearchService;
   productTagManagementService: ProductTagManagementService;
   sizeGuideManagementService: SizeGuideManagementService;
+
+  // Cart Services
+  cartManagementService: CartManagementService;
+  reservationService: ReservationService;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -90,6 +108,10 @@ export function createServiceContainer(): ServiceContainer {
   const mediaAssetRepository = new MediaAssetRepository(prisma);
   const productTagRepository = new ProductTagRepository(prisma);
   const sizeGuideRepository = new SizeGuideRepository(prisma);
+
+  // Initialize Cart repositories
+  const cartRepository = new CartRepositoryImpl(prisma);
+  const reservationRepository = new ReservationRepositoryImpl(prisma);
 
   // Initialize core services
   const passwordHasher = new PasswordHasherService();
@@ -151,6 +173,16 @@ export function createServiceContainer(): ServiceContainer {
     sizeGuideRepository
   );
 
+  // Initialize Cart services
+  const cartManagementService = new CartManagementService(
+    cartRepository,
+    reservationRepository
+  );
+  const reservationService = new ReservationService(
+    reservationRepository,
+    cartRepository
+  );
+
 
   return {
     // Infrastructure
@@ -170,6 +202,10 @@ export function createServiceContainer(): ServiceContainer {
     productTagRepository,
     sizeGuideRepository,
 
+    // Cart Repositories
+    cartRepository,
+    reservationRepository,
+
     // User Management Services
     authService,
     userProfileService,
@@ -186,6 +222,10 @@ export function createServiceContainer(): ServiceContainer {
     productSearchService,
     productTagManagementService,
     sizeGuideManagementService,
+
+    // Cart Services
+    cartManagementService,
+    reservationService,
   };
 }
 
