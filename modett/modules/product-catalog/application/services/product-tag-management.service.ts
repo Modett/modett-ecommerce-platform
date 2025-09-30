@@ -43,12 +43,48 @@ export class ProductTagManagementService {
     return tag;
   }
 
-  async getAllTags(options?: ProductTagQueryOptions): Promise<ProductTag[]> {
-    return await this.productTagRepository.findAll(options);
+  async getAllTags(options?: ProductTagQueryOptions): Promise<{
+    tags: ProductTag[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const { limit = 20, offset = 0 } = options || {};
+    const page = Math.floor(offset / limit) + 1;
+
+    const [tags, total] = await Promise.all([
+      this.productTagRepository.findAll(options),
+      this.productTagRepository.count()
+    ]);
+
+    return {
+      tags,
+      total,
+      page,
+      limit,
+    };
   }
 
-  async getTagsByKind(kind: string, options?: ProductTagQueryOptions): Promise<ProductTag[]> {
-    return await this.productTagRepository.findByKind(kind, options);
+  async getTagsByKind(kind: string, options?: ProductTagQueryOptions): Promise<{
+    tags: ProductTag[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const { limit = 20, offset = 0 } = options || {};
+    const page = Math.floor(offset / limit) + 1;
+
+    const [tags, total] = await Promise.all([
+      this.productTagRepository.findByKind(kind, options),
+      this.productTagRepository.count({ kind })
+    ]);
+
+    return {
+      tags,
+      total,
+      page,
+      limit,
+    };
   }
 
   async updateTag(id: string, updates: { tag?: string; kind?: string }): Promise<ProductTag> {
@@ -83,12 +119,32 @@ export class ProductTagManagementService {
   }
 
   // Search and filtering
-  async searchTags(query: string, options?: ProductTagQueryOptions): Promise<ProductTag[]> {
+  async searchTags(query: string, options?: ProductTagQueryOptions): Promise<{
+    tags: ProductTag[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     if (!query.trim()) {
       return this.getAllTags(options);
     }
 
-    return await this.productTagRepository.search(query.trim(), options);
+    const { limit = 20, offset = 0 } = options || {};
+    const page = Math.floor(offset / limit) + 1;
+
+    // For search, we need to count search results specifically
+    const searchQuery = query.trim();
+    const [tags, total] = await Promise.all([
+      this.productTagRepository.search(searchQuery, options),
+      this.productTagRepository.search(searchQuery, { ...options, limit: undefined, offset: undefined }).then(results => results.length)
+    ]);
+
+    return {
+      tags,
+      total,
+      page,
+      limit,
+    };
   }
 
   async getTagSuggestions(partialTag: string, limit: number = 10): Promise<ProductTag[]> {
@@ -107,30 +163,16 @@ export class ProductTagManagementService {
     tagsByKind: Array<{ kind: string | null; count: number }>;
     averageTagLength: number;
   }> {
+    // Get total count efficiently
     const totalTags = await this.productTagRepository.count();
-    const allTags = await this.productTagRepository.findAll();
 
-    // Group by kind
-    const kindGroups = new Map<string | null, number>();
-    let totalTagLength = 0;
-
-    for (const tag of allTags) {
-      const kind = tag.getKind();
-      kindGroups.set(kind, (kindGroups.get(kind) || 0) + 1);
-      totalTagLength += tag.getTag().length;
-    }
-
-    const tagsByKind = Array.from(kindGroups.entries()).map(([kind, count]) => ({
-      kind,
-      count,
-    }));
-
-    const averageTagLength = totalTags > 0 ? totalTagLength / totalTags : 0;
+    // Get stats with database aggregation
+    const stats = await this.productTagRepository.getStatistics();
 
     return {
       totalTags,
-      tagsByKind,
-      averageTagLength: Math.round(averageTagLength * 100) / 100,
+      tagsByKind: stats.tagsByKind,
+      averageTagLength: Math.round(stats.averageTagLength * 100) / 100,
     };
   }
 
