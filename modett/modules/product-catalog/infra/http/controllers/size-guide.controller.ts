@@ -87,17 +87,33 @@ export class SizeGuideController {
         guides = await this.sizeGuideManagementService.getAllSizeGuides(serviceOptions);
       }
 
+      console.log('Size guides retrieved:', guides);
+
+      // Serialize entities to plain objects
+      const serializedGuides = Array.isArray(guides)
+        ? guides.map(guide => guide?.toData ? guide.toData() : guide).filter(Boolean)
+        : guides;
+
+      console.log('Serialized guides:', serializedGuides);
+
       return reply.code(200).send({
         success: true,
-        data: guides,
-        meta: {
-          page: pageOptions.page,
-          limit: pageOptions.limit,
-          sortBy: pageOptions.sortBy,
-          sortOrder: pageOptions.sortOrder
+        data: {
+          sizeGuides: serializedGuides,
+          pagination: {
+            page: pageOptions.page,
+            limit: pageOptions.limit,
+            total: serializedGuides.length,
+            total_pages: Math.ceil(serializedGuides.length / pageOptions.limit)
+          }
         }
       });
     } catch (error) {
+      console.error('=== Size guides list error ===');
+      console.error('Error:', error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+
       request.log.error(error, 'Failed to get size guides');
       return reply.code(500).send({
         success: false,
@@ -259,14 +275,27 @@ export class SizeGuideController {
         });
       }
 
+      console.log('Updating size guide with ID:', id);
+      console.log('Update data:', updateData);
+
       const guide = await this.sizeGuideManagementService.updateSizeGuide(id, updateData);
+
+      console.log('Updated guide:', guide);
+
+      // Serialize entity to plain object
+      const serializedGuide = guide.toData ? guide.toData() : guide;
 
       return reply.code(200).send({
         success: true,
-        data: guide,
+        data: serializedGuide,
         message: 'Size guide updated successfully'
       });
     } catch (error) {
+      console.error('=== Size guide update error ===');
+      console.error('Error:', error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+
       request.log.error(error, 'Failed to update size guide');
 
       if (error instanceof Error && error.message.includes('not found')) {
@@ -364,9 +393,22 @@ export class SizeGuideController {
         guides = await this.sizeGuideManagementService.getSizeGuidesByRegion(region as Region, serviceOptions);
       }
 
+      // Serialize entities to plain objects
+      const serializedGuides = Array.isArray(guides)
+        ? guides.map(guide => guide?.toData ? guide.toData() : guide).filter(Boolean)
+        : [];
+
       return reply.code(200).send({
         success: true,
-        data: guides,
+        data: {
+          sizeGuides: serializedGuides,
+          pagination: {
+            page: pageOptions.page,
+            limit: pageOptions.limit,
+            total: serializedGuides.length,
+            total_pages: Math.ceil(serializedGuides.length / pageOptions.limit)
+          }
+        },
         meta: {
           region,
           page: pageOptions.page,
@@ -688,14 +730,31 @@ export class SizeGuideController {
         }
       }
 
-      const createdGuides = await this.sizeGuideManagementService.createMultipleSizeGuides(guides as CreateSizeGuideData[]);
+      console.log('Creating bulk size guides:', guides);
+      const result = await this.sizeGuideManagementService.createMultipleSizeGuides(guides as CreateSizeGuideData[]);
+      console.log('Created guides result:', result);
+
+      // Serialize entities to plain objects
+      const serializedGuides = Array.isArray(result.created)
+        ? result.created.map(guide => guide?.toData ? guide.toData() : guide).filter(Boolean)
+        : [];
+
+      console.log('Serialized guides:', serializedGuides);
 
       return reply.code(201).send({
         success: true,
-        data: createdGuides,
-        message: `${createdGuides.length} size guides created successfully`
+        data: {
+          created: serializedGuides,
+          skipped: result.skipped
+        },
+        message: `${serializedGuides.length} size guides created successfully${result.skipped.length > 0 ? `, ${result.skipped.length} skipped` : ''}`
       });
     } catch (error) {
+      console.error('=== Bulk create size guides error ===');
+      console.error('Error:', error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+
       request.log.error(error, 'Failed to create bulk size guides');
       return reply.code(500).send({
         success: false,
