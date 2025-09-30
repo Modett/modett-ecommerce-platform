@@ -1681,6 +1681,125 @@ export async function registerProductCatalogRoutes(
                       properties: {
                         id: { type: "string", format: "uuid" },
                         title: { type: "string" },
+                        bodyHtml: { type: "string", nullable: true },
+                        region: {
+                          type: "string",
+                          enum: ["US", "UK", "EU", "ASIA"],
+                        },
+                        category: { type: "string", nullable: true },
+                      },
+                    },
+                  },
+                  pagination: {
+                    type: "object",
+                    properties: {
+                      page: { type: "integer" },
+                      limit: { type: "integer" },
+                      total: { type: "integer" },
+                      total_pages: { type: "integer" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    sizeGuideController.getSizeGuides.bind(sizeGuideController) as any
+  );
+
+  // Get size guide statistics (MUST be before /:id route)
+  fastify.get(
+    "/size-guides/statistics",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Get statistics about size guides",
+        tags: ["Size Guides"],
+        summary: "Get Size Guide Statistics",
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            description: "Size guide statistics retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  total_guides: { type: "integer" },
+                  guides_by_region: {
+                    type: "object",
+                    additionalProperties: { type: "integer" },
+                  },
+                  guides_by_category: {
+                    type: "object",
+                    additionalProperties: { type: "integer" },
+                  },
+                  guides_with_content: { type: "integer" },
+                },
+              },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    sizeGuideController.getSizeGuideStats.bind(sizeGuideController) as any
+  );
+
+  // Get regional size guides (MUST be before /:id route)
+  fastify.get(
+    "/size-guides/regions/:region",
+    {
+      schema: {
+        description: "Get size guides for a specific region",
+        tags: ["Size Guides"],
+        summary: "Get Regional Size Guides",
+        params: {
+          type: "object",
+          properties: {
+            region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
+          },
+          required: ["region"],
+        },
+        querystring: {
+          type: "object",
+          properties: {
+            page: { type: "integer", minimum: 1, default: 1 },
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+            category: { type: "string" },
+            hasContent: { type: "boolean" },
+            sortBy: {
+              type: "string",
+              enum: ["title", "category"],
+              default: "title",
+            },
+            sortOrder: {
+              type: "string",
+              enum: ["asc", "desc"],
+              default: "asc",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Regional size guides retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  sizeGuides: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        title: { type: "string" },
                         bodyHtml: { type: "string" },
                         region: {
                           type: "string",
@@ -1709,7 +1828,95 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    sizeGuideController.getSizeGuides.bind(sizeGuideController) as any
+    sizeGuideController.getRegionalSizeGuides.bind(sizeGuideController) as any
+  );
+
+  // Bulk create size guides (MUST be before /:id route)
+  fastify.post(
+    "/size-guides/bulk",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Create multiple size guides in bulk",
+        tags: ["Size Guides"],
+        summary: "Bulk Create Size Guides",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          properties: {
+            guides: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string", minLength: 1 },
+                  bodyHtml: { type: "string" },
+                  region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
+                  category: { type: "string" },
+                },
+                required: ["title", "region"],
+              },
+              minItems: 1,
+              maxItems: 50,
+            },
+          },
+          required: ["guides"],
+        },
+        response: {
+          201: {
+            description: "Size guides created successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  created: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        title: { type: "string" },
+                        bodyHtml: { type: "string" },
+                        region: {
+                          type: "string",
+                          enum: ["US", "UK", "EU", "ASIA"],
+                        },
+                        category: { type: "string" },
+                        created_at: { type: "string", format: "date-time" },
+                        updated_at: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                  skipped: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        title: { type: "string" },
+                        reason: { type: "string" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Validation error",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Validation failed" },
+              code: { type: "string", example: "VALIDATION_ERROR" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    sizeGuideController.createBulkSizeGuides.bind(sizeGuideController) as any
   );
 
   // Get single size guide by ID
@@ -1924,214 +2131,5 @@ export async function registerProductCatalogRoutes(
       },
     },
     sizeGuideController.deleteSizeGuide.bind(sizeGuideController) as any
-  );
-
-  // Get regional size guides
-  fastify.get(
-    "/size-guides/regions/:region",
-    {
-      schema: {
-        description: "Get size guides for a specific region",
-        tags: ["Size Guides"],
-        summary: "Get Regional Size Guides",
-        params: {
-          type: "object",
-          properties: {
-            region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
-          },
-          required: ["region"],
-        },
-        querystring: {
-          type: "object",
-          properties: {
-            page: { type: "integer", minimum: 1, default: 1 },
-            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
-            category: { type: "string" },
-            hasContent: { type: "boolean" },
-            sortBy: {
-              type: "string",
-              enum: ["title", "category"],
-              default: "title",
-            },
-            sortOrder: {
-              type: "string",
-              enum: ["asc", "desc"],
-              default: "asc",
-            },
-          },
-        },
-        response: {
-          200: {
-            description: "Regional size guides retrieved successfully",
-            type: "object",
-            properties: {
-              success: { type: "boolean", example: true },
-              data: {
-                type: "object",
-                properties: {
-                  sizeGuides: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string", format: "uuid" },
-                        title: { type: "string" },
-                        bodyHtml: { type: "string" },
-                        region: {
-                          type: "string",
-                          enum: ["US", "UK", "EU", "ASIA"],
-                        },
-                        category: { type: "string" },
-                        created_at: { type: "string", format: "date-time" },
-                        updated_at: { type: "string", format: "date-time" },
-                      },
-                    },
-                  },
-                  pagination: {
-                    type: "object",
-                    properties: {
-                      page: { type: "integer" },
-                      limit: { type: "integer" },
-                      total: { type: "integer" },
-                      total_pages: { type: "integer" },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          ...authErrorResponses,
-        },
-      },
-    },
-    sizeGuideController.getRegionalSizeGuides.bind(sizeGuideController) as any
-  );
-
-  // Get size guide statistics
-  fastify.get(
-    "/size-guides/statistics",
-    {
-      preHandler: authenticateUser,
-      schema: {
-        description: "Get statistics about size guides",
-        tags: ["Size Guides"],
-        summary: "Get Size Guide Statistics",
-        security: [{ bearerAuth: [] }],
-        response: {
-          200: {
-            description: "Size guide statistics retrieved successfully",
-            type: "object",
-            properties: {
-              success: { type: "boolean", example: true },
-              data: {
-                type: "object",
-                properties: {
-                  total_guides: { type: "integer" },
-                  guides_by_region: {
-                    type: "object",
-                    additionalProperties: { type: "integer" },
-                  },
-                  guides_by_category: {
-                    type: "object",
-                    additionalProperties: { type: "integer" },
-                  },
-                  guides_with_content: { type: "integer" },
-                },
-              },
-            },
-          },
-          ...authErrorResponses,
-        },
-      },
-    },
-    sizeGuideController.getSizeGuideStats.bind(sizeGuideController) as any
-  );
-
-  // Bulk create size guides
-  fastify.post(
-    "/size-guides/bulk",
-    {
-      preHandler: authenticateUser,
-      schema: {
-        description: "Create multiple size guides in bulk",
-        tags: ["Size Guides"],
-        summary: "Bulk Create Size Guides",
-        security: [{ bearerAuth: [] }],
-        body: {
-          type: "object",
-          properties: {
-            guides: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string", minLength: 1 },
-                  bodyHtml: { type: "string" },
-                  region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
-                  category: { type: "string" },
-                },
-                required: ["title", "region"],
-              },
-              minItems: 1,
-              maxItems: 50,
-            },
-          },
-          required: ["guides"],
-        },
-        response: {
-          201: {
-            description: "Size guides created successfully",
-            type: "object",
-            properties: {
-              success: { type: "boolean", example: true },
-              data: {
-                type: "object",
-                properties: {
-                  created: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string", format: "uuid" },
-                        title: { type: "string" },
-                        bodyHtml: { type: "string" },
-                        region: {
-                          type: "string",
-                          enum: ["US", "UK", "EU", "ASIA"],
-                        },
-                        category: { type: "string" },
-                        created_at: { type: "string", format: "date-time" },
-                        updated_at: { type: "string", format: "date-time" },
-                      },
-                    },
-                  },
-                  skipped: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        title: { type: "string" },
-                        reason: { type: "string" },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          400: {
-            description: "Validation error",
-            type: "object",
-            properties: {
-              success: { type: "boolean", example: false },
-              error: { type: "string", example: "Validation failed" },
-              code: { type: "string", example: "VALIDATION_ERROR" },
-            },
-          },
-          ...authErrorResponses,
-        },
-      },
-    },
-    sizeGuideController.createBulkSizeGuides.bind(sizeGuideController) as any
   );
 }
