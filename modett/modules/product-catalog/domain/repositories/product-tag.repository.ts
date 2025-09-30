@@ -14,6 +14,10 @@ export interface IProductTagRepository {
   exists(id: ProductTagId): Promise<boolean>;
   existsByTag(tagName: string): Promise<boolean>;
   count(options?: ProductTagCountOptions): Promise<number>;
+  getStatistics(): Promise<{
+    tagsByKind: Array<{ kind: string | null; count: number }>;
+    averageTagLength: number;
+  }>;
 
   // Product-Tag associations
   addTagToProduct(productId: string, tagId: ProductTagId): Promise<void>;
