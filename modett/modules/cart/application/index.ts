@@ -1,29 +1,8 @@
-// Services
-export { CartManagementService } from "./services/cart-management.service";
-export { ReservationService } from "./services/reservation.service";
+// Export all commands and command handlers
+export * from './commands';
 
-// DTOs for Cart Management
-export type {
-  CreateCartDto,
-  AddToCartDto,
-  UpdateCartItemDto,
-  RemoveFromCartDto,
-  TransferCartDto,
-  CartSummaryDto,
-  CartItemDto,
-  CartDto,
-} from "./services/cart-management.service";
+// Export all queries and query handlers
+export * from './queries';
 
-// DTOs for Reservation Management
-export type {
-  CreateReservationDto,
-  ExtendReservationDto,
-  RenewReservationDto,
-  AdjustReservationDto,
-  ReservationDto,
-  AvailabilityDto,
-  ReservationConflictResolutionDto,
-  ReservationStatisticsDto,
-  BulkReservationDto,
-  BulkReservationResultDto,
-} from "./services/reservation.service";
+// Export all services
+export * from './services';
