@@ -3,12 +3,24 @@ import { IProductTagRepository, ProductTagQueryOptions, ProductTagCountOptions }
 import { ProductTag, ProductTagId } from "../../../domain/entities/product-tag.entity";
 
 export class ProductTagRepository implements IProductTagRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) {
+    // Type assertion needed for multi-schema Prisma setup
+  }
+
+  // Helper to access productTag model with proper typing
+  private get productTagModel() {
+    return (this.prisma as any).productTag;
+  }
+
+  // Helper to access productTagAssociation model with proper typing
+  private get productTagAssociationModel() {
+    return (this.prisma as any).productTagAssociation;
+  }
 
   async save(tag: ProductTag): Promise<void> {
     const data = tag.toDatabaseRow();
 
-    await this.prisma.productTag.create({
+    await this.productTagModel.create({
       data: {
         id: data.tag_id,
         tag: data.tag,
@@ -18,7 +30,7 @@ export class ProductTagRepository implements IProductTagRepository {
   }
 
   async findById(id: ProductTagId): Promise<ProductTag | null> {
-    const tagData = await this.prisma.productTag.findUnique({
+    const tagData = await this.productTagModel.findUnique({
       where: { id: id.getValue() },
     });
 
@@ -34,7 +46,7 @@ export class ProductTagRepository implements IProductTagRepository {
   }
 
   async findByTag(tagName: string): Promise<ProductTag | null> {
-    const tagData = await this.prisma.productTag.findUnique({
+    const tagData = await this.productTagModel.findUnique({
       where: { tag: tagName },
     });
 
@@ -63,14 +75,14 @@ export class ProductTagRepository implements IProductTagRepository {
       whereClause.kind = kind;
     }
 
-    const tags = await this.prisma.productTag.findMany({
+    const tags = await this.productTagModel.findMany({
       where: whereClause,
       take: limit,
       skip: offset,
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return tags.map(tagData => ProductTag.fromDatabaseRow({
+    return tags.map((tagData: any) => ProductTag.fromDatabaseRow({
       tag_id: tagData.id,
       tag: tagData.tag,
       kind: tagData.kind,
@@ -85,14 +97,14 @@ export class ProductTagRepository implements IProductTagRepository {
       sortOrder = 'asc',
     } = options || {};
 
-    const tags = await this.prisma.productTag.findMany({
+    const tags = await this.productTagModel.findMany({
       where: { kind },
       take: limit,
       skip: offset,
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return tags.map(tagData => ProductTag.fromDatabaseRow({
+    return tags.map((tagData: any) => ProductTag.fromDatabaseRow({
       tag_id: tagData.id,
       tag: tagData.tag,
       kind: tagData.kind,
@@ -100,12 +112,12 @@ export class ProductTagRepository implements IProductTagRepository {
   }
 
   async findByProductId(productId: string): Promise<ProductTag[]> {
-    const associations = await this.prisma.productTagAssociation.findMany({
+    const associations = await this.productTagAssociationModel.findMany({
       where: { productId },
       include: { tag: true },
     });
 
-    return associations.map(assoc => ProductTag.fromDatabaseRow({
+    return associations.map((assoc: any) => ProductTag.fromDatabaseRow({
       tag_id: assoc.tag.id,
       tag: assoc.tag.tag,
       kind: assoc.tag.kind,
@@ -120,7 +132,7 @@ export class ProductTagRepository implements IProductTagRepository {
       sortOrder = 'asc',
     } = options || {};
 
-    const tags = await this.prisma.productTag.findMany({
+    const tags = await this.productTagModel.findMany({
       where: {
         tag: {
           contains: query,
@@ -132,7 +144,7 @@ export class ProductTagRepository implements IProductTagRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return tags.map(tagData => ProductTag.fromDatabaseRow({
+    return tags.map((tagData: any) => ProductTag.fromDatabaseRow({
       tag_id: tagData.id,
       tag: tagData.tag,
       kind: tagData.kind,
@@ -140,7 +152,7 @@ export class ProductTagRepository implements IProductTagRepository {
   }
 
   async getMostUsed(limit: number = 10): Promise<Array<{ tag: ProductTag; count: number }>> {
-    const results = await this.prisma.productTag.findMany({
+    const results = await this.productTagModel.findMany({
       include: {
         _count: {
           select: { products: true },
@@ -154,7 +166,7 @@ export class ProductTagRepository implements IProductTagRepository {
       take: limit,
     });
 
-    return results.map(result => ({
+    return results.map((result: any) => ({
       tag: ProductTag.fromDatabaseRow({
         tag_id: result.id,
         tag: result.tag,
@@ -167,7 +179,7 @@ export class ProductTagRepository implements IProductTagRepository {
   async update(tag: ProductTag): Promise<void> {
     const data = tag.toDatabaseRow();
 
-    await this.prisma.productTag.update({
+    await this.productTagModel.update({
       where: { id: data.tag_id },
       data: {
         tag: data.tag,
@@ -177,20 +189,20 @@ export class ProductTagRepository implements IProductTagRepository {
   }
 
   async delete(id: ProductTagId): Promise<void> {
-    await this.prisma.productTag.delete({
+    await this.productTagModel.delete({
       where: { id: id.getValue() },
     });
   }
 
   async exists(id: ProductTagId): Promise<boolean> {
-    const count = await this.prisma.productTag.count({
+    const count = await this.productTagModel.count({
       where: { id: id.getValue() },
     });
     return count > 0;
   }
 
   async existsByTag(tagName: string): Promise<boolean> {
-    const count = await this.prisma.productTag.count({
+    const count = await this.productTagModel.count({
       where: { tag: tagName },
     });
     return count > 0;
@@ -211,14 +223,14 @@ export class ProductTagRepository implements IProductTagRepository {
       };
     }
 
-    return await this.prisma.productTag.count({
+    return await this.productTagModel.count({
       where: whereClause,
     });
   }
 
   // Product-Tag association methods
   async addTagToProduct(productId: string, tagId: ProductTagId): Promise<void> {
-    await this.prisma.productTagAssociation.create({
+    await this.productTagAssociationModel.create({
       data: {
         productId,
         tagId: tagId.getValue(),
@@ -227,7 +239,7 @@ export class ProductTagRepository implements IProductTagRepository {
   }
 
   async removeTagFromProduct(productId: string, tagId: ProductTagId): Promise<void> {
-    await this.prisma.productTagAssociation.delete({
+    await this.productTagAssociationModel.delete({
       where: {
         productId_tagId: {
           productId,
@@ -238,20 +250,51 @@ export class ProductTagRepository implements IProductTagRepository {
   }
 
   async getProductTagAssociations(productId: string): Promise<ProductTagId[]> {
-    const associations = await this.prisma.productTagAssociation.findMany({
+    const associations = await this.productTagAssociationModel.findMany({
       where: { productId },
       select: { tagId: true },
     });
 
-    return associations.map(assoc => ProductTagId.fromString(assoc.tagId));
+    return associations.map((assoc: any) => ProductTagId.fromString(assoc.tagId));
   }
 
   async getTagProductAssociations(tagId: ProductTagId): Promise<string[]> {
-    const associations = await this.prisma.productTagAssociation.findMany({
+    const associations = await this.productTagAssociationModel.findMany({
       where: { tagId: tagId.getValue() },
       select: { productId: true },
     });
 
-    return associations.map(assoc => assoc.productId);
+    return associations.map((assoc: any) => assoc.productId);
+  }
+
+  async getStatistics(): Promise<{
+    tagsByKind: Array<{ kind: string | null; count: number }>;
+    averageTagLength: number;
+  }> {
+    // Use database aggregation for better performance
+    const kindStats = await this.productTagModel.groupBy({
+      by: ['kind'],
+      _count: {
+        id: true,
+      },
+    });
+
+    // Get average tag length using raw query since Prisma doesn't support string length aggregation
+    const avgLengthQuery = await this.prisma.$queryRaw<Array<{ avg_length: bigint | number | null }>>`
+      SELECT AVG(LENGTH(tag)) as avg_length FROM product_catalog.product_tags
+    `;
+
+    const avgLengthResult = avgLengthQuery[0]?.avg_length;
+    const averageTagLength = avgLengthResult ? Number(avgLengthResult) : 0;
+
+    const tagsByKind = kindStats.map((stat: any) => ({
+      kind: stat.kind,
+      count: stat._count.id,
+    }));
+
+    return {
+      tagsByKind,
+      averageTagLength,
+    };
   }
 }

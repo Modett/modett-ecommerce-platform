@@ -709,6 +709,8 @@ export async function createServer(): Promise<FastifyInstance> {
       categoryService: serviceContainer.categoryManagementService,
       variantService: serviceContainer.variantManagementService,
       mediaService: serviceContainer.mediaManagementService,
+      productTagService: serviceContainer.productTagManagementService,
+      sizeGuideService: serviceContainer.sizeGuideManagementService,
     };
 
     // Register product catalog routes with services
