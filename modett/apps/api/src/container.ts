@@ -18,6 +18,7 @@ import {
   CategoryRepository,
   MediaAssetRepository,
   ProductTagRepository,
+  SizeGuideRepository,
 } from "../../../modules/product-catalog/infra/persistence/repositories";
 import {
   ProductManagementService,
@@ -26,6 +27,8 @@ import {
   VariantManagementService,
   ProductSearchService,
   SlugGeneratorService,
+  ProductTagManagementService,
+  SizeGuideManagementService,
 } from "../../../modules/product-catalog/application/services";
 
 
@@ -45,6 +48,7 @@ export interface ServiceContainer {
   categoryRepository: CategoryRepository;
   mediaAssetRepository: MediaAssetRepository;
   productTagRepository: ProductTagRepository;
+  sizeGuideRepository: SizeGuideRepository;
 
   // User Management Services
   authService: AuthenticationService;
@@ -60,6 +64,8 @@ export interface ServiceContainer {
   mediaManagementService: MediaManagementService;
   variantManagementService: VariantManagementService;
   productSearchService: ProductSearchService;
+  productTagManagementService: ProductTagManagementService;
+  sizeGuideManagementService: SizeGuideManagementService;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -83,6 +89,7 @@ export function createServiceContainer(): ServiceContainer {
   const categoryRepository = new CategoryRepository(prisma);
   const mediaAssetRepository = new MediaAssetRepository(prisma);
   const productTagRepository = new ProductTagRepository(prisma);
+  const sizeGuideRepository = new SizeGuideRepository(prisma);
 
   // Initialize core services
   const passwordHasher = new PasswordHasherService();
@@ -137,6 +144,12 @@ export function createServiceContainer(): ServiceContainer {
     productRepository,
     categoryRepository
   );
+  const productTagManagementService = new ProductTagManagementService(
+    productTagRepository
+  );
+  const sizeGuideManagementService = new SizeGuideManagementService(
+    sizeGuideRepository
+  );
 
 
   return {
@@ -155,6 +168,7 @@ export function createServiceContainer(): ServiceContainer {
     categoryRepository,
     mediaAssetRepository,
     productTagRepository,
+    sizeGuideRepository,
 
     // User Management Services
     authService,
@@ -170,6 +184,8 @@ export function createServiceContainer(): ServiceContainer {
     mediaManagementService,
     variantManagementService,
     productSearchService,
+    productTagManagementService,
+    sizeGuideManagementService,
   };
 }
 
