@@ -106,44 +106,67 @@ export class CartManagementService {
 
   // Cart creation
   async createUserCart(dto: CreateCartDto & { userId: string }): Promise<CartDto> {
-    // Check if user already has an active cart
-    const existingCart = await this.cartRepository.findActiveCartByUserId(
-      UserId.fromString(dto.userId)
-    );
+    try {
+      console.log('Creating user cart with data:', dto);
 
-    if (existingCart) {
-      return this.mapCartToDto(existingCart);
+      // Check if user already has an active cart
+      const existingCart = await this.cartRepository.findActiveCartByUserId(
+        UserId.fromString(dto.userId)
+      );
+
+      if (existingCart) {
+        console.log('Existing cart found:', existingCart.getCartId().getValue());
+        return this.mapCartToDto(existingCart);
+      }
+
+      // Create new cart
+      const cartData: CreateShoppingCartData & { userId: string } = {
+        userId: dto.userId,
+        currency: dto.currency,
+        reservationExpiresAt: dto.createReservation
+          ? new Date(Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000)
+          : undefined,
+      };
+
+      console.log('Cart data to create:', cartData);
+      const cart = ShoppingCart.createForUser(cartData);
+      console.log('Cart entity created:', cart.getCartId().getValue());
+
+      await this.cartRepository.save(cart);
+      console.log('Cart saved to database');
+
+      return this.mapCartToDto(cart);
+    } catch (error) {
+      console.error('Error creating user cart:', error);
+      throw error;
     }
-
-    // Create new cart
-    const cartData: CreateShoppingCartData & { userId: string } = {
-      userId: dto.userId,
-      currency: dto.currency,
-      reservationExpiresAt: dto.createReservation
-        ? new Date(Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000)
-        : undefined,
-    };
-
-    const cart = ShoppingCart.createForUser(cartData);
-    await this.cartRepository.save(cart);
-
-    return this.mapCartToDto(cart);
   }
 
   async createGuestCart(dto: CreateCartDto & { guestToken: string }): Promise<CartDto> {
-    // Create new guest cart
-    const cartData: CreateShoppingCartData & { guestToken: string } = {
-      guestToken: dto.guestToken,
-      currency: dto.currency,
-      reservationExpiresAt: dto.createReservation
-        ? new Date(Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000)
-        : undefined,
-    };
+    try {
+      console.log('Creating guest cart with data:', dto);
 
-    const cart = ShoppingCart.createForGuest(cartData);
-    await this.cartRepository.save(cart);
+      // Create new guest cart
+      const cartData: CreateShoppingCartData & { guestToken: string } = {
+        guestToken: dto.guestToken,
+        currency: dto.currency,
+        reservationExpiresAt: dto.createReservation
+          ? new Date(Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000)
+          : undefined,
+      };
 
-    return this.mapCartToDto(cart);
+      console.log('Guest cart data to create:', cartData);
+      const cart = ShoppingCart.createForGuest(cartData);
+      console.log('Guest cart entity created:', cart.getCartId().getValue());
+
+      await this.cartRepository.save(cart);
+      console.log('Guest cart saved to database');
+
+      return this.mapCartToDto(cart);
+    } catch (error) {
+      console.error('Error creating guest cart:', error);
+      throw error;
+    }
   }
 
   // Cart retrieval
