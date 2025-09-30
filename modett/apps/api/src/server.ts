@@ -389,6 +389,26 @@ export async function createServer(): Promise<FastifyInstance> {
           description: "OAuth 2.0 integration and social authentication",
         },
         {
+          name: "Cart",
+          description:
+            "Shopping cart management for user and guest carts",
+        },
+        {
+          name: "Cart Admin",
+          description:
+            "Administrative cart operations and statistics",
+        },
+        {
+          name: "Reservations",
+          description:
+            "Inventory reservation management for cart items",
+        },
+        {
+          name: "Reservations Admin",
+          description:
+            "Administrative reservation operations and statistics",
+        },
+        {
           name: "System",
           description:
             "⚙️ System health, monitoring, and information endpoints",
@@ -725,6 +745,31 @@ export async function createServer(): Promise<FastifyInstance> {
   } catch (error) {
     server.log.error(error as Error, "Failed to register product catalog routes:");
     server.log.info("Continuing with user management endpoints only");
+  }
+
+  // Register cart routes
+  try {
+    const { registerCartRoutes } = await import(
+      "../../../modules/cart/infra/http/routes"
+    );
+
+    const cartServices = {
+      cartManagementService: serviceContainer.cartManagementService,
+      reservationService: serviceContainer.reservationService,
+    };
+
+    // Register cart routes with services
+    await server.register(
+      async function (fastify) {
+        await registerCartRoutes(fastify, cartServices);
+      },
+      { prefix: "/api/v1/cart" }
+    );
+
+    server.log.info("Cart routes registered successfully");
+  } catch (error) {
+    server.log.error(error as Error, "Failed to register cart routes:");
+    server.log.info("Continuing with other endpoints");
   }
 
   return server;
