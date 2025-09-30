@@ -18,32 +18,39 @@ export class CartRepositoryImpl implements CartRepository {
 
   // Core CRUD operations
   async save(cart: ShoppingCart): Promise<void> {
-    const data = cart.toSnapshot();
+    try {
+      const data = cart.toSnapshot();
+      console.log('Saving cart to database:', JSON.stringify(data, null, 2));
 
-    await this.prisma.shoppingCart.create({
-      data: {
-        id: data.cartId,
-        userId: data.userId,
-        guestToken: data.guestToken,
-        currency: data.currency,
-        reservationExpiresAt: data.reservationExpiresAt,
-        createdAt: data.createdAt,
-        updatedAt: data.updatedAt,
-        items: {
-          create:
-            data.items?.map((item) => ({
-              id: item.id,
-              cartId: data.cartId,
-              variantId: item.variantId,
-              quantity: item.quantity,
-              unitPrice: item.unitPriceSnapshot,
-              appliedPromos: item.appliedPromos as any,
-              isGift: item.isGift,
-              giftMessage: item.giftMessage,
-            })) || [],
+      const result = await this.prisma.shoppingCart.create({
+        data: {
+          id: data.cartId,
+          userId: data.userId,
+          guestToken: data.guestToken,
+          currency: data.currency,
+          reservationExpiresAt: data.reservationExpiresAt,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+          items: {
+            create:
+              data.items?.map((item) => ({
+                id: item.id,
+                variantId: item.variantId,
+                qty: item.quantity,
+                unitPriceSnapshot: item.unitPriceSnapshot,
+                appliedPromos: item.appliedPromos as any,
+                isGift: item.isGift,
+                giftMessage: item.giftMessage,
+              })) || [],
+          },
         },
-      },
-    });
+      });
+
+      console.log('Cart saved successfully:', result.id);
+    } catch (error) {
+      console.error('Error saving cart to database:', error);
+      throw error;
+    }
   }
 
   async findById(cartId: CartId): Promise<ShoppingCart | null> {
@@ -85,8 +92,8 @@ export class CartRepositoryImpl implements CartRepository {
             id: item.id,
             cartId: data.cartId,
             variantId: item.variantId,
-            quantity: item.quantity,
-            unitPrice: item.unitPriceSnapshot,
+            qty: item.quantity,
+            unitPriceSnapshot: item.unitPriceSnapshot,
             appliedPromos: item.appliedPromos as any,
             isGift: item.isGift,
             giftMessage: item.giftMessage,
@@ -343,10 +350,10 @@ export class CartRepositoryImpl implements CartRepository {
   async countItemsInCart(cartId: CartId): Promise<number> {
     const result = await this.prisma.cartItem.aggregate({
       where: { cartId: cartId.getValue() },
-      _sum: { quantity: true },
+      _sum: { qty: true },
     });
 
-    return result._sum?.quantity || 0;
+    return result._sum?.qty || 0;
   }
 
   async getCartTotal(cartId: CartId): Promise<number> {
@@ -355,7 +362,7 @@ export class CartRepositoryImpl implements CartRepository {
     });
 
     return items.reduce((total, item) => {
-      return total + item.unitPrice.toNumber() * item.quantity;
+      return total + item.unitPriceSnapshot.toNumber() * item.qty;
     }, 0);
   }
 
@@ -450,16 +457,16 @@ export class CartRepositoryImpl implements CartRepository {
         }),
         this.prisma.shoppingCart.count({ where: { items: { none: {} } } }),
         this.prisma.cartItem.aggregate({
-          _count: { _all: true },
-          _avg: { quantity: true, unitPrice: true },
+          _count: true,
+          _avg: { qty: true, unitPriceSnapshot: true },
         }),
       ]);
 
-    const totalItems = itemStats._count?._all || 0;
+    const totalItems = itemStats._count || 0;
     const averageItemsPerCart = totalCarts > 0 ? totalItems / totalCarts : 0;
     const averageCartValue =
-      (itemStats._avg?.unitPrice?.toNumber() || 0) *
-      (itemStats._avg?.quantity || 0);
+      (itemStats._avg?.unitPriceSnapshot?.toNumber() || 0) *
+      (itemStats._avg?.qty || 0);
 
     return {
       totalCarts,
@@ -765,10 +772,10 @@ export class CartRepositoryImpl implements CartRepository {
 
     if (!cart) return null;
 
-    const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+    const itemCount = cart.items.reduce((sum, item) => sum + item.qty, 0);
     const uniqueItemCount = cart.items.length;
     const subtotal = cart.items.reduce(
-      (sum, item) => sum + item.unitPrice.toNumber() * item.quantity,
+      (sum, item) => sum + item.unitPriceSnapshot.toNumber() * item.qty,
       0
     );
     const hasGiftItems = cart.items.some((item) => item.isGift);
@@ -863,8 +870,8 @@ export class CartRepositoryImpl implements CartRepository {
             id: item.id,
             cartId: item.cartId,
             variantId: item.variantId,
-            quantity: item.quantity,
-            unitPriceSnapshot: item.unitPrice.toNumber(),
+            quantity: item.qty,
+            unitPriceSnapshot: item.unitPriceSnapshot.toNumber(),
             appliedPromos: item.appliedPromos,
             isGift: item.isGift,
             giftMessage: item.giftMessage,
