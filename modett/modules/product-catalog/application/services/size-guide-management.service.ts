@@ -234,24 +234,26 @@ export class SizeGuideManagementService {
   }
 
   // Bulk operations
-  async createMultipleSizeGuides(guidesData: CreateSizeGuideData[]): Promise<SizeGuide[]> {
+  async createMultipleSizeGuides(guidesData: CreateSizeGuideData[]): Promise<{
+    created: SizeGuide[];
+    skipped: Array<{ title: string; reason: string }>
+  }> {
     const createdGuides: SizeGuide[] = [];
-    const errors: string[] = [];
+    const skipped: Array<{ title: string; reason: string }> = [];
 
     for (const data of guidesData) {
       try {
         const guide = await this.createSizeGuide(data);
         createdGuides.push(guide);
       } catch (error) {
-        errors.push(`Failed to create size guide for ${data.region}/${data.category || 'general'}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        skipped.push({
+          title: data.title,
+          reason: error instanceof Error ? error.message : 'Unknown error'
+        });
       }
     }
 
-    if (errors.length > 0 && createdGuides.length === 0) {
-      throw new Error(`Failed to create any size guides: ${errors.join(', ')}`);
-    }
-
-    return createdGuides;
+    return { created: createdGuides, skipped };
   }
 
   async deleteMultipleSizeGuides(ids: string[]): Promise<{ deleted: string[]; failed: Array<{ id: string; error: string }> }> {
