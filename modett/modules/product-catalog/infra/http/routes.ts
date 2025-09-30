@@ -1197,6 +1197,48 @@ export async function registerProductCatalogRoutes(
     productTagController.getTags.bind(productTagController) as any
   );
 
+  // Get tag statistics (MUST be before /tags/:id to avoid matching "statistics" as an ID)
+  fastify.get(
+    "/tags/statistics",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Get statistics about product tags",
+        tags: ["Product Tags"],
+        summary: "Get Tag Statistics",
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            description: "Tag statistics retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  totalTags: { type: "integer" },
+                  tagsByKind: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        kind: { type: "string", nullable: true },
+                        count: { type: "integer" },
+                      },
+                    },
+                  },
+                  averageTagLength: { type: "number" },
+                },
+              },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productTagController.getTagStats.bind(productTagController) as any
+  );
+
   // Get single tag by ID
   fastify.get(
     "/tags/:id",
@@ -1245,6 +1287,56 @@ export async function registerProductCatalogRoutes(
       },
     },
     productTagController.getTag.bind(productTagController) as any
+  );
+
+  // Get tag by name
+  fastify.get(
+    "/tags/name/:name",
+    {
+      schema: {
+        description: "Get a specific product tag by name",
+        tags: ["Product Tags"],
+        summary: "Get Product Tag by Name",
+        params: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+          },
+          required: ["name"],
+        },
+        response: {
+          200: {
+            description: "Tag retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  tag: { type: "string" },
+                  kind: { type: "string" },
+                  usage_count: { type: "integer" },
+                  created_at: { type: "string", format: "date-time" },
+                  updated_at: { type: "string", format: "date-time" },
+                },
+              },
+            },
+          },
+          404: {
+            description: "Tag not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Tag not found" },
+              code: { type: "string", example: "TAG_NOT_FOUND" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productTagController.getTagByName.bind(productTagController) as any
   );
 
   // Create new tag
@@ -1410,53 +1502,6 @@ export async function registerProductCatalogRoutes(
     productTagController.deleteTag.bind(productTagController) as any
   );
 
-  // Get tag statistics
-  fastify.get(
-    "/tags/statistics",
-    {
-      preHandler: authenticateUser,
-      schema: {
-        description: "Get statistics about product tags",
-        tags: ["Product Tags"],
-        summary: "Get Tag Statistics",
-        security: [{ bearerAuth: [] }],
-        response: {
-          200: {
-            description: "Tag statistics retrieved successfully",
-            type: "object",
-            properties: {
-              success: { type: "boolean", example: true },
-              data: {
-                type: "object",
-                properties: {
-                  total_tags: { type: "integer" },
-                  tags_by_kind: {
-                    type: "object",
-                    additionalProperties: { type: "integer" },
-                  },
-                  most_used_tags: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string", format: "uuid" },
-                        tag: { type: "string" },
-                        kind: { type: "string" },
-                        usage_count: { type: "integer" },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          ...authErrorResponses,
-        },
-      },
-    },
-    productTagController.getTagStats.bind(productTagController) as any
-  );
-
   // Bulk create tags
   fastify.post(
     "/tags/bulk",
@@ -1493,34 +1538,17 @@ export async function registerProductCatalogRoutes(
             properties: {
               success: { type: "boolean", example: true },
               data: {
-                type: "object",
-                properties: {
-                  created: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string", format: "uuid" },
-                        tag: { type: "string" },
-                        kind: { type: "string" },
-                        usage_count: { type: "integer", example: 0 },
-                        created_at: { type: "string", format: "date-time" },
-                        updated_at: { type: "string", format: "date-time" },
-                      },
-                    },
-                  },
-                  skipped: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        tag: { type: "string" },
-                        reason: { type: "string" },
-                      },
-                    },
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string", format: "uuid" },
+                    tag: { type: "string" },
+                    kind: { type: "string", nullable: true },
                   },
                 },
               },
+              message: { type: "string" },
             },
           },
           400: {
@@ -1570,19 +1598,23 @@ export async function registerProductCatalogRoutes(
               data: {
                 type: "object",
                 properties: {
-                  deleted_count: { type: "integer" },
-                  skipped: {
+                  deleted: {
+                    type: "array",
+                    items: { type: "string" },
+                  },
+                  failed: {
                     type: "array",
                     items: {
                       type: "object",
                       properties: {
-                        id: { type: "string", format: "uuid" },
-                        reason: { type: "string" },
+                        id: { type: "string" },
+                        error: { type: "string" },
                       },
                     },
                   },
                 },
               },
+              message: { type: "string" },
             },
           },
           400: {
