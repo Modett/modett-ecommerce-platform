@@ -68,12 +68,14 @@ export class ProductTagController {
 
       return reply.code(200).send({
         success: true,
-        data: tags,
-        meta: {
-          page: pageOptions.page,
-          limit: pageOptions.limit,
-          sortBy: pageOptions.sortBy,
-          sortOrder: pageOptions.sortOrder
+        data: {
+          tags: tags.tags || tags,
+          pagination: {
+            page: pageOptions.page,
+            limit: pageOptions.limit,
+            total: tags.total || 0,
+            total_pages: Math.ceil((tags.total || 0) / pageOptions.limit)
+          }
         }
       });
     } catch (error) {
@@ -81,6 +83,7 @@ export class ProductTagController {
       return reply.code(500).send({
         success: false,
         error: 'Internal server error',
+        code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to retrieve tags'
       });
     }
@@ -90,10 +93,13 @@ export class ProductTagController {
     try {
       const { id } = request.params;
 
+      console.log('=== getTag called with id:', id);
+
       if (!id || typeof id !== 'string') {
         return reply.code(400).send({
           success: false,
           error: 'Bad Request',
+          code: 'VALIDATION_ERROR',
           message: 'Tag ID is required and must be a valid string'
         });
       }
@@ -169,6 +175,7 @@ export class ProductTagController {
         return reply.code(400).send({
           success: false,
           error: 'Bad Request',
+          code: 'VALIDATION_ERROR',
           message: 'Tag is required and must be a non-empty string'
         });
       }
@@ -178,6 +185,7 @@ export class ProductTagController {
         return reply.code(400).send({
           success: false,
           error: 'Bad Request',
+          code: 'VALIDATION_ERROR',
           message: 'Tag cannot be longer than 50 characters'
         });
       }
@@ -186,6 +194,7 @@ export class ProductTagController {
         return reply.code(400).send({
           success: false,
           error: 'Bad Request',
+          code: 'VALIDATION_ERROR',
           message: 'Tag can only contain letters, numbers, spaces, hyphens, and underscores'
         });
       }
@@ -204,6 +213,7 @@ export class ProductTagController {
         return reply.code(409).send({
           success: false,
           error: 'Conflict',
+          code: 'TAG_ALREADY_EXISTS',
           message: 'Tag with this name already exists'
         });
       }
@@ -211,6 +221,7 @@ export class ProductTagController {
       return reply.code(500).send({
         success: false,
         error: 'Internal server error',
+        code: 'INTERNAL_SERVER_ERROR',
         message: 'Failed to create tag'
       });
     }
@@ -304,6 +315,8 @@ export class ProductTagController {
 
       await this.productTagManagementService.deleteTag(id);
 
+      console.log('Delete response being sent');
+
       return reply.code(200).send({
         success: true,
         message: 'Tag deleted successfully'
@@ -368,12 +381,18 @@ export class ProductTagController {
 
   async getTagStats(request: FastifyRequest, reply: FastifyReply) {
     try {
+      console.log('=== getTagStats called ===');
       const stats = await this.productTagManagementService.getTagStats();
+      console.log('Stats to send:', JSON.stringify(stats, null, 2));
 
-      return reply.code(200).send({
+      const response = {
         success: true,
         data: stats
-      });
+      };
+
+      console.log('Final response:', JSON.stringify(response, null, 2));
+
+      return reply.code(200).send(response);
     } catch (error) {
       request.log.error(error, 'Failed to get tag statistics');
       return reply.code(500).send({
@@ -439,12 +458,20 @@ export class ProductTagController {
 
       const createdTags = await this.productTagManagementService.createMultipleTags(tags);
 
+      console.log('Created tags:', createdTags);
+      console.log('Serialized tags:', createdTags.map(tag => tag.toData()));
+
       return reply.code(201).send({
         success: true,
-        data: createdTags,
+        data: createdTags.map(tag => tag.toData()),
         message: `${createdTags.length} tags created successfully`
       });
     } catch (error) {
+      console.error('=== Bulk create error ===');
+      console.error('Error:', error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+
       request.log.error(error, 'Failed to create bulk tags');
       return reply.code(500).send({
         success: false,
