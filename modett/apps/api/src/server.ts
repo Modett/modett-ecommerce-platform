@@ -38,7 +38,7 @@ export async function createServer(): Promise<FastifyInstance> {
         : true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-Guest-Token"],
   });
 
   await server.register(import("@fastify/helmet"), {
@@ -414,12 +414,8 @@ export async function createServer(): Promise<FastifyInstance> {
             "⚙️ System health, monitoring, and information endpoints",
         },
       ],
-      security: [
-        {},
-        {
-          bearerAuth: []
-        }
-      ],
+      // Note: Don't set global security here, let individual routes define their own security
+      // security: [],
     },
   });
 

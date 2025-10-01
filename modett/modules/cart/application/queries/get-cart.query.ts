@@ -29,6 +29,14 @@ export class GetCartHandler implements IQueryHandler<GetCartQuery, CommandResult
         );
       }
 
+      // Validate that only one of userId or guestToken is provided (not both)
+      if (query.userId && query.guestToken) {
+        return CommandResult.failure<CartDto | null>(
+          'Only one of userId or guestToken should be provided',
+          ['userId', 'guestToken']
+        );
+      }
+
       const cart = await this.cartManagementService.getCart(
         query.cartId,
         query.userId,
