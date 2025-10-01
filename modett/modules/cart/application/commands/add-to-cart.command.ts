@@ -68,10 +68,22 @@ export class AddToCartHandler implements ICommandHandler<AddToCartCommand, Comma
         );
       }
 
-      if (!command.cartId && !command.userId && !command.guestToken) {
+      // Validate that at least one identifier is provided
+      // Note: cartId is optional - if not provided, cart will be found/created using userId or guestToken
+      const hasUserIdentifier = command.userId || command.guestToken;
+
+      if (!hasUserIdentifier && !command.cartId) {
         return CommandResult.failure<CartDto>(
-          'Either cartId, userId, or guestToken is required',
-          ['cartId', 'userId', 'guestToken']
+          'Either userId or guestToken is required',
+          ['userId', 'guestToken']
+        );
+      }
+
+      // Validate that user doesn't provide both userId and guestToken
+      if (command.userId && command.guestToken) {
+        return CommandResult.failure<CartDto>(
+          'Cannot provide both userId and guestToken',
+          ['userId', 'guestToken']
         );
       }
 
