@@ -1,4 +1,4 @@
-// Export base interfaces and types
+ // Export base interfaces and types
 export { ICommand, ICommandHandler, CommandResult } from "./add-to-cart.command";
 
 // Export commands and handlers
