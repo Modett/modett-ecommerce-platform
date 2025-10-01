@@ -24,11 +24,16 @@ import {
 } from "../../../application";
 import { PromoData } from "../../../domain/value-objects/applied-promos.vo";
 
+// Import the middleware to get type augmentations
+import "../../../../user-management/infra/http/middleware/auth.middleware";
+import "../middleware/cart-auth.middleware";
+
 // Request interfaces
 interface AddToCartRequest {
+  cartId?: string;
   variantId: string;
   quantity: number;
-  unitPrice: number; 
+  unitPrice: number;
   appliedPromos?: Array<{
     id: string;
     code: string;
@@ -101,7 +106,15 @@ export class CartController {
   ) {
     try {
       const { cartId } = request.params;
-      const { userId, guestToken } = request.query;
+
+      // Debug logging
+      console.log('[getCart] Authorization header:', request.headers.authorization ? 'Present' : 'Missing');
+      console.log('[getCart] request.user:', request.user ? `Present (userId: ${request.user.userId})` : 'Missing');
+      console.log('[getCart] request.guestToken:', request.guestToken ? 'Present' : 'Missing');
+
+      // Get userId from JWT (authenticated user) or guestToken from header
+      const userId = request.user?.userId;
+      const guestToken = request.guestToken;
 
       if (!cartId || typeof cartId !== "string") {
         return reply.code(400).send({
@@ -134,6 +147,9 @@ export class CartController {
       }
     } catch (error) {
       request.log.error(error, "Failed to get cart");
+      console.error("[getCart] Error details:", error);
+      console.error("[getCart] Error message:", error instanceof Error ? error.message : String(error));
+      console.error("[getCart] Error stack:", error instanceof Error ? error.stack : "No stack trace");
 
       if (error instanceof Error && error.message.includes("Unauthorized")) {
         return reply.code(403).send({
@@ -188,6 +204,9 @@ export class CartController {
       }
     } catch (error) {
       request.log.error(error, "Failed to get cart by user");
+      console.error("[getActiveCartByUser] Error details:", error);
+      console.error("[getActiveCartByUser] Error message:", error instanceof Error ? error.message : String(error));
+      console.error("[getActiveCartByUser] Error stack:", error instanceof Error ? error.stack : "No stack trace");
       return reply.code(500).send({
         success: false,
         error: "Internal server error",
@@ -362,13 +381,15 @@ export class CartController {
   async addToCart(
     request: FastifyRequest<{
       Body: AddToCartRequest;
-      Querystring: CartQueryParams & { cartId?: string };
     }>,
     reply: FastifyReply
   ) {
     try {
       const itemData = request.body;
-      const { cartId, userId, guestToken } = request.query;
+
+      // Get userId from JWT (authenticated user) or guestToken from header
+      const userId = request.user?.userId;
+      const guestToken = request.guestToken;
 
       // Validate required fields
       if (!itemData.variantId || typeof itemData.variantId !== "string") {
@@ -403,15 +424,8 @@ export class CartController {
         });
       }
 
-      // Validate that either cartId, userId, or guestToken is provided
-      if (!cartId && !userId && !guestToken) {
-        return reply.code(400).send({
-          success: false,
-          error: "Bad Request",
-          message:
-            "Either cartId, userId, or guestToken must be provided",
-        });
-      }
+      // Authentication already validated by middleware
+      // At this point, we have either userId (from JWT) or guestToken (from header)
 
       // Convert appliedPromos from request format to PromoData format
       const appliedPromos: PromoData[] | undefined = itemData.appliedPromos?.map(promo => ({
@@ -425,7 +439,7 @@ export class CartController {
 
       // Create command
       const command: AddToCartCommand = {
-        cartId,
+        cartId: itemData.cartId,
         userId,
         guestToken,
         variantId: itemData.variantId,
@@ -494,7 +508,10 @@ export class CartController {
     try {
       const { cartId, variantId } = request.params;
       const { quantity } = request.body;
-      const { userId, guestToken } = request.query;
+
+      // Get userId from JWT (authenticated user) or guestToken from header
+      const userId = request.user?.userId;
+      const guestToken = request.guestToken;
 
       if (!cartId || typeof cartId !== "string") {
         return reply.code(400).send({
@@ -587,7 +604,10 @@ export class CartController {
   ) {
     try {
       const { cartId, variantId } = request.params;
-      const { userId, guestToken } = request.query;
+
+      // Get userId from JWT (authenticated user) or guestToken from header
+      const userId = request.user?.userId;
+      const guestToken = request.guestToken;
 
       if (!cartId || typeof cartId !== "string") {
         return reply.code(400).send({
@@ -668,7 +688,10 @@ export class CartController {
   ) {
     try {
       const { cartId } = request.params;
-      const { userId, guestToken } = request.query;
+
+      // Get userId from JWT (authenticated user) or guestToken from header
+      const userId = request.user?.userId;
+      const guestToken = request.guestToken;
 
       if (!cartId || typeof cartId !== "string") {
         return reply.code(400).send({
@@ -841,6 +864,32 @@ export class CartController {
         success: false,
         error: "Internal server error",
         message: "Failed to cleanup expired carts",
+      });
+    }
+  }
+
+  // Generate guest token
+  async generateGuestToken(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ) {
+    try {
+      const { randomBytes } = await import("crypto");
+      const guestToken = randomBytes(32).toString("hex");
+
+      return reply.code(200).send({
+        success: true,
+        data: {
+          guestToken,
+        },
+        message: "Guest token generated successfully",
+      });
+    } catch (error) {
+      request.log.error(error, "Failed to generate guest token");
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to generate guest token",
       });
     }
   }
