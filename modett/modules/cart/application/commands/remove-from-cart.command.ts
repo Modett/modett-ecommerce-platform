@@ -28,6 +28,14 @@ export class RemoveFromCartHandler implements ICommandHandler<RemoveFromCartComm
         );
       }
 
+      // Validate that only one of userId or guestToken is provided (not both)
+      if (command.userId && command.guestToken) {
+        return CommandResult.failure<CartDto>(
+          'Only one of userId or guestToken should be provided',
+          ['userId', 'guestToken']
+        );
+      }
+
       const cart = await this.cartManagementService.removeFromCart({
         cartId: command.cartId,
         variantId: command.variantId,
