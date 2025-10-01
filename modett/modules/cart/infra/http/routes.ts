@@ -3,6 +3,11 @@ import { CartController } from "./controllers/cart.controller";
 import { ReservationController } from "./controllers/reservation.controller";
 import { CartManagementService } from "../../application/services/cart-management.service";
 import { ReservationService } from "../../application/services/reservation.service";
+import { optionalAuth } from "../../../user-management/infra/http/middleware/auth.middleware";
+import {
+  extractGuestToken,
+  requireCartAuth
+} from "./middleware/cart-auth.middleware";
 
 // Standard authentication error responses for Swagger
 const authErrorResponses = {
@@ -42,26 +47,52 @@ export async function registerCartRoutes(
   // CART ROUTES
   // =============================================================================
 
+  // Generate guest token
+  fastify.get(
+    "/generate-guest-token",
+    {
+      schema: {
+        description: "Generate a guest token for creating a guest cart",
+        tags: ["Cart"],
+        summary: "Generate Guest Token",
+        response: {
+          200: {
+            description: "Guest token generated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  guestToken: { type: "string", example: "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456" },
+                },
+              },
+              message: { type: "string", example: "Guest token generated successfully" },
+            },
+          },
+        },
+      },
+    },
+    async (request: any, reply: any) => cartController.generateGuestToken(request, reply)
+  );
+
   // Get cart by ID
   fastify.get(
     "/carts/:cartId",
     {
+      preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Get cart details by cart ID",
+        description: "Get cart details by cart ID. Requires authentication - provide either Bearer token (for user carts) or X-Guest-Token header (for guest carts).",
         tags: ["Cart"],
         summary: "Get Cart",
+        security: [
+          { bearerAuth: [] }
+        ],
         params: {
           type: "object",
           required: ["cartId"],
           properties: {
             cartId: { type: "string", format: "uuid", description: "Cart ID" },
-          },
-        },
-        querystring: {
-          type: "object",
-          properties: {
-            userId: { type: "string", format: "uuid", description: "User ID for authorization" },
-            guestToken: { type: "string", description: "Guest token for authorization" },
           },
         },
         response: {
@@ -279,22 +310,34 @@ export async function registerCartRoutes(
   fastify.post(
     "/cart/items",
     {
+      preHandler: [optionalAuth, extractGuestToken, requireCartAuth],
       schema: {
-        description: "Add an item to cart",
+        description: "Add an item to cart. Cart will be automatically created if it doesn't exist. Requires either Bearer token authentication (for registered users) or X-Guest-Token header (for guest users).",
         tags: ["Cart"],
         summary: "Add to Cart",
-        querystring: {
+        security: [
+          { bearerAuth: [] }
+        ],
+        headers: {
           type: "object",
           properties: {
-            cartId: { type: "string", format: "uuid" },
-            userId: { type: "string", format: "uuid" },
-            guestToken: { type: "string" },
+            "authorization": {
+              type: "string",
+              description: "Bearer token for registered users"
+            },
+            "x-guest-token": {
+              type: "string",
+              description: "Guest token (64-char hex). Get from /generate-guest-token endpoint.",
+              pattern: "^[a-f0-9]{64}$"
+            }
           },
+          additionalProperties: true
         },
         body: {
           type: "object",
           required: ["variantId", "quantity", "unitPrice"],
           properties: {
+            cartId: { type: "string", format: "uuid", description: "Cart ID (optional for guest users)" },
             variantId: { type: "string", format: "uuid", description: "Product variant ID" },
             quantity: { type: "integer", minimum: 1, example: 2 },
             unitPrice: { type: "number", minimum: 0, example: 29.99 },
@@ -336,6 +379,8 @@ export async function registerCartRoutes(
               errors: { type: "array", items: { type: "string" } },
             },
           },
+          401: authErrorResponses[401],
+          403: authErrorResponses[403],
         },
       },
     },
@@ -346,23 +391,20 @@ export async function registerCartRoutes(
   fastify.put(
     "/carts/:cartId/items/:variantId",
     {
+      preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Update cart item quantity",
+        description: "Update cart item quantity. Requires authentication.",
         tags: ["Cart"],
         summary: "Update Cart Item",
+        security: [
+          { bearerAuth: [] }
+        ],
         params: {
           type: "object",
           required: ["cartId", "variantId"],
           properties: {
             cartId: { type: "string", format: "uuid" },
             variantId: { type: "string", format: "uuid" },
-          },
-        },
-        querystring: {
-          type: "object",
-          properties: {
-            userId: { type: "string", format: "uuid" },
-            guestToken: { type: "string" },
           },
         },
         body: {
@@ -392,23 +434,20 @@ export async function registerCartRoutes(
   fastify.delete(
     "/carts/:cartId/items/:variantId",
     {
+      preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Remove item from cart",
+        description: "Remove item from cart. Requires authentication.",
         tags: ["Cart"],
         summary: "Remove from Cart",
+        security: [
+          { bearerAuth: [] }
+        ],
         params: {
           type: "object",
           required: ["cartId", "variantId"],
           properties: {
             cartId: { type: "string", format: "uuid" },
             variantId: { type: "string", format: "uuid" },
-          },
-        },
-        querystring: {
-          type: "object",
-          properties: {
-            userId: { type: "string", format: "uuid" },
-            guestToken: { type: "string" },
           },
         },
         response: {
@@ -431,22 +470,19 @@ export async function registerCartRoutes(
   fastify.delete(
     "/carts/:cartId",
     {
+      preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Clear all items from cart",
+        description: "Clear all items from cart. Requires authentication.",
         tags: ["Cart"],
         summary: "Clear Cart",
+        security: [
+          { bearerAuth: [] }
+        ],
         params: {
           type: "object",
           required: ["cartId"],
           properties: {
             cartId: { type: "string", format: "uuid" },
-          },
-        },
-        querystring: {
-          type: "object",
-          properties: {
-            userId: { type: "string", format: "uuid" },
-            guestToken: { type: "string" },
           },
         },
         response: {
