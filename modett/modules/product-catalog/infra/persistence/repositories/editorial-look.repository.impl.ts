@@ -502,4 +502,34 @@ export class EditorialLookRepository implements IEditorialLookRepository {
 
     return associations.map(assoc => EditorialLookId.fromString(assoc.lookId));
   }
+
+  async setLookProducts(lookId: EditorialLookId, productIds: string[]): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      // Remove all existing products
+      await tx.editorialLookProduct.deleteMany({
+        where: { lookId: lookId.getValue() },
+      });
+
+      // Add new products
+      if (productIds.length > 0) {
+        await tx.editorialLookProduct.createMany({
+          data: productIds.map(productId => ({
+            lookId: lookId.getValue(),
+            productId: productId,
+          })),
+        });
+      }
+    });
+  }
+
+  async existsProductInLook(lookId: EditorialLookId, productId: string): Promise<boolean> {
+    const count = await this.prisma.editorialLookProduct.count({
+      where: {
+        lookId: lookId.getValue(),
+        productId: productId,
+      },
+    });
+
+    return count > 0;
+  }
 }
