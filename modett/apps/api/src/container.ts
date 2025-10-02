@@ -19,6 +19,7 @@ import {
   MediaAssetRepository,
   ProductTagRepository,
   SizeGuideRepository,
+  EditorialLookRepository,
 } from "../../../modules/product-catalog/infra/persistence/repositories";
 import {
   ProductManagementService,
@@ -29,6 +30,7 @@ import {
   SlugGeneratorService,
   ProductTagManagementService,
   SizeGuideManagementService,
+  EditorialLookManagementService,
 } from "../../../modules/product-catalog/application/services";
 
 // Cart imports
@@ -59,6 +61,7 @@ export interface ServiceContainer {
   mediaAssetRepository: MediaAssetRepository;
   productTagRepository: ProductTagRepository;
   sizeGuideRepository: SizeGuideRepository;
+  editorialLookRepository: EditorialLookRepository;
 
   // Cart Repositories
   cartRepository: CartRepositoryImpl;
@@ -80,6 +83,7 @@ export interface ServiceContainer {
   productSearchService: ProductSearchService;
   productTagManagementService: ProductTagManagementService;
   sizeGuideManagementService: SizeGuideManagementService;
+  editorialLookManagementService: EditorialLookManagementService;
 
   // Cart Services
   cartManagementService: CartManagementService;
@@ -108,6 +112,7 @@ export function createServiceContainer(): ServiceContainer {
   const mediaAssetRepository = new MediaAssetRepository(prisma);
   const productTagRepository = new ProductTagRepository(prisma);
   const sizeGuideRepository = new SizeGuideRepository(prisma);
+  const editorialLookRepository = new EditorialLookRepository(prisma);
 
   // Initialize Cart repositories
   const cartRepository = new CartRepositoryImpl(prisma);
@@ -172,11 +177,17 @@ export function createServiceContainer(): ServiceContainer {
   const sizeGuideManagementService = new SizeGuideManagementService(
     sizeGuideRepository
   );
+  const editorialLookManagementService = new EditorialLookManagementService(
+    editorialLookRepository,
+    mediaAssetRepository,
+    productRepository
+  );
 
   // Initialize Cart services
   const cartManagementService = new CartManagementService(
     cartRepository,
-    reservationRepository
+    reservationRepository,
+    productVariantRepository
   );
   const reservationService = new ReservationService(
     reservationRepository,
@@ -201,6 +212,7 @@ export function createServiceContainer(): ServiceContainer {
     mediaAssetRepository,
     productTagRepository,
     sizeGuideRepository,
+    editorialLookRepository,
 
     // Cart Repositories
     cartRepository,
@@ -222,6 +234,7 @@ export function createServiceContainer(): ServiceContainer {
     productSearchService,
     productTagManagementService,
     sizeGuideManagementService,
+    editorialLookManagementService,
 
     // Cart Services
     cartManagementService,

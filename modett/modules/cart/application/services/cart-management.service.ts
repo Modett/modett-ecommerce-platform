@@ -9,6 +9,8 @@ import { Currency } from "../../domain/value-objects/currency.vo";
 import { VariantId } from "../../domain/value-objects/variant-id.vo";
 import { Quantity } from "../../domain/value-objects/quantity.vo";
 import { PromoData } from "../../domain/value-objects/applied-promos.vo";
+import { IProductVariantRepository } from "../../../product-catalog/domain/repositories/product-variant.repository";
+import { VariantId as ProductVariantId } from "../../../product-catalog/domain/value-objects/variant-id.vo";
 
 // DTOs for service operations
 export interface CreateCartDto {
@@ -25,7 +27,6 @@ export interface AddToCartDto {
   guestToken?: string;
   variantId: string;
   quantity: number;
-  unitPrice: number;
   appliedPromos?: PromoData[];
   isGift?: boolean;
   giftMessage?: string;
@@ -101,7 +102,8 @@ export interface CartDto {
 export class CartManagementService {
   constructor(
     private readonly cartRepository: CartRepository,
-    private readonly reservationRepository: ReservationRepository
+    private readonly reservationRepository: ReservationRepository,
+    private readonly productVariantRepository: IProductVariantRepository
   ) {}
 
   // Cart creation
@@ -206,6 +208,18 @@ export class CartManagementService {
   async addToCart(dto: AddToCartDto): Promise<CartDto> {
     let cart: ShoppingCart | null = null;
 
+    // Fetch product variant to get the price
+    const productVariant = await this.productVariantRepository.findById(
+      ProductVariantId.fromString(dto.variantId)
+    );
+
+    if (!productVariant) {
+      throw new Error("Product variant not found");
+    }
+
+    // Get the unit price from the product variant
+    const unitPrice = productVariant.getPrice().getValue();
+
     // Find or create cart
     if (dto.cartId) {
       cart = await this.cartRepository.findById(CartId.fromString(dto.cartId));
@@ -259,11 +273,11 @@ export class CartManagementService {
       );
     }
 
-    // Add item to cart
+    // Add item to cart with the fetched unit price
     const itemData: Omit<CreateCartItemData, 'cartId'> = {
       variantId: dto.variantId,
       quantity: dto.quantity,
-      unitPrice: dto.unitPrice,
+      unitPrice: unitPrice,
       appliedPromos: dto.appliedPromos,
       isGift: dto.isGift,
       giftMessage: dto.giftMessage,

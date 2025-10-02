@@ -1,7 +1,6 @@
 import { IEditorialLookRepository, EditorialLookQueryOptions, EditorialLookCountOptions } from '../../domain/repositories/editorial-look.repository';
 import { IMediaAssetRepository } from '../../domain/repositories/media-asset.repository';
 import { IProductRepository } from '../../domain/repositories/product.repository';
-import { IEditorialLookProductRepository } from '../../domain/repositories/editorial-look-product.repository';
 import { EditorialLook, CreateEditorialLookData } from '../../domain/entities/editorial-look.entity';
 import { EditorialLookId as EntityEditorialLookId } from '../../domain/entities/editorial-look.entity';
 import { MediaAssetId as EntityMediaAssetId } from '../../domain/entities/media-asset.entity';
@@ -12,8 +11,7 @@ export class EditorialLookManagementService {
   constructor(
     private readonly editorialLookRepository: IEditorialLookRepository,
     private readonly mediaAssetRepository: IMediaAssetRepository,
-    private readonly productRepository: IProductRepository,
-    private readonly editorialLookProductRepository: IEditorialLookProductRepository
+    private readonly productRepository: IProductRepository
   ) {}
 
   // Core CRUD operations
@@ -274,7 +272,7 @@ export class EditorialLookManagementService {
     }
 
     try {
-      await this.editorialLookProductRepository.addProductToLook(lookIdVo, productIdVo);
+      await this.editorialLookRepository.addProductToLook(lookIdEntity, productId);
     } catch (error) {
       if (error instanceof Error && error.message.includes('duplicate')) {
         throw new Error(`Product "${productId}" is already associated with this editorial look`);
@@ -284,16 +282,15 @@ export class EditorialLookManagementService {
   }
 
   async removeProductFromLook(lookId: string, productId: string): Promise<void> {
-    const lookIdVo = EditorialLookId.fromString(lookId);
-    const productIdVo = ProductId.fromString(productId);
+    const lookIdEntity = EntityEditorialLookId.fromString(lookId);
 
     // Validate association exists
-    const exists = await this.editorialLookProductRepository.exists(lookIdVo, productIdVo);
+    const exists = await this.editorialLookRepository.existsProductInLook(lookIdEntity, productId);
     if (!exists) {
       throw new Error(`Product "${productId}" is not associated with look "${lookId}"`);
     }
 
-    await this.editorialLookProductRepository.removeProductFromLook(lookIdVo, productIdVo);
+    await this.editorialLookRepository.removeProductFromLook(lookIdEntity, productId);
   }
 
   async setLookProducts(id: string, productIds: string[]): Promise<EditorialLook> {
@@ -310,16 +307,14 @@ export class EditorialLookManagementService {
     }
 
     // Use repository for consistency instead of entity method
-    const lookIdVo = EditorialLookId.fromString(id);
-    const productIdVos = productIds.map(id => ProductId.fromString(id));
-    await this.editorialLookProductRepository.setLookProducts(lookIdVo, productIdVos);
+    const lookIdEntity = EntityEditorialLookId.fromString(id);
+    await this.editorialLookRepository.setLookProducts(lookIdEntity, productIds);
 
     // Return updated look
     return await this.getEditorialLookById(id);
   }
 
   async getLookProducts(id: string): Promise<string[]> {
-    const lookIdVo = EditorialLookId.fromString(id);
     const lookIdEntity = EntityEditorialLookId.fromString(id);
 
     // Validate look exists
@@ -328,8 +323,8 @@ export class EditorialLookManagementService {
       throw new Error(`Editorial look with ID "${id}" not found`);
     }
 
-    const productIds = await this.editorialLookProductRepository.getLookProducts(lookIdVo);
-    return productIds.map(id => id.toString());
+    const productIds = await this.editorialLookRepository.getLookProducts(lookIdEntity);
+    return productIds;
   }
 
   async getProductLooks(productId: string): Promise<string[]> {
@@ -341,8 +336,8 @@ export class EditorialLookManagementService {
       throw new Error(`Product with ID "${productId}" not found`);
     }
 
-    const lookIds = await this.editorialLookProductRepository.getProductLooks(productIdVo);
-    return lookIds.map(id => id.toString());
+    const lookIds = await this.editorialLookRepository.getProductLooks(productId);
+    return lookIds.map(id => id.getValue());
   }
 
   async getLooksByProduct(productId: string, options?: EditorialLookQueryOptions): Promise<EditorialLook[]> {

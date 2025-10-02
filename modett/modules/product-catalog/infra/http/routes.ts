@@ -17,6 +17,7 @@ import {
   MediaManagementService,
   ProductTagManagementService,
   SizeGuideManagementService,
+  EditorialLookManagementService,
 } from "../../application/services";
 import {
   authenticateUser,
@@ -57,6 +58,7 @@ export async function registerProductCatalogRoutes(
     mediaService: MediaManagementService;
     productTagService: ProductTagManagementService;
     sizeGuideService: SizeGuideManagementService;
+    editorialLookService: EditorialLookManagementService;
   }
 ) {
   // Initialize controllers
@@ -73,6 +75,9 @@ export async function registerProductCatalogRoutes(
   );
   const sizeGuideController = new SizeGuideController(
     services.sizeGuideService
+  );
+  const editorialLookController = new EditorialLookController(
+    services.editorialLookService
   );
 
   // =============================================================================
@@ -1729,16 +1734,29 @@ export async function registerProductCatalogRoutes(
               data: {
                 type: "object",
                 properties: {
-                  total_guides: { type: "integer" },
-                  guides_by_region: {
-                    type: "object",
-                    additionalProperties: { type: "integer" },
+                  totalGuides: { type: "integer" },
+                  guidesByRegion: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        region: { type: "string" },
+                        count: { type: "integer" },
+                      },
+                    },
                   },
-                  guides_by_category: {
-                    type: "object",
-                    additionalProperties: { type: "integer" },
+                  guidesByCategory: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        category: { type: "string", nullable: true },
+                        count: { type: "integer" },
+                      },
+                    },
                   },
-                  guides_with_content: { type: "integer" },
+                  guidesWithContent: { type: "integer" },
+                  guidesWithoutContent: { type: "integer" },
                 },
               },
             },
@@ -2131,5 +2149,705 @@ export async function registerProductCatalogRoutes(
       },
     },
     sizeGuideController.deleteSizeGuide.bind(sizeGuideController) as any
+  );
+
+  // =============================================================================
+  // EDITORIAL LOOK ROUTES
+  // =============================================================================
+
+  // List editorial looks with filtering
+  fastify.get(
+    "/editorial-looks",
+    {
+      schema: {
+        description: "Get paginated list of editorial looks with filtering options",
+        tags: ["Editorial Looks"],
+        summary: "List Editorial Looks",
+        querystring: {
+          type: "object",
+          properties: {
+            page: { type: "integer", minimum: 1, default: 1 },
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+            published: { type: "boolean" },
+            scheduled: { type: "boolean" },
+            draft: { type: "boolean" },
+            hasContent: { type: "boolean" },
+            hasHeroImage: { type: "boolean" },
+            sortBy: {
+              type: "string",
+              enum: ["title", "publishedAt", "createdAt"],
+              default: "createdAt",
+            },
+            sortOrder: {
+              type: "string",
+              enum: ["asc", "desc"],
+              default: "desc",
+            },
+          },
+        },
+      },
+    },
+    editorialLookController.getEditorialLooks.bind(editorialLookController)
+  );
+
+  // Get editorial look by ID
+  fastify.get(
+    "/editorial-looks/:id",
+    {
+      schema: {
+        description: "Get editorial look by ID",
+        tags: ["Editorial Looks"],
+        summary: "Get Editorial Look",
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+      },
+    },
+    editorialLookController.getEditorialLook.bind(editorialLookController)
+  );
+
+  // Create editorial look
+  fastify.post(
+    "/editorial-looks",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Create a new editorial look",
+        tags: ["Editorial Looks"],
+        summary: "Create Editorial Look",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          required: ["title"],
+          properties: {
+            title: { type: "string", maxLength: 200 },
+            storyHtml: { type: "string", maxLength: 100000 },
+            heroAssetId: { type: "string", format: "uuid" },
+            publishedAt: { type: "string", format: "date-time" },
+            productIds: {
+              type: "array",
+              items: { type: "string", format: "uuid" },
+            },
+          },
+        },
+      },
+    },
+    editorialLookController.createEditorialLook.bind(editorialLookController) as any
+  );
+
+  // Update editorial look
+  fastify.put(
+    "/editorial-looks/:id",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Update an existing editorial look",
+        tags: ["Editorial Looks"],
+        summary: "Update Editorial Look",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            title: { type: "string", maxLength: 200 },
+            storyHtml: { type: "string", maxLength: 100000 },
+            heroAssetId: { type: "string", format: "uuid", nullable: true },
+            publishedAt: { type: "string", format: "date-time", nullable: true },
+          },
+        },
+      },
+    },
+    editorialLookController.updateEditorialLook.bind(editorialLookController) as any
+  );
+
+  // Delete editorial look
+  fastify.delete(
+    "/editorial-looks/:id",
+    {
+      preHandler: authenticateAdmin,
+      schema: {
+        description: "Delete an editorial look",
+        tags: ["Editorial Looks"],
+        summary: "Delete Editorial Look",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+      },
+    },
+    editorialLookController.deleteEditorialLook.bind(editorialLookController) as any
+  );
+
+  // Publish editorial look
+  fastify.post(
+    "/editorial-looks/:id/publish",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Publish an editorial look immediately",
+        tags: ["Editorial Looks"],
+        summary: "Publish Editorial Look",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+      },
+    },
+    editorialLookController.publishEditorialLook.bind(editorialLookController) as any
+  );
+
+  // Unpublish editorial look
+  fastify.post(
+    "/editorial-looks/:id/unpublish",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Unpublish an editorial look",
+        tags: ["Editorial Looks"],
+        summary: "Unpublish Editorial Look",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+      },
+    },
+    editorialLookController.unpublishEditorialLook.bind(editorialLookController) as any
+  );
+
+  // Schedule editorial look publication
+  fastify.post(
+    "/editorial-looks/:id/schedule",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Schedule an editorial look for future publication",
+        tags: ["Editorial Looks"],
+        summary: "Schedule Editorial Look Publication",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+        body: {
+          type: "object",
+          required: ["publishDate"],
+          properties: {
+            publishDate: { type: "string", format: "date-time" },
+          },
+        },
+      },
+    },
+    editorialLookController.schedulePublication.bind(editorialLookController) as any
+  );
+
+  // Get ready to publish looks
+  fastify.get(
+    "/editorial-looks/ready-to-publish",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Get editorial looks ready to be published",
+        tags: ["Editorial Looks"],
+        summary: "Get Ready to Publish Looks",
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    editorialLookController.getReadyToPublishLooks.bind(editorialLookController) as any
+  );
+
+  // Process scheduled publications
+  fastify.post(
+    "/editorial-looks/process-scheduled",
+    {
+      preHandler: authenticateAdmin,
+      schema: {
+        description: "Process scheduled editorial look publications",
+        tags: ["Editorial Looks"],
+        summary: "Process Scheduled Publications",
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    editorialLookController.processScheduledPublications.bind(editorialLookController) as any
+  );
+
+  // Set hero image
+  fastify.post(
+    "/editorial-looks/:id/hero-image",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Set hero image for an editorial look",
+        tags: ["Editorial Looks"],
+        summary: "Set Hero Image",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+        body: {
+          type: "object",
+          required: ["assetId"],
+          properties: {
+            assetId: { type: "string", format: "uuid" },
+          },
+        },
+      },
+    },
+    editorialLookController.setHeroImage.bind(editorialLookController) as any
+  );
+
+  // Remove hero image
+  fastify.delete(
+    "/editorial-looks/:id/hero-image",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Remove hero image from an editorial look",
+        tags: ["Editorial Looks"],
+        summary: "Remove Hero Image",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+      },
+    },
+    editorialLookController.removeHeroImage.bind(editorialLookController) as any
+  );
+
+  // Get looks by hero asset
+  fastify.get(
+    "/editorial-looks/by-hero-asset/:assetId",
+    {
+      schema: {
+        description: "Get editorial looks using a specific hero asset",
+        tags: ["Editorial Looks"],
+        summary: "Get Looks by Hero Asset",
+        params: {
+          type: "object",
+          properties: {
+            assetId: { type: "string", format: "uuid" },
+          },
+          required: ["assetId"],
+        },
+      },
+    },
+    editorialLookController.getLooksByHeroAsset.bind(editorialLookController)
+  );
+
+  // Add product to look
+  fastify.post(
+    "/editorial-looks/:id/products/:productId",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Add a product to an editorial look",
+        tags: ["Editorial Looks"],
+        summary: "Add Product to Look",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            productId: { type: "string", format: "uuid" },
+          },
+          required: ["id", "productId"],
+        },
+      },
+    },
+    editorialLookController.addProductToLook.bind(editorialLookController) as any
+  );
+
+  // Remove product from look
+  fastify.delete(
+    "/editorial-looks/:id/products/:productId",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Remove a product from an editorial look",
+        tags: ["Editorial Looks"],
+        summary: "Remove Product from Look",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            productId: { type: "string", format: "uuid" },
+          },
+          required: ["id", "productId"],
+        },
+      },
+    },
+    editorialLookController.removeProductFromLook.bind(editorialLookController) as any
+  );
+
+  // Set look products (replace all)
+  fastify.put(
+    "/editorial-looks/:id/products",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Set all products for an editorial look (replaces existing)",
+        tags: ["Editorial Looks"],
+        summary: "Set Look Products",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+        body: {
+          type: "object",
+          required: ["productIds"],
+          properties: {
+            productIds: {
+              type: "array",
+              items: { type: "string", format: "uuid" },
+            },
+          },
+        },
+      },
+    },
+    editorialLookController.setLookProducts.bind(editorialLookController) as any
+  );
+
+  // Get look products
+  fastify.get(
+    "/editorial-looks/:id/products",
+    {
+      schema: {
+        description: "Get all products associated with an editorial look",
+        tags: ["Editorial Looks"],
+        summary: "Get Look Products",
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+      },
+    },
+    editorialLookController.getLookProducts.bind(editorialLookController)
+  );
+
+  // Get product's editorial looks (IDs only)
+  fastify.get(
+    "/products/:productId/editorial-looks/ids",
+    {
+      schema: {
+        description: "Get IDs of editorial looks featuring a product",
+        tags: ["Editorial Looks"],
+        summary: "Get Product Look IDs",
+        params: {
+          type: "object",
+          properties: {
+            productId: { type: "string", format: "uuid" },
+          },
+          required: ["productId"],
+        },
+      },
+    },
+    editorialLookController.getProductLooks.bind(editorialLookController)
+  );
+
+  // Get product's editorial looks (full details)
+  fastify.get(
+    "/products/:productId/editorial-looks",
+    {
+      schema: {
+        description: "Get all editorial looks featuring a product",
+        tags: ["Editorial Looks"],
+        summary: "Get Looks by Product",
+        params: {
+          type: "object",
+          properties: {
+            productId: { type: "string", format: "uuid" },
+          },
+          required: ["productId"],
+        },
+        querystring: {
+          type: "object",
+          properties: {
+            page: { type: "integer", minimum: 1, default: 1 },
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+            sortBy: {
+              type: "string",
+              enum: ["title", "publishedAt", "createdAt"],
+              default: "createdAt",
+            },
+            sortOrder: {
+              type: "string",
+              enum: ["asc", "desc"],
+              default: "desc",
+            },
+          },
+        },
+      },
+    },
+    editorialLookController.getLooksByProduct.bind(editorialLookController)
+  );
+
+  // Update story content
+  fastify.patch(
+    "/editorial-looks/:id/story",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Update story content for an editorial look",
+        tags: ["Editorial Looks"],
+        summary: "Update Story Content",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+        body: {
+          type: "object",
+          required: ["storyHtml"],
+          properties: {
+            storyHtml: { type: "string", maxLength: 100000 },
+          },
+        },
+      },
+    },
+    editorialLookController.updateStoryContent.bind(editorialLookController) as any
+  );
+
+  // Clear story content
+  fastify.delete(
+    "/editorial-looks/:id/story",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Clear story content from an editorial look",
+        tags: ["Editorial Looks"],
+        summary: "Clear Story Content",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+      },
+    },
+    editorialLookController.clearStoryContent.bind(editorialLookController) as any
+  );
+
+  // Get editorial look statistics
+  fastify.get(
+    "/editorial-looks/statistics",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Get statistics about editorial looks",
+        tags: ["Editorial Looks"],
+        summary: "Get Editorial Look Statistics",
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    editorialLookController.getEditorialLookStats.bind(editorialLookController) as any
+  );
+
+  // Get popular products in editorial looks
+  fastify.get(
+    "/editorial-looks/popular-products",
+    {
+      schema: {
+        description: "Get most featured products in editorial looks",
+        tags: ["Editorial Looks"],
+        summary: "Get Popular Products",
+        querystring: {
+          type: "object",
+          properties: {
+            limit: { type: "integer", minimum: 1, maximum: 50, default: 10 },
+          },
+        },
+      },
+    },
+    editorialLookController.getPopularProducts.bind(editorialLookController)
+  );
+
+  // Bulk create editorial looks
+  fastify.post(
+    "/editorial-looks/bulk",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Create multiple editorial looks at once",
+        tags: ["Editorial Looks"],
+        summary: "Bulk Create Editorial Looks",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          required: ["looks"],
+          properties: {
+            looks: {
+              type: "array",
+              minItems: 1,
+              maxItems: 20,
+              items: {
+                type: "object",
+                required: ["title"],
+                properties: {
+                  title: { type: "string", maxLength: 200 },
+                  storyHtml: { type: "string", maxLength: 100000 },
+                  heroAssetId: { type: "string", format: "uuid" },
+                  publishedAt: { type: "string", format: "date-time" },
+                  productIds: {
+                    type: "array",
+                    items: { type: "string", format: "uuid" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    editorialLookController.createBulkEditorialLooks.bind(editorialLookController) as any
+  );
+
+  // Bulk delete editorial looks
+  fastify.delete(
+    "/editorial-looks/bulk",
+    {
+      preHandler: authenticateAdmin,
+      schema: {
+        description: "Delete multiple editorial looks at once",
+        tags: ["Editorial Looks"],
+        summary: "Bulk Delete Editorial Looks",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          required: ["ids"],
+          properties: {
+            ids: {
+              type: "array",
+              minItems: 1,
+              maxItems: 50,
+              items: { type: "string", format: "uuid" },
+            },
+          },
+        },
+      },
+    },
+    editorialLookController.deleteBulkEditorialLooks.bind(editorialLookController) as any
+  );
+
+  // Bulk publish editorial looks
+  fastify.post(
+    "/editorial-looks/bulk-publish",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Publish multiple editorial looks at once",
+        tags: ["Editorial Looks"],
+        summary: "Bulk Publish Editorial Looks",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          required: ["ids"],
+          properties: {
+            ids: {
+              type: "array",
+              minItems: 1,
+              maxItems: 20,
+              items: { type: "string", format: "uuid" },
+            },
+          },
+        },
+      },
+    },
+    editorialLookController.publishBulkEditorialLooks.bind(editorialLookController) as any
+  );
+
+  // Validate editorial look for publication
+  fastify.get(
+    "/editorial-looks/:id/validate",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Validate an editorial look for publication",
+        tags: ["Editorial Looks"],
+        summary: "Validate for Publication",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+      },
+    },
+    editorialLookController.validateForPublication.bind(editorialLookController) as any
+  );
+
+  // Duplicate editorial look
+  fastify.post(
+    "/editorial-looks/:id/duplicate",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Duplicate an editorial look with a new title",
+        tags: ["Editorial Looks"],
+        summary: "Duplicate Editorial Look",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+          },
+          required: ["id"],
+        },
+        body: {
+          type: "object",
+          required: ["newTitle"],
+          properties: {
+            newTitle: { type: "string", maxLength: 200 },
+          },
+        },
+      },
+    },
+    editorialLookController.duplicateEditorialLook.bind(editorialLookController) as any
   );
 }

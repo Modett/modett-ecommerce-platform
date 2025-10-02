@@ -1,5 +1,4 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { optionalAuth } from "../../../../user-management/infra/http/middleware/auth.middleware";
 
 // Extend FastifyRequest to include guestToken
 declare module "fastify" {
@@ -24,22 +23,20 @@ export async function extractGuestToken(
     // Validate guest token format (64-char hex string)
     const guestTokenRegex = /^[a-f0-9]{64}$/i;
     if (!guestTokenRegex.test(guestTokenHeader)) {
-      reply.status(400).send({
+      return reply.status(400).send({
         success: false,
         error: "Invalid guest token format. Must be a 64-character hexadecimal string",
         code: "INVALID_GUEST_TOKEN",
       });
-      return;
     }
 
     // Check if user is also authenticated (cannot be both)
     if (request.user) {
-      reply.status(400).send({
+      return reply.status(400).send({
         success: false,
         error: "Cannot provide both Authorization token and X-Guest-Token header",
         code: "MULTIPLE_AUTH_METHODS",
       });
-      return;
     }
 
     request.guestToken = guestTokenHeader;
