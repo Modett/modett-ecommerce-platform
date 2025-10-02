@@ -194,10 +194,12 @@ export async function registerCartRoutes(
   fastify.get(
     "/guests/:guestToken/cart",
     {
+      preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Get active cart for a guest",
+        description: "Get active cart for a guest. WARNING: Do NOT provide Authorization header - this endpoint is for guest users only. If you are logged in (have a bearer token), you must logout first.",
         tags: ["Cart"],
         summary: "Get Guest Cart",
+        security: [{ bearerAuth: [] }, {}], // Optional authentication - will be rejected if provided
         params: {
           type: "object",
           required: ["guestToken"],
@@ -212,6 +214,16 @@ export async function registerCartRoutes(
             properties: {
               success: { type: "boolean", example: true },
               data: { type: "object", additionalProperties: true },
+            },
+          },
+          400: {
+            description: "Bad request - Authenticated user cannot access guest cart",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Bad Request" },
+              message: { type: "string", example: "Authenticated users cannot access guest carts. Use the user cart endpoint instead." },
+              code: { type: "string", example: "AUTHENTICATED_USER_CANNOT_ACCESS_GUEST_CART" },
             },
           },
           404: {
@@ -271,10 +283,12 @@ export async function registerCartRoutes(
   fastify.post(
     "/guests/:guestToken/cart",
     {
+      preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Create a new cart for a guest",
+        description: "Create a new cart for a guest. WARNING: Do NOT provide Authorization header - this endpoint is for guest users only. If you are logged in (have a bearer token), you must logout first.",
         tags: ["Cart"],
         summary: "Create Guest Cart",
+        security: [{ bearerAuth: [] }, {}], // Optional authentication - will be rejected if provided
         params: {
           type: "object",
           required: ["guestToken"],
@@ -298,6 +312,16 @@ export async function registerCartRoutes(
               success: { type: "boolean", example: true },
               data: { type: "object", additionalProperties: true },
               message: { type: "string", example: "Cart created successfully" },
+            },
+          },
+          400: {
+            description: "Bad request - Authenticated user cannot create guest cart",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Bad Request" },
+              message: { type: "string", example: "Authenticated users cannot create guest carts. Use the user cart endpoint instead." },
+              code: { type: "string", example: "AUTHENTICATED_USER_CANNOT_CREATE_GUEST_CART" },
             },
           },
         },
@@ -335,12 +359,11 @@ export async function registerCartRoutes(
         },
         body: {
           type: "object",
-          required: ["variantId", "quantity", "unitPrice"],
+          required: ["variantId", "quantity"],
           properties: {
             cartId: { type: "string", format: "uuid", description: "Cart ID (optional for guest users)" },
             variantId: { type: "string", format: "uuid", description: "Product variant ID" },
             quantity: { type: "integer", minimum: 1, example: 2 },
-            unitPrice: { type: "number", minimum: 0, example: 29.99 },
             appliedPromos: {
               type: "array",
               items: {
@@ -505,10 +528,12 @@ export async function registerCartRoutes(
   fastify.post(
     "/guests/:guestToken/cart/transfer",
     {
+      preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Transfer guest cart to authenticated user",
+        description: "Transfer guest cart to authenticated user. This endpoint can optionally use Bearer token to verify the user.",
         tags: ["Cart"],
         summary: "Transfer Cart",
+        security: [{ bearerAuth: [] }], // Optional authentication
         params: {
           type: "object",
           required: ["guestToken"],
