@@ -19,8 +19,10 @@ export interface IEditorialLookRepository {
   // Product-Look associations
   addProductToLook(lookId: EditorialLookId, productId: string): Promise<void>;
   removeProductFromLook(lookId: EditorialLookId, productId: string): Promise<void>;
+  setLookProducts(lookId: EditorialLookId, productIds: string[]): Promise<void>;
   getLookProducts(lookId: EditorialLookId): Promise<string[]>;
   getProductLooks(productId: string): Promise<EditorialLookId[]>;
+  existsProductInLook(lookId: EditorialLookId, productId: string): Promise<boolean>;
 }
 
 export interface EditorialLookQueryOptions {
