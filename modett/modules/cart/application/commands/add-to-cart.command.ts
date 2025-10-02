@@ -34,7 +34,6 @@ export interface AddToCartCommand extends ICommand {
   guestToken?: string;
   variantId: string;
   quantity: number;
-  unitPrice: number;
   appliedPromos?: PromoData[];
   isGift?: boolean;
   giftMessage?: string;
@@ -58,13 +57,6 @@ export class AddToCartHandler implements ICommandHandler<AddToCartCommand, Comma
         return CommandResult.failure<CartDto>(
           'Quantity must be greater than 0',
           ['quantity']
-        );
-      }
-
-      if (command.unitPrice < 0) {
-        return CommandResult.failure<CartDto>(
-          'Unit price must be non-negative',
-          ['unitPrice']
         );
       }
 
@@ -93,7 +85,6 @@ export class AddToCartHandler implements ICommandHandler<AddToCartCommand, Comma
         guestToken: command.guestToken,
         variantId: command.variantId,
         quantity: command.quantity,
-        unitPrice: command.unitPrice,
         appliedPromos: command.appliedPromos,
         isGift: command.isGift,
         giftMessage: command.giftMessage,
