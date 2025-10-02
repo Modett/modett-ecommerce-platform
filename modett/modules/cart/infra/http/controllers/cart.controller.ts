@@ -33,7 +33,6 @@ interface AddToCartRequest {
   cartId?: string;
   variantId: string;
   quantity: number;
-  unitPrice: number;
   appliedPromos?: Array<{
     id: string;
     code: string;
@@ -107,11 +106,6 @@ export class CartController {
     try {
       const { cartId } = request.params;
 
-      // Debug logging
-      console.log('[getCart] Authorization header:', request.headers.authorization ? 'Present' : 'Missing');
-      console.log('[getCart] request.user:', request.user ? `Present (userId: ${request.user.userId})` : 'Missing');
-      console.log('[getCart] request.guestToken:', request.guestToken ? 'Present' : 'Missing');
-
       // Get userId from JWT (authenticated user) or guestToken from header
       const userId = request.user?.userId;
       const guestToken = request.guestToken;
@@ -147,9 +141,6 @@ export class CartController {
       }
     } catch (error) {
       request.log.error(error, "Failed to get cart");
-      console.error("[getCart] Error details:", error);
-      console.error("[getCart] Error message:", error instanceof Error ? error.message : String(error));
-      console.error("[getCart] Error stack:", error instanceof Error ? error.stack : "No stack trace");
 
       if (error instanceof Error && error.message.includes("Unauthorized")) {
         return reply.code(403).send({
@@ -204,9 +195,6 @@ export class CartController {
       }
     } catch (error) {
       request.log.error(error, "Failed to get cart by user");
-      console.error("[getActiveCartByUser] Error details:", error);
-      console.error("[getActiveCartByUser] Error message:", error instanceof Error ? error.message : String(error));
-      console.error("[getActiveCartByUser] Error stack:", error instanceof Error ? error.stack : "No stack trace");
       return reply.code(500).send({
         success: false,
         error: "Internal server error",
@@ -221,6 +209,17 @@ export class CartController {
     reply: FastifyReply
   ) {
     try {
+      // Check if user is authenticated - authenticated users cannot access guest carts
+      // This check catches both JWT authentication and any Authorization header
+      if (request.user || request.headers.authorization) {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: "Authenticated users cannot access guest carts. Use the user cart endpoint instead. If testing in Swagger, please logout (click the 'Logout' button) before accessing guest carts.",
+          code: "AUTHENTICATED_USER_CANNOT_ACCESS_GUEST_CART",
+        });
+      }
+
       const { guestToken } = request.params;
 
       if (!guestToken || typeof guestToken !== "string") {
@@ -291,21 +290,12 @@ export class CartController {
       // Execute command using handler
       const result = await this.createUserCartHandler.handle(command);
 
-      console.log('Handler result:', JSON.stringify({
-        success: result.success,
-        hasData: !!result.data,
-        dataKeys: result.data ? Object.keys(result.data) : [],
-        error: result.error
-      }));
-
       if (result.success && result.data) {
-        const response = {
+        return reply.code(201).send({
           success: true,
           data: result.data,
           message: "Cart created successfully",
-        };
-        console.log('Sending response:', JSON.stringify(response, null, 2));
-        return reply.code(201).send(response);
+        });
       } else {
         return reply.code(400).send({
           success: false,
@@ -332,6 +322,17 @@ export class CartController {
     reply: FastifyReply
   ) {
     try {
+      // Check if user is authenticated - authenticated users cannot create guest carts
+      // This check catches both JWT authentication and any Authorization header
+      if (request.user || request.headers.authorization) {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: "Authenticated users cannot create guest carts. Use the user cart endpoint instead. If testing in Swagger, please logout (click the 'Logout' button) before creating guest carts.",
+          code: "AUTHENTICATED_USER_CANNOT_CREATE_GUEST_CART",
+        });
+      }
+
       const { guestToken } = request.params;
       const cartData = request.body || {};
 
@@ -412,18 +413,6 @@ export class CartController {
         });
       }
 
-      if (
-        !itemData.unitPrice ||
-        typeof itemData.unitPrice !== "number" ||
-        itemData.unitPrice < 0
-      ) {
-        return reply.code(400).send({
-          success: false,
-          error: "Bad Request",
-          message: "Unit price must be a non-negative number",
-        });
-      }
-
       // Authentication already validated by middleware
       // At this point, we have either userId (from JWT) or guestToken (from header)
 
@@ -444,7 +433,6 @@ export class CartController {
         guestToken,
         variantId: itemData.variantId,
         quantity: itemData.quantity,
-        unitPrice: itemData.unitPrice,
         appliedPromos,
         isGift: itemData.isGift,
         giftMessage: itemData.giftMessage,
@@ -778,6 +766,16 @@ export class CartController {
           success: false,
           error: "Bad Request",
           message: "User ID is required and must be a valid string",
+        });
+      }
+
+      // If authenticated, verify the userId matches the authenticated user
+      if (request.user && request.user.userId !== userId) {
+        return reply.code(403).send({
+          success: false,
+          error: "Forbidden",
+          message: "You can only transfer carts to your own account",
+          code: "UNAUTHORIZED_CART_TRANSFER",
         });
       }
 
