@@ -68,6 +68,9 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       // Validate Bearer token format
       const tokenMatch = authHeader.match(/^Bearer\s+(.+)$/);
       if (!tokenMatch) {
+        if (optional) {
+          return; // Invalid format but optional, continue without auth
+        }
         reply.status(401).send({
           success: false,
           error:
@@ -87,7 +90,10 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       const isBlacklisted = TokenBlacklistService.isTokenBlacklisted(token);
       console.log(`[DEBUG] Token blacklisted: ${isBlacklisted}`);
       if (isBlacklisted) {
-        console.log(`[DEBUG] Token is blacklisted, rejecting request`);
+        console.log(`[DEBUG] Token is blacklisted, ${optional ? 'continuing without auth' : 'rejecting request'}`);
+        if (optional) {
+          return; // Blacklisted but optional, continue without auth
+        }
         reply.status(401).send({
           success: false,
           error: "Token has been revoked",
@@ -103,6 +109,10 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
           algorithms: [JWT_ALGORITHM],
         });
       } catch (jwtError: any) {
+        if (optional) {
+          return; // Invalid token but optional, continue without auth
+        }
+
         const errorMessage =
           jwtError.name === "TokenExpiredError"
             ? "Token has expired"
@@ -120,6 +130,9 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
 
       // Validate token payload structure
       if (!decoded.userId || !decoded.email) {
+        if (optional) {
+          return; // Invalid payload but optional, continue without auth
+        }
         reply.status(401).send({
           success: false,
           error: "Invalid token payload",
