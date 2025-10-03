@@ -10,7 +10,7 @@ export class CategoryId {
       throw new Error('Category ID must be a valid UUID');
     }
   }
-
+   
   static create(): CategoryId {
     return new CategoryId(uuidv4());
   }
