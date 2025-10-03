@@ -92,7 +92,7 @@ export class ListProductsHandler
         products: productResults,
         totalCount: products.totalCount,
         page,
-        limit,
+        limit, 
       };
 
       return CommandResult.success<ListProductsResult>(result);

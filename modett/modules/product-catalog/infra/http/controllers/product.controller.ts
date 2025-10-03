@@ -38,7 +38,7 @@ interface ProductQueryParams {
   status?: "draft" | "published" | "scheduled";
   brand?: string;
   categoryId?: string;
-  search?: string;
+  search?: string; 
   sortBy?: "createdAt" | "title" | "publishAt";
   sortOrder?: "asc" | "desc";
 }

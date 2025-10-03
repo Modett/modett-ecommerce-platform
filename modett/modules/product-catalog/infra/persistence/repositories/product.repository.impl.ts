@@ -198,13 +198,7 @@ export class ProductRepository implements IProductRepository {
       includeDrafts = false,
     } = options || {};
 
-    const whereClause: any = {
-      categories: {
-        some: {
-          categoryId: categoryId,
-        },
-      },
-    };
+    const whereClause: any = {categories: {some: {categoryId: categoryId}}};
 
     if (!includeDrafts) {
       whereClause.status = { in: ['published', 'scheduled'] };
