@@ -168,7 +168,7 @@ export class ProductManagementService {
     }
 
     return {
-      items: products,
+      items: products, // Array of Product entities
       totalCount,
     };
   }
