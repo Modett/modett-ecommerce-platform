@@ -22,7 +22,7 @@ export async function createServer(): Promise<FastifyInstance> {
     trustProxy: true,
     ajv: {
       customOptions: {
-        removeAdditional: "all",
+        removeAdditional: false,
         useDefaults: true,
         coerceTypes: "array",
         strict: false,
@@ -38,7 +38,12 @@ export async function createServer(): Promise<FastifyInstance> {
         : true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "X-Guest-Token"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "X-Guest-Token",
+    ],
   });
 
   await server.register(import("@fastify/helmet"), {
@@ -68,7 +73,8 @@ export async function createServer(): Promise<FastifyInstance> {
       openapi: "3.0.0",
       info: {
         title: "Modett E-commerce API",
-        description: "Professional e-commerce platform API with user management, product catalog, and authentication services.",
+        description:
+          "Professional e-commerce platform API with user management, product catalog, and authentication services.",
         version: "1.0.0",
         contact: {
           name: "Modett API Support",
@@ -112,7 +118,10 @@ export async function createServer(): Promise<FastifyInstance> {
               errors: {
                 type: "array",
                 items: { type: "string" },
-                example: ["email is required", "password must be at least 8 characters"]
+                example: [
+                  "email is required",
+                  "password must be at least 8 characters",
+                ],
               },
               code: { type: "string", example: "VALIDATION_ERROR" },
               timestamp: { type: "string", format: "date-time" },
@@ -123,7 +132,10 @@ export async function createServer(): Promise<FastifyInstance> {
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              message: { type: "string", example: "Operation completed successfully" },
+              message: {
+                type: "string",
+                example: "Operation completed successfully",
+              },
               data: { type: "object" },
               timestamp: { type: "string", format: "date-time" },
             },
@@ -211,8 +223,16 @@ export async function createServer(): Promise<FastifyInstance> {
             type: "object",
             properties: {
               userId: { type: "string", format: "uuid" },
-              defaultAddressId: { type: "string", format: "uuid", nullable: true },
-              defaultPaymentMethodId: { type: "string", format: "uuid", nullable: true },
+              defaultAddressId: {
+                type: "string",
+                format: "uuid",
+                nullable: true,
+              },
+              defaultPaymentMethodId: {
+                type: "string",
+                format: "uuid",
+                nullable: true,
+              },
               locale: { type: "string", example: "en-US", nullable: true },
               currency: { type: "string", example: "USD", nullable: true },
               preferences: { type: "object", additionalProperties: true },
@@ -302,15 +322,39 @@ export async function createServer(): Promise<FastifyInstance> {
               type: {
                 type: "string",
                 enum: ["card", "wallet", "bank", "cod", "gift_card"],
-                example: "card"
+                example: "card",
               },
               brand: { type: "string", nullable: true, example: "visa" },
-              last4: { type: "string", nullable: true, pattern: "^[0-9]{4}$", example: "4242" },
-              expMonth: { type: "number", nullable: true, minimum: 1, maximum: 12, example: 12 },
-              expYear: { type: "number", nullable: true, minimum: 2024, example: 2025 },
+              last4: {
+                type: "string",
+                nullable: true,
+                pattern: "^[0-9]{4}$",
+                example: "4242",
+              },
+              expMonth: {
+                type: "number",
+                nullable: true,
+                minimum: 1,
+                maximum: 12,
+                example: 12,
+              },
+              expYear: {
+                type: "number",
+                nullable: true,
+                minimum: 2024,
+                example: 2025,
+              },
               isDefault: { type: "boolean", example: true },
-              billingAddressId: { type: "string", format: "uuid", nullable: true },
-              providerRef: { type: "string", nullable: true, example: "pm_1234567890" },
+              billingAddressId: {
+                type: "string",
+                format: "uuid",
+                nullable: true,
+              },
+              providerRef: {
+                type: "string",
+                nullable: true,
+                example: "pm_1234567890",
+              },
               createdAt: { type: "string", format: "date-time" },
               updatedAt: { type: "string", format: "date-time" },
             },
@@ -326,7 +370,7 @@ export async function createServer(): Promise<FastifyInstance> {
               provider: {
                 type: "string",
                 enum: ["google", "facebook", "apple", "twitter", "github"],
-                example: "google"
+                example: "google",
               },
               providerUserId: { type: "string", example: "1234567890" },
               email: { type: "string", format: "email", nullable: true },
@@ -345,8 +389,14 @@ export async function createServer(): Promise<FastifyInstance> {
           AuthTokens: {
             type: "object",
             properties: {
-              accessToken: { type: "string", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
-              refreshToken: { type: "string", example: "rt_1234567890abcdef..." },
+              accessToken: {
+                type: "string",
+                example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              },
+              refreshToken: {
+                type: "string",
+                example: "rt_1234567890abcdef...",
+              },
               expiresIn: {
                 type: "number",
                 description: "Token expiry in seconds",
@@ -390,23 +440,56 @@ export async function createServer(): Promise<FastifyInstance> {
         },
         {
           name: "Cart",
-          description:
-            "Shopping cart management for user and guest carts",
+          description: "Shopping cart management for user and guest carts",
         },
         {
           name: "Cart Admin",
-          description:
-            "Administrative cart operations and statistics",
+          description: "Administrative cart operations and statistics",
         },
         {
           name: "Reservations",
-          description:
-            "Inventory reservation management for cart items",
+          description: "Inventory reservation management for cart items",
         },
         {
           name: "Reservations Admin",
+          description: "Administrative reservation operations and statistics",
+        },
+        {
+          name: "Orders",
+          description: "Order creation, management, and tracking",
+        },
+        {
+          name: "Order Addresses",
+          description: "Order billing and shipping address management",
+        },
+        {
+          name: "Order Items",
           description:
-            "Administrative reservation operations and statistics",
+            "Order item management - add, update, remove items from orders",
+        },
+        {
+          name: "Order Shipments",
+          description:
+            "Order shipment tracking, carrier management, and delivery status",
+        },
+        {
+          name: "Order Status History",
+          description: "Order status change audit trail and history tracking",
+        },
+        {
+          name: "Order Events",
+          description:
+            "Order event log, audit, and domain event tracking for orders",
+        },
+        {
+          name: "Preorders",
+          description:
+            "Preorder management for future releases and seasonal collections",
+        },
+        {
+          name: "Backorders",
+          description:
+            "Backorder management for temporarily out-of-stock items",
         },
         {
           name: "System",
@@ -559,7 +642,6 @@ export async function createServer(): Promise<FastifyInstance> {
       };
     }
   );
-
 
   server.setErrorHandler(async (error, request, reply) => {
     server.log.error(
@@ -740,7 +822,10 @@ export async function createServer(): Promise<FastifyInstance> {
 
     server.log.info("Product catalog routes registered successfully");
   } catch (error) {
-    server.log.error(error as Error, "Failed to register product catalog routes:");
+    server.log.error(
+      error as Error,
+      "Failed to register product catalog routes:"
+    );
     server.log.info("Continuing with user management endpoints only");
   }
 
@@ -766,6 +851,36 @@ export async function createServer(): Promise<FastifyInstance> {
     server.log.info("Cart routes registered successfully");
   } catch (error) {
     server.log.error(error as Error, "Failed to register cart routes:");
+    server.log.info("Continuing with other endpoints");
+  }
+
+  // Register order management routes
+  try {
+    const { registerOrderManagementRoutes } = await import(
+      "../../../modules/order-management/infra/http/routes"
+    );
+
+    const orderServices = {
+      orderService: serviceContainer.orderManagementService,
+      orderEventService: serviceContainer.orderEventService,
+      preorderService: serviceContainer.preorderManagementService,
+      backorderService: serviceContainer.backorderManagementService,
+    };
+
+    // Register order management routes with services
+    await server.register(
+      async function (fastify) {
+        await registerOrderManagementRoutes(fastify, orderServices);
+      },
+      { prefix: "/api/v1" }
+    );
+
+    server.log.info("Order management routes registered successfully");
+  } catch (error) {
+    server.log.error(
+      error as Error,
+      "Failed to register order management routes:"
+    );
     server.log.info("Continuing with other endpoints");
   }
 
