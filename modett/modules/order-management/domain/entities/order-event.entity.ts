@@ -6,6 +6,14 @@ export interface OrderEventProps {
   createdAt: Date;
 }
 
+export interface OrderEventDatabaseRow {
+  event_id: number;
+  order_id: string;
+  event_type: string;
+  payload: any;
+  created_at: Date;
+}
+
 export class OrderEvent {
   private eventId: number;
   private orderId: string;
@@ -22,21 +30,42 @@ export class OrderEvent {
   }
 
   static create(props: Omit<OrderEventProps, 'eventId' | 'createdAt'>): OrderEvent {
+    // Validate required fields
+    if (!props.orderId || props.orderId.trim().length === 0) {
+      throw new Error('Order ID is required');
+    }
+
     if (!props.eventType || props.eventType.trim().length === 0) {
       throw new Error('Event type is required');
+    }
+
+    // Validate orderId is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(props.orderId)) {
+      throw new Error('Order ID must be a valid UUID');
     }
 
     return new OrderEvent({
       eventId: 0, // Will be assigned by database
       orderId: props.orderId,
       eventType: props.eventType,
-      payload: props.payload,
+      payload: props.payload || {},
       createdAt: new Date()
     });
   }
 
   static reconstitute(props: OrderEventProps): OrderEvent {
     return new OrderEvent(props);
+  }
+
+  static fromDatabaseRow(row: OrderEventDatabaseRow): OrderEvent {
+    return new OrderEvent({
+      eventId: row.event_id,
+      orderId: row.order_id,
+      eventType: row.event_type,
+      payload: row.payload || {},
+      createdAt: row.created_at,
+    });
   }
 
   getEventId(): number {
@@ -57,5 +86,26 @@ export class OrderEvent {
 
   getCreatedAt(): Date {
     return this.createdAt;
+  }
+
+  // Utility methods
+  toDatabaseRow(): OrderEventDatabaseRow {
+    return {
+      event_id: this.eventId,
+      order_id: this.orderId,
+      event_type: this.eventType,
+      payload: this.payload,
+      created_at: this.createdAt,
+    };
+  }
+
+  toJSON() {
+    return {
+      eventId: this.eventId,
+      orderId: this.orderId,
+      eventType: this.eventType,
+      payload: this.payload,
+      createdAt: this.createdAt,
+    };
   }
 }

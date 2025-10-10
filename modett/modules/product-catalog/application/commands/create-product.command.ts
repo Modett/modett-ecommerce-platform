@@ -76,7 +76,7 @@ export class CreateProductHandler implements ICommandHandler<CreateProductComman
     } catch (error) {
       if (error instanceof Error) {
         return CommandResult.failure<Product>(
-          'Product creation failed',
+          error.message,  // Use actual error message instead of generic "Product creation failed"
           [error.message]
         );
       }

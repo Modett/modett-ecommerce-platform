@@ -1,8 +1,9 @@
 import {
   IOrderEventRepository,
-  OrderEventQueryOptions
+  OrderEventQueryOptions,
 } from "../../domain/repositories/order-event.repository";
 import { OrderEvent } from "../../domain/entities/order-event.entity";
+import { OrderEventTypes } from "../../domain/enums/order-event-types.enum";
 
 export interface LogEventData {
   orderId: string;
@@ -36,15 +37,21 @@ export class OrderEventService {
     return orderEvent;
   }
 
-  async logOrderCreated(orderId: string, payload?: Record<string, any>): Promise<OrderEvent> {
+  async logOrderCreated(
+    orderId: string,
+    payload?: Record<string, any>
+  ): Promise<OrderEvent> {
     return await this.logEvent({
       orderId,
-      eventType: "order.created",
+      eventType: OrderEventTypes.ORDER_CREATED,
       payload: payload || {},
     });
   }
 
-  async logOrderUpdated(orderId: string, payload?: Record<string, any>): Promise<OrderEvent> {
+  async logOrderUpdated(
+    orderId: string,
+    payload?: Record<string, any>
+  ): Promise<OrderEvent> {
     return await this.logEvent({
       orderId,
       eventType: "order.updated",
@@ -60,7 +67,7 @@ export class OrderEventService {
   ): Promise<OrderEvent> {
     return await this.logEvent({
       orderId,
-      eventType: "order.status_changed",
+      eventType: OrderEventTypes.ORDER_STATUS_CHANGED,
       payload: {
         oldStatus,
         newStatus,
@@ -69,7 +76,10 @@ export class OrderEventService {
     });
   }
 
-  async logOrderPaid(orderId: string, payload?: Record<string, any>): Promise<OrderEvent> {
+  async logOrderPaid(
+    orderId: string,
+    payload?: Record<string, any>
+  ): Promise<OrderEvent> {
     return await this.logEvent({
       orderId,
       eventType: "order.paid",
@@ -77,7 +87,10 @@ export class OrderEventService {
     });
   }
 
-  async logOrderFulfilled(orderId: string, payload?: Record<string, any>): Promise<OrderEvent> {
+  async logOrderFulfilled(
+    orderId: string,
+    payload?: Record<string, any>
+  ): Promise<OrderEvent> {
     return await this.logEvent({
       orderId,
       eventType: "order.fulfilled",
@@ -85,7 +98,10 @@ export class OrderEventService {
     });
   }
 
-  async logOrderCancelled(orderId: string, payload?: Record<string, any>): Promise<OrderEvent> {
+  async logOrderCancelled(
+    orderId: string,
+    payload?: Record<string, any>
+  ): Promise<OrderEvent> {
     return await this.logEvent({
       orderId,
       eventType: "order.cancelled",
@@ -93,7 +109,10 @@ export class OrderEventService {
     });
   }
 
-  async logOrderRefunded(orderId: string, payload?: Record<string, any>): Promise<OrderEvent> {
+  async logOrderRefunded(
+    orderId: string,
+    payload?: Record<string, any>
+  ): Promise<OrderEvent> {
     return await this.logEvent({
       orderId,
       eventType: "order.refunded",
@@ -267,7 +286,10 @@ export class OrderEventService {
       ...options,
     };
 
-    return await this.orderEventRepository.findByOrderId(orderId, defaultOptions);
+    return await this.orderEventRepository.findByOrderId(
+      orderId,
+      defaultOptions
+    );
   }
 
   async deleteEvent(eventId: number): Promise<boolean> {

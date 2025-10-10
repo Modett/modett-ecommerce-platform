@@ -133,7 +133,6 @@ export function createServiceContainer(): ServiceContainer {
   const addressRepository = new AddressRepository(prisma);
   const userProfileRepository = new UserProfileRepository(prisma);
   const paymentMethodRepository = new PaymentMethodRepository(prisma);
-
   // Initialize Product Catalog repositories
   const productRepository = new ProductRepository(prisma);
   const productVariantRepository = new ProductVariantRepository(prisma);
