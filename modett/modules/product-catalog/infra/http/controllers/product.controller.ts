@@ -38,7 +38,7 @@ interface ProductQueryParams {
   status?: "draft" | "published" | "scheduled";
   brand?: string;
   categoryId?: string;
-  search?: string; 
+  search?: string;
   sortBy?: "createdAt" | "title" | "publishAt";
   sortOrder?: "asc" | "desc";
 }
@@ -108,8 +108,7 @@ export class ProductController {
           sortOrder,
         };
 
-        const searchResult =
-          await this.searchProductsHandler.handle(searchQuery);
+        const searchResult = await this.searchProductsHandler.handle(searchQuery);
         if (searchResult.success && searchResult.data) {
           return reply.code(200).send({
             success: true,
@@ -301,7 +300,7 @@ export class ProductController {
             title: productData.title,
             slug: productData.slug,
             status: productData.status,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
           },
           message: "Product created successfully",
         });

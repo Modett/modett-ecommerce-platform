@@ -131,4 +131,20 @@ export class OrderShipment {
   updateTrackingNumber(trackingNumber: string): void {
     this.trackingNumber = trackingNumber;
   }
+
+  toJSON() {
+    return {
+      shipmentId: this.shipmentId,
+      orderId: this.orderId,
+      carrier: this.carrier,
+      service: this.service,
+      trackingNumber: this.trackingNumber,
+      giftReceipt: this.giftReceipt,
+      pickupLocationId: this.pickupLocationId,
+      shippedAt: this.shippedAt,
+      deliveredAt: this.deliveredAt,
+      isShipped: this.isShipped(),
+      isDelivered: this.isDelivered(),
+    };
+  }
 }

@@ -68,4 +68,16 @@ export class OrderStatusHistory {
   isInitialStatus(): boolean {
     return !this.fromStatus;
   }
+
+  toJSON() {
+    return {
+      historyId: this.historyId,
+      orderId: this.orderId,
+      fromStatus: this.fromStatus?.getValue(),
+      toStatus: this.toStatus.getValue(),
+      changedAt: this.changedAt,
+      changedBy: this.changedBy,
+      isInitialStatus: this.isInitialStatus(),
+    };
+  }
 }

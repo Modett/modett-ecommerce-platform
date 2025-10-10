@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["cart", "product_catalog", "public", "user_management"]
+  schemas  = ["cart", "product_catalog", "public", "user_management", "order_management", "inventory_management"]
 }
 
 model User {
@@ -24,6 +24,7 @@ model User {
   socialLogins   SocialLogin[]
   addresses      UserAddress[]
   profile        UserProfile?
+  orders         Order[]
 
   @@map("users")
   @@schema("user_management")
@@ -149,6 +150,7 @@ model ProductVariant {
   updatedAt      DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   cartItems      CartItem[]
   reservations   Reservation[]
+  orderItems     OrderItem[]
   product        Product        @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   media          VariantMedia[]
 
@@ -354,4 +356,152 @@ enum RegionEnum {
 
   @@map("region_enum")
   @@schema("product_catalog")
+}
+
+model Order {
+  id              String               @id @default(dbgenerated("gen_random_uuid()")) @map("order_id") @db.Uuid
+  orderNo         String               @unique @map("order_no")
+  userId          String?              @map("user_id") @db.Uuid
+  guestToken      String?              @map("guest_token")
+  totals          Json                 @default("{}")
+  status          OrderStatusEnum      @default(created)
+  source          OrderSourceEnum      @default(web)
+  currency        String
+  createdAt       DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  items           OrderItem[]
+  addresses       OrderAddress[]
+  shipments       OrderShipment[]
+  statusHistory   OrderStatusHistory[]
+  events          OrderEvent[]
+  user            User?                @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([userId], map: "idx_orders_user_id")
+  @@index([status], map: "idx_orders_status")
+  @@index([createdAt], map: "idx_orders_created_at")
+  @@map("orders")
+  @@schema("order_management")
+}
+
+model OrderItem {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @map("order_item_id") @db.Uuid
+  orderId         String         @map("order_id") @db.Uuid
+  variantId       String         @map("variant_id") @db.Uuid
+  qty             Int
+  productSnapshot Json           @default("{}") @map("product_snapshot")
+  isGift          Boolean        @default(false) @map("is_gift")
+  giftMessage     String?        @map("gift_message")
+  order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  variant         ProductVariant @relation(fields: [variantId], references: [id], onUpdate: NoAction)
+  backorder       Backorder?
+  preorder        Preorder?
+
+  @@map("order_items")
+  @@schema("order_management")
+}
+
+model OrderAddress {
+  orderId          String @id @map("order_id") @db.Uuid
+  billingSnapshot  Json   @default("{}") @map("billing_snapshot")
+  shippingSnapshot Json   @default("{}") @map("shipping_snapshot")
+  order            Order  @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("order_addresses")
+  @@schema("order_management")
+}
+
+model OrderShipment {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @map("shipment_id") @db.Uuid
+  orderId          String    @map("order_id") @db.Uuid
+  carrier          String?
+  service          String?
+  trackingNo       String?   @map("tracking_no")
+  giftReceipt      Boolean   @default(false) @map("gift_receipt")
+  pickupLocationId String?   @map("pickup_location_id") @db.Uuid
+  shippedAt        DateTime? @map("shipped_at") @db.Timestamptz(6)
+  deliveredAt      DateTime? @map("delivered_at") @db.Timestamptz(6)
+  order            Order     @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  pickupLocation   Location? @relation(fields: [pickupLocationId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@map("order_shipments")
+  @@schema("order_management")
+}
+
+model OrderStatusHistory {
+  id         BigInt           @id @default(autoincrement()) @map("history_id")
+  orderId    String           @map("order_id") @db.Uuid
+  fromStatus OrderStatusEnum? @map("from_status")
+  toStatus   OrderStatusEnum  @map("to_status")
+  changedAt  DateTime         @default(now()) @map("changed_at") @db.Timestamptz(6)
+  changedBy  String?          @map("changed_by")
+  order      Order            @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("order_status_history")
+  @@schema("order_management")
+}
+
+model Backorder {
+  orderItemId String    @id @map("order_item_id") @db.Uuid
+  promisedEta DateTime? @map("promised_eta") @db.Timestamptz(6)
+  notifiedAt  DateTime? @map("notified_at") @db.Timestamptz(6)
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("backorders")
+  @@schema("order_management")
+}
+
+model Preorder {
+  orderItemId String    @id @map("order_item_id") @db.Uuid
+  releaseDate DateTime? @map("release_date") @db.Timestamptz(6)
+  notifiedAt  DateTime? @map("notified_at") @db.Timestamptz(6)
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("preorders")
+  @@schema("order_management")
+}
+
+model OrderEvent {
+  id        BigInt   @id @default(autoincrement()) @map("event_id")
+  orderId   String   @map("order_id") @db.Uuid
+  eventType String   @map("event_type")
+  payload   Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([orderId], map: "idx_order_events_order_id")
+  @@index([eventType], map: "idx_order_events_event_type")
+  @@map("order_events")
+  @@schema("order_management")
+}
+
+enum OrderStatusEnum {
+  created
+  paid
+  fulfilled
+  partially_returned
+  refunded
+  cancelled
+
+  @@map("order_status_enum")
+  @@schema("order_management")
+}
+
+enum OrderSourceEnum {
+  web
+  mobile
+
+  @@map("order_source_enum")
+  @@schema("order_management")
+}
+
+// Minimal inventory management models to satisfy FK constraints
+model Location {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @map("location_id") @db.Uuid
+  name           String
+  type           String
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  orderShipments OrderShipment[]
+
+  @@map("locations")
+  @@schema("inventory_management")
 }

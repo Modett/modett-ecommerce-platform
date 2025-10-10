@@ -7,7 +7,6 @@ import { Preorder } from "../../domain/entities/preorder.entity";
 export interface CreatePreorderData {
   orderItemId: string;
   releaseDate?: Date;
-  notifiedAt?: Date;
 }
 
 export class PreorderManagementService {
@@ -31,7 +30,6 @@ export class PreorderManagementService {
     const preorder = Preorder.create({
       orderItemId: data.orderItemId,
       releaseDate: data.releaseDate,
-      notifiedAt: data.notifiedAt,
     });
 
     // Save the preorder

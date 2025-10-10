@@ -103,6 +103,7 @@ export async function registerProductCatalogRoutes(
             },
             categoryId: { type: "string", format: "uuid" },
             brand: { type: "string" },
+            // search: { type: "string" },
             sortBy: {
               type: "string",
               enum: ["title", "createdAt", "updatedAt", "publishAt"],
@@ -138,6 +139,10 @@ export async function registerProductCatalogRoutes(
                           type: "string",
                           enum: ["draft", "published", "scheduled"],
                         },
+                        longDescHtml: { type: "string", nullable: true },
+                        countryOfOrigin: { type: "string", nullable: true },
+                        seoTitle: { type: "string", nullable: true },
+                        seoDescription: { type: "string", nullable: true },
                         publishAt: {
                           type: "string",
                           format: "date-time",
@@ -2160,7 +2165,8 @@ export async function registerProductCatalogRoutes(
     "/editorial-looks",
     {
       schema: {
-        description: "Get paginated list of editorial looks with filtering options",
+        description:
+          "Get paginated list of editorial looks with filtering options",
         tags: ["Editorial Looks"],
         summary: "List Editorial Looks",
         querystring: {
@@ -2236,7 +2242,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.createEditorialLook.bind(editorialLookController) as any
+    editorialLookController.createEditorialLook.bind(
+      editorialLookController
+    ) as any
   );
 
   // Update editorial look
@@ -2262,12 +2270,18 @@ export async function registerProductCatalogRoutes(
             title: { type: "string", maxLength: 200 },
             storyHtml: { type: "string", maxLength: 100000 },
             heroAssetId: { type: "string", format: "uuid", nullable: true },
-            publishedAt: { type: "string", format: "date-time", nullable: true },
+            publishedAt: {
+              type: "string",
+              format: "date-time",
+              nullable: true,
+            },
           },
         },
       },
     },
-    editorialLookController.updateEditorialLook.bind(editorialLookController) as any
+    editorialLookController.updateEditorialLook.bind(
+      editorialLookController
+    ) as any
   );
 
   // Delete editorial look
@@ -2289,7 +2303,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.deleteEditorialLook.bind(editorialLookController) as any
+    editorialLookController.deleteEditorialLook.bind(
+      editorialLookController
+    ) as any
   );
 
   // Publish editorial look
@@ -2311,7 +2327,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.publishEditorialLook.bind(editorialLookController) as any
+    editorialLookController.publishEditorialLook.bind(
+      editorialLookController
+    ) as any
   );
 
   // Unpublish editorial look
@@ -2333,7 +2351,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.unpublishEditorialLook.bind(editorialLookController) as any
+    editorialLookController.unpublishEditorialLook.bind(
+      editorialLookController
+    ) as any
   );
 
   // Schedule editorial look publication
@@ -2362,7 +2382,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.schedulePublication.bind(editorialLookController) as any
+    editorialLookController.schedulePublication.bind(
+      editorialLookController
+    ) as any
   );
 
   // Get ready to publish looks
@@ -2377,7 +2399,9 @@ export async function registerProductCatalogRoutes(
         security: [{ bearerAuth: [] }],
       },
     },
-    editorialLookController.getReadyToPublishLooks.bind(editorialLookController) as any
+    editorialLookController.getReadyToPublishLooks.bind(
+      editorialLookController
+    ) as any
   );
 
   // Process scheduled publications
@@ -2392,7 +2416,9 @@ export async function registerProductCatalogRoutes(
         security: [{ bearerAuth: [] }],
       },
     },
-    editorialLookController.processScheduledPublications.bind(editorialLookController) as any
+    editorialLookController.processScheduledPublications.bind(
+      editorialLookController
+    ) as any
   );
 
   // Set hero image
@@ -2486,7 +2512,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.addProductToLook.bind(editorialLookController) as any
+    editorialLookController.addProductToLook.bind(
+      editorialLookController
+    ) as any
   );
 
   // Remove product from look
@@ -2509,7 +2537,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.removeProductFromLook.bind(editorialLookController) as any
+    editorialLookController.removeProductFromLook.bind(
+      editorialLookController
+    ) as any
   );
 
   // Set look products (replace all)
@@ -2518,7 +2548,8 @@ export async function registerProductCatalogRoutes(
     {
       preHandler: authenticateUser,
       schema: {
-        description: "Set all products for an editorial look (replaces existing)",
+        description:
+          "Set all products for an editorial look (replaces existing)",
         tags: ["Editorial Looks"],
         summary: "Set Look Products",
         security: [{ bearerAuth: [] }],
@@ -2647,7 +2678,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.updateStoryContent.bind(editorialLookController) as any
+    editorialLookController.updateStoryContent.bind(
+      editorialLookController
+    ) as any
   );
 
   // Clear story content
@@ -2669,7 +2702,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.clearStoryContent.bind(editorialLookController) as any
+    editorialLookController.clearStoryContent.bind(
+      editorialLookController
+    ) as any
   );
 
   // Get editorial look statistics
@@ -2684,7 +2719,9 @@ export async function registerProductCatalogRoutes(
         security: [{ bearerAuth: [] }],
       },
     },
-    editorialLookController.getEditorialLookStats.bind(editorialLookController) as any
+    editorialLookController.getEditorialLookStats.bind(
+      editorialLookController
+    ) as any
   );
 
   // Get popular products in editorial looks
@@ -2743,7 +2780,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.createBulkEditorialLooks.bind(editorialLookController) as any
+    editorialLookController.createBulkEditorialLooks.bind(
+      editorialLookController
+    ) as any
   );
 
   // Bulk delete editorial looks
@@ -2770,7 +2809,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.deleteBulkEditorialLooks.bind(editorialLookController) as any
+    editorialLookController.deleteBulkEditorialLooks.bind(
+      editorialLookController
+    ) as any
   );
 
   // Bulk publish editorial looks
@@ -2797,7 +2838,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.publishBulkEditorialLooks.bind(editorialLookController) as any
+    editorialLookController.publishBulkEditorialLooks.bind(
+      editorialLookController
+    ) as any
   );
 
   // Validate editorial look for publication
@@ -2819,7 +2862,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.validateForPublication.bind(editorialLookController) as any
+    editorialLookController.validateForPublication.bind(
+      editorialLookController
+    ) as any
   );
 
   // Duplicate editorial look
@@ -2848,6 +2893,8 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    editorialLookController.duplicateEditorialLook.bind(editorialLookController) as any
+    editorialLookController.duplicateEditorialLook.bind(
+      editorialLookController
+    ) as any
   );
 }

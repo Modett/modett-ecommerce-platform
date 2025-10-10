@@ -18,6 +18,11 @@ export class ProductManagementService {
       throw new Error("Product title is required");
     }
 
+    // Validate categories - product must have at least one category
+    if (!data.categoryIds || data.categoryIds.length === 0) {
+      throw new Error("Product must have at least one category");
+    }
+
     // Create the product entity
     const product = Product.create(data);
 
@@ -265,12 +270,19 @@ export class ProductManagementService {
       }
     }
 
-    // TODO: Handle categoryIds - requires category association service
+    // Handle categoryIds - validate and update associations
     if (data.categoryIds !== undefined) {
-      // This would require implementing category association logic
-      // For now, we'll log it as a TODO
+      // Validate that product will have at least one category
+      if (data.categoryIds.length === 0) {
+        throw new Error("Product must have at least one category");
+      }
+
+      // TODO: Implement category association update logic
+      // This would require:
+      // 1. Remove existing category associations
+      // 2. Add new category associations
       console.warn(
-        "Category association not yet implemented for product updates"
+        "Category association update not yet fully implemented for product updates"
       );
     }
 
