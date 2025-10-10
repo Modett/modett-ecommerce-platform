@@ -1,21 +1,26 @@
-// Export base interfaces
-export { IQuery, IQueryHandler } from "./get-cart.query";
+// Base interfaces (type-only exports)
+export type { IQuery, IQueryHandler } from "./get-cart.query.js";
 
-// Export queries and handlers
-export {
+// Query interfaces (type-only exports)
+export type {
   GetCartQuery,
-  GetCartHandler,
   GetActiveCartByUserQuery,
-  GetActiveCartByUserHandler,
-  GetActiveCartByGuestTokenQuery,
-  GetActiveCartByGuestTokenHandler
-} from "./get-cart.query";
-
-export { GetCartSummaryQuery, GetCartSummaryHandler } from "./get-cart-summary.query";
-
-export {
+  GetActiveCartByGuestTokenQuery
+} from "./get-cart.query.js";
+export type { GetCartSummaryQuery } from "./get-cart-summary.query.js";
+export type {
   GetReservationsQuery,
+  GetReservationByVariantQuery
+} from "./get-reservations.query.js";
+
+// Query Handler classes (runtime exports)
+export {
+  GetCartHandler,
+  GetActiveCartByUserHandler,
+  GetActiveCartByGuestTokenHandler
+} from "./get-cart.query.js";
+export { GetCartSummaryHandler } from "./get-cart-summary.query.js";
+export {
   GetReservationsHandler,
-  GetReservationByVariantQuery,
   GetReservationByVariantHandler
-} from "./get-reservations.query";
+} from "./get-reservations.query.js";
