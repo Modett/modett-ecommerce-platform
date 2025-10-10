@@ -43,6 +43,19 @@ import {
   ReservationService,
 } from "../../../modules/cart/application/services";
 
+// Order Management imports
+import { OrderRepositoryImpl } from "../../../modules/order-management/infra/persistence/repositories/order.repository.impl";
+import { OrderAddressRepositoryImpl } from "../../../modules/order-management/infra/persistence/repositories/order-address.repository.impl";
+import { OrderItemRepositoryImpl } from "../../../modules/order-management/infra/persistence/repositories/order-item.repository.impl";
+import { OrderShipmentRepositoryImpl } from "../../../modules/order-management/infra/persistence/repositories/order-shipment.repository.impl";
+import { OrderStatusHistoryRepositoryImpl } from "../../../modules/order-management/infra/persistence/repositories/order-status-history.repository.impl";
+import { OrderEventRepositoryImpl } from "../../../modules/order-management/infra/persistence/repositories/order-event.repository.impl";
+import { PreorderRepositoryImpl } from "../../../modules/order-management/infra/persistence/repositories/preorder.repository.impl";
+import { BackorderRepositoryImpl } from "../../../modules/order-management/infra/persistence/repositories/backorder.repository.impl";
+import { OrderManagementService } from "../../../modules/order-management/application/services/order-management.service";
+import { OrderEventService } from "../../../modules/order-management/application/services/order-event.service";
+import { PreorderManagementService } from "../../../modules/order-management/application/services/preorder-management.service";
+import { BackorderManagementService } from "../../../modules/order-management/application/services/backorder-management.service";
 
 export interface ServiceContainer {
   // Infrastructure
@@ -67,6 +80,16 @@ export interface ServiceContainer {
   cartRepository: CartRepositoryImpl;
   reservationRepository: ReservationRepositoryImpl;
 
+  // Order Management Repositories
+  orderRepository: OrderRepositoryImpl;
+  orderAddressRepository: OrderAddressRepositoryImpl;
+  orderItemRepository: OrderItemRepositoryImpl;
+  orderShipmentRepository: OrderShipmentRepositoryImpl;
+  orderStatusHistoryRepository: OrderStatusHistoryRepositoryImpl;
+  orderEventRepository: OrderEventRepositoryImpl;
+  preorderRepository: PreorderRepositoryImpl;
+  backorderRepository: BackorderRepositoryImpl;
+
   // User Management Services
   authService: AuthenticationService;
   userProfileService: UserProfileService;
@@ -88,6 +111,12 @@ export interface ServiceContainer {
   // Cart Services
   cartManagementService: CartManagementService;
   reservationService: ReservationService;
+
+  // Order Management Services
+  orderManagementService: OrderManagementService;
+  orderEventService: OrderEventService;
+  preorderManagementService: PreorderManagementService;
+  backorderManagementService: BackorderManagementService;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -117,6 +146,18 @@ export function createServiceContainer(): ServiceContainer {
   // Initialize Cart repositories
   const cartRepository = new CartRepositoryImpl(prisma);
   const reservationRepository = new ReservationRepositoryImpl(prisma);
+
+  // Initialize Order Management repositories
+  const orderRepository = new OrderRepositoryImpl(prisma);
+  const orderAddressRepository = new OrderAddressRepositoryImpl(prisma);
+  const orderItemRepository = new OrderItemRepositoryImpl(prisma);
+  const orderShipmentRepository = new OrderShipmentRepositoryImpl(prisma);
+  const orderStatusHistoryRepository = new OrderStatusHistoryRepositoryImpl(
+    prisma
+  );
+  const orderEventRepository = new OrderEventRepositoryImpl(prisma);
+  const preorderRepository = new PreorderRepositoryImpl(prisma);
+  const backorderRepository = new BackorderRepositoryImpl(prisma);
 
   // Initialize core services
   const passwordHasher = new PasswordHasherService();
@@ -194,6 +235,24 @@ export function createServiceContainer(): ServiceContainer {
     cartRepository
   );
 
+  // Initialize Order Management services
+  const orderEventService = new OrderEventService(orderEventRepository);
+  const preorderManagementService = new PreorderManagementService(
+    preorderRepository
+  );
+  const backorderManagementService = new BackorderManagementService(
+    backorderRepository
+  );
+  const orderManagementService = new OrderManagementService(
+    orderRepository,
+    orderAddressRepository,
+    orderItemRepository,
+    orderShipmentRepository,
+    orderStatusHistoryRepository,
+    variantManagementService,
+    productManagementService,
+    orderEventService
+  );
 
   return {
     // Infrastructure
@@ -218,6 +277,16 @@ export function createServiceContainer(): ServiceContainer {
     cartRepository,
     reservationRepository,
 
+    // Order Management Repositories
+    orderRepository,
+    orderAddressRepository,
+    orderItemRepository,
+    orderShipmentRepository,
+    orderStatusHistoryRepository,
+    orderEventRepository,
+    preorderRepository,
+    backorderRepository,
+
     // User Management Services
     authService,
     userProfileService,
@@ -239,6 +308,12 @@ export function createServiceContainer(): ServiceContainer {
     // Cart Services
     cartManagementService,
     reservationService,
+
+    // Order Management Services
+    orderManagementService,
+    orderEventService,
+    preorderManagementService,
+    backorderManagementService,
   };
 }
 
