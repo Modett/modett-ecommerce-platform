@@ -492,6 +492,41 @@ export async function createServer(): Promise<FastifyInstance> {
             "Backorder management for temporarily out-of-stock items",
         },
         {
+          name: "Stock Management",
+          description:
+            "Inventory stock operations - add, adjust, transfer, reserve stock",
+        },
+        {
+          name: "Locations",
+          description:
+            "Warehouse, store, and vendor location management",
+        },
+        {
+          name: "Suppliers",
+          description:
+            "Supplier management and contact information",
+        },
+        {
+          name: "Purchase Orders",
+          description:
+            "Purchase order creation, receiving, and management",
+        },
+        {
+          name: "Stock Alerts",
+          description:
+            "Stock alert management for low stock, out of stock, and overstock",
+        },
+        {
+          name: "Pickup Reservations",
+          description:
+            "Store pickup reservation management for buy online pickup in store",
+        },
+        {
+          name: "Inventory Transactions",
+          description:
+            "Inventory transaction history and audit trail",
+        },
+        {
           name: "System",
           description:
             "⚙️ System health, monitoring, and information endpoints",
@@ -880,6 +915,38 @@ export async function createServer(): Promise<FastifyInstance> {
     server.log.error(
       error as Error,
       "Failed to register order management routes:"
+    );
+    server.log.info("Continuing with other endpoints");
+  }
+
+  // Register inventory management routes
+  try {
+    const { registerInventoryManagementRoutes } = await import(
+      "../../../modules/inventory-management/infra/http/routes"
+    );
+
+    const inventoryServices = {
+      stockService: serviceContainer.stockManagementService,
+      locationService: serviceContainer.locationManagementService,
+      supplierService: serviceContainer.supplierManagementService,
+      poService: serviceContainer.purchaseOrderManagementService,
+      alertService: serviceContainer.stockAlertService,
+      reservationService: serviceContainer.pickupReservationService,
+    };
+
+    // Register inventory management routes with services
+    await server.register(
+      async function (fastify) {
+        await registerInventoryManagementRoutes(fastify, inventoryServices);
+      },
+      { prefix: "/api/v1/inventory" }
+    );
+
+    server.log.info("Inventory management routes registered successfully");
+  } catch (error) {
+    server.log.error(
+      error as Error,
+      "Failed to register inventory management routes:"
     );
     server.log.info("Continuing with other endpoints");
   }
