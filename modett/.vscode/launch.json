@@ -11,10 +11,24 @@
         "NODE_ENV": "development"
       },
       "console": "integratedTerminal",
-      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/build/**",
+        "**/@fastify/**",
+        "**/fastify/**",
+        "**/tsx/**",
+        "**/VM**",
+        "**/<eval>/**",
+        "**/debug:*",
+        "**/anonymous",
+        "**/internal/**"
+      ],
       "cwd": "${workspaceFolder}",
       "restart": true,
       "sourceMaps": true
+      // "outFiles": ["${workspaceFolder}/dist/**/*.js"]
     }
   ]
 }
