@@ -1,9 +1,10 @@
-import * as jwt from 'jsonwebtoken';
-import { IUserRepository } from '../../domain/repositories/iuser.repository';
-import { IPasswordHasherService, PasswordHasherService } from './password-hasher.service';
-import { Email } from '../../domain/value-objects/email.vo';
-import { UserId } from '../../domain/value-objects/user-id.vo';
-import { User } from '../../domain/entities/user.entity';
+import jwt, { type SignOptions } from 'jsonwebtoken';
+import crypto from 'crypto';
+import { IUserRepository } from '../../domain/repositories/iuser.repository.js';
+import { IPasswordHasherService, PasswordHasherService } from './password-hasher.service.js';
+import { Email } from '../../domain/value-objects/email.vo.js';
+import { UserId } from '../../domain/value-objects/user-id.vo.js';
+import { User } from '../../domain/entities/user.entity.js';
 
 export interface LoginCredentials {
   email: string;
@@ -390,7 +391,7 @@ export class AuthenticationService {
   }
 
   private generateSecureToken(): string {
-    return require('crypto').randomBytes(32).toString('hex');
+    return crypto.randomBytes(32).toString('hex');
   }
 
   private generateAuthResult(user: User): AuthResult {
@@ -420,7 +421,7 @@ export class AuthenticationService {
 
     return jwt.sign(payload, this.accessTokenSecret, {
       expiresIn: this.accessTokenExpiresIn,
-    } as jwt.SignOptions);
+    } as SignOptions);
   }
 
   private generateRefreshToken(user: User): string {
@@ -432,7 +433,7 @@ export class AuthenticationService {
 
     return jwt.sign(payload, this.refreshTokenSecret, {
       expiresIn: this.refreshTokenExpiresIn,
-    } as jwt.SignOptions);
+    } as SignOptions);
   }
 
   private generateGuestEmail(): string {

@@ -57,6 +57,22 @@ import { OrderEventService } from "../../../modules/order-management/application
 import { PreorderManagementService } from "../../../modules/order-management/application/services/preorder-management.service";
 import { BackorderManagementService } from "../../../modules/order-management/application/services/backorder-management.service";
 
+// Inventory Management imports
+import { StockRepositoryImpl } from "../../../modules/inventory-management/infra/persistence/repositories/stock.repository.impl";
+import { LocationRepositoryImpl } from "../../../modules/inventory-management/infra/persistence/repositories/location.repository.impl";
+import { SupplierRepositoryImpl } from "../../../modules/inventory-management/infra/persistence/repositories/supplier.repository.impl";
+import { PurchaseOrderRepositoryImpl } from "../../../modules/inventory-management/infra/persistence/repositories/purchase-order.repository.impl";
+import { PurchaseOrderItemRepositoryImpl } from "../../../modules/inventory-management/infra/persistence/repositories/purchase-order-item.repository.impl";
+import { StockAlertRepositoryImpl } from "../../../modules/inventory-management/infra/persistence/repositories/stock-alert.repository.impl";
+import { PickupReservationRepositoryImpl } from "../../../modules/inventory-management/infra/persistence/repositories/pickup-reservation.repository.impl";
+import { InventoryTransactionRepositoryImpl } from "../../../modules/inventory-management/infra/persistence/repositories/inventory-transaction.repository.impl";
+import { StockManagementService } from "../../../modules/inventory-management/application/services/stock-management.service";
+import { LocationManagementService } from "../../../modules/inventory-management/application/services/location-management.service";
+import { SupplierManagementService } from "../../../modules/inventory-management/application/services/supplier-management.service";
+import { PurchaseOrderManagementService } from "../../../modules/inventory-management/application/services/purchase-order-management.service";
+import { StockAlertService } from "../../../modules/inventory-management/application/services/stock-alert.service";
+import { PickupReservationService } from "../../../modules/inventory-management/application/services/pickup-reservation.service";
+
 export interface ServiceContainer {
   // Infrastructure
   prisma: PrismaClient;
@@ -90,6 +106,16 @@ export interface ServiceContainer {
   preorderRepository: PreorderRepositoryImpl;
   backorderRepository: BackorderRepositoryImpl;
 
+  // Inventory Management Repositories
+  stockRepository: StockRepositoryImpl;
+  locationRepository: LocationRepositoryImpl;
+  supplierRepository: SupplierRepositoryImpl;
+  purchaseOrderRepository: PurchaseOrderRepositoryImpl;
+  purchaseOrderItemRepository: PurchaseOrderItemRepositoryImpl;
+  stockAlertRepository: StockAlertRepositoryImpl;
+  pickupReservationRepository: PickupReservationRepositoryImpl;
+  inventoryTransactionRepository: InventoryTransactionRepositoryImpl;
+
   // User Management Services
   authService: AuthenticationService;
   userProfileService: UserProfileService;
@@ -117,6 +143,14 @@ export interface ServiceContainer {
   orderEventService: OrderEventService;
   preorderManagementService: PreorderManagementService;
   backorderManagementService: BackorderManagementService;
+
+  // Inventory Management Services
+  stockManagementService: StockManagementService;
+  locationManagementService: LocationManagementService;
+  supplierManagementService: SupplierManagementService;
+  purchaseOrderManagementService: PurchaseOrderManagementService;
+  stockAlertService: StockAlertService;
+  pickupReservationService: PickupReservationService;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -157,6 +191,16 @@ export function createServiceContainer(): ServiceContainer {
   const orderEventRepository = new OrderEventRepositoryImpl(prisma);
   const preorderRepository = new PreorderRepositoryImpl(prisma);
   const backorderRepository = new BackorderRepositoryImpl(prisma);
+
+  // Initialize Inventory Management repositories
+  const stockRepository = new StockRepositoryImpl(prisma);
+  const locationRepository = new LocationRepositoryImpl(prisma);
+  const supplierRepository = new SupplierRepositoryImpl(prisma);
+  const purchaseOrderRepository = new PurchaseOrderRepositoryImpl(prisma);
+  const purchaseOrderItemRepository = new PurchaseOrderItemRepositoryImpl(prisma);
+  const stockAlertRepository = new StockAlertRepositoryImpl(prisma);
+  const pickupReservationRepository = new PickupReservationRepositoryImpl(prisma);
+  const inventoryTransactionRepository = new InventoryTransactionRepositoryImpl(prisma);
 
   // Initialize core services
   const passwordHasher = new PasswordHasherService();
@@ -253,6 +297,31 @@ export function createServiceContainer(): ServiceContainer {
     orderEventService
   );
 
+  // Initialize Inventory Management services
+  const stockManagementService = new StockManagementService(
+    stockRepository,
+    inventoryTransactionRepository
+  );
+  const locationManagementService = new LocationManagementService(
+    locationRepository
+  );
+  const supplierManagementService = new SupplierManagementService(
+    supplierRepository
+  );
+  const purchaseOrderManagementService = new PurchaseOrderManagementService(
+    purchaseOrderRepository,
+    purchaseOrderItemRepository,
+    stockManagementService
+  );
+  const stockAlertService = new StockAlertService(
+    stockAlertRepository,
+    stockRepository
+  );
+  const pickupReservationService = new PickupReservationService(
+    pickupReservationRepository,
+    stockManagementService
+  );
+
   return {
     // Infrastructure
     prisma,
@@ -286,6 +355,16 @@ export function createServiceContainer(): ServiceContainer {
     preorderRepository,
     backorderRepository,
 
+    // Inventory Management Repositories
+    stockRepository,
+    locationRepository,
+    supplierRepository,
+    purchaseOrderRepository,
+    purchaseOrderItemRepository,
+    stockAlertRepository,
+    pickupReservationRepository,
+    inventoryTransactionRepository,
+
     // User Management Services
     authService,
     userProfileService,
@@ -313,6 +392,14 @@ export function createServiceContainer(): ServiceContainer {
     orderEventService,
     preorderManagementService,
     backorderManagementService,
+
+    // Inventory Management Services
+    stockManagementService,
+    locationManagementService,
+    supplierManagementService,
+    purchaseOrderManagementService,
+    stockAlertService,
+    pickupReservationService,
   };
 }
 

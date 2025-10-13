@@ -4,30 +4,31 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "🚀 Debug API (Simple)",
-      "program": "${workspaceFolder}/apps/api/src/index.ts",
-      "runtimeArgs": ["--loader", "ts-node/esm"],
-      "env": {
-        "NODE_ENV": "development"
-      },
-      "console": "integratedTerminal",
-      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
-      "sourceMaps": true,
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "🔧 Debug with tsx",
+      "name": "🚀 Debug API Server",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["tsx", "--inspect", "apps/api/src/index.ts"],
       "env": {
         "NODE_ENV": "development"
       },
       "console": "integratedTerminal",
-      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/build/**",
+        "**/@fastify/**",
+        "**/fastify/**",
+        "**/tsx/**",
+        "**/VM**",
+        "**/<eval>/**",
+        "**/debug:*",
+        "**/anonymous",
+        "**/internal/**"
+      ],
       "cwd": "${workspaceFolder}",
-      "restart": true
+      "restart": true,
+      "sourceMaps": true
+      // "outFiles": ["${workspaceFolder}/dist/**/*.js"]
     }
   ]
 }
