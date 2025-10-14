@@ -1,0 +1,1 @@
+// GiftCard entity - empty file

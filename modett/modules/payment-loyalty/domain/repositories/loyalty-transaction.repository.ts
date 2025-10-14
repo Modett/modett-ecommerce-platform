@@ -1,0 +1,1 @@
+// LoyaltyTransactionRepository interface - empty file

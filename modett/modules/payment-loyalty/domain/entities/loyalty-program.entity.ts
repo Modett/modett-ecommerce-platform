@@ -1,0 +1,1 @@
+// LoyaltyProgram entity - empty file

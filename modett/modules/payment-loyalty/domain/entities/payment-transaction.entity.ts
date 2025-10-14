@@ -1,0 +1,1 @@
+// PaymentTransaction entity - empty file

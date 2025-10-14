@@ -1,0 +1,1 @@
+// GetGiftCardTransactionsQuery - empty file

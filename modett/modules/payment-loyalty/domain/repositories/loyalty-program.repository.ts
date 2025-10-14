@@ -1,0 +1,1 @@
+// LoyaltyProgramRepository interface - empty file

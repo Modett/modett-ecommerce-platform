@@ -1,0 +1,1 @@
+// LoyaltyProgramRepository implementation - empty file

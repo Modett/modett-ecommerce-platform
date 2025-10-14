@@ -1,0 +1,1 @@
+// PromotionUsage entity - empty file

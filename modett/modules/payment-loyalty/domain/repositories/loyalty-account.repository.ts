@@ -1,0 +1,1 @@
+// LoyaltyAccountRepository interface - empty file

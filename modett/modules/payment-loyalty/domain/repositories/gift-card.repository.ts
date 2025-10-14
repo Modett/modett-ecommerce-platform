@@ -1,0 +1,1 @@
+// GiftCardRepository interface - empty file

@@ -1,0 +1,1 @@
+// PaymentIntent entity - empty file

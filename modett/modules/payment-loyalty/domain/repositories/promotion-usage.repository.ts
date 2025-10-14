@@ -1,0 +1,1 @@
+// PromotionUsageRepository interface - empty file

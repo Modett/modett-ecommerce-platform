@@ -1,0 +1,1 @@
+// BnplTransaction entity - empty file

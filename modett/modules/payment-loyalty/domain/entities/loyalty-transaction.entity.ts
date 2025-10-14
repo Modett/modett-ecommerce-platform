@@ -1,0 +1,1 @@
+// LoyaltyTransaction entity - empty file

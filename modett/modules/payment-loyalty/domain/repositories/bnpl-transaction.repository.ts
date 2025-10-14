@@ -1,0 +1,1 @@
+// BnplTransactionRepository interface - empty file

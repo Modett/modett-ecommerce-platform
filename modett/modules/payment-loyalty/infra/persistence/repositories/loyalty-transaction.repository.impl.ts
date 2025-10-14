@@ -1,0 +1,1 @@
+// LoyaltyTransactionRepository implementation - empty file

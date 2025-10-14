@@ -1,0 +1,1 @@
+// GiftCardTransactionRepository implementation - empty file
