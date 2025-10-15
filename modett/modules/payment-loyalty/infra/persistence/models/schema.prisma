@@ -1,0 +1,301 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["payment_loyalty"]
+}
+
+// Enums
+enum PaymentIntentStatus {
+  requires_action
+  requires_confirmation
+  authorized
+  captured
+  partially_refunded
+  refunded
+  cancelled
+  failed
+
+  @@map("payment_intent_status_enum")
+  @@schema("payment_loyalty")
+}
+
+enum GiftCardStatus {
+  active
+  redeemed
+  expired
+  cancelled
+
+  @@map("gift_card_status_enum")
+  @@schema("payment_loyalty")
+}
+
+enum BnplStatus {
+  pending
+  approved
+  active
+  completed
+  defaulted
+  cancelled
+
+  @@map("bnpl_status_enum")
+  @@schema("payment_loyalty")
+}
+
+enum GiftCardTransactionType {
+  issue
+  redeem
+  refund
+  expiry
+
+  @@map("gift_card_transaction_type_enum")
+  @@schema("payment_loyalty")
+}
+
+enum LoyaltyTransactionType {
+  earn
+  redeem
+  expire
+  adjust
+
+  @@map("loyalty_transaction_type_enum")
+  @@schema("payment_loyalty")
+}
+
+enum PaymentMethod {
+  card
+  paypal
+  bank_transfer
+  gift_card
+  bnpl
+  loyalty_points
+
+  @@map("payment_method_enum")
+  @@schema("payment_loyalty")
+}
+
+// Payment Intent
+model PaymentIntent {
+  id                String              @id @default(dbgenerated("gen_random_uuid()")) @map("payment_intent_id") @db.Uuid
+  orderId           String              @map("order_id") @db.Uuid
+  status            PaymentIntentStatus @default(requires_action)
+  currency          String
+  amountCents       BigInt              @map("amount_cents")
+  capturedCents     BigInt              @default(0) @map("captured_cents")
+  refundedCents     BigInt              @default(0) @map("refunded_cents")
+  method            PaymentMethod
+  providerRef       String?             @map("provider_ref")
+  idempotencyKey    String?             @unique @map("idempotency_key")
+  metadata          Json                @default("{}")
+  failureReason     String?             @map("failure_reason")
+  createdAt         DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  paymentTransactions PaymentTransaction[]
+  webhookEvents     PaymentWebhookEvent[]
+
+  @@index([orderId], map: "idx_payment_intents_order_id")
+  @@index([status], map: "idx_payment_intents_status")
+  @@index([idempotencyKey], map: "idx_payment_intents_idempotency_key")
+  @@map("payment_intents")
+  @@schema("payment_loyalty")
+}
+
+// Gift Card
+model GiftCard {
+  id              String                 @id @default(dbgenerated("gen_random_uuid()")) @map("gift_card_id") @db.Uuid
+  code            String                 @unique
+  balanceCents    BigInt                 @map("balance_cents")
+  initialCents    BigInt                 @map("initial_cents")
+  currency        String
+  status          GiftCardStatus         @default(active)
+  expiresAt       DateTime?              @map("expires_at") @db.Timestamptz(6)
+  recipientEmail  String?                @map("recipient_email")
+  recipientName   String?                @map("recipient_name")
+  message         String?
+  createdAt       DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transactions    GiftCardTransaction[]
+
+  @@index([code], map: "idx_gift_cards_code")
+  @@index([status], map: "idx_gift_cards_status")
+  @@map("gift_cards")
+  @@schema("payment_loyalty")
+}
+
+// Loyalty Account
+model LoyaltyAccount {
+  id                String               @id @default(dbgenerated("gen_random_uuid()")) @map("loyalty_account_id") @db.Uuid
+  userId            String               @map("user_id") @db.Uuid
+  programId         String               @map("program_id") @db.Uuid
+  pointsBalance     Int                  @default(0) @map("points_balance")
+  lifetimePoints    Int                  @default(0) @map("lifetime_points")
+  tier              String?
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  program           LoyaltyProgram       @relation(fields: [programId], references: [id], onDelete: Cascade)
+  transactions      LoyaltyTransaction[]
+
+  @@unique([userId, programId])
+  @@index([userId], map: "idx_loyalty_accounts_user_id")
+  @@index([programId], map: "idx_loyalty_accounts_program_id")
+  @@map("loyalty_accounts")
+  @@schema("payment_loyalty")
+}
+
+// Promotion
+model Promotion {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @map("promotion_id") @db.Uuid
+  code            String            @unique
+  name            String
+  description     String?
+  rules           Json              @default("{}")
+  discountType    String            @map("discount_type")
+  discountValue   Decimal           @map("discount_value") @db.Decimal(12, 2)
+  maxUsage        Int?              @map("max_usage")
+  usageCount      Int               @default(0) @map("usage_count")
+  validFrom       DateTime          @map("valid_from") @db.Timestamptz(6)
+  validUntil      DateTime          @map("valid_until") @db.Timestamptz(6)
+  isActive        Boolean           @default(true) @map("is_active")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  usages          PromotionUsage[]
+
+  @@index([code], map: "idx_promotions_code")
+  @@index([isActive], map: "idx_promotions_is_active")
+  @@index([validFrom, validUntil], map: "idx_promotions_validity")
+  @@map("promotions")
+  @@schema("payment_loyalty")
+}
+
+// Loyalty Program
+model LoyaltyProgram {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @map("loyalty_program_id") @db.Uuid
+  name            String           @unique
+  description     String?
+  earnRules       Json             @default("{}") @map("earn_rules")
+  burnRules       Json             @default("{}") @map("burn_rules")
+  tierConfig      Json             @default("{}") @map("tier_config")
+  isActive        Boolean          @default(true) @map("is_active")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  accounts        LoyaltyAccount[]
+
+  @@index([isActive], map: "idx_loyalty_programs_is_active")
+  @@map("loyalty_programs")
+  @@schema("payment_loyalty")
+}
+
+// Payment Transaction
+model PaymentTransaction {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @map("payment_transaction_id") @db.Uuid
+  paymentIntentId String         @map("payment_intent_id") @db.Uuid
+  type            String
+  amountCents     BigInt         @map("amount_cents")
+  currency        String
+  providerRef     String?        @map("provider_ref")
+  status          String
+  metadata        Json           @default("{}")
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  paymentIntent   PaymentIntent  @relation(fields: [paymentIntentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentIntentId], map: "idx_payment_transactions_payment_intent_id")
+  @@map("payment_transactions")
+  @@schema("payment_loyalty")
+}
+
+// BNPL Transaction
+model BnplTransaction {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @map("bnpl_transaction_id") @db.Uuid
+  orderId         String     @map("order_id") @db.Uuid
+  userId          String     @map("user_id") @db.Uuid
+  provider        String
+  providerRef     String?    @map("provider_ref")
+  totalCents      BigInt     @map("total_cents")
+  currency        String
+  installments    Int
+  installmentPlan Json       @map("installment_plan")
+  status          BnplStatus @default(pending)
+  approvedAt      DateTime?  @map("approved_at") @db.Timestamptz(6)
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([orderId], map: "idx_bnpl_transactions_order_id")
+  @@index([userId], map: "idx_bnpl_transactions_user_id")
+  @@index([status], map: "idx_bnpl_transactions_status")
+  @@map("bnpl_transactions")
+  @@schema("payment_loyalty")
+}
+
+// Gift Card Transaction
+model GiftCardTransaction {
+  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @map("gift_card_transaction_id") @db.Uuid
+  giftCardId      String                  @map("gift_card_id") @db.Uuid
+  type            GiftCardTransactionType
+  amountCents     BigInt                  @map("amount_cents")
+  orderId         String?                 @map("order_id") @db.Uuid
+  balanceAfter    BigInt                  @map("balance_after")
+  createdAt       DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  giftCard        GiftCard                @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+
+  @@index([giftCardId], map: "idx_gift_card_transactions_gift_card_id")
+  @@index([orderId], map: "idx_gift_card_transactions_order_id")
+  @@map("gift_card_transactions")
+  @@schema("payment_loyalty")
+}
+
+// Loyalty Transaction
+model LoyaltyTransaction {
+  id              String              @id @default(dbgenerated("gen_random_uuid()")) @map("loyalty_transaction_id") @db.Uuid
+  accountId       String              @map("account_id") @db.Uuid
+  type            LoyaltyTransactionType
+  points          Int
+  orderId         String?             @map("order_id") @db.Uuid
+  description     String?
+  balanceAfter    Int                 @map("balance_after")
+  expiresAt       DateTime?           @map("expires_at") @db.Timestamptz(6)
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  account         LoyaltyAccount      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId], map: "idx_loyalty_transactions_account_id")
+  @@index([orderId], map: "idx_loyalty_transactions_order_id")
+  @@map("loyalty_transactions")
+  @@schema("payment_loyalty")
+}
+
+// Promotion Usage
+model PromotionUsage {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @map("promotion_usage_id") @db.Uuid
+  promotionId     String    @map("promotion_id") @db.Uuid
+  orderId         String    @map("order_id") @db.Uuid
+  userId          String?   @map("user_id") @db.Uuid
+  discountCents   BigInt    @map("discount_cents")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  promotion       Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@index([promotionId], map: "idx_promotion_usages_promotion_id")
+  @@index([orderId], map: "idx_promotion_usages_order_id")
+  @@index([userId], map: "idx_promotion_usages_user_id")
+  @@map("promotion_usages")
+  @@schema("payment_loyalty")
+}
+
+// Payment Webhook Event
+model PaymentWebhookEvent {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @map("webhook_event_id") @db.Uuid
+  paymentIntentId String?       @map("payment_intent_id") @db.Uuid
+  provider        String
+  eventType       String        @map("event_type")
+  payload         Json
+  processed       Boolean       @default(false)
+  processedAt     DateTime?     @map("processed_at") @db.Timestamptz(6)
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  paymentIntent   PaymentIntent? @relation(fields: [paymentIntentId], references: [id], onDelete: SetNull)
+
+  @@index([provider, eventType], map: "idx_payment_webhook_events_provider_type")
+  @@index([processed], map: "idx_payment_webhook_events_processed")
+  @@map("payment_webhook_events")
+  @@schema("payment_loyalty")
+}

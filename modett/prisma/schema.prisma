@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["cart", "product_catalog", "public", "user_management", "order_management", "inventory_management"]
+  schemas  = ["cart", "product_catalog", "public", "user_management", "order_management", "inventory_management", "fulfillment", "payment_loyalty"]
 }
 
 model User {
@@ -132,27 +132,32 @@ model Product {
 }
 
 model ProductVariant {
-  id             String         @id @default(dbgenerated("gen_random_uuid()")) @map("variant_id") @db.Uuid
-  productId      String         @map("product_id") @db.Uuid
-  sku            String         @unique
-  size           String?
-  color          String?
-  barcode        String?
-  price          Decimal        @db.Decimal(12, 2)
-  compareAtPrice Decimal?       @map("compare_at_price") @db.Decimal(12, 2)
-  weightG        Int?           @map("weight_g")
-  dims           Json?
-  taxClass       String?        @map("tax_class")
-  allowBackorder Boolean        @default(false) @map("allow_backorder")
-  allowPreorder  Boolean        @default(false) @map("allow_preorder")
-  restockEta     DateTime?      @map("restock_eta") @db.Timestamptz(6)
-  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt      DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  cartItems      CartItem[]
-  reservations   Reservation[]
-  orderItems     OrderItem[]
-  product        Product        @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  media          VariantMedia[]
+  id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @map("variant_id") @db.Uuid
+  productId          String                 @map("product_id") @db.Uuid
+  sku                String                 @unique
+  size               String?
+  color              String?
+  barcode            String?
+  price              Decimal                @db.Decimal(12, 2)
+  compareAtPrice     Decimal?               @map("compare_at_price") @db.Decimal(12, 2)
+  weightG            Int?                   @map("weight_g")
+  dims               Json?
+  taxClass           String?                @map("tax_class")
+  allowBackorder     Boolean                @default(false) @map("allow_backorder")
+  allowPreorder      Boolean                @default(false) @map("allow_preorder")
+  restockEta         DateTime?              @map("restock_eta") @db.Timestamptz(6)
+  createdAt          DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  cartItems          CartItem[]
+  reservations       Reservation[]
+  orderItems         OrderItem[]
+  product            Product                @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  media              VariantMedia[]
+  inventoryStocks    InventoryStock[]
+  inventoryTxns      InventoryTransaction[]
+  stockAlerts        StockAlert[]
+  purchaseOrderItems PurchaseOrderItem[]
+  pickupReservations PickupReservation[]
 
   @@index([productId], map: "idx_variants_product_id")
   @@map("product_variants")
@@ -359,22 +364,23 @@ enum RegionEnum {
 }
 
 model Order {
-  id              String               @id @default(dbgenerated("gen_random_uuid()")) @map("order_id") @db.Uuid
-  orderNo         String               @unique @map("order_no")
-  userId          String?              @map("user_id") @db.Uuid
-  guestToken      String?              @map("guest_token")
-  totals          Json                 @default("{}")
-  status          OrderStatusEnum      @default(created)
-  source          OrderSourceEnum      @default(web)
-  currency        String
-  createdAt       DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  items           OrderItem[]
-  addresses       OrderAddress[]
-  shipments       OrderShipment[]
-  statusHistory   OrderStatusHistory[]
-  events          OrderEvent[]
-  user            User?                @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @map("order_id") @db.Uuid
+  orderNo            String               @unique @map("order_no")
+  userId             String?              @map("user_id") @db.Uuid
+  guestToken         String?              @map("guest_token")
+  totals             Json                 @default("{}")
+  status             OrderStatusEnum      @default(created)
+  source             OrderSourceEnum      @default(web)
+  currency           String
+  createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  items              OrderItem[]
+  addresses          OrderAddress[]
+  shipments          OrderShipment[]
+  statusHistory      OrderStatusHistory[]
+  events             OrderEvent[]
+  user               User?                @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  pickupReservations PickupReservation[]
 
   @@index([userId], map: "idx_orders_user_id")
   @@index([status], map: "idx_orders_status")
@@ -395,6 +401,7 @@ model OrderItem {
   variant         ProductVariant @relation(fields: [variantId], references: [id], onUpdate: NoAction)
   backorder       Backorder?
   preorder        Preorder?
+  shipmentItems   ShipmentItem[]
 
   @@map("order_items")
   @@schema("order_management")
@@ -494,14 +501,405 @@ enum OrderSourceEnum {
   @@schema("order_management")
 }
 
-// Minimal inventory management models to satisfy FK constraints
+enum LocationTypeEnum {
+  warehouse
+  store
+
+  @@map("location_type_enum")
+  @@schema("inventory_management")
+}
+
+enum InvTxnReasonEnum {
+  order
+  rma
+  po
+  adjustment
+  reservation
+  release
+  damage
+  loss
+  found
+  audit
+  shrinkage
+  correction
+
+  @@map("inv_txn_reason_enum")
+  @@schema("inventory_management")
+}
+
+enum StockAlertTypeEnum {
+  low_stock
+  oos
+
+  @@map("stock_alert_type_enum")
+  @@schema("inventory_management")
+}
+
+enum PoStatusEnum {
+  draft
+  sent
+  part_received
+  received
+  closed
+
+  @@map("po_status_enum")
+  @@schema("inventory_management")
+}
+
+// Fulfillment models
+
+enum ShipmentStatusEnum {
+  created
+  label_printed
+  in_transit
+  delivered
+  failed
+
+  @@map("shipment_status_enum")
+  @@schema("fulfillment")
+}
+
+model Shipment {
+  shipmentId  String             @id @default(dbgenerated("gen_random_uuid()")) @map("shipment_id") @db.Uuid
+  orderId     String             @map("order_id") @db.Uuid
+  carrier     String?
+  service     String?
+  labelUrl    String?            @map("label_url")
+  isGift      Boolean            @default(false) @map("is_gift")
+  giftMessage String?            @map("gift_message")
+  status      ShipmentStatusEnum @default(created)
+  shippedAt   DateTime?          @map("shipped_at") @db.Timestamptz(6)
+  deliveredAt DateTime?          @map("delivered_at") @db.Timestamptz(6)
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations (optional)
+  // order Order @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  items ShipmentItem[]
+
+  @@index([orderId], map: "idx_fulfillment_shipments_order_id")
+  @@index([status], map: "idx_fulfillment_shipments_status")
+  @@index([createdAt], map: "idx_fulfillment_shipments_created_at")
+  @@map("shipments")
+  @@schema("fulfillment")
+}
+
+model ShipmentItem {
+  shipmentId  String   @map("shipment_id") @db.Uuid
+  orderItemId String   @map("order_item_id") @db.Uuid
+  qty         Int
+  giftWrap    Boolean  @default(false) @map("gift_wrap")
+  giftMessage String?  @map("gift_message")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  shipment Shipment @relation(fields: [shipmentId], references: [shipmentId], onDelete: Cascade, onUpdate: NoAction)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([shipmentId, orderItemId])
+  @@map("shipment_items")
+  @@schema("fulfillment")
+}
+
+// Inventory Management Models
 model Location {
-  id             String          @id @default(dbgenerated("gen_random_uuid()")) @map("location_id") @db.Uuid
-  name           String
-  type           String
-  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  orderShipments OrderShipment[]
+  id                 String                 @id @default(dbgenerated("gen_random_uuid()")) @map("location_id") @db.Uuid
+  name               String
+  type               LocationTypeEnum
+  address            Json?
+  orderShipments     OrderShipment[]
+  inventoryStocks    InventoryStock[]
+  inventoryTxns      InventoryTransaction[]
+  pickupReservations PickupReservation[]
 
   @@map("locations")
   @@schema("inventory_management")
+}
+
+model InventoryStock {
+  variantId         String         @map("variant_id") @db.Uuid
+  locationId        String         @map("location_id") @db.Uuid
+  onHand            Int            @default(0) @map("on_hand")
+  reserved          Int            @default(0)
+  lowStockThreshold Int?           @map("low_stock_threshold")
+  safetyStock       Int?           @map("safety_stock")
+  variant           ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  location          Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@id([variantId, locationId])
+  @@map("inventory_stocks")
+  @@schema("inventory_management")
+}
+
+model InventoryTransaction {
+  invTxnId      String           @id @default(dbgenerated("gen_random_uuid()")) @map("inv_txn_id") @db.Uuid
+  variantId     String           @map("variant_id") @db.Uuid
+  locationId    String           @map("location_id") @db.Uuid
+  qtyDelta      Int              @map("qty_delta")
+  reason        InvTxnReasonEnum
+  referenceType String?          @map("reference_type")
+  referenceId   String?          @map("reference_id") @db.Uuid
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  variant       ProductVariant   @relation(fields: [variantId], references: [id])
+  location      Location         @relation(fields: [locationId], references: [id])
+
+  @@map("inventory_transactions")
+  @@schema("inventory_management")
+}
+
+model StockAlert {
+  alertId     String             @id @default(dbgenerated("gen_random_uuid()")) @map("alert_id") @db.Uuid
+  variantId   String             @map("variant_id") @db.Uuid
+  type        StockAlertTypeEnum
+  triggeredAt DateTime           @default(now()) @map("triggered_at") @db.Timestamptz(6)
+  resolvedAt  DateTime?          @map("resolved_at") @db.Timestamptz(6)
+  variant     ProductVariant     @relation(fields: [variantId], references: [id])
+
+  @@map("stock_alerts")
+  @@schema("inventory_management")
+}
+
+model Supplier {
+  supplierId     String          @id @default(dbgenerated("gen_random_uuid()")) @map("supplier_id") @db.Uuid
+  name           String
+  leadTimeDays   Int?            @map("lead_time_days")
+  contacts       Json            @default("[]")
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+  @@schema("inventory_management")
+}
+
+model PurchaseOrder {
+  poId       String              @id @default(dbgenerated("gen_random_uuid()")) @map("po_id") @db.Uuid
+  supplierId String              @map("supplier_id") @db.Uuid
+  eta        DateTime?           @db.Timestamptz(6)
+  status     PoStatusEnum        @default(draft)
+  createdAt  DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  supplier   Supplier            @relation(fields: [supplierId], references: [supplierId], onDelete: Cascade)
+  items      PurchaseOrderItem[]
+
+  @@map("purchase_orders")
+  @@schema("inventory_management")
+}
+
+model PurchaseOrderItem {
+  poId          String         @map("po_id") @db.Uuid
+  variantId     String         @map("variant_id") @db.Uuid
+  orderedQty    Int            @map("ordered_qty")
+  receivedQty   Int            @default(0) @map("received_qty")
+  purchaseOrder PurchaseOrder  @relation(fields: [poId], references: [poId], onDelete: Cascade)
+  variant       ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@id([poId, variantId])
+  @@map("purchase_order_items")
+  @@schema("inventory_management")
+}
+
+model PickupReservation {
+  reservationId String         @id @default(dbgenerated("gen_random_uuid()")) @map("reservation_id") @db.Uuid
+  orderId       String         @map("order_id") @db.Uuid
+  variantId     String         @map("variant_id") @db.Uuid
+  locationId    String         @map("location_id") @db.Uuid
+  qty           Int
+  expiresAt     DateTime       @map("expires_at") @db.Timestamptz(6)
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant       ProductVariant @relation(fields: [variantId], references: [id])
+  location      Location       @relation(fields: [locationId], references: [id])
+
+  @@map("pickup_reservations")
+  @@schema("inventory_management")
+}
+
+// Payment & Loyalty Schema
+enum PaymentIntentStatusEnum {
+  requires_action
+  authorized
+  captured
+  failed
+  cancelled
+
+  @@map("payment_intent_status_enum")
+  @@schema("payment_loyalty")
+}
+
+enum PaymentTxnTypeEnum {
+  auth
+  capture
+  refund
+  void
+
+  @@map("payment_txn_type_enum")
+  @@schema("payment_loyalty")
+}
+
+enum GiftCardTxnTypeEnum {
+  issue
+  redeem
+  refund
+
+  @@map("gift_card_txn_type_enum")
+  @@schema("payment_loyalty")
+}
+
+enum LoyaltyReasonEnum {
+  purchase
+  review
+  goodwill
+  refund
+
+  @@map("loyalty_reason_enum")
+  @@schema("payment_loyalty")
+}
+
+model PaymentIntent {
+  intentId        String                   @id @default(dbgenerated("gen_random_uuid()")) @map("intent_id") @db.Uuid
+  orderId         String                   @map("order_id") @db.Uuid
+  idempotencyKey  String?                  @unique @map("idempotency_key")
+  provider        String
+  status          PaymentIntentStatusEnum
+  amount          Decimal                  @db.Decimal(12, 2)
+  currency        String
+  clientSecret    String?                  @map("client_secret")
+  createdAt       DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime                 @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transactions    PaymentTransaction[]
+  bnplTransactions BnplTransaction[]
+
+  @@map("payment_intents")
+  @@schema("payment_loyalty")
+}
+
+model PaymentTransaction {
+  txnId         String              @id @default(dbgenerated("gen_random_uuid()")) @map("txn_id") @db.Uuid
+  intentId      String              @map("intent_id") @db.Uuid
+  type          PaymentTxnTypeEnum
+  amount        Decimal             @db.Decimal(12, 2)
+  status        String
+  failureReason String?             @map("failure_reason")
+  pspRef        String?             @map("psp_ref")
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  paymentIntent PaymentIntent       @relation(fields: [intentId], references: [intentId], onDelete: Cascade)
+
+  @@map("payment_transactions")
+  @@schema("payment_loyalty")
+}
+
+model BnplTransaction {
+  bnplId      String         @id @default(dbgenerated("gen_random_uuid()")) @map("bnpl_id") @db.Uuid
+  intentId    String?        @map("intent_id") @db.Uuid
+  orderId     String?        @map("order_id") @db.Uuid
+  provider    String
+  plan        Json           @default("{}")
+  status      String?
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  paymentIntent PaymentIntent? @relation(fields: [intentId], references: [intentId], onDelete: SetNull)
+
+  @@map("bnpl_transactions")
+  @@schema("payment_loyalty")
+}
+
+model GiftCard {
+  giftCardId      String                  @id @default(dbgenerated("gen_random_uuid()")) @map("gift_card_id") @db.Uuid
+  code            String                  @unique
+  initialBalance  Decimal                 @map("initial_balance") @db.Decimal(12, 2)
+  currentBalance  Decimal                 @map("current_balance") @db.Decimal(12, 2)
+  currency        String
+  expiresAt       DateTime?               @map("expires_at") @db.Timestamptz(6)
+  status          String
+  transactions    GiftCardTransaction[]
+
+  @@map("gift_cards")
+  @@schema("payment_loyalty")
+}
+
+model GiftCardTransaction {
+  gcTxnId     String               @id @default(dbgenerated("gen_random_uuid()")) @map("gc_txn_id") @db.Uuid
+  giftCardId  String               @map("gift_card_id") @db.Uuid
+  orderId     String?              @map("order_id") @db.Uuid
+  amount      Decimal              @db.Decimal(12, 2)
+  type        GiftCardTxnTypeEnum
+  createdAt   DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  giftCard    GiftCard             @relation(fields: [giftCardId], references: [giftCardId], onDelete: Cascade)
+
+  @@map("gift_card_transactions")
+  @@schema("payment_loyalty")
+}
+
+model Promotion {
+  promoId     String            @id @default(dbgenerated("gen_random_uuid()")) @map("promo_id") @db.Uuid
+  code        String?           @unique
+  rule        Json
+  startsAt    DateTime?         @map("starts_at") @db.Timestamptz(6)
+  endsAt      DateTime?         @map("ends_at") @db.Timestamptz(6)
+  usageLimit  Int?              @map("usage_limit")
+  status      String?
+  usages      PromotionUsage[]
+
+  @@map("promotions")
+  @@schema("payment_loyalty")
+}
+
+model PromotionUsage {
+  promoId        String      @map("promo_id") @db.Uuid
+  orderId        String      @map("order_id") @db.Uuid
+  discountAmount Decimal     @map("discount_amount") @db.Decimal(12, 2)
+  promotion      Promotion   @relation(fields: [promoId], references: [promoId], onDelete: Cascade)
+
+  @@id([promoId, orderId])
+  @@map("promotion_usage")
+  @@schema("payment_loyalty")
+}
+
+model LoyaltyProgram {
+  programId   String            @id @default(dbgenerated("gen_random_uuid()")) @map("program_id") @db.Uuid
+  name        String
+  earnRules   Json              @default("{}") @map("earn_rules")
+  burnRules   Json              @default("{}") @map("burn_rules")
+  tiers       Json              @default("[]")
+  accounts    LoyaltyAccount[]
+
+  @@map("loyalty_programs")
+  @@schema("payment_loyalty")
+}
+
+model LoyaltyAccount {
+  accountId     String                @id @default(dbgenerated("gen_random_uuid()")) @map("account_id") @db.Uuid
+  userId        String                @map("user_id") @db.Uuid
+  programId     String                @map("program_id") @db.Uuid
+  pointsBalance BigInt                @default(0) @map("points_balance")
+  tier          String?
+  updatedAt     DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  program       LoyaltyProgram        @relation(fields: [programId], references: [programId], onDelete: Cascade)
+  transactions  LoyaltyTransaction[]
+
+  @@map("loyalty_accounts")
+  @@schema("payment_loyalty")
+}
+
+model LoyaltyTransaction {
+  ltxnId      String           @id @default(dbgenerated("gen_random_uuid()")) @map("ltxn_id") @db.Uuid
+  accountId   String           @map("account_id") @db.Uuid
+  pointsDelta Int              @map("points_delta")
+  reason      LoyaltyReasonEnum
+  orderId     String?          @map("order_id") @db.Uuid
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  account     LoyaltyAccount   @relation(fields: [accountId], references: [accountId], onDelete: Cascade)
+
+  @@map("loyalty_transactions")
+  @@schema("payment_loyalty")
+}
+
+model PaymentWebhookEvent {
+  eventId     String    @id @default(dbgenerated("gen_random_uuid()")) @map("event_id") @db.Uuid
+  provider    String
+  eventType   String    @map("event_type")
+  eventData   Json      @map("event_data")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("payment_webhook_events")
+  @@schema("payment_loyalty")
 }
