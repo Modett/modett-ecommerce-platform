@@ -951,5 +951,29 @@ export async function createServer(): Promise<FastifyInstance> {
     server.log.info("Continuing with other endpoints");
   }
 
+  // Register fulfillment routes
+  try {
+    const { registerFulfillmentRoutes } = await import(
+      "../../../modules/fulfillment/infra/http/routes"
+    );
+
+    const fulfillmentServices = {
+      shipmentService: serviceContainer.shipmentService,
+      shipmentItemService: serviceContainer.shipmentItemService,
+    };
+
+    await server.register(
+      async function (fastify) {
+        await registerFulfillmentRoutes(fastify, fulfillmentServices);
+      },
+      { prefix: "/api/v1/fulfillment" }
+    );
+
+    server.log.info("Fulfillment routes registered successfully");
+  } catch (error) {
+    server.log.error(error as Error, "Failed to register fulfillment routes:");
+    server.log.info("Continuing without fulfillment endpoints");
+  }
+
   return server;
 }
