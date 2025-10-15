@@ -14,10 +14,17 @@ export interface PickupReservationResult {
   qty: number;
   expiresAt: Date;
   isExpired: boolean;
+  isActive?: boolean;
+  isCancelled?: boolean;
+  isFulfilled?: boolean;
 }
 
 export class GetPickupReservationQueryHandler
-  implements IQueryHandler<GetPickupReservationQuery, CommandResult<PickupReservationResult | null>>
+  implements
+    IQueryHandler<
+      GetPickupReservationQuery,
+      CommandResult<PickupReservationResult | null>
+    >
 {
   constructor(private readonly reservationService: PickupReservationService) {}
 
@@ -55,6 +62,9 @@ export class GetPickupReservationQueryHandler
         qty: reservation.getQty(),
         expiresAt: reservation.getExpiresAt(),
         isExpired: reservation.isExpired(),
+        isActive: reservation.isActive(),
+        isCancelled: reservation.isCancelled(),
+        isFulfilled: reservation.isFulfilled(),
       };
 
       return CommandResult.success(result);

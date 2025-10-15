@@ -8,8 +8,6 @@ export interface FulfillReservationCommand extends ICommand {
   variantId: string;
   locationId: string;
   quantity: number;
-
-  referenceId?: string;
 }
 
 export class FulfillReservationCommandHandler
@@ -41,12 +39,11 @@ export class FulfillReservationCommandHandler
       }
 
       // Execute service
+
       const stock = await this.stockService.fulfillReservation(
         command.variantId,
         command.locationId,
-        command.quantity,
-
-        command.referenceId
+        command.quantity
       );
 
       return CommandResult.success(stock);
