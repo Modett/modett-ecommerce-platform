@@ -73,6 +73,12 @@ import { PurchaseOrderManagementService } from "../../../modules/inventory-manag
 import { StockAlertService } from "../../../modules/inventory-management/application/services/stock-alert.service";
 import { PickupReservationService } from "../../../modules/inventory-management/application/services/pickup-reservation.service";
 
+// Fulfillment imports
+import { ShipmentRepositoryImpl } from "../../../modules/fulfillment/infra/persistence/repositories/shipment.repository.impl";
+import { ShipmentItemRepositoryImpl } from "../../../modules/fulfillment/infra/persistence/repositories/shipment-item.repository.impl";
+import { ShipmentService } from "../../../modules/fulfillment/application/services/shipment.service";
+import { ShipmentItemService } from "../../../modules/fulfillment/application/services/shipment-item.service";
+
 export interface ServiceContainer {
   // Infrastructure
   prisma: PrismaClient;
@@ -151,6 +157,10 @@ export interface ServiceContainer {
   purchaseOrderManagementService: PurchaseOrderManagementService;
   stockAlertService: StockAlertService;
   pickupReservationService: PickupReservationService;
+
+  // Fulfillment Services
+  shipmentService: ShipmentService;
+  shipmentItemService: ShipmentItemService;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -201,6 +211,10 @@ export function createServiceContainer(): ServiceContainer {
   const stockAlertRepository = new StockAlertRepositoryImpl(prisma);
   const pickupReservationRepository = new PickupReservationRepositoryImpl(prisma);
   const inventoryTransactionRepository = new InventoryTransactionRepositoryImpl(prisma);
+
+  // Initialize Fulfillment repositories
+  const shipmentRepository = new ShipmentRepositoryImpl(prisma);
+  const shipmentItemRepository = new ShipmentItemRepositoryImpl(prisma);
 
   // Initialize core services
   const passwordHasher = new PasswordHasherService();
@@ -322,6 +336,15 @@ export function createServiceContainer(): ServiceContainer {
     stockManagementService
   );
 
+  // Initialize Fulfillment services
+  const shipmentService = new ShipmentService(
+    shipmentRepository,
+    shipmentItemRepository
+  );
+  const shipmentItemService = new ShipmentItemService(
+    shipmentItemRepository
+  );
+
   return {
     // Infrastructure
     prisma,
@@ -400,6 +423,10 @@ export function createServiceContainer(): ServiceContainer {
     purchaseOrderManagementService,
     stockAlertService,
     pickupReservationService,
+
+    // Fulfillment Services
+    shipmentService,
+    shipmentItemService,
   };
 }
 
