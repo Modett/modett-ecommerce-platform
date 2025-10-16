@@ -79,6 +79,56 @@ import { ShipmentItemRepositoryImpl } from "../../../modules/fulfillment/infra/p
 import { ShipmentService } from "../../../modules/fulfillment/application/services/shipment.service";
 import { ShipmentItemService } from "../../../modules/fulfillment/application/services/shipment-item.service";
 
+// Payment & Loyalty imports
+import {
+  BnplTransactionRepository,
+  GiftCardRepository,
+  GiftCardTransactionRepository,
+  LoyaltyAccountRepository,
+  LoyaltyProgramRepository,
+  LoyaltyTransactionRepository,
+  PaymentIntentRepository,
+  PaymentTransactionRepository,
+  PaymentWebhookEventRepository,
+  PromotionRepository,
+  PromotionUsageRepository,
+} from "../../../modules/payment-loyalty/infra/persistence/repositories";
+import {
+  PaymentService,
+  BnplTransactionService,
+  GiftCardService,
+  PromotionService,
+  PaymentWebhookService,
+} from "../../../modules/payment-loyalty/application/services";
+import { LoyaltyService } from "../../../modules/payment-loyalty/application/services/loyalty.service";
+import { LoyaltyTransactionService } from "../../../modules/payment-loyalty/application/services/loyalty-transaction.service";
+
+// Customer Care imports
+import {
+  SupportTicketRepositoryImpl,
+  TicketMessageRepositoryImpl,
+  SupportAgentRepositoryImpl,
+  ChatSessionRepositoryImpl,
+  ChatMessageRepositoryImpl,
+  ReturnRequestRepositoryImpl,
+  ReturnItemRepositoryImpl,
+  RepairRepositoryImpl,
+  GoodwillRecordRepositoryImpl,
+  CustomerFeedbackRepositoryImpl,
+} from "../../../modules/customer-care/infra/persistence/repositories";
+import {
+  SupportTicketService,
+  TicketMessageService,
+  SupportAgentService,
+  ChatSessionService,
+  ChatMessageService,
+  ReturnRequestService,
+  ReturnItemService,
+  RepairService,
+  GoodwillRecordService,
+  CustomerFeedbackService,
+} from "../../../modules/customer-care/application/services";
+
 export interface ServiceContainer {
   // Infrastructure
   prisma: PrismaClient;
@@ -161,6 +211,52 @@ export interface ServiceContainer {
   // Fulfillment Services
   shipmentService: ShipmentService;
   shipmentItemService: ShipmentItemService;
+
+  // Payment & Loyalty Repositories
+  paymentIntentRepository: PaymentIntentRepository;
+  paymentTransactionRepository: PaymentTransactionRepository;
+  bnplTransactionRepository: BnplTransactionRepository;
+  giftCardRepository: GiftCardRepository;
+  giftCardTransactionRepository: GiftCardTransactionRepository;
+  promotionRepository: PromotionRepository;
+  promotionUsageRepository: PromotionUsageRepository;
+  loyaltyProgramRepository: LoyaltyProgramRepository;
+  loyaltyAccountRepository: LoyaltyAccountRepository;
+  loyaltyTransactionRepository: LoyaltyTransactionRepository;
+  paymentWebhookEventRepository: PaymentWebhookEventRepository;
+
+  // Payment & Loyalty Services
+  paymentService: PaymentService;
+  bnplTransactionService: BnplTransactionService;
+  giftCardService: GiftCardService;
+  promotionService: PromotionService;
+  paymentWebhookService: PaymentWebhookService;
+  loyaltyService: LoyaltyService;
+  loyaltyTransactionService: LoyaltyTransactionService;
+
+  // Customer Care Repositories
+  supportTicketRepository: SupportTicketRepositoryImpl;
+  ticketMessageRepository: TicketMessageRepositoryImpl;
+  supportAgentRepository: SupportAgentRepositoryImpl;
+  chatSessionRepository: ChatSessionRepositoryImpl;
+  chatMessageRepository: ChatMessageRepositoryImpl;
+  returnRequestRepository: ReturnRequestRepositoryImpl;
+  returnItemRepository: ReturnItemRepositoryImpl;
+  repairRepository: RepairRepositoryImpl;
+  goodwillRecordRepository: GoodwillRecordRepositoryImpl;
+  customerFeedbackRepository: CustomerFeedbackRepositoryImpl;
+
+  // Customer Care Services
+  supportTicketService: SupportTicketService;
+  ticketMessageService: TicketMessageService;
+  supportAgentService: SupportAgentService;
+  chatSessionService: ChatSessionService;
+  chatMessageService: ChatMessageService;
+  returnRequestService: ReturnRequestService;
+  returnItemService: ReturnItemService;
+  repairService: RepairService;
+  goodwillRecordService: GoodwillRecordService;
+  customerFeedbackService: CustomerFeedbackService;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -215,6 +311,19 @@ export function createServiceContainer(): ServiceContainer {
   // Initialize Fulfillment repositories
   const shipmentRepository = new ShipmentRepositoryImpl(prisma);
   const shipmentItemRepository = new ShipmentItemRepositoryImpl(prisma);
+
+  // Initialize Payment & Loyalty repositories
+  const paymentIntentRepository = new PaymentIntentRepository(prisma);
+  const paymentTransactionRepository = new PaymentTransactionRepository(prisma);
+  const bnplTransactionRepository = new BnplTransactionRepository(prisma);
+  const giftCardRepository = new GiftCardRepository(prisma);
+  const giftCardTransactionRepository = new GiftCardTransactionRepository(prisma);
+  const promotionRepository = new PromotionRepository(prisma);
+  const promotionUsageRepository = new PromotionUsageRepository(prisma);
+  const loyaltyProgramRepository = new LoyaltyProgramRepository(prisma);
+  const loyaltyAccountRepository = new LoyaltyAccountRepository(prisma);
+  const loyaltyTransactionRepository = new LoyaltyTransactionRepository(prisma);
+  const paymentWebhookEventRepository = new PaymentWebhookEventRepository(prisma);
 
   // Initialize core services
   const passwordHasher = new PasswordHasherService();
@@ -345,6 +454,63 @@ export function createServiceContainer(): ServiceContainer {
     shipmentItemRepository
   );
 
+  // Initialize Payment & Loyalty services
+  const paymentService = new PaymentService(
+    prisma,
+    paymentIntentRepository,
+    paymentTransactionRepository
+  );
+  const bnplTransactionService = new BnplTransactionService(
+    prisma,
+    bnplTransactionRepository
+  );
+  const giftCardService = new GiftCardService(
+    prisma,
+    giftCardRepository,
+    giftCardTransactionRepository
+  );
+  const promotionService = new PromotionService(
+    prisma,
+    promotionRepository,
+    promotionUsageRepository
+  );
+  const paymentWebhookService = new PaymentWebhookService(
+    paymentWebhookEventRepository
+  );
+  const loyaltyService = new LoyaltyService(
+    prisma,
+    loyaltyAccountRepository,
+    loyaltyProgramRepository,
+    loyaltyTransactionRepository
+  );
+  const loyaltyTransactionService = new LoyaltyTransactionService(
+    loyaltyTransactionRepository
+  );
+
+  // Initialize Customer Care repositories
+  const supportTicketRepository = new SupportTicketRepositoryImpl(prisma);
+  const ticketMessageRepository = new TicketMessageRepositoryImpl(prisma);
+  const supportAgentRepository = new SupportAgentRepositoryImpl(prisma);
+  const chatSessionRepository = new ChatSessionRepositoryImpl(prisma);
+  const chatMessageRepository = new ChatMessageRepositoryImpl(prisma);
+  const returnRequestRepository = new ReturnRequestRepositoryImpl(prisma);
+  const returnItemRepository = new ReturnItemRepositoryImpl(prisma);
+  const repairRepository = new RepairRepositoryImpl(prisma);
+  const goodwillRecordRepository = new GoodwillRecordRepositoryImpl(prisma);
+  const customerFeedbackRepository = new CustomerFeedbackRepositoryImpl(prisma);
+
+  // Initialize Customer Care services
+  const supportTicketService = new SupportTicketService(supportTicketRepository);
+  const ticketMessageService = new TicketMessageService(ticketMessageRepository);
+  const supportAgentService = new SupportAgentService(supportAgentRepository);
+  const chatSessionService = new ChatSessionService(chatSessionRepository);
+  const chatMessageService = new ChatMessageService(chatMessageRepository);
+  const returnRequestService = new ReturnRequestService(returnRequestRepository);
+  const returnItemService = new ReturnItemService(returnItemRepository);
+  const repairService = new RepairService(repairRepository);
+  const goodwillRecordService = new GoodwillRecordService(goodwillRecordRepository);
+  const customerFeedbackService = new CustomerFeedbackService(customerFeedbackRepository);
+
   return {
     // Infrastructure
     prisma,
@@ -388,6 +554,19 @@ export function createServiceContainer(): ServiceContainer {
     pickupReservationRepository,
     inventoryTransactionRepository,
 
+    // Payment & Loyalty Repositories
+    paymentIntentRepository,
+    paymentTransactionRepository,
+    bnplTransactionRepository,
+    giftCardRepository,
+    giftCardTransactionRepository,
+    promotionRepository,
+    promotionUsageRepository,
+    loyaltyProgramRepository,
+    loyaltyAccountRepository,
+    loyaltyTransactionRepository,
+    paymentWebhookEventRepository,
+
     // User Management Services
     authService,
     userProfileService,
@@ -427,6 +606,39 @@ export function createServiceContainer(): ServiceContainer {
     // Fulfillment Services
     shipmentService,
     shipmentItemService,
+
+    // Payment & Loyalty Services
+    paymentService,
+    bnplTransactionService,
+    giftCardService,
+    promotionService,
+    paymentWebhookService,
+    loyaltyService,
+    loyaltyTransactionService,
+
+    // Customer Care Repositories
+    supportTicketRepository,
+    ticketMessageRepository,
+    supportAgentRepository,
+    chatSessionRepository,
+    chatMessageRepository,
+    returnRequestRepository,
+    returnItemRepository,
+    repairRepository,
+    goodwillRecordRepository,
+    customerFeedbackRepository,
+
+    // Customer Care Services
+    supportTicketService,
+    ticketMessageService,
+    supportAgentService,
+    chatSessionService,
+    chatMessageService,
+    returnRequestService,
+    returnItemService,
+    repairService,
+    goodwillRecordService,
+    customerFeedbackService,
   };
 }
 
