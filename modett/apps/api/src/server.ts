@@ -498,18 +498,15 @@ export async function createServer(): Promise<FastifyInstance> {
         },
         {
           name: "Locations",
-          description:
-            "Warehouse, store, and vendor location management",
+          description: "Warehouse, store, and vendor location management",
         },
         {
           name: "Suppliers",
-          description:
-            "Supplier management and contact information",
+          description: "Supplier management and contact information",
         },
         {
           name: "Purchase Orders",
-          description:
-            "Purchase order creation, receiving, and management",
+          description: "Purchase order creation, receiving, and management",
         },
         {
           name: "Stock Alerts",
@@ -523,8 +520,42 @@ export async function createServer(): Promise<FastifyInstance> {
         },
         {
           name: "Inventory Transactions",
+          description: "Inventory transaction history and audit trail",
+        },
+        {
+          name: "Customer Care - Tickets",
           description:
-            "Inventory transaction history and audit trail",
+            "Support ticket management, creation, and tracking",
+        },
+        {
+          name: "Customer Care - Agents",
+          description:
+            "Support agent management and assignment",
+        },
+        {
+          name: "Customer Care - Chat",
+          description:
+            "Live chat session and message management",
+        },
+        {
+          name: "Customer Care - Returns",
+          description:
+            "Return/RMA request and item management",
+        },
+        {
+          name: "Customer Care - Repairs",
+          description:
+            "Product repair request and tracking",
+        },
+        {
+          name: "Customer Care - Goodwill",
+          description:
+            "Goodwill records for refunds, discounts, and credits",
+        },
+        {
+          name: "Customer Care - Feedback",
+          description:
+            "Customer feedback collection and NPS/CSAT tracking",
         },
         {
           name: "System",
@@ -973,6 +1004,73 @@ export async function createServer(): Promise<FastifyInstance> {
   } catch (error) {
     server.log.error(error as Error, "Failed to register fulfillment routes:");
     server.log.info("Continuing without fulfillment endpoints");
+  }
+
+  // Register payment & loyalty routes
+  try {
+    const { registerPaymentLoyaltyRoutes } = await import(
+      "../../../modules/payment-loyalty/infra/http/routes"
+    );
+
+    const paymentLoyaltyServices = {
+      paymentService: serviceContainer.paymentService,
+      bnplService: serviceContainer.bnplTransactionService,
+      giftCardService: serviceContainer.giftCardService,
+      promotionService: serviceContainer.promotionService,
+      webhookService: serviceContainer.paymentWebhookService,
+      loyaltyService: serviceContainer.loyaltyService,
+      loyaltyTxnService: serviceContainer.loyaltyTransactionService,
+    };
+
+    await server.register(
+      async function (fastify) {
+        await registerPaymentLoyaltyRoutes(fastify, paymentLoyaltyServices);
+      },
+      { prefix: "/api/v1" }
+    );
+
+    server.log.info("Payment & Loyalty routes registered successfully");
+  } catch (error) {
+    server.log.error(
+      error as Error,
+      "Failed to register payment & loyalty routes:"
+    );
+    server.log.info("Continuing without payment & loyalty endpoints");
+  }
+
+  // Register customer care routes
+  try {
+    const { registerCustomerCareRoutes } = await import(
+      "../../../modules/customer-care/infra/http/routes"
+    );
+
+    const customerCareServices = {
+      supportTicketService: serviceContainer.supportTicketService,
+      ticketMessageService: serviceContainer.ticketMessageService,
+      supportAgentService: serviceContainer.supportAgentService,
+      chatSessionService: serviceContainer.chatSessionService,
+      chatMessageService: serviceContainer.chatMessageService,
+      returnRequestService: serviceContainer.returnRequestService,
+      returnItemService: serviceContainer.returnItemService,
+      repairService: serviceContainer.repairService,
+      goodwillRecordService: serviceContainer.goodwillRecordService,
+      customerFeedbackService: serviceContainer.customerFeedbackService,
+    };
+
+    await server.register(
+      async function (fastify) {
+        await registerCustomerCareRoutes(fastify, customerCareServices);
+      },
+      { prefix: "/api/v1" }
+    );
+
+    server.log.info("Customer Care routes registered successfully");
+  } catch (error) {
+    server.log.error(
+      error as Error,
+      "Failed to register customer care routes:"
+    );
+    server.log.info("Continuing without customer care endpoints");
   }
 
   return server;
