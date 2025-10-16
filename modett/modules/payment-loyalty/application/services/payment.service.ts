@@ -26,6 +26,11 @@ export interface RefundPaymentDto {
   reason?: string;
 }
 
+export interface VoidPaymentDto {
+  intentId: string;
+  pspReference?: string;
+}
+
 export interface PaymentIntentDto {
   intentId: string;
   orderId: string;
@@ -183,6 +188,38 @@ export class PaymentService {
     intent.cancel();
 
     await this.paymentIntentRepo.update(intent);
+
+    return this.toPaymentIntentDto(intent);
+  }
+
+  async voidPayment(dto: VoidPaymentDto): Promise<PaymentIntentDto> {
+    const intent = await this.paymentIntentRepo.findById(dto.intentId);
+    if (!intent) {
+      throw new Error(`Payment intent ${dto.intentId} not found`);
+    }
+
+    if (intent.isCaptured()) {
+      throw new Error("Cannot void a captured payment; use refund instead");
+    }
+
+    // Mark intent as cancelled (voided)
+    intent.cancel();
+
+    // Record void transaction
+    const transaction = PaymentTransaction.create({
+      txnId: crypto.randomUUID(),
+      intentId: intent.intentId.getValue(),
+      type: PaymentTransactionType.void(),
+      amount: intent.amount,
+      status: "SUCCESS",
+      pspReference: dto.pspReference || null,
+      failureReason: null,
+    });
+
+    await this.prisma.$transaction([
+      this.paymentIntentRepo.update(intent) as any,
+      this.paymentTxnRepo.save(transaction) as any,
+    ]);
 
     return this.toPaymentIntentDto(intent);
   }

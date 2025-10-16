@@ -1,1 +1,0 @@
-// CreateLoyaltyTransactionCommand - empty file
