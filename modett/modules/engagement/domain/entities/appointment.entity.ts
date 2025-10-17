@@ -1,7 +1,7 @@
-import { AppointmentId } from "../value-objects/appointment-id.vo";
-
-// Enums from database schema
-export type AppointmentType = "stylist" | "in-store";
+import {
+  AppointmentId,
+  AppointmentType,
+} from "../value-objects/index.js";
 
 export interface CreateAppointmentData {
   userId: string;
@@ -22,6 +22,16 @@ export interface AppointmentEntityData {
   notes?: string;
 }
 
+export interface AppointmentDatabaseRow {
+  appt_id: string;
+  user_id: string;
+  type: string;
+  location_id: string | null;
+  start_at: Date;
+  end_at: Date;
+  notes: string | null;
+}
+
 export class Appointment {
   private constructor(
     private readonly apptId: AppointmentId,
@@ -39,10 +49,6 @@ export class Appointment {
 
     if (!data.userId) {
       throw new Error("User ID is required");
-    }
-
-    if (!data.type) {
-      throw new Error("Appointment type is required");
     }
 
     if (!data.startAt) {
@@ -83,6 +89,18 @@ export class Appointment {
       data.endAt,
       data.locationId,
       data.notes
+    );
+  }
+
+  static fromDatabaseRow(row: AppointmentDatabaseRow): Appointment {
+    return new Appointment(
+      AppointmentId.fromString(row.appt_id),
+      row.user_id,
+      AppointmentType.fromString(row.type),
+      row.start_at,
+      row.end_at,
+      row.location_id || undefined,
+      row.notes || undefined
     );
   }
 
@@ -164,11 +182,11 @@ export class Appointment {
   }
 
   isStylistAppointment(): boolean {
-    return this.type === "stylist";
+    return this.type.isStylist();
   }
 
   isInStoreAppointment(): boolean {
-    return this.type === "in-store";
+    return this.type.isInStore();
   }
 
   conflictsWith(other: Appointment): boolean {
@@ -179,7 +197,8 @@ export class Appointment {
     );
   }
 
-  toSnapshot(): AppointmentEntityData {
+  // Convert to data for persistence
+  toData(): AppointmentEntityData {
     return {
       apptId: this.apptId.getValue(),
       userId: this.userId,
@@ -189,5 +208,21 @@ export class Appointment {
       endAt: this.endAt,
       notes: this.notes,
     };
+  }
+
+  toDatabaseRow(): AppointmentDatabaseRow {
+    return {
+      appt_id: this.apptId.getValue(),
+      user_id: this.userId,
+      type: this.type.getValue(),
+      location_id: this.locationId || null,
+      start_at: this.startAt,
+      end_at: this.endAt,
+      notes: this.notes || null,
+    };
+  }
+
+  equals(other: Appointment): boolean {
+    return this.apptId.equals(other.apptId);
   }
 }

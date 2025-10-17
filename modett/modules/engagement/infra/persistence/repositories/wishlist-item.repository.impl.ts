@@ -1,103 +1,144 @@
 import { PrismaClient } from "@prisma/client";
-import { WishlistItemRepository } from "../../../domain/repositories/wishlist-item.repository";
 import {
-  WishlistItem,
-  WishlistItemEntityData,
-} from "../../../domain/entities/wishlist-item.entity";
-import { WishlistId } from "../../../domain/value-objects/wishlist-id.vo";
+  IWishlistItemRepository,
+  WishlistItemQueryOptions,
+} from "../../../domain/repositories/wishlist-item.repository.js";
+import { WishlistItem } from "../../../domain/entities/wishlist-item.entity.js";
 
-export class WishlistItemRepositoryImpl implements WishlistItemRepository {
+export class WishlistItemRepositoryImpl implements IWishlistItemRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async save(item: WishlistItem): Promise<void> {
-    const data = item.toSnapshot();
-    await this.prisma.wishlistItem.create({
-      data: {
-        wishlistId: data.wishlistId,
-        variantId: data.variantId,
-      },
+  private hydrate(record: any): WishlistItem {
+    return WishlistItem.fromDatabaseRow({
+      wishlist_id: record.wishlistId,
+      variant_id: record.variantId,
     });
   }
 
-  async update(item: WishlistItem): Promise<void> {
-    // No updatable fields in WishlistItem according to the current DB schema.
-    throw new Error(
-      "WishlistItem has no updatable fields in the current schema."
-    );
+  private dehydrate(item: WishlistItem): any {
+    const row = item.toDatabaseRow();
+    return {
+      wishlistId: row.wishlist_id,
+      variantId: row.variant_id,
+    };
   }
 
-  async delete(wishlistId: WishlistId, variantId: string): Promise<void> {
+  async save(item: WishlistItem): Promise<void> {
+    const data = this.dehydrate(item);
+    await this.prisma.wishlistItem.create({ data });
+  }
+
+  async delete(wishlistId: string, variantId: string): Promise<void> {
     await this.prisma.wishlistItem.delete({
       where: {
         wishlistId_variantId: {
-          wishlistId: wishlistId.getValue(),
-          variantId: variantId,
+          wishlistId,
+          variantId,
         },
       },
     });
   }
 
   async findById(
-    wishlistId: WishlistId,
+    wishlistId: string,
     variantId: string
   ): Promise<WishlistItem | null> {
-    const result = await this.prisma.wishlistItem.findUnique({
+    const record = await this.prisma.wishlistItem.findUnique({
       where: {
         wishlistId_variantId: {
-          wishlistId: wishlistId.getValue(),
-          variantId: variantId,
+          wishlistId,
+          variantId,
         },
       },
     });
-    return result ? this.mapPrismaToEntity(result) : null;
+
+    return record ? this.hydrate(record) : null;
   }
 
-  async findByWishlistId(wishlistId: WishlistId): Promise<WishlistItem[]> {
-    const results = await this.prisma.wishlistItem.findMany({
-      where: { wishlistId: wishlistId.getValue() },
+  async findByWishlistId(
+    wishlistId: string,
+    options?: WishlistItemQueryOptions
+  ): Promise<WishlistItem[]> {
+    const records = await this.prisma.wishlistItem.findMany({
+      where: { wishlistId },
+      skip: options?.offset,
+      take: options?.limit,
     });
-    return results.map(this.mapPrismaToEntity);
+
+    return records.map((record) => this.hydrate(record));
   }
 
-  async findByVariantId(variantId: string): Promise<WishlistItem[]> {
-    const results = await this.prisma.wishlistItem.findMany({
+  async findByVariantId(
+    variantId: string,
+    options?: WishlistItemQueryOptions
+  ): Promise<WishlistItem[]> {
+    const records = await this.prisma.wishlistItem.findMany({
+      where: { variantId },
+      skip: options?.offset,
+      take: options?.limit,
+    });
+
+    return records.map((record) => this.hydrate(record));
+  }
+
+  async findAll(options?: WishlistItemQueryOptions): Promise<WishlistItem[]> {
+    const records = await this.prisma.wishlistItem.findMany({
+      skip: options?.offset,
+      take: options?.limit,
+    });
+
+    return records.map((record) => this.hydrate(record));
+  }
+
+  async saveMany(items: WishlistItem[]): Promise<void> {
+    const data = items.map((item) => this.dehydrate(item));
+    await this.prisma.wishlistItem.createMany({
+      data,
+      skipDuplicates: true,
+    });
+  }
+
+  async deleteByWishlistId(wishlistId: string): Promise<void> {
+    await this.prisma.wishlistItem.deleteMany({
+      where: { wishlistId },
+    });
+  }
+
+  async deleteMany(
+    items: Array<{ wishlistId: string; variantId: string }>
+  ): Promise<void> {
+    await Promise.all(
+      items.map((item) => this.delete(item.wishlistId, item.variantId))
+    );
+  }
+
+  async countByWishlistId(wishlistId: string): Promise<number> {
+    return await this.prisma.wishlistItem.count({
+      where: { wishlistId },
+    });
+  }
+
+  async countByVariantId(variantId: string): Promise<number> {
+    return await this.prisma.wishlistItem.count({
       where: { variantId },
     });
-    return results.map(this.mapPrismaToEntity);
   }
 
-  async findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Promise<WishlistItem[]> {
-    const results = await this.prisma.wishlistItem.findMany({
-      take: options?.limit,
-      skip: options?.offset,
-    });
-    return results.map(this.mapPrismaToEntity);
-  }
-
-  async exists(wishlistId: WishlistId, variantId: string): Promise<boolean> {
+  async exists(wishlistId: string, variantId: string): Promise<boolean> {
     const count = await this.prisma.wishlistItem.count({
       where: {
-        wishlistId: wishlistId.getValue(),
+        wishlistId,
         variantId,
       },
     });
+
     return count > 0;
   }
 
-  async countByWishlistId(wishlistId: WishlistId): Promise<number> {
-    return this.prisma.wishlistItem.count({
-      where: { wishlistId: wishlistId.getValue() },
-    });
+  async isVariantInWishlist(
+    wishlistId: string,
+    variantId: string
+  ): Promise<boolean> {
+    return this.exists(wishlistId, variantId);
   }
-
-  private mapPrismaToEntity = (row: any): WishlistItem => {
-    const entityData: WishlistItemEntityData = {
-      wishlistId: row.wishlistId,
-      variantId: row.variantId,
-    };
-    return WishlistItem.reconstitute(entityData);
-  };
 }
