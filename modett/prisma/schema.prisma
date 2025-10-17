@@ -1234,6 +1234,37 @@ enum AppointmentTypeEnum {
   @@schema("engagement")
 }
 
+enum NotificationStatusEnum {
+  pending
+  scheduled
+  sending
+  sent
+  failed
+
+  @@map("notification_status_enum")
+  @@schema("engagement")
+}
+
+enum ReviewStatusEnum {
+  pending
+  approved
+  rejected
+  flagged
+
+  @@map("review_status_enum")
+  @@schema("engagement")
+}
+
+enum SubscriptionStatusEnum {
+  active
+  unsubscribed
+  bounced
+  spam
+
+  @@map("subscription_status_enum")
+  @@schema("engagement")
+}
+
 model Wishlist {
   id          String         @id @default(dbgenerated("gen_random_uuid()")) @map("wishlist_id") @db.Uuid
   userId      String?        @map("user_id") @db.Uuid
@@ -1277,14 +1308,14 @@ model Reminder {
 }
 
 model Notification {
-  id          String                @id @default(dbgenerated("gen_random_uuid()")) @map("notification_id") @db.Uuid
+  id          String                   @id @default(dbgenerated("gen_random_uuid()")) @map("notification_id") @db.Uuid
   type        NotificationTypeEnum
   channel     ChannelEnum?
-  templateId  String?               @map("template_id") @db.Uuid
-  payload     Json                  @default("{}")
-  status      String?
-  scheduledAt DateTime?             @map("scheduled_at") @db.Timestamptz(6)
-  sentAt      DateTime?             @map("sent_at") @db.Timestamptz(6)
+  templateId  String?                  @map("template_id") @db.Uuid
+  payload     Json                     @default("{}")
+  status      NotificationStatusEnum?
+  scheduledAt DateTime?                @map("scheduled_at") @db.Timestamptz(6)
+  sentAt      DateTime?                @map("sent_at") @db.Timestamptz(6)
   error       String?
 
   @@map("notifications")
@@ -1292,15 +1323,15 @@ model Notification {
 }
 
 model ProductReview {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @map("review_id") @db.Uuid
-  productId String   @map("product_id") @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @map("review_id") @db.Uuid
+  productId String           @map("product_id") @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
   rating    Int
   title     String?
   body      String?
-  status    String   @default("pending")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  status    ReviewStatusEnum @default(pending)
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  product   Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_reviews")
   @@schema("engagement")
@@ -1321,11 +1352,11 @@ model Appointment {
 }
 
 model NewsletterSubscription {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @map("subscription_id") @db.Uuid
-  email      String   @unique
-  status     String?
-  source     String?
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id        String                   @id @default(dbgenerated("gen_random_uuid()")) @map("subscription_id") @db.Uuid
+  email     String                   @unique
+  status    SubscriptionStatusEnum?
+  source    String?
+  createdAt DateTime                 @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@map("newsletter_subscriptions")
   @@schema("engagement")
