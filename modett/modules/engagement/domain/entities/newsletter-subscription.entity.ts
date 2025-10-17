@@ -1,4 +1,7 @@
-import { SubscriptionId } from "../value-objects/subscription-id.vo";
+import {
+  SubscriptionId,
+  SubscriptionStatus,
+} from "../value-objects/index.js";
 
 export interface CreateNewsletterSubscriptionData {
   email: string;
@@ -8,18 +11,26 @@ export interface CreateNewsletterSubscriptionData {
 export interface NewsletterSubscriptionEntityData {
   subscriptionId: string;
   email: string;
-  status?: string;
+  status: SubscriptionStatus;
   source?: string;
   createdAt: Date;
+}
+
+export interface NewsletterSubscriptionDatabaseRow {
+  subscription_id: string;
+  email: string;
+  status: string | null;
+  source: string | null;
+  created_at: Date;
 }
 
 export class NewsletterSubscription {
   private constructor(
     private readonly subscriptionId: SubscriptionId,
     private readonly email: string,
-    private status?: string,
-    private readonly source?: string,
-    private readonly createdAt: Date = new Date()
+    private status: SubscriptionStatus,
+    private readonly createdAt: Date,
+    private readonly source?: string
   ) {}
 
   // Factory methods
@@ -39,7 +50,8 @@ export class NewsletterSubscription {
     return new NewsletterSubscription(
       subscriptionId,
       data.email.toLowerCase().trim(),
-      "active",
+      SubscriptionStatus.active(),
+      new Date(),
       data.source
     );
   }
@@ -51,8 +63,18 @@ export class NewsletterSubscription {
       subscriptionId,
       data.email,
       data.status,
-      data.source,
-      data.createdAt
+      data.createdAt,
+      data.source
+    );
+  }
+
+  static fromDatabaseRow(row: NewsletterSubscriptionDatabaseRow): NewsletterSubscription {
+    return new NewsletterSubscription(
+      SubscriptionId.fromString(row.subscription_id),
+      row.email,
+      row.status ? SubscriptionStatus.fromString(row.status) : SubscriptionStatus.active(),
+      row.created_at,
+      row.source || undefined
     );
   }
 
@@ -65,7 +87,7 @@ export class NewsletterSubscription {
     return this.email;
   }
 
-  getStatus(): string | undefined {
+  getStatus(): SubscriptionStatus {
     return this.status;
   }
 
@@ -79,43 +101,44 @@ export class NewsletterSubscription {
 
   // Business methods
   activate(): void {
-    this.status = "active";
+    this.status = SubscriptionStatus.active();
   }
 
   unsubscribe(): void {
-    this.status = "unsubscribed";
+    this.status = SubscriptionStatus.unsubscribed();
   }
 
   bounce(): void {
-    this.status = "bounced";
+    this.status = SubscriptionStatus.bounced();
   }
 
   markAsSpam(): void {
-    this.status = "spam";
+    this.status = SubscriptionStatus.spam();
   }
 
   // Helper methods
   isActive(): boolean {
-    return this.status === "active";
+    return this.status.isActive();
   }
 
   isUnsubscribed(): boolean {
-    return this.status === "unsubscribed";
+    return this.status.isUnsubscribed();
   }
 
   isBounced(): boolean {
-    return this.status === "bounced";
+    return this.status.isBounced();
   }
 
   isSpam(): boolean {
-    return this.status === "spam";
+    return this.status.isSpam();
   }
 
   canReceiveEmails(): boolean {
-    return this.status === "active";
+    return this.status.canReceiveEmails();
   }
 
-  toSnapshot(): NewsletterSubscriptionEntityData {
+  // Convert to data for persistence
+  toData(): NewsletterSubscriptionEntityData {
     return {
       subscriptionId: this.subscriptionId.getValue(),
       email: this.email,
@@ -123,5 +146,19 @@ export class NewsletterSubscription {
       source: this.source,
       createdAt: this.createdAt,
     };
+  }
+
+  toDatabaseRow(): NewsletterSubscriptionDatabaseRow {
+    return {
+      subscription_id: this.subscriptionId.getValue(),
+      email: this.email,
+      status: this.status.getValue(),
+      source: this.source || null,
+      created_at: this.createdAt,
+    };
+  }
+
+  equals(other: NewsletterSubscription): boolean {
+    return this.subscriptionId.equals(other.subscriptionId);
   }
 }
