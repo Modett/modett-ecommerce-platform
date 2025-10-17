@@ -1,27 +1,42 @@
-import { WishlistItem } from "../entities/wishlist-item.entity";
-import { WishlistId } from "../value-objects/wishlist-id.vo";
+import { WishlistItem } from "../entities/wishlist-item.entity.js";
 
-export interface WishlistItemRepository {
-  // Core CRUD
+export interface WishlistItemQueryOptions {
+  limit?: number;
+  offset?: number;
+  sortBy?: "addedAt";
+  sortOrder?: "asc" | "desc";
+}
+
+export interface IWishlistItemRepository {
+  // Basic CRUD
   save(item: WishlistItem): Promise<void>;
-  update(item: WishlistItem): Promise<void>;
-  delete(wishlistId: WishlistId, variantId: string): Promise<void>;
-  findById(
-    wishlistId: WishlistId,
-    variantId: string
-  ): Promise<WishlistItem | null>;
+  delete(wishlistId: string, variantId: string): Promise<void>;
 
   // Finders
-  findByWishlistId(wishlistId: WishlistId): Promise<WishlistItem[]>;
-  findByVariantId(variantId: string): Promise<WishlistItem[]>;
-  findAll(options?: {
-    limit?: number;
-    offset?: number;
-  }): Promise<WishlistItem[]>;
+  findById(
+    wishlistId: string,
+    variantId: string
+  ): Promise<WishlistItem | null>;
+  findByWishlistId(
+    wishlistId: string,
+    options?: WishlistItemQueryOptions
+  ): Promise<WishlistItem[]>;
+  findByVariantId(
+    variantId: string,
+    options?: WishlistItemQueryOptions
+  ): Promise<WishlistItem[]>;
+  findAll(options?: WishlistItemQueryOptions): Promise<WishlistItem[]>;
+
+  // Batch operations
+  saveMany(items: WishlistItem[]): Promise<void>;
+  deleteByWishlistId(wishlistId: string): Promise<void>;
+  deleteMany(items: Array<{ wishlistId: string; variantId: string }>): Promise<void>;
+
+  // Counts and statistics
+  countByWishlistId(wishlistId: string): Promise<number>;
+  countByVariantId(variantId: string): Promise<number>;
 
   // Existence checks
-  exists(wishlistId: WishlistId, variantId: string): Promise<boolean>;
-
-  // Business queries
-  countByWishlistId(wishlistId: WishlistId): Promise<number>;
+  exists(wishlistId: string, variantId: string): Promise<boolean>;
+  isVariantInWishlist(wishlistId: string, variantId: string): Promise<boolean>;
 }
