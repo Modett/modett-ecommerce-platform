@@ -1,4 +1,4 @@
-import { WishlistId } from "../value-objects/wishlist-id.vo";
+import { WishlistId } from "../value-objects/index.js";
 
 export interface CreateWishlistData {
   userId?: string;
@@ -21,17 +21,29 @@ export interface WishlistEntityData {
   updatedAt: Date;
 }
 
+export interface WishlistDatabaseRow {
+  wishlist_id: string;
+  user_id: string | null;
+  guest_token: string | null;
+  name: string | null;
+  is_default: boolean;
+  is_public: boolean;
+  description: string | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export class Wishlist {
   private constructor(
     private readonly wishlistId: WishlistId,
+    private readonly createdAt: Date,
+    private updatedAt: Date,
     private userId?: string,
     private guestToken?: string,
     private name?: string,
     private isDefault: boolean = false,
     private isPublic: boolean = false,
-    private description?: string,
-    private readonly createdAt: Date = new Date(),
-    private updatedAt: Date = new Date()
+    private description?: string
   ) {}
 
   // Factory methods
@@ -48,8 +60,12 @@ export class Wishlist {
       throw new Error("Wishlist cannot belong to both a user and a guest");
     }
 
+    const now = new Date();
+
     return new Wishlist(
       wishlistId,
+      now,
+      now,
       data.userId,
       data.guestToken,
       data.name,
@@ -64,14 +80,28 @@ export class Wishlist {
 
     return new Wishlist(
       wishlistId,
+      data.createdAt,
+      data.updatedAt,
       data.userId,
       data.guestToken,
       data.name,
       data.isDefault,
       data.isPublic,
-      data.description,
-      data.createdAt,
-      data.updatedAt
+      data.description
+    );
+  }
+
+  static fromDatabaseRow(row: WishlistDatabaseRow): Wishlist {
+    return new Wishlist(
+      WishlistId.fromString(row.wishlist_id),
+      row.created_at,
+      row.updated_at,
+      row.user_id || undefined,
+      row.guest_token || undefined,
+      row.name || undefined,
+      row.is_default,
+      row.is_public,
+      row.description || undefined
     );
   }
 
@@ -166,7 +196,8 @@ export class Wishlist {
     this.updatedAt = new Date();
   }
 
-  toSnapshot(): WishlistEntityData {
+  // Convert to data for persistence
+  toData(): WishlistEntityData {
     return {
       wishlistId: this.wishlistId.getValue(),
       userId: this.userId,
@@ -178,5 +209,23 @@ export class Wishlist {
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
+  }
+
+  toDatabaseRow(): WishlistDatabaseRow {
+    return {
+      wishlist_id: this.wishlistId.getValue(),
+      user_id: this.userId || null,
+      guest_token: this.guestToken || null,
+      name: this.name || null,
+      is_default: this.isDefault,
+      is_public: this.isPublic,
+      description: this.description || null,
+      created_at: this.createdAt,
+      updated_at: this.updatedAt,
+    };
+  }
+
+  equals(other: Wishlist): boolean {
+    return this.wishlistId.equals(other.wishlistId);
   }
 }
