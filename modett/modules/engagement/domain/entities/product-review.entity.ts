@@ -1,5 +1,8 @@
-import { ReviewId } from "../value-objects/review-id.vo";
-import { Rating } from "../value-objects/rating.vo";
+import {
+  ReviewId,
+  Rating,
+  ReviewStatus,
+} from "../value-objects/index.js";
 
 export interface CreateProductReviewData {
   productId: string;
@@ -16,8 +19,19 @@ export interface ProductReviewEntityData {
   rating: number;
   title?: string;
   body?: string;
-  status: string;
+  status: ReviewStatus;
   createdAt: Date;
+}
+
+export interface ProductReviewDatabaseRow {
+  review_id: string;
+  product_id: string;
+  user_id: string;
+  rating: number;
+  title: string | null;
+  body: string | null;
+  status: string;
+  created_at: Date;
 }
 
 export class ProductReview {
@@ -26,10 +40,10 @@ export class ProductReview {
     private readonly productId: string,
     private readonly userId: string,
     private rating: Rating,
+    private status: ReviewStatus,
+    private readonly createdAt: Date,
     private title?: string,
-    private body?: string,
-    private status: string = "pending",
-    private readonly createdAt: Date = new Date()
+    private body?: string
   ) {}
 
   // Factory methods
@@ -50,6 +64,8 @@ export class ProductReview {
       data.productId,
       data.userId,
       rating,
+      ReviewStatus.pending(),
+      new Date(),
       data.title,
       data.body
     );
@@ -64,10 +80,23 @@ export class ProductReview {
       data.productId,
       data.userId,
       rating,
-      data.title,
-      data.body,
       data.status,
-      data.createdAt
+      data.createdAt,
+      data.title,
+      data.body
+    );
+  }
+
+  static fromDatabaseRow(row: ProductReviewDatabaseRow): ProductReview {
+    return new ProductReview(
+      ReviewId.fromString(row.review_id),
+      row.product_id,
+      row.user_id,
+      Rating.fromNumber(row.rating),
+      ReviewStatus.fromString(row.status),
+      row.created_at,
+      row.title || undefined,
+      row.body || undefined
     );
   }
 
@@ -96,7 +125,7 @@ export class ProductReview {
     return this.body;
   }
 
-  getStatus(): string {
+  getStatus(): ReviewStatus {
     return this.status;
   }
 
@@ -118,32 +147,32 @@ export class ProductReview {
   }
 
   approve(): void {
-    this.status = "approved";
+    this.status = ReviewStatus.approved();
   }
 
   reject(): void {
-    this.status = "rejected";
+    this.status = ReviewStatus.rejected();
   }
 
   flag(): void {
-    this.status = "flagged";
+    this.status = ReviewStatus.flagged();
   }
 
   // Helper methods
   isPending(): boolean {
-    return this.status === "pending";
+    return this.status.isPending();
   }
 
   isApproved(): boolean {
-    return this.status === "approved";
+    return this.status.isApproved();
   }
 
   isRejected(): boolean {
-    return this.status === "rejected";
+    return this.status.isRejected();
   }
 
   isFlagged(): boolean {
-    return this.status === "flagged";
+    return this.status.isFlagged();
   }
 
   isPositive(): boolean {
@@ -158,7 +187,8 @@ export class ProductReview {
     return !!(this.title || this.body);
   }
 
-  toSnapshot(): ProductReviewEntityData {
+  // Convert to data for persistence
+  toData(): ProductReviewEntityData {
     return {
       reviewId: this.reviewId.getValue(),
       productId: this.productId,
@@ -169,5 +199,22 @@ export class ProductReview {
       status: this.status,
       createdAt: this.createdAt,
     };
+  }
+
+  toDatabaseRow(): ProductReviewDatabaseRow {
+    return {
+      review_id: this.reviewId.getValue(),
+      product_id: this.productId,
+      user_id: this.userId,
+      rating: this.rating.getValue(),
+      title: this.title || null,
+      body: this.body || null,
+      status: this.status.getValue(),
+      created_at: this.createdAt,
+    };
+  }
+
+  equals(other: ProductReview): boolean {
+    return this.reviewId.equals(other.reviewId);
   }
 }
