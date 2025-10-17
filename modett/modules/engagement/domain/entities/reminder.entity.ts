@@ -1,10 +1,10 @@
-import { ReminderId } from "../value-objects/reminder-id.vo";
-
-// Enums from database schema
-export type ReminderType = "restock" | "price_drop";
-export type ContactType = "email" | "phone";
-export type ChannelType = "email" | "sms" | "whatsapp" | "push";
-export type ReminderStatus = "pending" | "sent" | "unsubscribed";
+import {
+  ReminderId,
+  ReminderType,
+  ContactType,
+  ChannelType,
+  ReminderStatus,
+} from "../value-objects/index.js";
 
 export interface CreateReminderData {
   type: ReminderType;
@@ -26,6 +26,17 @@ export interface ReminderEntityData {
   status: ReminderStatus;
 }
 
+export interface ReminderDatabaseRow {
+  reminder_id: string;
+  type: string;
+  variant_id: string;
+  user_id: string | null;
+  contact: string;
+  channel: string;
+  opt_in_at: Date | null;
+  status: string;
+}
+
 export class Reminder {
   private constructor(
     private readonly reminderId: ReminderId,
@@ -33,7 +44,7 @@ export class Reminder {
     private readonly variantId: string,
     private readonly contact: ContactType,
     private readonly channel: ChannelType,
-    private status: ReminderStatus = "pending",
+    private status: ReminderStatus,
     private userId?: string,
     private optInAt?: Date
   ) {}
@@ -46,25 +57,13 @@ export class Reminder {
       throw new Error("Variant ID is required");
     }
 
-    if (!data.type) {
-      throw new Error("Reminder type is required");
-    }
-
-    if (!data.contact) {
-      throw new Error("Contact type is required");
-    }
-
-    if (!data.channel) {
-      throw new Error("Channel is required");
-    }
-
     return new Reminder(
       reminderId,
       data.type,
       data.variantId,
       data.contact,
       data.channel,
-      undefined, // status defaults to 'pending'
+      ReminderStatus.pending(),
       data.userId,
       data.optInAt
     );
@@ -82,6 +81,19 @@ export class Reminder {
       data.status,
       data.userId,
       data.optInAt
+    );
+  }
+
+  static fromDatabaseRow(row: ReminderDatabaseRow): Reminder {
+    return new Reminder(
+      ReminderId.fromString(row.reminder_id),
+      ReminderType.fromString(row.type),
+      row.variant_id,
+      ContactType.fromString(row.contact),
+      ChannelType.fromString(row.channel),
+      ReminderStatus.fromString(row.status),
+      row.user_id || undefined,
+      row.opt_in_at || undefined
     );
   }
 
@@ -124,35 +136,36 @@ export class Reminder {
   }
 
   markAsSent(): void {
-    this.status = "sent";
+    this.status = ReminderStatus.sent();
   }
 
   unsubscribe(): void {
-    this.status = "unsubscribed";
+    this.status = ReminderStatus.unsubscribed();
   }
 
   // Helper methods
   isPending(): boolean {
-    return this.status === "pending";
+    return this.status.isPending();
   }
 
   isSent(): boolean {
-    return this.status === "sent";
+    return this.status.isSent();
   }
 
   isUnsubscribed(): boolean {
-    return this.status === "unsubscribed";
+    return this.status.isUnsubscribed();
   }
 
   isRestockReminder(): boolean {
-    return this.type === "restock";
+    return this.type.isRestock();
   }
 
   isPriceDropReminder(): boolean {
-    return this.type === "price_drop";
+    return this.type.isPriceDrop();
   }
 
-  toSnapshot(): ReminderEntityData {
+  // Convert to data for persistence
+  toData(): ReminderEntityData {
     return {
       reminderId: this.reminderId.getValue(),
       type: this.type,
@@ -163,5 +176,22 @@ export class Reminder {
       optInAt: this.optInAt,
       status: this.status,
     };
+  }
+
+  toDatabaseRow(): ReminderDatabaseRow {
+    return {
+      reminder_id: this.reminderId.getValue(),
+      type: this.type.getValue(),
+      variant_id: this.variantId,
+      user_id: this.userId || null,
+      contact: this.contact.getValue(),
+      channel: this.channel.getValue(),
+      opt_in_at: this.optInAt || null,
+      status: this.status.getValue(),
+    };
+  }
+
+  equals(other: Reminder): boolean {
+    return this.reminderId.equals(other.reminderId);
   }
 }
