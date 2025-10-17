@@ -8,6 +8,11 @@ export interface WishlistItemEntityData {
   variantId: string;
 }
 
+export interface WishlistItemDatabaseRow {
+  wishlist_id: string;
+  variant_id: string;
+}
+
 export class WishlistItem {
   private constructor(
     private readonly wishlistId: string,
@@ -31,6 +36,10 @@ export class WishlistItem {
     return new WishlistItem(data.wishlistId, data.variantId);
   }
 
+  static fromDatabaseRow(row: WishlistItemDatabaseRow): WishlistItem {
+    return new WishlistItem(row.wishlist_id, row.variant_id);
+  }
+
   // Getters
   getWishlistId(): string {
     return this.wishlistId;
@@ -40,18 +49,25 @@ export class WishlistItem {
     return this.variantId;
   }
 
-  // Utility methods
+  // Convert to data for persistence
+  toData(): WishlistItemEntityData {
+    return {
+      wishlistId: this.wishlistId,
+      variantId: this.variantId,
+    };
+  }
+
+  toDatabaseRow(): WishlistItemDatabaseRow {
+    return {
+      wishlist_id: this.wishlistId,
+      variant_id: this.variantId,
+    };
+  }
+
   equals(other: WishlistItem): boolean {
     return (
       this.wishlistId === other.wishlistId &&
       this.variantId === other.variantId
     );
-  }
-
-  toSnapshot(): WishlistItemEntityData {
-    return {
-      wishlistId: this.wishlistId,
-      variantId: this.variantId,
-    };
   }
 }
