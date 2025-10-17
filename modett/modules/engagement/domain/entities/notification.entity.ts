@@ -1,15 +1,9 @@
-import { NotificationId } from "../value-objects/notification-id.vo";
-
-// Enums from database schema
-export type NotificationType =
-  | "order_confirm"
-  | "shipped"
-  | "restock"
-  | "review_request"
-  | "care_guide"
-  | "promo";
-
-export type ChannelType = "email" | "sms" | "whatsapp" | "push";
+import {
+  NotificationId,
+  NotificationType,
+  ChannelType,
+  NotificationStatus,
+} from "../value-objects/index.js";
 
 export interface CreateNotificationData {
   type: NotificationType;
@@ -25,20 +19,32 @@ export interface NotificationEntityData {
   channel?: ChannelType;
   templateId?: string;
   payload: Record<string, any>;
-  status?: string;
+  status?: NotificationStatus;
   scheduledAt?: Date;
   sentAt?: Date;
   error?: string;
+}
+
+export interface NotificationDatabaseRow {
+  notification_id: string;
+  type: string;
+  channel: string | null;
+  template_id: string | null;
+  payload: Record<string, any>;
+  status: string | null;
+  scheduled_at: Date | null;
+  sent_at: Date | null;
+  error: string | null;
 }
 
 export class Notification {
   private constructor(
     private readonly notificationId: NotificationId,
     private readonly type: NotificationType,
+    private payload: Record<string, any>,
+    private status: NotificationStatus,
     private readonly channel?: ChannelType,
     private readonly templateId?: string,
-    private payload: Record<string, any> = {},
-    private status?: string,
     private scheduledAt?: Date,
     private sentAt?: Date,
     private error?: string
@@ -48,17 +54,13 @@ export class Notification {
   static create(data: CreateNotificationData): Notification {
     const notificationId = NotificationId.create();
 
-    if (!data.type) {
-      throw new Error("Notification type is required");
-    }
-
     return new Notification(
       notificationId,
       data.type,
+      data.payload || {},
+      NotificationStatus.pending(),
       data.channel,
       data.templateId,
-      data.payload || {},
-      undefined,
       data.scheduledAt
     );
   }
@@ -69,13 +71,27 @@ export class Notification {
     return new Notification(
       notificationId,
       data.type,
+      data.payload,
+      data.status || NotificationStatus.pending(),
       data.channel,
       data.templateId,
-      data.payload,
-      data.status,
       data.scheduledAt,
       data.sentAt,
       data.error
+    );
+  }
+
+  static fromDatabaseRow(row: NotificationDatabaseRow): Notification {
+    return new Notification(
+      NotificationId.fromString(row.notification_id),
+      NotificationType.fromString(row.type),
+      row.payload,
+      row.status ? NotificationStatus.fromString(row.status) : NotificationStatus.pending(),
+      row.channel ? ChannelType.fromString(row.channel) : undefined,
+      row.template_id || undefined,
+      row.scheduled_at || undefined,
+      row.sent_at || undefined,
+      row.error || undefined
     );
   }
 
@@ -100,7 +116,7 @@ export class Notification {
     return this.payload;
   }
 
-  getStatus(): string | undefined {
+  getStatus(): NotificationStatus {
     return this.status;
   }
 
@@ -126,51 +142,51 @@ export class Notification {
       throw new Error("Scheduled time must be in the future");
     }
     this.scheduledAt = scheduledAt;
-    this.status = "scheduled";
+    this.status = NotificationStatus.scheduled();
   }
 
   markAsSending(): void {
-    this.status = "sending";
+    this.status = NotificationStatus.sending();
   }
 
   markAsSent(): void {
-    this.status = "sent";
+    this.status = NotificationStatus.sent();
     this.sentAt = new Date();
     this.error = undefined;
   }
 
   markAsFailed(error: string): void {
-    this.status = "failed";
+    this.status = NotificationStatus.failed();
     this.error = error;
   }
 
   retry(): void {
-    if (this.status !== "failed") {
+    if (!this.status.isFailed()) {
       throw new Error("Can only retry failed notifications");
     }
-    this.status = "pending";
+    this.status = NotificationStatus.pending();
     this.error = undefined;
   }
 
   // Helper methods
   isPending(): boolean {
-    return !this.status || this.status === "pending";
+    return this.status.isPending();
   }
 
   isScheduled(): boolean {
-    return this.status === "scheduled";
+    return this.status.isScheduled();
   }
 
   isSending(): boolean {
-    return this.status === "sending";
+    return this.status.isSending();
   }
 
   isSent(): boolean {
-    return this.status === "sent";
+    return this.status.isSent();
   }
 
   isFailed(): boolean {
-    return this.status === "failed";
+    return this.status.isFailed();
   }
 
   isDue(): boolean {
@@ -180,7 +196,8 @@ export class Notification {
     return this.scheduledAt <= new Date();
   }
 
-  toSnapshot(): NotificationEntityData {
+  // Convert to data for persistence
+  toData(): NotificationEntityData {
     return {
       notificationId: this.notificationId.getValue(),
       type: this.type,
@@ -192,5 +209,23 @@ export class Notification {
       sentAt: this.sentAt,
       error: this.error,
     };
+  }
+
+  toDatabaseRow(): NotificationDatabaseRow {
+    return {
+      notification_id: this.notificationId.getValue(),
+      type: this.type.getValue(),
+      channel: this.channel?.getValue() || null,
+      template_id: this.templateId || null,
+      payload: this.payload,
+      status: this.status.getValue(),
+      scheduled_at: this.scheduledAt || null,
+      sent_at: this.sentAt || null,
+      error: this.error || null,
+    };
+  }
+
+  equals(other: Notification): boolean {
+    return this.notificationId.equals(other.notificationId);
   }
 }
