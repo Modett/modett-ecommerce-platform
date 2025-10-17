@@ -129,6 +129,25 @@ import {
   CustomerFeedbackService,
 } from "../../../modules/customer-care/application/services";
 
+// Engagement imports
+import {
+  WishlistRepositoryImpl,
+  WishlistItemRepositoryImpl,
+  ReminderRepositoryImpl,
+  NotificationRepositoryImpl,
+  AppointmentRepositoryImpl,
+  ProductReviewRepositoryImpl,
+  NewsletterSubscriptionRepositoryImpl,
+} from "../../../modules/engagement/infra/persistence/repositories";
+import {
+  WishlistManagementService,
+  ReminderManagementService,
+  NotificationService,
+  AppointmentService,
+  ProductReviewService,
+  NewsletterService,
+} from "../../../modules/engagement/application/services";
+
 export interface ServiceContainer {
   // Infrastructure
   prisma: PrismaClient;
@@ -257,6 +276,23 @@ export interface ServiceContainer {
   repairService: RepairService;
   goodwillRecordService: GoodwillRecordService;
   customerFeedbackService: CustomerFeedbackService;
+
+  // Engagement Repositories
+  wishlistRepository: WishlistRepositoryImpl;
+  wishlistItemRepository: WishlistItemRepositoryImpl;
+  reminderRepository: ReminderRepositoryImpl;
+  notificationRepository: NotificationRepositoryImpl;
+  appointmentRepository: AppointmentRepositoryImpl;
+  productReviewRepository: ProductReviewRepositoryImpl;
+  newsletterSubscriptionRepository: NewsletterSubscriptionRepositoryImpl;
+
+  // Engagement Services
+  wishlistManagementService: WishlistManagementService;
+  reminderManagementService: ReminderManagementService;
+  notificationService: NotificationService;
+  appointmentService: AppointmentService;
+  productReviewService: ProductReviewService;
+  newsletterService: NewsletterService;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -511,6 +547,26 @@ export function createServiceContainer(): ServiceContainer {
   const goodwillRecordService = new GoodwillRecordService(goodwillRecordRepository);
   const customerFeedbackService = new CustomerFeedbackService(customerFeedbackRepository);
 
+  // Initialize Engagement repositories
+  const wishlistRepository = new WishlistRepositoryImpl(prisma);
+  const wishlistItemRepository = new WishlistItemRepositoryImpl(prisma);
+  const reminderRepository = new ReminderRepositoryImpl(prisma);
+  const notificationRepository = new NotificationRepositoryImpl(prisma);
+  const appointmentRepository = new AppointmentRepositoryImpl(prisma);
+  const productReviewRepository = new ProductReviewRepositoryImpl(prisma);
+  const newsletterSubscriptionRepository = new NewsletterSubscriptionRepositoryImpl(prisma);
+
+  // Initialize Engagement services
+  const wishlistManagementService = new WishlistManagementService(
+    wishlistRepository,
+    wishlistItemRepository
+  );
+  const reminderManagementService = new ReminderManagementService(reminderRepository);
+  const notificationService = new NotificationService(notificationRepository);
+  const appointmentService = new AppointmentService(appointmentRepository);
+  const productReviewService = new ProductReviewService(productReviewRepository);
+  const newsletterService = new NewsletterService(newsletterSubscriptionRepository);
+
   return {
     // Infrastructure
     prisma,
@@ -639,6 +695,23 @@ export function createServiceContainer(): ServiceContainer {
     repairService,
     goodwillRecordService,
     customerFeedbackService,
+
+    // Engagement Repositories
+    wishlistRepository,
+    wishlistItemRepository,
+    reminderRepository,
+    notificationRepository,
+    appointmentRepository,
+    productReviewRepository,
+    newsletterSubscriptionRepository,
+
+    // Engagement Services
+    wishlistManagementService,
+    reminderManagementService,
+    notificationService,
+    appointmentService,
+    productReviewService,
+    newsletterService,
   };
 }
 

@@ -558,6 +558,36 @@ export async function createServer(): Promise<FastifyInstance> {
             "Customer feedback collection and NPS/CSAT tracking",
         },
         {
+          name: "Engagement - Wishlists",
+          description:
+            "Wishlist management - create, share, and manage product wishlists",
+        },
+        {
+          name: "Engagement - Reminders",
+          description:
+            "Product reminders for back-in-stock, price drops, and low stock alerts",
+        },
+        {
+          name: "Engagement - Notifications",
+          description:
+            "Notification scheduling and delivery across multiple channels",
+        },
+        {
+          name: "Engagement - Appointments",
+          description:
+            "In-store appointment booking for consultations, fittings, and styling",
+        },
+        {
+          name: "Engagement - Reviews",
+          description:
+            "Product review and rating management with moderation",
+        },
+        {
+          name: "Engagement - Newsletter",
+          description:
+            "Newsletter subscription management",
+        },
+        {
           name: "System",
           description:
             "⚙️ System health, monitoring, and information endpoints",
@@ -1071,6 +1101,37 @@ export async function createServer(): Promise<FastifyInstance> {
       "Failed to register customer care routes:"
     );
     server.log.info("Continuing without customer care endpoints");
+  }
+
+  // Register engagement routes
+  try {
+    const { registerEngagementRoutes } = await import(
+      "../../../modules/engagement/infra/http/routes"
+    );
+
+    const engagementServices = {
+      wishlistService: serviceContainer.wishlistManagementService,
+      reminderService: serviceContainer.reminderManagementService,
+      notificationService: serviceContainer.notificationService,
+      appointmentService: serviceContainer.appointmentService,
+      productReviewService: serviceContainer.productReviewService,
+      newsletterService: serviceContainer.newsletterService,
+    };
+
+    await server.register(
+      async function (fastify) {
+        await registerEngagementRoutes(fastify, engagementServices);
+      },
+      { prefix: "/api/v1" }
+    );
+
+    server.log.info("Engagement routes registered successfully");
+  } catch (error) {
+    server.log.error(
+      error as Error,
+      "Failed to register engagement routes:"
+    );
+    server.log.info("Continuing without engagement endpoints");
   }
 
   return server;
