@@ -605,7 +605,11 @@ export class OrderController {
       request.log.error(error, "Failed to delete order");
 
       // Handle business rule violations (e.g., constraint violations)
-      if (error instanceof Error && (error.message.includes("Cannot delete") || error.message.includes("constraint"))) {
+      if (
+        error instanceof Error &&
+        (error.message.includes("Cannot delete") ||
+          error.message.includes("constraint"))
+      ) {
         return reply.code(400).send({
           success: false,
           error: "Bad Request",

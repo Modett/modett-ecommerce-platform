@@ -18,6 +18,8 @@ import {
   optionalAuth,
   authenticateVerifiedUser,
 } from "./middleware/auth.middleware";
+import { IUserRepository } from "../../domain/repositories/iuser.repository";
+import { IAddressRepository } from "../../domain/repositories/iaddress.repository";
 
 // Route registration function
 export async function registerUserManagementRoutes(
@@ -27,13 +29,19 @@ export async function registerUserManagementRoutes(
     userProfileService: UserProfileService;
     addressService: AddressManagementService;
     paymentMethodService?: PaymentMethodService;
+    userRepository: IUserRepository;
+    addressRepository: IAddressRepository;
   }
 ) {
   // Initialize controllers
   const authController = new AuthController(services.authService);
   const profileController = new ProfileController(services.userProfileService);
   const addressesController = new AddressesController(services.addressService);
-  const usersController = new UsersController(services.userProfileService);
+  const usersController = new UsersController(
+    services.userProfileService,
+    services.userRepository,
+    services.addressRepository
+  );
   const paymentMethodsController = new PaymentMethodsController(
     services.paymentMethodService
   );
@@ -45,8 +53,8 @@ export async function registerUserManagementRoutes(
     {
       schema: {
         description: "Register a new user account with email verification",
-        tags: ["Authentication"], // ✅ ADD
-        summary: "Register New User", // ✅ ADD
+        tags: ["Authentication"],
+        summary: "Register New User",
         body: {
           type: "object",
           required: ["email", "password"],
@@ -54,27 +62,27 @@ export async function registerUserManagementRoutes(
             email: {
               type: "string",
               format: "email",
-              description: "Valid email address", // ✅ ADD
-              example: "john.doe@example.com", // ✅ ADD
+              description: "Valid email address",
+              example: "john.doe@example.com",
             },
             password: {
               type: "string",
               minLength: 8,
-              description: "Password (min 8 characters)", // ✅ ADD
-              example: "SecurePass123!", // ✅ ADD
+              description: "Password (min 8 characters)",
+              example: "SecurePass123!",
             },
             phone: {
               type: "string",
-              description: "Phone number (optional)", // ✅ ADD
-              example: "+1234567890", // ✅ ADD
+              description: "Phone number (optional)",
+              example: "+1234567890",
             },
             firstName: {
               type: "string",
-              example: "John", // ✅ ADD
+              example: "John",
             },
             lastName: {
               type: "string",
-              example: "Doe", // ✅ ADD
+              example: "Doe",
             },
           },
         },
@@ -107,12 +115,15 @@ export async function registerUserManagementRoutes(
               errors: {
                 type: "array",
                 items: { type: "string" },
-                example: ["email is required", "password must be at least 8 characters"]
+                example: [
+                  "email is required",
+                  "password must be at least 8 characters",
+                ],
               },
               code: { type: "string", example: "VALIDATION_ERROR" },
-              timestamp: { type: "string", format: "date-time" }
+              timestamp: { type: "string", format: "date-time" },
             },
-            required: ["success", "error", "code"]
+            required: ["success", "error", "code"],
           },
         },
       },
@@ -165,14 +176,17 @@ export async function registerUserManagementRoutes(
               data: {
                 type: "object",
                 properties: {
-                  message: { type: "string", example: "Logged out successfully" },
-                  action: { type: "string", example: "logout_complete" }
-                }
-              }
-            }
-          }
-        }
-      }
+                  message: {
+                    type: "string",
+                    example: "Logged out successfully",
+                  },
+                  action: { type: "string", example: "logout_complete" },
+                },
+              },
+            },
+          },
+        },
+      },
     },
     authController.logout.bind(authController)
   );
@@ -181,11 +195,17 @@ export async function registerUserManagementRoutes(
     "/auth/refresh-token",
     {
       schema: {
+        description: "Refresh access token using refresh token",
+        tags: ["Authentication"],
+        summary: "Refresh Token",
         body: {
           type: "object",
           required: ["refreshToken"],
           properties: {
-            refreshToken: { type: "string" },
+            refreshToken: {
+              type: "string",
+              description: "Valid refresh token",
+            },
           },
         },
       },
@@ -203,11 +223,18 @@ export async function registerUserManagementRoutes(
         },
       },
       schema: {
+        description: "Initiate password reset process",
+        tags: ["Authentication"],
+        summary: "Forgot Password",
         body: {
           type: "object",
           required: ["email"],
           properties: {
-            email: { type: "string", format: "email" },
+            email: {
+              type: "string",
+              format: "email",
+              description: "User's email address",
+            },
           },
         },
       },
@@ -219,13 +246,27 @@ export async function registerUserManagementRoutes(
     "/auth/reset-password",
     {
       schema: {
+        description: "Reset password using reset token",
+        tags: ["Authentication"],
+        summary: "Reset Password",
         body: {
           type: "object",
           required: ["token", "newPassword", "confirmPassword"],
           properties: {
-            token: { type: "string" },
-            newPassword: { type: "string", minLength: 8 },
-            confirmPassword: { type: "string", minLength: 8 },
+            token: {
+              type: "string",
+              description: "Password reset token from email",
+            },
+            newPassword: {
+              type: "string",
+              minLength: 8,
+              description: "New password (min 8 characters)",
+            },
+            confirmPassword: {
+              type: "string",
+              minLength: 8,
+              description: "Confirm new password",
+            },
           },
         },
       },
@@ -237,11 +278,17 @@ export async function registerUserManagementRoutes(
     "/auth/verify-email",
     {
       schema: {
+        description: "Verify user email address using verification token",
+        tags: ["Authentication"],
+        summary: "Verify Email",
         body: {
           type: "object",
           required: ["token"],
           properties: {
-            token: { type: "string" },
+            token: {
+              type: "string",
+              description: "Email verification token from email",
+            },
           },
         },
       },
@@ -253,11 +300,18 @@ export async function registerUserManagementRoutes(
     "/auth/resend-verification",
     {
       schema: {
+        description: "Resend email verification link",
+        tags: ["Authentication"],
+        summary: "Resend Verification Email",
         body: {
           type: "object",
           required: ["email"],
           properties: {
-            email: { type: "string", format: "email" },
+            email: {
+              type: "string",
+              format: "email",
+              description: "User's email address",
+            },
           },
         },
       },
@@ -289,8 +343,11 @@ export async function registerUserManagementRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              message: { type: "string", example: "Password changed successfully" }
-            }
+              message: {
+                type: "string",
+                example: "Password changed successfully",
+              },
+            },
           },
           400: {
             description: "Bad request",
@@ -298,18 +355,18 @@ export async function registerUserManagementRoutes(
             properties: {
               success: { type: "boolean", example: false },
               error: { type: "string" },
-              errors: { type: "array", items: { type: "string" } }
-            }
+              errors: { type: "array", items: { type: "string" } },
+            },
           },
           401: {
             description: "Unauthorized",
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
-              error: { type: "string", example: "Invalid access token" }
-            }
-          }
-        }
+              error: { type: "string", example: "Invalid access token" },
+            },
+          },
+        },
       },
     },
     authController.changePassword.bind(authController) as any
@@ -321,9 +378,9 @@ export async function registerUserManagementRoutes(
     {
       schema: {
         description: "Get current authenticated user information",
-        tags: ["Users"], // ✅ ADD
-        summary: "Get Current User", // ✅ ADD
-        security: [{ bearerAuth: [] }], // ✅ ADD
+        tags: ["Users"],
+        summary: "Get Current User",
+        security: [{ bearerAuth: [] }],
         response: {
           200: {
             description: "Current user information",
@@ -336,16 +393,34 @@ export async function registerUserManagementRoutes(
                   userId: { type: "string", format: "uuid" },
                   email: { type: "string", format: "email" },
                   phone: { type: "string", nullable: true },
-                  firstName: { type: "string", nullable: true },
-                  lastName: { type: "string", nullable: true },
-                  status: { type: "string", enum: ["active", "inactive", "blocked"] },
+                  firstName: {
+                    type: "string",
+                    nullable: true,
+                    description: "From user's default or first address",
+                  },
+                  lastName: {
+                    type: "string",
+                    nullable: true,
+                    description: "From user's default or first address",
+                  },
+                  status: {
+                    type: "string",
+                    enum: ["active", "inactive", "blocked"],
+                  },
                   emailVerified: { type: "boolean" },
                   phoneVerified: { type: "boolean" },
                   isGuest: { type: "boolean" },
                   createdAt: { type: "string", format: "date-time" },
-                  updatedAt: { type: "string", format: "date-time" }
+                  updatedAt: { type: "string", format: "date-time" },
                 },
-                required: ["userId", "email", "status", "emailVerified", "phoneVerified", "isGuest"]
+                required: [
+                  "userId",
+                  "email",
+                  "status",
+                  "emailVerified",
+                  "phoneVerified",
+                  "isGuest",
+                ],
               },
             },
           },
@@ -356,9 +431,9 @@ export async function registerUserManagementRoutes(
               success: { type: "boolean", example: false },
               error: { type: "string", example: "Authentication required" },
               code: { type: "string", example: "AUTHENTICATION_ERROR" },
-              timestamp: { type: "string", format: "date-time" }
+              timestamp: { type: "string", format: "date-time" },
             },
-            required: ["success", "error", "code"]
+            required: ["success", "error", "code"],
           },
         },
       },
@@ -371,10 +446,17 @@ export async function registerUserManagementRoutes(
     "/users/:userId",
     {
       schema: {
+        description: "Get user information by user ID",
+        tags: ["Users"],
+        summary: "Get User by ID",
         params: {
           type: "object",
           properties: {
-            userId: { type: "string", format: "uuid" },
+            userId: {
+              type: "string",
+              format: "uuid",
+              description: "Unique user identifier",
+            },
           },
           required: ["userId"],
         },
@@ -402,19 +484,39 @@ export async function registerUserManagementRoutes(
                 type: "object",
                 properties: {
                   userId: { type: "string", format: "uuid" },
-                  defaultAddressId: { type: "string", format: "uuid", nullable: true },
-                  defaultPaymentMethodId: { type: "string", format: "uuid", nullable: true },
-                  preferences: { type: "object", nullable: true, additionalProperties: true },
+                  defaultAddressId: {
+                    type: "string",
+                    format: "uuid",
+                    nullable: true,
+                  },
+                  defaultPaymentMethodId: {
+                    type: "string",
+                    format: "uuid",
+                    nullable: true,
+                  },
+                  preferences: {
+                    type: "object",
+                    nullable: true,
+                    additionalProperties: true,
+                  },
                   locale: { type: "string", nullable: true, example: "en-US" },
                   currency: { type: "string", nullable: true, example: "USD" },
-                  stylePreferences: { type: "object", nullable: true, additionalProperties: true },
-                  preferredSizes: { type: "object", nullable: true, additionalProperties: true },
+                  stylePreferences: {
+                    type: "object",
+                    nullable: true,
+                    additionalProperties: true,
+                  },
+                  preferredSizes: {
+                    type: "object",
+                    nullable: true,
+                    additionalProperties: true,
+                  },
                   createdAt: { type: "string", format: "date-time" },
-                  updatedAt: { type: "string", format: "date-time" }
+                  updatedAt: { type: "string", format: "date-time" },
                 },
-                required: ["userId"]
-              }
-            }
+                required: ["userId"],
+              },
+            },
           },
           401: {
             description: "Unauthorized - authentication required",
@@ -423,11 +525,11 @@ export async function registerUserManagementRoutes(
               success: { type: "boolean", example: false },
               error: { type: "string", example: "Authentication required" },
               code: { type: "string", example: "AUTHENTICATION_ERROR" },
-              timestamp: { type: "string", format: "date-time" }
+              timestamp: { type: "string", format: "date-time" },
             },
-            required: ["success", "error", "code"]
-          }
-        }
+            required: ["success", "error", "code"],
+          },
+        },
       },
       preHandler: authenticateUser,
     },
@@ -449,38 +551,38 @@ export async function registerUserManagementRoutes(
               type: "string",
               format: "uuid",
               description: "Default address ID for the user",
-              example: "550e8400-e29b-41d4-a716-446655440000"
+              example: "550e8400-e29b-41d4-a716-446655440000",
             },
             defaultPaymentMethodId: {
               type: "string",
               format: "uuid",
               description: "Default payment method ID for the user",
-              example: "550e8400-e29b-41d4-a716-446655440001"
+              example: "550e8400-e29b-41d4-a716-446655440001",
             },
             preferences: {
               type: "object",
               description: "User preferences object",
-              example: { "notifications": true, "marketing": false }
+              example: { notifications: true, marketing: false },
             },
             locale: {
               type: "string",
               description: "User's preferred locale",
-              example: "en-US"
+              example: "en-US",
             },
             currency: {
               type: "string",
               description: "User's preferred currency",
-              example: "USD"
+              example: "USD",
             },
             stylePreferences: {
               type: "object",
               description: "User's style preferences",
-              example: { "theme": "dark", "layout": "compact" }
+              example: { theme: "dark", layout: "compact" },
             },
             preferredSizes: {
               type: "object",
               description: "User's preferred sizes for different categories",
-              example: { "clothing": "M", "shoes": "9" }
+              example: { clothing: "M", shoes: "9" },
             },
           },
         },
@@ -494,18 +596,38 @@ export async function registerUserManagementRoutes(
                 type: "object",
                 properties: {
                   userId: { type: "string", format: "uuid" },
-                  defaultAddressId: { type: "string", format: "uuid", nullable: true },
-                  defaultPaymentMethodId: { type: "string", format: "uuid", nullable: true },
-                  preferences: { type: "object", nullable: true, additionalProperties: true },
+                  defaultAddressId: {
+                    type: "string",
+                    format: "uuid",
+                    nullable: true,
+                  },
+                  defaultPaymentMethodId: {
+                    type: "string",
+                    format: "uuid",
+                    nullable: true,
+                  },
+                  preferences: {
+                    type: "object",
+                    nullable: true,
+                    additionalProperties: true,
+                  },
                   locale: { type: "string", nullable: true },
                   currency: { type: "string", nullable: true },
-                  stylePreferences: { type: "object", nullable: true, additionalProperties: true },
-                  preferredSizes: { type: "object", nullable: true, additionalProperties: true },
-                  updatedAt: { type: "string", format: "date-time" }
+                  stylePreferences: {
+                    type: "object",
+                    nullable: true,
+                    additionalProperties: true,
+                  },
+                  preferredSizes: {
+                    type: "object",
+                    nullable: true,
+                    additionalProperties: true,
+                  },
+                  updatedAt: { type: "string", format: "date-time" },
                 },
-                required: ["userId", "updatedAt"]
-              }
-            }
+                required: ["userId", "updatedAt"],
+              },
+            },
           },
           400: {
             description: "Bad request - validation error",
@@ -516,12 +638,12 @@ export async function registerUserManagementRoutes(
               errors: {
                 type: "array",
                 items: { type: "string" },
-                example: ["defaultAddressId must be a valid UUID"]
+                example: ["defaultAddressId must be a valid UUID"],
               },
               code: { type: "string", example: "VALIDATION_ERROR" },
-              timestamp: { type: "string", format: "date-time" }
+              timestamp: { type: "string", format: "date-time" },
             },
-            required: ["success", "error", "code"]
+            required: ["success", "error", "code"],
           },
           401: {
             description: "Unauthorized - authentication required",
@@ -530,11 +652,11 @@ export async function registerUserManagementRoutes(
               success: { type: "boolean", example: false },
               error: { type: "string", example: "Authentication required" },
               code: { type: "string", example: "AUTHENTICATION_ERROR" },
-              timestamp: { type: "string", format: "date-time" }
+              timestamp: { type: "string", format: "date-time" },
             },
-            required: ["success", "error", "code"]
-          }
-        }
+            required: ["success", "error", "code"],
+          },
+        },
       },
       preHandler: authenticateUser,
     },
@@ -555,7 +677,7 @@ export async function registerUserManagementRoutes(
               type: "string",
               format: "uuid",
               description: "Unique identifier for the user",
-              example: "550e8400-e29b-41d4-a716-446655440000"
+              example: "550e8400-e29b-41d4-a716-446655440000",
             },
           },
           required: ["userId"],
@@ -570,19 +692,39 @@ export async function registerUserManagementRoutes(
                 type: "object",
                 properties: {
                   userId: { type: "string", format: "uuid" },
-                  defaultAddressId: { type: "string", format: "uuid", nullable: true },
-                  defaultPaymentMethodId: { type: "string", format: "uuid", nullable: true },
-                  preferences: { type: "object", nullable: true, additionalProperties: true },
+                  defaultAddressId: {
+                    type: "string",
+                    format: "uuid",
+                    nullable: true,
+                  },
+                  defaultPaymentMethodId: {
+                    type: "string",
+                    format: "uuid",
+                    nullable: true,
+                  },
+                  preferences: {
+                    type: "object",
+                    nullable: true,
+                    additionalProperties: true,
+                  },
                   locale: { type: "string", nullable: true },
                   currency: { type: "string", nullable: true },
-                  stylePreferences: { type: "object", nullable: true, additionalProperties: true },
-                  preferredSizes: { type: "object", nullable: true, additionalProperties: true },
+                  stylePreferences: {
+                    type: "object",
+                    nullable: true,
+                    additionalProperties: true,
+                  },
+                  preferredSizes: {
+                    type: "object",
+                    nullable: true,
+                    additionalProperties: true,
+                  },
                   createdAt: { type: "string", format: "date-time" },
-                  updatedAt: { type: "string", format: "date-time" }
+                  updatedAt: { type: "string", format: "date-time" },
                 },
-                required: ["userId"]
-              }
-            }
+                required: ["userId"],
+              },
+            },
           },
           404: {
             description: "User not found",
@@ -591,11 +733,11 @@ export async function registerUserManagementRoutes(
               success: { type: "boolean", example: false },
               error: { type: "string", example: "User not found" },
               code: { type: "string", example: "USER_NOT_FOUND" },
-              timestamp: { type: "string", format: "date-time" }
+              timestamp: { type: "string", format: "date-time" },
             },
-            required: ["success", "error", "code"]
-          }
-        }
+            required: ["success", "error", "code"],
+          },
+        },
       },
     },
     profileController.getProfile.bind(profileController)
@@ -615,7 +757,7 @@ export async function registerUserManagementRoutes(
               type: "string",
               format: "uuid",
               description: "Unique identifier for the user",
-              example: "550e8400-e29b-41d4-a716-446655440000"
+              example: "550e8400-e29b-41d4-a716-446655440000",
             },
           },
           required: ["userId"],
@@ -627,38 +769,38 @@ export async function registerUserManagementRoutes(
               type: "string",
               format: "uuid",
               description: "Default address ID for the user",
-              example: "550e8400-e29b-41d4-a716-446655440000"
+              example: "550e8400-e29b-41d4-a716-446655440000",
             },
             defaultPaymentMethodId: {
               type: "string",
               format: "uuid",
               description: "Default payment method ID for the user",
-              example: "550e8400-e29b-41d4-a716-446655440001"
+              example: "550e8400-e29b-41d4-a716-446655440001",
             },
             preferences: {
               type: "object",
               description: "User preferences object",
-              example: { "notifications": true, "marketing": false }
+              example: { notifications: true, marketing: false },
             },
             locale: {
               type: "string",
               description: "User's preferred locale",
-              example: "en-US"
+              example: "en-US",
             },
             currency: {
               type: "string",
               description: "User's preferred currency",
-              example: "USD"
+              example: "USD",
             },
             stylePreferences: {
               type: "object",
               description: "User's style preferences",
-              example: { "theme": "dark", "layout": "compact" }
+              example: { theme: "dark", layout: "compact" },
             },
             preferredSizes: {
               type: "object",
               description: "User's preferred sizes for different categories",
-              example: { "clothing": "M", "shoes": "9" }
+              example: { clothing: "M", shoes: "9" },
             },
           },
         },
@@ -672,18 +814,38 @@ export async function registerUserManagementRoutes(
                 type: "object",
                 properties: {
                   userId: { type: "string", format: "uuid" },
-                  defaultAddressId: { type: "string", format: "uuid", nullable: true },
-                  defaultPaymentMethodId: { type: "string", format: "uuid", nullable: true },
-                  preferences: { type: "object", nullable: true, additionalProperties: true },
+                  defaultAddressId: {
+                    type: "string",
+                    format: "uuid",
+                    nullable: true,
+                  },
+                  defaultPaymentMethodId: {
+                    type: "string",
+                    format: "uuid",
+                    nullable: true,
+                  },
+                  preferences: {
+                    type: "object",
+                    nullable: true,
+                    additionalProperties: true,
+                  },
                   locale: { type: "string", nullable: true },
                   currency: { type: "string", nullable: true },
-                  stylePreferences: { type: "object", nullable: true, additionalProperties: true },
-                  preferredSizes: { type: "object", nullable: true, additionalProperties: true },
-                  updatedAt: { type: "string", format: "date-time" }
+                  stylePreferences: {
+                    type: "object",
+                    nullable: true,
+                    additionalProperties: true,
+                  },
+                  preferredSizes: {
+                    type: "object",
+                    nullable: true,
+                    additionalProperties: true,
+                  },
+                  updatedAt: { type: "string", format: "date-time" },
                 },
-                required: ["userId", "updatedAt"]
-              }
-            }
+                required: ["userId", "updatedAt"],
+              },
+            },
           },
           400: {
             description: "Bad request - validation error",
@@ -694,12 +856,12 @@ export async function registerUserManagementRoutes(
               errors: {
                 type: "array",
                 items: { type: "string" },
-                example: ["defaultAddressId must be a valid UUID"]
+                example: ["defaultAddressId must be a valid UUID"],
               },
               code: { type: "string", example: "VALIDATION_ERROR" },
-              timestamp: { type: "string", format: "date-time" }
+              timestamp: { type: "string", format: "date-time" },
             },
-            required: ["success", "error", "code"]
+            required: ["success", "error", "code"],
           },
           404: {
             description: "User not found",
@@ -708,11 +870,11 @@ export async function registerUserManagementRoutes(
               success: { type: "boolean", example: false },
               error: { type: "string", example: "User not found" },
               code: { type: "string", example: "USER_NOT_FOUND" },
-              timestamp: { type: "string", format: "date-time" }
+              timestamp: { type: "string", format: "date-time" },
             },
-            required: ["success", "error", "code"]
-          }
-        }
+            required: ["success", "error", "code"],
+          },
+        },
       },
     },
     profileController.updateProfile.bind(profileController)
@@ -725,25 +887,25 @@ export async function registerUserManagementRoutes(
       preHandler: authenticateUser,
       schema: {
         description: "Get user addresses with optional filtering",
-        tags: ["Addresses"], 
-        summary: "List My Addresses", 
-        security: [{ bearerAuth: [] }], 
+        tags: ["Addresses"],
+        summary: "List My Addresses",
+        security: [{ bearerAuth: [] }],
         querystring: {
           type: "object",
           properties: {
             type: { type: "string", enum: ["billing", "shipping"] },
-            page: { type: "integer", minimum: 1, default: 1 }, 
-            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 }, 
+            page: { type: "integer", minimum: 1, default: 1 },
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
             sortBy: {
               type: "string",
               enum: ["createdAt", "updatedAt"],
               default: "createdAt",
-            }, 
+            },
             sortOrder: {
               type: "string",
               enum: ["asc", "desc"],
               default: "desc",
-            }, 
+            },
           },
         },
         response: {
@@ -772,13 +934,20 @@ export async function registerUserManagementRoutes(
                     country: { type: "string" },
                     phone: { type: "string", nullable: true },
                     createdAt: { type: "string", format: "date-time" },
-                    updatedAt: { type: "string", format: "date-time" }
+                    updatedAt: { type: "string", format: "date-time" },
                   },
-                  required: ["addressId", "userId", "type", "isDefault", "addressLine1", "city", "country"]
+                  required: [
+                    "addressId",
+                    "userId",
+                    "type",
+                    "isDefault",
+                    "addressLine1",
+                    "city",
+                    "country",
+                  ],
                 },
               },
               meta: {
-                // ✅ ADD PAGINATION META
                 type: "object",
                 properties: {
                   total: { type: "integer" },
@@ -808,13 +977,27 @@ export async function registerUserManagementRoutes(
           type: "object",
           required: ["type", "addressLine1", "city", "country"],
           properties: {
-            type: { type: "string", enum: ["billing", "shipping"], description: "Address type" },
-            isDefault: { type: "boolean", description: "Set as default address", default: false },
+            type: {
+              type: "string",
+              enum: ["billing", "shipping"],
+              description: "Address type",
+            },
+            isDefault: {
+              type: "boolean",
+              description: "Set as default address",
+              default: false,
+            },
             firstName: { type: "string", description: "First name" },
             lastName: { type: "string", description: "Last name" },
             company: { type: "string", description: "Company name" },
-            addressLine1: { type: "string", description: "Primary address line" },
-            addressLine2: { type: "string", description: "Secondary address line" },
+            addressLine1: {
+              type: "string",
+              description: "Primary address line",
+            },
+            addressLine2: {
+              type: "string",
+              description: "Secondary address line",
+            },
             city: { type: "string", description: "City" },
             state: { type: "string", description: "State/Province" },
             postalCode: { type: "string", description: "Postal/ZIP code" },
@@ -834,10 +1017,10 @@ export async function registerUserManagementRoutes(
                   addressId: { type: "string", format: "uuid" },
                   userId: { type: "string", format: "uuid" },
                   action: { type: "string", enum: ["created"] },
-                  message: { type: "string" }
-                }
-              }
-            }
+                  message: { type: "string" },
+                },
+              },
+            },
           },
           400: {
             description: "Validation error",
@@ -845,18 +1028,18 @@ export async function registerUserManagementRoutes(
             properties: {
               success: { type: "boolean" },
               error: { type: "string" },
-              errors: { type: "array", items: { type: "string" } }
-            }
+              errors: { type: "array", items: { type: "string" } },
+            },
           },
           401: {
             description: "Authentication required",
             type: "object",
             properties: {
               success: { type: "boolean" },
-              error: { type: "string" }
-            }
-          }
-        }
+              error: { type: "string" },
+            },
+          },
+        },
       },
     },
     addressesController.addCurrentUserAddress.bind(addressesController) as any
@@ -866,6 +1049,9 @@ export async function registerUserManagementRoutes(
     "/users/:userId/addresses",
     {
       schema: {
+        description: "Get addresses for a specific user",
+        tags: ["Addresses"],
+        summary: "List User Addresses",
         params: {
           type: "object",
           properties: {
@@ -888,6 +1074,9 @@ export async function registerUserManagementRoutes(
     "/users/:userId/addresses",
     {
       schema: {
+        description: "Add new address for a specific user (Admin)",
+        tags: ["Addresses"],
+        summary: "Add User Address (Admin)",
         params: {
           type: "object",
           properties: {
@@ -924,6 +1113,10 @@ export async function registerUserManagementRoutes(
     {
       preHandler: authenticateUser,
       schema: {
+        description: "Update current user's address",
+        tags: ["Addresses"],
+        summary: "Update My Address",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           properties: {
@@ -960,6 +1153,10 @@ export async function registerUserManagementRoutes(
     {
       preHandler: authenticateUser,
       schema: {
+        description: "Delete current user's address",
+        tags: ["Addresses"],
+        summary: "Delete My Address",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           properties: {
@@ -978,6 +1175,9 @@ export async function registerUserManagementRoutes(
     "/users/:userId/addresses/:addressId",
     {
       schema: {
+        description: "Update user's address (Admin)",
+        tags: ["Addresses"],
+        summary: "Update User Address (Admin)",
         params: {
           type: "object",
           properties: {
@@ -1012,6 +1212,9 @@ export async function registerUserManagementRoutes(
     "/users/:userId/addresses/:addressId",
     {
       schema: {
+        description: "Delete user's address (Admin)",
+        tags: ["Addresses"],
+        summary: "Delete User Address (Admin)",
         params: {
           type: "object",
           properties: {
@@ -1050,35 +1253,42 @@ export async function registerUserManagementRoutes(
                       type: "object",
                       properties: {
                         paymentMethodId: { type: "string", format: "uuid" },
-                        type: { type: "string", enum: ["card", "wallet", "bank", "cod", "gift_card"] },
+                        type: {
+                          type: "string",
+                          enum: ["card", "wallet", "bank", "cod", "gift_card"],
+                        },
                         brand: { type: "string", nullable: true },
                         last4: { type: "string", nullable: true },
                         expMonth: { type: "number", nullable: true },
                         expYear: { type: "number", nullable: true },
-                        billingAddressId: { type: "string", format: "uuid", nullable: true },
+                        billingAddressId: {
+                          type: "string",
+                          format: "uuid",
+                          nullable: true,
+                        },
                         providerRef: { type: "string", nullable: true },
                         isDefault: { type: "boolean" },
                         createdAt: { type: "string", format: "date-time" },
-                        updatedAt: { type: "string", format: "date-time" }
+                        updatedAt: { type: "string", format: "date-time" },
                       },
-                      required: ["paymentMethodId", "type", "isDefault"]
-                    }
+                      required: ["paymentMethodId", "type", "isDefault"],
+                    },
                   },
-                  totalCount: { type: "number" }
+                  totalCount: { type: "number" },
                 },
-                required: ["userId", "paymentMethods", "totalCount"]
-              }
-            }
+                required: ["userId", "paymentMethods", "totalCount"],
+              },
+            },
           },
           401: {
             description: "Unauthorized - authentication required",
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
-              error: { type: "string", example: "Authentication required" }
-            }
-          }
-        }
+              error: { type: "string", example: "Authentication required" },
+            },
+          },
+        },
       },
       preHandler: authenticateUser,
     },
@@ -1103,47 +1313,47 @@ export async function registerUserManagementRoutes(
               type: "string",
               enum: ["card", "wallet", "bank", "cod", "gift_card"],
               description: "Type of payment method",
-              example: "card"
+              example: "card",
             },
             brand: {
               type: "string",
               description: "Card brand (e.g., Visa, Mastercard)",
-              example: "Visa"
+              example: "Visa",
             },
             last4: {
               type: "string",
               pattern: "^[0-9]{4}$",
               description: "Last 4 digits of card number",
-              example: "1234"
+              example: "1234",
             },
             expMonth: {
               type: "number",
               minimum: 1,
               maximum: 12,
               description: "Expiration month",
-              example: 12
+              example: 12,
             },
             expYear: {
               type: "number",
               minimum: 2024,
               description: "Expiration year",
-              example: 2027
+              example: 2027,
             },
             billingAddressId: {
               type: "string",
               format: "uuid",
               description: "ID of billing address",
-              example: "550e8400-e29b-41d4-a716-446655440000"
+              example: "550e8400-e29b-41d4-a716-446655440000",
             },
             providerRef: {
               type: "string",
               description: "Payment provider reference",
-              example: "pm_1234567890"
+              example: "pm_1234567890",
             },
             isDefault: {
               type: "boolean",
               description: "Set as default payment method",
-              example: false
+              example: false,
             },
           },
         },
@@ -1161,10 +1371,10 @@ export async function registerUserManagementRoutes(
                   brand: { type: "string", nullable: true },
                   last4: { type: "string", nullable: true },
                   isDefault: { type: "boolean" },
-                  createdAt: { type: "string", format: "date-time" }
-                }
-              }
-            }
+                  createdAt: { type: "string", format: "date-time" },
+                },
+              },
+            },
           },
           400: {
             description: "Bad request - validation error",
@@ -1172,18 +1382,18 @@ export async function registerUserManagementRoutes(
             properties: {
               success: { type: "boolean", example: false },
               error: { type: "string", example: "Validation failed" },
-              errors: { type: "array", items: { type: "string" } }
-            }
+              errors: { type: "array", items: { type: "string" } },
+            },
           },
           401: {
             description: "Unauthorized - authentication required",
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
-              error: { type: "string", example: "Authentication required" }
-            }
-          }
-        }
+              error: { type: "string", example: "Authentication required" },
+            },
+          },
+        },
       },
       preHandler: authenticateUser,
     },
@@ -1197,6 +1407,10 @@ export async function registerUserManagementRoutes(
     {
       preHandler: authenticateUser,
       schema: {
+        description: "Update current user's payment method",
+        tags: ["Payment Methods"],
+        summary: "Update My Payment Method",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           properties: {
@@ -1223,6 +1437,10 @@ export async function registerUserManagementRoutes(
     {
       preHandler: authenticateUser,
       schema: {
+        description: "Delete current user's payment method",
+        tags: ["Payment Methods"],
+        summary: "Delete My Payment Method",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           properties: {
@@ -1241,6 +1459,9 @@ export async function registerUserManagementRoutes(
     "/users/:userId/payment-methods",
     {
       schema: {
+        description: "Get payment methods for a specific user (Admin)",
+        tags: ["Payment Methods"],
+        summary: "List User Payment Methods (Admin)",
         params: {
           type: "object",
           properties: {
@@ -1257,6 +1478,9 @@ export async function registerUserManagementRoutes(
     "/users/:userId/payment-methods",
     {
       schema: {
+        description: "Add payment method for a specific user (Admin)",
+        tags: ["Payment Methods"],
+        summary: "Add User Payment Method (Admin)",
         params: {
           type: "object",
           properties: {
@@ -1290,6 +1514,9 @@ export async function registerUserManagementRoutes(
     "/users/:userId/payment-methods/:paymentMethodId",
     {
       schema: {
+        description: "Update user's payment method (Admin)",
+        tags: ["Payment Methods"],
+        summary: "Update User Payment Method (Admin)",
         params: {
           type: "object",
           properties: {
@@ -1314,6 +1541,9 @@ export async function registerUserManagementRoutes(
     "/users/:userId/payment-methods/:paymentMethodId",
     {
       schema: {
+        description: "Delete user's payment method (Admin)",
+        tags: ["Payment Methods"],
+        summary: "Delete User Payment Method (Admin)",
         params: {
           type: "object",
           properties: {
@@ -1343,33 +1573,33 @@ export async function registerUserManagementRoutes(
               type: "string",
               enum: ["google", "facebook", "apple", "twitter", "github"],
               description: "Social media provider",
-              example: "google"
+              example: "google",
             },
             providerUserId: {
               type: "string",
               description: "User ID from the social provider",
-              example: "1234567890"
+              example: "1234567890",
             },
             accessToken: {
               type: "string",
               description: "Access token from the social provider",
-              example: "ya29.a0AfH6SMC..."
+              example: "ya29.a0AfH6SMC...",
             },
             email: {
               type: "string",
               format: "email",
               description: "User's email from social provider",
-              example: "user@example.com"
+              example: "user@example.com",
             },
             firstName: {
               type: "string",
               description: "User's first name from social provider",
-              example: "John"
+              example: "John",
             },
             lastName: {
               type: "string",
               description: "User's last name from social provider",
-              example: "Doe"
+              example: "Doe",
             },
           },
         },
@@ -1392,32 +1622,35 @@ export async function registerUserManagementRoutes(
                       firstName: { type: "string" },
                       lastName: { type: "string" },
                       isGuest: { type: "boolean" },
-                      emailVerified: { type: "boolean" }
-                    }
+                      emailVerified: { type: "boolean" },
+                    },
                   },
                   expiresIn: { type: "number" },
-                  tokenType: { type: "string", example: "Bearer" }
-                }
-              }
-            }
+                  tokenType: { type: "string", example: "Bearer" },
+                },
+              },
+            },
           },
           400: {
             description: "Bad request - validation error",
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
-              error: { type: "string", example: "Invalid social provider data" }
-            }
+              error: {
+                type: "string",
+                example: "Invalid social provider data",
+              },
+            },
           },
           401: {
             description: "Unauthorized - invalid social token",
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
-              error: { type: "string", example: "Invalid access token" }
-            }
-          }
-        }
+              error: { type: "string", example: "Invalid access token" },
+            },
+          },
+        },
       },
     },
     socialLoginController.socialLogin.bind(socialLoginController)
@@ -1437,7 +1670,7 @@ export async function registerUserManagementRoutes(
               type: "string",
               enum: ["google", "facebook", "apple", "twitter", "github"],
               description: "Social media provider for OAuth",
-              example: "google"
+              example: "google",
             },
           },
           required: ["provider"],
@@ -1448,23 +1681,23 @@ export async function registerUserManagementRoutes(
             redirectUrl: {
               type: "string",
               description: "URL to redirect after successful authentication",
-              example: "https://myapp.com/dashboard"
+              example: "https://myapp.com/dashboard",
             },
           },
         },
         response: {
           302: {
-            description: "Redirect to OAuth provider authorization URL"
+            description: "Redirect to OAuth provider authorization URL",
           },
           400: {
             description: "Invalid provider or parameters",
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
-              error: { type: "string", example: "Invalid OAuth provider" }
-            }
-          }
-        }
+              error: { type: "string", example: "Invalid OAuth provider" },
+            },
+          },
+        },
       },
     },
     socialLoginController.initiateOAuthFlow.bind(socialLoginController)
@@ -1484,7 +1717,7 @@ export async function registerUserManagementRoutes(
               type: "string",
               enum: ["google", "facebook", "apple", "twitter", "github"],
               description: "Social media provider",
-              example: "google"
+              example: "google",
             },
           },
           required: ["provider"],
@@ -1495,33 +1728,33 @@ export async function registerUserManagementRoutes(
             code: {
               type: "string",
               description: "Authorization code from OAuth provider",
-              example: "4/0AX4XfWjT..."
+              example: "4/0AX4XfWjT...",
             },
             state: {
               type: "string",
               description: "State parameter for CSRF protection",
-              example: "random_state_string"
+              example: "random_state_string",
             },
             error: {
               type: "string",
               description: "Error message if OAuth failed",
-              example: "access_denied"
+              example: "access_denied",
             },
           },
         },
         response: {
           302: {
-            description: "Redirect to application with authentication result"
+            description: "Redirect to application with authentication result",
           },
           400: {
             description: "OAuth callback error",
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
-              error: { type: "string", example: "OAuth authorization failed" }
-            }
-          }
-        }
+              error: { type: "string", example: "OAuth authorization failed" },
+            },
+          },
+        },
       },
     },
     socialLoginController.handleOAuthCallback.bind(socialLoginController)
@@ -1532,6 +1765,10 @@ export async function registerUserManagementRoutes(
     {
       preHandler: authenticateUser,
       schema: {
+        description: "Link social account to current user",
+        tags: ["Social Login"],
+        summary: "Link Social Account",
+        security: [{ bearerAuth: [] }],
         body: {
           type: "object",
           required: ["provider", "providerUserId", "accessToken"],
@@ -1553,6 +1790,12 @@ export async function registerUserManagementRoutes(
     "/social-accounts/me",
     {
       preHandler: authenticateUser,
+      schema: {
+        description: "Get current user's linked social accounts",
+        tags: ["Social Login"],
+        summary: "List My Social Accounts",
+        security: [{ bearerAuth: [] }],
+      },
     },
     socialLoginController.getCurrentUserSocialAccounts.bind(
       socialLoginController
@@ -1564,6 +1807,10 @@ export async function registerUserManagementRoutes(
     {
       preHandler: authenticateUser,
       schema: {
+        description: "Unlink social account from current user",
+        tags: ["Social Login"],
+        summary: "Unlink Social Account",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           properties: {
@@ -1580,6 +1827,9 @@ export async function registerUserManagementRoutes(
     "/users/:userId/social-accounts",
     {
       schema: {
+        description: "Get social accounts for a specific user (Admin)",
+        tags: ["Social Login"],
+        summary: "List User Social Accounts (Admin)",
         params: {
           type: "object",
           properties: {
@@ -1593,7 +1843,7 @@ export async function registerUserManagementRoutes(
   );
 
   // Development/Testing endpoint
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== "production") {
     fastify.post(
       "/auth/generate-test-verification-token",
       {
@@ -1605,10 +1855,10 @@ export async function registerUserManagementRoutes(
             required: ["email", "userId"],
             properties: {
               email: { type: "string", format: "email" },
-              userId: { type: "string", format: "uuid" }
-            }
-          }
-        }
+              userId: { type: "string", format: "uuid" },
+            },
+          },
+        },
       },
       authController.generateTestVerificationToken.bind(authController)
     );

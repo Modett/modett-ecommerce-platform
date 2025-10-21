@@ -1,4 +1,4 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyRequest, FastifyReply } from "fastify";
 import {
   AddPaymentMethodCommand,
   AddPaymentMethodHandler,
@@ -7,13 +7,13 @@ import {
   DeletePaymentMethodCommand,
   DeletePaymentMethodHandler,
   ListPaymentMethodsQuery,
-  ListPaymentMethodsHandler
-} from '../../../application';
-import { PaymentMethodService } from '../../../application/services/payment-method.service';
+  ListPaymentMethodsHandler,
+} from "../../../application";
+import { PaymentMethodService } from "../../../application/services/payment-method.service";
 
 // Request DTOs
 export interface AddPaymentMethodRequest {
-  type: 'card' | 'wallet' | 'bank' | 'cod' | 'gift_card';
+  type: "card" | "wallet" | "bank" | "cod" | "gift_card";
   brand?: string;
   last4?: string;
   expMonth?: number;
@@ -75,7 +75,7 @@ export interface PaymentMethodActionResponse {
   data?: {
     paymentMethodId: string;
     userId: string;
-    action: 'created' | 'updated' | 'deleted';
+    action: "created" | "updated" | "deleted";
     message: string;
   };
   error?: string;
@@ -87,13 +87,23 @@ export class PaymentMethodsController {
   private updatePaymentMethodHandler?: UpdatePaymentMethodHandler;
   private deletePaymentMethodHandler?: DeletePaymentMethodHandler;
   private listPaymentMethodsHandler?: ListPaymentMethodsHandler;
+  private paymentMethodService?: PaymentMethodService;
 
   constructor(paymentMethodService?: PaymentMethodService) {
+    this.paymentMethodService = paymentMethodService;
     if (paymentMethodService) {
-      this.addPaymentMethodHandler = new AddPaymentMethodHandler(paymentMethodService);
-      this.updatePaymentMethodHandler = new UpdatePaymentMethodHandler(paymentMethodService);
-      this.deletePaymentMethodHandler = new DeletePaymentMethodHandler(paymentMethodService);
-      this.listPaymentMethodsHandler = new ListPaymentMethodsHandler(paymentMethodService);
+      this.addPaymentMethodHandler = new AddPaymentMethodHandler(
+        paymentMethodService
+      );
+      this.updatePaymentMethodHandler = new UpdatePaymentMethodHandler(
+        paymentMethodService
+      );
+      this.deletePaymentMethodHandler = new DeletePaymentMethodHandler(
+        paymentMethodService
+      );
+      this.listPaymentMethodsHandler = new ListPaymentMethodsHandler(
+        paymentMethodService
+      );
     }
   }
   async addPaymentMethod(
@@ -113,25 +123,25 @@ export class PaymentMethodsController {
         expYear,
         billingAddressId,
         providerRef,
-        isDefault
+        isDefault,
       } = request.body;
 
       // Validate required fields
       if (!userId || !type) {
         reply.status(400).send({
           success: false,
-          error: 'Required fields missing: userId, type',
-          errors: ['userId', 'type']
+          error: "Required fields missing: userId, type",
+          errors: ["userId", "type"],
         });
         return;
       }
 
       // For card payments, require additional fields
-      if (type === 'card' && (!last4 || !expMonth || !expYear)) {
+      if (type === "card" && (!last4 || !expMonth || !expYear)) {
         reply.status(400).send({
           success: false,
-          error: 'Card payments require last4, expMonth, and expYear',
-          errors: ['last4', 'expMonth', 'expYear']
+          error: "Card payments require last4, expMonth, and expYear",
+          errors: ["last4", "expMonth", "expYear"],
         });
         return;
       }
@@ -139,7 +149,7 @@ export class PaymentMethodsController {
       if (!this.addPaymentMethodHandler) {
         reply.status(501).send({
           success: false,
-          error: 'Payment method service not available'
+          error: "Payment method service not available",
         });
         return;
       }
@@ -155,7 +165,7 @@ export class PaymentMethodsController {
         billingAddressId,
         providerRef,
         isDefault,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Execute command
@@ -166,21 +176,21 @@ export class PaymentMethodsController {
           success: true,
           data: {
             ...result.data,
-            action: 'created' as const,
-            message: 'Payment method added successfully'
-          }
+            action: "created" as const,
+            message: "Payment method added successfully",
+          },
         });
       } else {
         reply.status(400).send({
           success: false,
           error: result.error,
-          errors: result.errors
+          errors: result.errors,
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while adding payment method'
+        error: "Internal server error while adding payment method",
       });
     }
   }
@@ -197,8 +207,8 @@ export class PaymentMethodsController {
       if (!userId) {
         reply.status(400).send({
           success: false,
-          error: 'User ID is required',
-          errors: ['userId']
+          error: "User ID is required",
+          errors: ["userId"],
         });
         return;
       }
@@ -206,7 +216,7 @@ export class PaymentMethodsController {
       if (!this.listPaymentMethodsHandler) {
         reply.status(501).send({
           success: false,
-          error: 'Payment method service not available'
+          error: "Payment method service not available",
         });
         return;
       }
@@ -214,7 +224,7 @@ export class PaymentMethodsController {
       // Create query
       const query: ListPaymentMethodsQuery = {
         userId,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Execute query
@@ -223,19 +233,19 @@ export class PaymentMethodsController {
       if (result.success) {
         reply.status(200).send({
           success: true,
-          data: result.data
+          data: result.data,
         });
       } else {
         reply.status(400).send({
           success: false,
           error: result.error,
-          errors: result.errors
+          errors: result.errors,
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while retrieving payment methods'
+        error: "Internal server error while retrieving payment methods",
       });
     }
   }
@@ -254,8 +264,8 @@ export class PaymentMethodsController {
       if (!userId || !paymentMethodId) {
         reply.status(400).send({
           success: false,
-          error: 'User ID and Payment Method ID are required',
-          errors: ['userId', 'paymentMethodId']
+          error: "User ID and Payment Method ID are required",
+          errors: ["userId", "paymentMethodId"],
         });
         return;
       }
@@ -263,7 +273,7 @@ export class PaymentMethodsController {
       if (!this.updatePaymentMethodHandler) {
         reply.status(501).send({
           success: false,
-          error: 'Payment method service not available'
+          error: "Payment method service not available",
         });
         return;
       }
@@ -274,7 +284,7 @@ export class PaymentMethodsController {
         userId,
         billingAddressId,
         isDefault,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Execute command
@@ -285,20 +295,20 @@ export class PaymentMethodsController {
           success: true,
           data: {
             ...result.data,
-            action: 'updated' as const
-          }
+            action: "updated" as const,
+          },
         });
       } else {
         reply.status(400).send({
           success: false,
           error: result.error,
-          errors: result.errors
+          errors: result.errors,
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while updating payment method'
+        error: "Internal server error while updating payment method",
       });
     }
   }
@@ -315,8 +325,8 @@ export class PaymentMethodsController {
       if (!userId || !paymentMethodId) {
         reply.status(400).send({
           success: false,
-          error: 'User ID and Payment Method ID are required',
-          errors: ['userId', 'paymentMethodId']
+          error: "User ID and Payment Method ID are required",
+          errors: ["userId", "paymentMethodId"],
         });
         return;
       }
@@ -324,7 +334,7 @@ export class PaymentMethodsController {
       if (!this.deletePaymentMethodHandler) {
         reply.status(501).send({
           success: false,
-          error: 'Payment method service not available'
+          error: "Payment method service not available",
         });
         return;
       }
@@ -333,7 +343,7 @@ export class PaymentMethodsController {
       const command: DeletePaymentMethodCommand = {
         paymentMethodId,
         userId,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Execute command
@@ -344,20 +354,20 @@ export class PaymentMethodsController {
           success: true,
           data: {
             ...result.data,
-            action: 'deleted' as const
-          }
+            action: "deleted" as const,
+          },
         });
       } else {
         reply.status(400).send({
           success: false,
           error: result.error,
-          errors: result.errors
+          errors: result.errors,
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while deleting payment method'
+        error: "Internal server error while deleting payment method",
       });
     }
   }
@@ -373,7 +383,7 @@ export class PaymentMethodsController {
       if (!userId) {
         reply.status(401).send({
           success: false,
-          error: 'Authentication required'
+          error: "Authentication required",
         });
         return;
       }
@@ -386,25 +396,25 @@ export class PaymentMethodsController {
         expYear,
         billingAddressId,
         providerRef,
-        isDefault
+        isDefault,
       } = request.body;
 
       // Validate required fields
       if (!type) {
         reply.status(400).send({
           success: false,
-          error: 'Payment method type is required',
-          errors: ['type']
+          error: "Payment method type is required",
+          errors: ["type"],
         });
         return;
       }
 
       // For card payments, require additional fields
-      if (type === 'card' && (!last4 || !expMonth || !expYear)) {
+      if (type === "card" && (!last4 || !expMonth || !expYear)) {
         reply.status(400).send({
           success: false,
-          error: 'Card payments require last4, expMonth, and expYear',
-          errors: ['last4', 'expMonth', 'expYear']
+          error: "Card payments require last4, expMonth, and expYear",
+          errors: ["last4", "expMonth", "expYear"],
         });
         return;
       }
@@ -412,7 +422,7 @@ export class PaymentMethodsController {
       if (!this.addPaymentMethodHandler) {
         reply.status(501).send({
           success: false,
-          error: 'Payment method service not available'
+          error: "Payment method service not available",
         });
         return;
       }
@@ -428,7 +438,7 @@ export class PaymentMethodsController {
         billingAddressId,
         providerRef,
         isDefault,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Execute command
@@ -439,21 +449,22 @@ export class PaymentMethodsController {
           success: true,
           data: {
             ...result.data,
-            action: 'created' as const,
-            message: 'Payment method added successfully'
-          }
+            action: "created" as const,
+            message: "Payment method added successfully",
+          },
         });
       } else {
         reply.status(400).send({
           success: false,
           error: result.error,
-          errors: result.errors
+          errors: result.errors,
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while adding payment method for current user'
+        error:
+          "Internal server error while adding payment method for current user",
       });
     }
   }
@@ -469,7 +480,7 @@ export class PaymentMethodsController {
       if (!userId) {
         reply.status(401).send({
           success: false,
-          error: 'Authentication required'
+          error: "Authentication required",
         });
         return;
       }
@@ -477,7 +488,7 @@ export class PaymentMethodsController {
       if (!this.listPaymentMethodsHandler) {
         reply.status(501).send({
           success: false,
-          error: 'Payment method service not available'
+          error: "Payment method service not available",
         });
         return;
       }
@@ -485,7 +496,7 @@ export class PaymentMethodsController {
       // Create query
       const query: ListPaymentMethodsQuery = {
         userId,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Execute query
@@ -494,19 +505,20 @@ export class PaymentMethodsController {
       if (result.success) {
         reply.status(200).send({
           success: true,
-          data: result.data
+          data: result.data,
         });
       } else {
         reply.status(400).send({
           success: false,
           error: result.error,
-          errors: result.errors
+          errors: result.errors,
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while retrieving current user payment methods'
+        error:
+          "Internal server error while retrieving current user payment methods",
       });
     }
   }
@@ -526,7 +538,7 @@ export class PaymentMethodsController {
       if (!userId) {
         reply.status(401).send({
           success: false,
-          error: 'Authentication required'
+          error: "Authentication required",
         });
         return;
       }
@@ -534,27 +546,39 @@ export class PaymentMethodsController {
       if (!paymentMethodId) {
         reply.status(400).send({
           success: false,
-          error: 'Payment Method ID is required',
-          errors: ['paymentMethodId']
+          error: "Payment Method ID is required",
+          errors: ["paymentMethodId"],
         });
         return;
       }
 
-      // TODO: Implement payment method update logic for current user
+      if (!this.paymentMethodService) {
+        reply.status(500).send({
+          success: false,
+          error: "Payment method service not available",
+        });
+        return;
+      }
+
+      const { billingAddressId, isDefault } = request.body;
+
+      // Call the payment method service to update
+      const result = await this.paymentMethodService.updatePaymentMethod({
+        paymentMethodId,
+        userId,
+        billingAddressId,
+        isDefault,
+      });
 
       reply.status(200).send({
         success: true,
-        data: {
-          paymentMethodId,
-          userId,
-          action: 'updated' as const,
-          message: 'Payment method updated successfully'
-        }
+        data: result,
       });
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while updating current user payment method'
+        error:
+          "Internal server error while updating current user payment method",
       });
     }
   }
@@ -573,7 +597,7 @@ export class PaymentMethodsController {
       if (!userId) {
         reply.status(401).send({
           success: false,
-          error: 'Authentication required'
+          error: "Authentication required",
         });
         return;
       }
@@ -581,27 +605,40 @@ export class PaymentMethodsController {
       if (!paymentMethodId) {
         reply.status(400).send({
           success: false,
-          error: 'Payment Method ID is required',
-          errors: ['paymentMethodId']
+          error: "Payment Method ID is required",
+          errors: ["paymentMethodId"],
         });
         return;
       }
 
-      // TODO: Implement payment method deletion logic for current user
+      if (!this.paymentMethodService) {
+        reply.status(500).send({
+          success: false,
+          error: "Payment method service not available",
+        });
+        return;
+      }
+
+      // Call the payment method service to delete
+      await this.paymentMethodService.deletePaymentMethod(
+        paymentMethodId,
+        userId
+      );
 
       reply.status(200).send({
         success: true,
         data: {
           paymentMethodId,
           userId,
-          action: 'deleted' as const,
-          message: 'Payment method deleted successfully'
-        }
+          action: "deleted" as const,
+          message: "Payment method deleted successfully",
+        },
       });
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while deleting current user payment method'
+        error:
+          "Internal server error while deleting current user payment method",
       });
     }
   }

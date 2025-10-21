@@ -331,11 +331,6 @@ export async function registerProductCatalogRoutes(
               items: { type: "string", format: "uuid" },
               description: "Category IDs",
             },
-            tags: {
-              type: "array",
-              items: { type: "string" },
-              description: "Product tags",
-            },
           },
         },
         response: {
@@ -471,56 +466,56 @@ export async function registerProductCatalogRoutes(
   // =============================================================================
 
   // Advanced product search
-  fastify.get(
-    "/search/products",
-    {
-      schema: {
-        description: "Search products with filters",
-        tags: ["Search"],
-        summary: "Search Products",
-        querystring: {
-          type: "object",
-          required: ["q"],
-          properties: {
-            q: { type: "string", minLength: 1, description: "Search query" },
-            page: { type: "integer", minimum: 1, default: 1 },
-            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
-            status: {
-              type: "string",
-              enum: ["draft", "published", "scheduled"],
-            },
-            categoryIds: {
-              type: "array",
-              items: { type: "string", format: "uuid" },
-            },
-            brands: { type: "array", items: { type: "string" } },
-            minPrice: { type: "number", minimum: 0 },
-            maxPrice: { type: "number", minimum: 0 },
-          },
-        },
-        response: {
-          200: {
-            description: "Search results",
-            type: "object",
-            properties: {
-              success: { type: "boolean", example: true },
-              data: {
-                type: "object",
-                properties: {
-                  products: { type: "array" },
-                  total: { type: "integer" },
-                  query: { type: "string" },
-                  page: { type: "integer" },
-                  limit: { type: "integer" },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    searchController.searchProducts.bind(searchController)
-  );
+  // fastify.get(
+  //   "/search/products",
+  //   {
+  //     schema: {
+  //       description: "Search products with filters",
+  //       tags: ["Search"],
+  //       summary: "Search Products",
+  //       querystring: {
+  //         type: "object",
+  //         required: ["q"],
+  //         properties: {
+  //           q: { type: "string", minLength: 1, description: "Search query" },
+  //           page: { type: "integer", minimum: 1, default: 1 },
+  //           limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+  //           status: {
+  //             type: "string",
+  //             enum: ["draft", "published", "scheduled"],
+  //           },
+  //           categoryIds: {
+  //             type: "array",
+  //             items: { type: "string", format: "uuid" },
+  //           },
+  //           brands: { type: "array", items: { type: "string" } },
+  //           minPrice: { type: "number", minimum: 0 },
+  //           maxPrice: { type: "number", minimum: 0 },
+  //         },
+  //       },
+  //       response: {
+  //         200: {
+  //           description: "Search results",
+  //           type: "object",
+  //           properties: {
+  //             success: { type: "boolean", example: true },
+  //             data: {
+  //               type: "object",
+  //               properties: {
+  //                 products: { type: "array" },
+  //                 total: { type: "integer" },
+  //                 query: { type: "string" },
+  //                 page: { type: "integer" },
+  //                 limit: { type: "integer" },
+  //               },
+  //             },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   },
+  //   searchController.searchProducts.bind(searchController)
+  // );
 
   // =============================================================================
   // CATEGORY ROUTES

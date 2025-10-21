@@ -74,17 +74,21 @@ export async function registerEngagementRoutes(
   fastify.post(
     "/engagement/wishlists",
     {
-      preHandler: authenticateUser,
+      preHandler: optionalAuth,
       schema: {
         description: "Create a new wishlist",
         tags: ["Engagement - Wishlists"],
+        security: [{ bearerAuth: [] }],
         body: {
           type: "object",
           required: ["userId", "name"],
           properties: {
             userId: { type: "string", description: "User ID" },
             name: { type: "string", description: "Wishlist name" },
-            description: { type: "string", description: "Wishlist description" },
+            description: {
+              type: "string",
+              description: "Wishlist description",
+            },
             isPublic: {
               type: "boolean",
               description: "Whether the wishlist is public",
@@ -182,7 +186,10 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             limit: { type: "string", description: "Maximum number of results" },
-            offset: { type: "string", description: "Number of results to skip" },
+            offset: {
+              type: "string",
+              description: "Number of results to skip",
+            },
           },
         },
         response: {
@@ -227,7 +234,10 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             limit: { type: "string", description: "Maximum number of results" },
-            offset: { type: "string", description: "Number of results to skip" },
+            offset: {
+              type: "string",
+              description: "Number of results to skip",
+            },
           },
         },
         response: {
@@ -280,7 +290,10 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             limit: { type: "string", description: "Maximum number of results" },
-            offset: { type: "string", description: "Number of results to skip" },
+            offset: {
+              type: "string",
+              description: "Number of results to skip",
+            },
           },
         },
         response: {
@@ -318,9 +331,10 @@ export async function registerEngagementRoutes(
   fastify.post(
     "/engagement/wishlists/:wishlistId/items",
     {
-      preHandler: authenticateUser,
+      preHandler: optionalAuth,
       schema: {
         description: "Add an item to a wishlist",
+        security: [{ bearerAuth: [] }],
         tags: ["Engagement - Wishlists"],
         params: {
           type: "object",
@@ -370,7 +384,7 @@ export async function registerEngagementRoutes(
   fastify.delete(
     "/engagement/wishlists/:wishlistId/items/:wishlistItemId",
     {
-      preHandler: authenticateUser,
+      preHandler: optionalAuth,
       schema: {
         description: "Remove an item from a wishlist",
         tags: ["Engagement - Wishlists"],
@@ -403,9 +417,10 @@ export async function registerEngagementRoutes(
   fastify.patch(
     "/engagement/wishlists/:wishlistId",
     {
-      preHandler: authenticateUser,
+      preHandler: optionalAuth,
       schema: {
         description: "Update wishlist details",
+        security: [{ bearerAuth: [] }],
         tags: ["Engagement - Wishlists"],
         params: {
           type: "object",
@@ -418,7 +433,10 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             name: { type: "string", description: "Wishlist name" },
-            description: { type: "string", description: "Wishlist description" },
+            description: {
+              type: "string",
+              description: "Wishlist description",
+            },
             isPublic: { type: "boolean", description: "Public visibility" },
           },
         },
@@ -447,6 +465,7 @@ export async function registerEngagementRoutes(
       schema: {
         description: "Delete a wishlist",
         tags: ["Engagement - Wishlists"],
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["wishlistId"],
@@ -483,23 +502,33 @@ export async function registerEngagementRoutes(
       schema: {
         description: "Create a new product reminder",
         tags: ["Engagement - Reminders"],
+        security: [{ bearerAuth: [] }],
         body: {
           type: "object",
-          required: ["userId", "variantId", "type", "contactType"],
+          required: ["variantId", "type", "contact", "channel"],
           properties: {
-            userId: { type: "string", description: "User ID" },
             variantId: { type: "string", description: "Product variant ID" },
             type: {
               type: "string",
               enum: ["back_in_stock", "price_drop", "low_stock"],
               description: "Reminder type",
             },
-            contactType: {
+            contact: {
               type: "string",
-              enum: ["email", "sms", "push"],
-              description: "Contact method",
+              enum: ["email", "phone"],
+              description:
+                "Contact type (not actual email/phone, just the type)",
             },
-            threshold: { type: "number", description: "Price threshold for price_drop reminders" },
+            channel: {
+              type: "string",
+              enum: ["email", "sms", "push", "whatsapp"],
+              description: "Contact channel",
+            },
+            optInAt: {
+              type: "string",
+              format: "date-time",
+              description: "Opt-in timestamp (optional)",
+            },
           },
         },
         response: {
@@ -517,7 +546,6 @@ export async function registerEngagementRoutes(
                   type: { type: "string" },
                   contactType: { type: "string" },
                   status: { type: "string" },
-                  threshold: { type: "number" },
                   createdAt: { type: "string", format: "date-time" },
                 },
               },
@@ -540,6 +568,7 @@ export async function registerEngagementRoutes(
       schema: {
         description: "Get a specific reminder by ID",
         tags: ["Engagement - Reminders"],
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["reminderId"],
@@ -586,6 +615,7 @@ export async function registerEngagementRoutes(
       schema: {
         description: "Get all reminders for a specific user",
         tags: ["Engagement - Reminders"],
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["userId"],
@@ -597,7 +627,10 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             limit: { type: "string", description: "Maximum number of results" },
-            offset: { type: "string", description: "Number of results to skip" },
+            offset: {
+              type: "string",
+              description: "Number of results to skip",
+            },
           },
         },
         response: {
@@ -641,6 +674,7 @@ export async function registerEngagementRoutes(
       schema: {
         description: "Get all reminders for a specific product variant",
         tags: ["Engagement - Reminders"],
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["variantId"],
@@ -652,7 +686,10 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             limit: { type: "string", description: "Maximum number of results" },
-            offset: { type: "string", description: "Number of results to skip" },
+            offset: {
+              type: "string",
+              description: "Number of results to skip",
+            },
           },
         },
         response: {
@@ -696,6 +733,7 @@ export async function registerEngagementRoutes(
       schema: {
         description: "Update reminder status",
         tags: ["Engagement - Reminders"],
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["reminderId"],
@@ -709,7 +747,7 @@ export async function registerEngagementRoutes(
           properties: {
             status: {
               type: "string",
-              enum: ["active", "triggered", "cancelled"],
+              enum: ["pending", "sent", "unsubscribed"],
               description: "New reminder status",
             },
           },
@@ -739,6 +777,7 @@ export async function registerEngagementRoutes(
       schema: {
         description: "Unsubscribe from a reminder",
         tags: ["Engagement - Reminders"],
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["reminderId"],
@@ -771,6 +810,7 @@ export async function registerEngagementRoutes(
       schema: {
         description: "Delete a reminder",
         tags: ["Engagement - Reminders"],
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["reminderId"],
@@ -814,11 +854,12 @@ export async function registerEngagementRoutes(
             type: {
               type: "string",
               enum: [
-                "order_update",
-                "promotion",
-                "reminder",
-                "announcement",
-                "product_update",
+                "order_confirm",
+                "shipped",
+                "restock",
+                "review_request",
+                "care_guide",
+                "promo",
               ],
               description: "Notification type",
             },
@@ -898,9 +939,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    notificationController.sendNotification.bind(
-      notificationController
-    ) as any
+    notificationController.sendNotification.bind(notificationController) as any
   );
 
   // Get Notification
@@ -946,9 +985,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    notificationController.getNotification.bind(
-      notificationController
-    ) as any
+    notificationController.getNotification.bind(notificationController) as any
   );
 
   // Get User Notifications
@@ -970,7 +1007,10 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             limit: { type: "string", description: "Maximum number of results" },
-            offset: { type: "string", description: "Number of results to skip" },
+            offset: {
+              type: "string",
+              description: "Number of results to skip",
+            },
           },
         },
         response: {
@@ -1077,9 +1117,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    appointmentController.createAppointment.bind(
-      appointmentController
-    ) as any
+    appointmentController.createAppointment.bind(appointmentController) as any
   );
 
   // Get Appointment
@@ -1148,7 +1186,10 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             limit: { type: "string", description: "Maximum number of results" },
-            offset: { type: "string", description: "Number of results to skip" },
+            offset: {
+              type: "string",
+              description: "Number of results to skip",
+            },
           },
         },
         response: {
@@ -1182,9 +1223,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    appointmentController.getUserAppointments.bind(
-      appointmentController
-    ) as any
+    appointmentController.getUserAppointments.bind(appointmentController) as any
   );
 
   // Get Location Appointments
@@ -1206,7 +1245,10 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             limit: { type: "string", description: "Maximum number of results" },
-            offset: { type: "string", description: "Number of results to skip" },
+            offset: {
+              type: "string",
+              description: "Number of results to skip",
+            },
           },
         },
         response: {
@@ -1283,9 +1325,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    appointmentController.updateAppointment.bind(
-      appointmentController
-    ) as any
+    appointmentController.updateAppointment.bind(appointmentController) as any
   );
 
   // Cancel Appointment
@@ -1317,9 +1357,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    appointmentController.cancelAppointment.bind(
-      appointmentController
-    ) as any
+    appointmentController.cancelAppointment.bind(appointmentController) as any
   );
 
   // ============================================================
@@ -1377,9 +1415,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    productReviewController.createReview.bind(
-      productReviewController
-    ) as any
+    productReviewController.createReview.bind(productReviewController) as any
   );
 
   // Get Product Review
@@ -1445,7 +1481,10 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             limit: { type: "string", description: "Maximum number of results" },
-            offset: { type: "string", description: "Number of results to skip" },
+            offset: {
+              type: "string",
+              description: "Number of results to skip",
+            },
           },
         },
         response: {
@@ -1502,7 +1541,10 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             limit: { type: "string", description: "Maximum number of results" },
-            offset: { type: "string", description: "Number of results to skip" },
+            offset: {
+              type: "string",
+              description: "Number of results to skip",
+            },
           },
         },
         response: {
@@ -1535,9 +1577,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    productReviewController.getUserReviews.bind(
-      productReviewController
-    ) as any
+    productReviewController.getUserReviews.bind(productReviewController) as any
   );
 
   // Update Review Status
@@ -1678,7 +1718,11 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             subscriptionId: { type: "string", description: "Subscription ID" },
-            email: { type: "string", format: "email", description: "Email address" },
+            email: {
+              type: "string",
+              format: "email",
+              description: "Email address",
+            },
           },
         },
         response: {
@@ -1709,7 +1753,11 @@ export async function registerEngagementRoutes(
           type: "object",
           properties: {
             subscriptionId: { type: "string", description: "Subscription ID" },
-            email: { type: "string", format: "email", description: "Email address" },
+            email: {
+              type: "string",
+              format: "email",
+              description: "Email address",
+            },
           },
         },
         response: {

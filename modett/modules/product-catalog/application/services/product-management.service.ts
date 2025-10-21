@@ -42,7 +42,10 @@ export class ProductManagementService {
     // Handle categoryIds - create associations
     if (data.categoryIds && data.categoryIds.length > 0) {
       for (const categoryId of data.categoryIds) {
-        await this.productRepository.addToCategory(product.getId().getValue(), categoryId);
+        await this.productRepository.addToCategory(
+          product.getId().getValue(),
+          categoryId
+        );
       }
     }
 
@@ -113,67 +116,50 @@ export class ProductManagementService {
 
     const offset = (page - 1) * limit;
 
-    let products: Product[];
-    let totalCount: number;
+    // Get all products first, then apply filters progressively (AND logic like variants)
+    let products = await this.productRepository.findAll({
+      sortBy,
+      sortOrder,
+      includeDrafts: status === "draft" || includeDrafts,
+    });
 
-    // Handle different filtering scenarios
-    if (categoryId) {
-      // Filter by category
-      const queryOptions: ProductQueryOptions = {
-        limit,
-        offset,
-        sortBy,
-        sortOrder,
-        includeDrafts: status === "draft" || includeDrafts,
-      };
-
-      products = await this.productRepository.findByCategory(
-        categoryId,
-        queryOptions
-      );
-      totalCount = await this.productRepository.count({ categoryId });
-    } else if (brand) {
-      // Filter by brand
-      const queryOptions: ProductQueryOptions = {
-        limit,
-        offset,
-        sortBy,
-        sortOrder,
-        includeDrafts: status === "draft" || includeDrafts,
-      };
-
-      products = await this.productRepository.findByBrand(brand, queryOptions);
-      totalCount = await this.productRepository.count({ brand });
-    } else if (status) {
-      // Filter by status
-      const queryOptions: ProductQueryOptions = {
-        limit,
-        offset,
-        sortBy,
-        sortOrder,
-      };
-
-      products = await this.productRepository.findByStatus(
-        status,
-        queryOptions
-      );
-      totalCount = await this.productRepository.count({ status });
-    } else {
-      // No specific filtering - get all products
-      const queryOptions: ProductQueryOptions = {
-        limit,
-        offset,
-        sortBy,
-        sortOrder,
-        includeDrafts,
-      };
-
-      products = await this.productRepository.findAll(queryOptions);
-      totalCount = await this.productRepository.count({});
+    // Apply filters progressively (AND logic)
+    if (brand) {
+      products = products.filter((p) => p.getBrand() === brand);
     }
 
+    if (categoryId) {
+      // For categoryId, we need to get products in that category
+      const categoryProducts = await this.productRepository.findByCategory(
+        categoryId,
+        {
+          sortBy,
+          sortOrder,
+          includeDrafts: status === "draft" || includeDrafts,
+        }
+      );
+
+      // If we have other filters, apply them to category results
+      if (brand) {
+        products = categoryProducts.filter((p) => p.getBrand() === brand);
+      } else {
+        products = categoryProducts;
+      }
+    }
+
+    if (status) {
+      products = products.filter((p) => p.getStatus().toString() === status);
+    }
+
+    // Get total count before pagination
+    const totalCount = products.length;
+
+    // Apply pagination
+    const startIndex = offset;
+    const paginatedProducts = products.slice(startIndex, startIndex + limit);
+
     return {
-      items: products, // Array of Product entities
+      items: paginatedProducts,
       totalCount,
     };
   }

@@ -875,6 +875,8 @@ export async function createServer(): Promise<FastifyInstance> {
       userProfileService: serviceContainer.userProfileService,
       addressService: serviceContainer.addressService,
       paymentMethodService: serviceContainer.paymentMethodService,
+      userRepository: serviceContainer.userRepository,
+      addressRepository: serviceContainer.addressRepository,
     };
 
     // Register routes with services

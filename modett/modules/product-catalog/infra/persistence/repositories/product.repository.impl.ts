@@ -1,5 +1,10 @@
 import { PrismaClient } from "@prisma/client";
-import { IProductRepository, ProductQueryOptions, ProductSearchOptions, ProductCountOptions } from "../../../domain/repositories/product.repository";
+import {
+  IProductRepository,
+  ProductQueryOptions,
+  ProductSearchOptions,
+  ProductCountOptions,
+} from "../../../domain/repositories/product.repository";
 import { Product } from "../../../domain/entities/product.entity";
 import { ProductId } from "../../../domain/value-objects/product-id.vo";
 import { Slug } from "../../../domain/value-objects/slug.vo";
@@ -85,14 +90,25 @@ export class ProductRepository implements IProductRepository {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
       includeDrafts = true,
+      brand,
+      categoryId,
+      status,
     } = options || {};
 
     const whereClause: any = {};
-    if (!includeDrafts) {
-      whereClause.status = { in: ['published', 'scheduled'] };
+    if (brand) {
+      whereClause.brand = brand;
+    }
+    if (categoryId) {
+      whereClause.categories = { some: { categoryId } };
+    }
+    if (status) {
+      whereClause.status = status;
+    } else if (!includeDrafts) {
+      whereClause.status = { in: ["published", "scheduled"] };
     }
 
     const products = await this.prisma.product.findMany({
@@ -102,29 +118,34 @@ export class ProductRepository implements IProductRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return products.map(productData => Product.fromDatabaseRow({
-      product_id: productData.id,
-      title: productData.title,
-      slug: productData.slug,
-      brand: productData.brand,
-      short_desc: productData.shortDesc,
-      long_desc_html: productData.longDescHtml,
-      status: productData.status as any,
-      publish_at: productData.publishAt,
-      country_of_origin: productData.countryOfOrigin,
-      seo_title: productData.seoTitle,
-      seo_description: productData.seoDescription,
-      created_at: productData.createdAt,
-      updated_at: productData.updatedAt,
-    }));
+    return products.map((productData) =>
+      Product.fromDatabaseRow({
+        product_id: productData.id,
+        title: productData.title,
+        slug: productData.slug,
+        brand: productData.brand,
+        short_desc: productData.shortDesc,
+        long_desc_html: productData.longDescHtml,
+        status: productData.status as any,
+        publish_at: productData.publishAt,
+        country_of_origin: productData.countryOfOrigin,
+        seo_title: productData.seoTitle,
+        seo_description: productData.seoDescription,
+        created_at: productData.createdAt,
+        updated_at: productData.updatedAt,
+      })
+    );
   }
 
-  async findByStatus(status: string, options?: ProductQueryOptions): Promise<Product[]> {
+  async findByStatus(
+    status: string,
+    options?: ProductQueryOptions
+  ): Promise<Product[]> {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = options || {};
 
     const products = await this.prisma.product.findMany({
@@ -134,35 +155,40 @@ export class ProductRepository implements IProductRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return products.map(productData => Product.fromDatabaseRow({
-      product_id: productData.id,
-      title: productData.title,
-      slug: productData.slug,
-      brand: productData.brand,
-      short_desc: productData.shortDesc,
-      long_desc_html: productData.longDescHtml,
-      status: productData.status as any,
-      publish_at: productData.publishAt,
-      country_of_origin: productData.countryOfOrigin,
-      seo_title: productData.seoTitle,
-      seo_description: productData.seoDescription,
-      created_at: productData.createdAt,
-      updated_at: productData.updatedAt,
-    }));
+    return products.map((productData) =>
+      Product.fromDatabaseRow({
+        product_id: productData.id,
+        title: productData.title,
+        slug: productData.slug,
+        brand: productData.brand,
+        short_desc: productData.shortDesc,
+        long_desc_html: productData.longDescHtml,
+        status: productData.status as any,
+        publish_at: productData.publishAt,
+        country_of_origin: productData.countryOfOrigin,
+        seo_title: productData.seoTitle,
+        seo_description: productData.seoDescription,
+        created_at: productData.createdAt,
+        updated_at: productData.updatedAt,
+      })
+    );
   }
 
-  async findByBrand(brand: string, options?: ProductQueryOptions): Promise<Product[]> {
+  async findByBrand(
+    brand: string,
+    options?: ProductQueryOptions
+  ): Promise<Product[]> {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
       includeDrafts = false,
     } = options || {};
 
     const whereClause: any = { brand };
     if (!includeDrafts) {
-      whereClause.status = { in: ['published', 'scheduled'] };
+      whereClause.status = { in: ["published", "scheduled"] };
     }
 
     const products = await this.prisma.product.findMany({
@@ -172,36 +198,43 @@ export class ProductRepository implements IProductRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return products.map(productData => Product.fromDatabaseRow({
-      product_id: productData.id,
-      title: productData.title,
-      slug: productData.slug,
-      brand: productData.brand,
-      short_desc: productData.shortDesc,
-      long_desc_html: productData.longDescHtml,
-      status: productData.status as any,
-      publish_at: productData.publishAt,
-      country_of_origin: productData.countryOfOrigin,
-      seo_title: productData.seoTitle,
-      seo_description: productData.seoDescription,
-      created_at: productData.createdAt,
-      updated_at: productData.updatedAt,
-    }));
+    return products.map((productData) =>
+      Product.fromDatabaseRow({
+        product_id: productData.id,
+        title: productData.title,
+        slug: productData.slug,
+        brand: productData.brand,
+        short_desc: productData.shortDesc,
+        long_desc_html: productData.longDescHtml,
+        status: productData.status as any,
+        publish_at: productData.publishAt,
+        country_of_origin: productData.countryOfOrigin,
+        seo_title: productData.seoTitle,
+        seo_description: productData.seoDescription,
+        created_at: productData.createdAt,
+        updated_at: productData.updatedAt,
+      })
+    );
   }
 
-  async findByCategory(categoryId: string, options?: ProductQueryOptions): Promise<Product[]> {
+  async findByCategory(
+    categoryId: string,
+    options?: ProductQueryOptions
+  ): Promise<Product[]> {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
       includeDrafts = false,
     } = options || {};
 
-    const whereClause: any = {categories: {some: {categoryId: categoryId}}};
+    const whereClause: any = {
+      categories: { some: { categoryId: categoryId } },
+    };
 
     if (!includeDrafts) {
-      whereClause.status = { in: ['published', 'scheduled'] };
+      whereClause.status = { in: ["published", "scheduled"] };
     }
 
     const products = await this.prisma.product.findMany({
@@ -211,29 +244,34 @@ export class ProductRepository implements IProductRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return products.map(productData => Product.fromDatabaseRow({
-      product_id: productData.id,
-      title: productData.title,
-      slug: productData.slug,
-      brand: productData.brand,
-      short_desc: productData.shortDesc,
-      long_desc_html: productData.longDescHtml,
-      status: productData.status as any,
-      publish_at: productData.publishAt,
-      country_of_origin: productData.countryOfOrigin,
-      seo_title: productData.seoTitle,
-      seo_description: productData.seoDescription,
-      created_at: productData.createdAt,
-      updated_at: productData.updatedAt,
-    }));
+    return products.map((productData) =>
+      Product.fromDatabaseRow({
+        product_id: productData.id,
+        title: productData.title,
+        slug: productData.slug,
+        brand: productData.brand,
+        short_desc: productData.shortDesc,
+        long_desc_html: productData.longDescHtml,
+        status: productData.status as any,
+        publish_at: productData.publishAt,
+        country_of_origin: productData.countryOfOrigin,
+        seo_title: productData.seoTitle,
+        seo_description: productData.seoDescription,
+        created_at: productData.createdAt,
+        updated_at: productData.updatedAt,
+      })
+    );
   }
 
-  async search(query: string, options?: ProductSearchOptions): Promise<Product[]> {
+  async search(
+    query: string,
+    options?: ProductSearchOptions
+  ): Promise<Product[]> {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
       includeDrafts = false,
       brands,
       categories,
@@ -246,26 +284,26 @@ export class ProductRepository implements IProductRepository {
         {
           title: {
             contains: query,
-            mode: 'insensitive',
+            mode: "insensitive",
           },
         },
         {
           shortDesc: {
             contains: query,
-            mode: 'insensitive',
+            mode: "insensitive",
           },
         },
         {
           brand: {
             contains: query,
-            mode: 'insensitive',
+            mode: "insensitive",
           },
         },
       ],
     };
 
     if (!includeDrafts) {
-      whereClause.status = { in: ['published', 'scheduled'] };
+      whereClause.status = { in: ["published", "scheduled"] };
     }
 
     if (brands && brands.length > 0) {
@@ -309,21 +347,23 @@ export class ProductRepository implements IProductRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return products.map(productData => Product.fromDatabaseRow({
-      product_id: productData.id,
-      title: productData.title,
-      slug: productData.slug,
-      brand: productData.brand,
-      short_desc: productData.shortDesc,
-      long_desc_html: productData.longDescHtml,
-      status: productData.status as any,
-      publish_at: productData.publishAt,
-      country_of_origin: productData.countryOfOrigin,
-      seo_title: productData.seoTitle,
-      seo_description: productData.seoDescription,
-      created_at: productData.createdAt,
-      updated_at: productData.updatedAt,
-    }));
+    return products.map((productData) =>
+      Product.fromDatabaseRow({
+        product_id: productData.id,
+        title: productData.title,
+        slug: productData.slug,
+        brand: productData.brand,
+        short_desc: productData.shortDesc,
+        long_desc_html: productData.longDescHtml,
+        status: productData.status as any,
+        publish_at: productData.publishAt,
+        country_of_origin: productData.countryOfOrigin,
+        seo_title: productData.seoTitle,
+        seo_description: productData.seoDescription,
+        created_at: productData.createdAt,
+        updated_at: productData.updatedAt,
+      })
+    );
   }
 
   async update(product: Product): Promise<void> {

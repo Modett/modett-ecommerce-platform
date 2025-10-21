@@ -9,7 +9,7 @@ export { TransactionId } from "./transaction-id.vo";
 
 // Enum Value Objects
 export { LocationType, LocationTypeVO } from "./location-type.vo";
-export { TransactionReason, TransactionReasonVO } from "./transaction-reason.vo";
+export { TransactionReasonVO } from "./transaction-reason.vo";
 export { AlertType, AlertTypeVO } from "./alert-type.vo";
 export {
   PurchaseOrderStatus,

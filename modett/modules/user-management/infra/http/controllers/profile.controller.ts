@@ -1,11 +1,11 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyRequest, FastifyReply } from "fastify";
 import {
   UpdateProfileCommand,
   UpdateProfileHandler,
   GetUserProfileQuery,
-  GetUserProfileHandler
-} from '../../../application';
-import { UserProfileService } from '../../../application/services/user-profile.service';
+  GetUserProfileHandler,
+} from "../../../application";
+import { UserProfileService } from "../../../application/services/user-profile.service";
 
 // Request DTOs
 export interface UpdateProfileRequest {
@@ -65,8 +65,8 @@ export class ProfileController {
       if (!userId) {
         reply.status(400).send({
           success: false,
-          error: 'User ID is required',
-          errors: ['userId']
+          error: "User ID is required",
+          errors: ["userId"],
         });
         return;
       }
@@ -74,7 +74,7 @@ export class ProfileController {
       // Create query
       const query: GetUserProfileQuery = {
         userId,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Execute query
@@ -83,20 +83,20 @@ export class ProfileController {
       if (result.success) {
         reply.status(200).send({
           success: true,
-          data: result.data
+          data: result.data,
         });
       } else {
-        const statusCode = result.error?.includes('not found') ? 404 : 400;
+        const statusCode = result.error?.includes("not found") ? 404 : 400;
         reply.status(statusCode).send({
           success: false,
           error: result.error,
-          errors: result.errors
+          errors: result.errors,
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while retrieving profile'
+        error: "Internal server error while retrieving profile",
       });
     }
   }
@@ -117,14 +117,14 @@ export class ProfileController {
         locale,
         currency,
         stylePreferences,
-        preferredSizes
+        preferredSizes,
       } = request.body;
 
       if (!userId) {
         reply.status(400).send({
           success: false,
-          error: 'User ID is required',
-          errors: ['userId']
+          error: "User ID is required",
+          errors: ["userId"],
         });
         return;
       }
@@ -139,7 +139,7 @@ export class ProfileController {
         currency,
         stylePreferences,
         preferredSizes,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Execute command
@@ -148,19 +148,23 @@ export class ProfileController {
       if (result.success) {
         reply.status(200).send({
           success: true,
-          data: result.data
+          data: result.data,
         });
       } else {
         reply.status(400).send({
           success: false,
           error: result.error,
-          errors: result.errors
+          errors: result.errors,
+          code: "PROFILE_UPDATE_ERROR",
+          timestamp: new Date().toISOString(),
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while updating profile'
+        error: "Internal server error while updating profile",
+        code: "INTERNAL_SERVER_ERROR",
+        timestamp: new Date().toISOString(),
       });
     }
   }
@@ -176,7 +180,7 @@ export class ProfileController {
       if (!userId) {
         reply.status(401).send({
           success: false,
-          error: 'Authentication required'
+          error: "Authentication required",
         });
         return;
       }
@@ -184,7 +188,7 @@ export class ProfileController {
       // Create query
       const query: GetUserProfileQuery = {
         userId,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Execute query
@@ -193,20 +197,20 @@ export class ProfileController {
       if (result.success) {
         reply.status(200).send({
           success: true,
-          data: result.data
+          data: result.data,
         });
       } else {
-        const statusCode = result.error?.includes('not found') ? 404 : 400;
+        const statusCode = result.error?.includes("not found") ? 404 : 400;
         reply.status(statusCode).send({
           success: false,
           error: result.error,
-          errors: result.errors
+          errors: result.errors,
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while retrieving current user profile'
+        error: "Internal server error while retrieving current user profile",
       });
     }
   }
@@ -222,7 +226,7 @@ export class ProfileController {
       if (!userId) {
         reply.status(401).send({
           success: false,
-          error: 'Authentication required'
+          error: "Authentication required",
         });
         return;
       }
@@ -234,7 +238,7 @@ export class ProfileController {
         locale,
         currency,
         stylePreferences,
-        preferredSizes
+        preferredSizes,
       } = request.body;
 
       // Create command
@@ -247,7 +251,7 @@ export class ProfileController {
         currency,
         stylePreferences,
         preferredSizes,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Execute command
@@ -263,7 +267,7 @@ export class ProfileController {
 
         reply.status(200).send({
           success: true,
-          data: responseData
+          data: responseData,
         });
       } else {
         reply.status(400).send({
@@ -271,15 +275,15 @@ export class ProfileController {
           error: result.error || "Profile update failed",
           errors: result.errors,
           code: "PROFILE_UPDATE_ERROR",
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while updating current user profile',
+        error: "Internal server error while updating current user profile",
         code: "INTERNAL_SERVER_ERROR",
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
   }

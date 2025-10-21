@@ -1,6 +1,13 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { GetUserProfileQuery, GetUserProfileHandler } from '../../../application';
-import { UserProfileService } from '../../../application/services/user-profile.service';
+import { FastifyRequest, FastifyReply } from "fastify";
+import {
+  GetUserProfileQuery,
+  GetUserProfileHandler,
+  GetUserDetailsQuery,
+  GetUserDetailsHandler,
+} from "../../../application";
+import { UserProfileService } from "../../../application/services/user-profile.service";
+import { IUserRepository } from "../../../domain/repositories/iuser.repository";
+import { IAddressRepository } from "../../../domain/repositories/iaddress.repository";
 
 // Response DTOs
 export interface UserResponse {
@@ -24,9 +31,15 @@ export interface UserResponse {
 
 export class UsersController {
   private getProfileHandler: GetUserProfileHandler;
+  private getUserDetailsHandler: GetUserDetailsHandler;
 
-  constructor(userProfileService: UserProfileService) {
+  constructor(
+    userProfileService: UserProfileService,
+    userRepository: IUserRepository,
+    addressRepository: IAddressRepository
+  ) {
     this.getProfileHandler = new GetUserProfileHandler(userProfileService);
+    this.getUserDetailsHandler = new GetUserDetailsHandler(userRepository, addressRepository);
   }
 
   async getUser(
@@ -39,8 +52,8 @@ export class UsersController {
       if (!userId) {
         reply.status(400).send({
           success: false,
-          error: 'User ID is required',
-          errors: ['userId']
+          error: "User ID is required",
+          errors: ["userId"],
         });
         return;
       }
@@ -48,7 +61,7 @@ export class UsersController {
       // Create query to get user profile
       const query: GetUserProfileQuery = {
         userId,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Execute query
@@ -66,22 +79,22 @@ export class UsersController {
               locale: result.data.locale,
               currency: result.data.currency,
               stylePreferences: result.data.stylePreferences,
-              preferredSizes: result.data.preferredSizes
-            }
-          }
+              preferredSizes: result.data.preferredSizes,
+            },
+          },
         });
       } else {
-        const statusCode = result.error?.includes('not found') ? 404 : 400;
+        const statusCode = result.error?.includes("not found") ? 404 : 400;
         reply.status(statusCode).send({
           success: false,
-          error: result.error || 'User not found',
-          errors: result.errors
+          error: result.error || "User not found",
+          errors: result.errors,
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while retrieving user'
+        error: "Internal server error while retrieving user",
       });
     }
   }
@@ -93,64 +106,53 @@ export class UsersController {
     try {
       // Extract user info from JWT token (assuming middleware sets it)
       const userId = (request as any).user?.userId;
-      const email = (request as any).user?.email;
 
       if (!userId) {
         reply.status(401).send({
           success: false,
-          error: 'Authentication required'
+          error: "Authentication required",
         });
         return;
       }
 
-      // Create query to get user profile
-      const query: GetUserProfileQuery = {
+      // Create query to get user details
+      const query: GetUserDetailsQuery = {
         userId,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       // Execute query
-      const result = await this.getProfileHandler.handle(query);
+      const result = await this.getUserDetailsHandler.handle(query);
 
       if (result.success && result.data) {
         reply.status(200).send({
           success: true,
           data: {
             userId: result.data.userId,
-            email: email,
-            phone: null,
-            firstName: null,
-            lastName: null,
-            status: "active",
-            emailVerified: true,
-            phoneVerified: false,
-            isGuest: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
+            email: result.data.email,
+            phone: result.data.phone,
+            firstName: result.data.firstName,
+            lastName: result.data.lastName,
+            status: result.data.status,
+            emailVerified: result.data.emailVerified,
+            phoneVerified: result.data.phoneVerified,
+            isGuest: result.data.isGuest,
+            createdAt: result.data.createdAt,
+            updatedAt: result.data.updatedAt,
+          },
         });
       } else {
-        reply.status(200).send({
-          success: true,
-          data: {
-            userId: userId,
-            email: email,
-            phone: null,
-            firstName: null,
-            lastName: null,
-            status: "active",
-            emailVerified: true,
-            phoneVerified: false,
-            isGuest: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
+        const statusCode = result.error?.includes("not found") ? 404 : 400;
+        reply.status(statusCode).send({
+          success: false,
+          error: result.error || "User not found",
+          errors: result.errors,
         });
       }
     } catch (error) {
       reply.status(500).send({
         success: false,
-        error: 'Internal server error while retrieving current user'
+        error: "Internal server error while retrieving current user",
       });
     }
   }
