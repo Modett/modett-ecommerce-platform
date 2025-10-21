@@ -1,16 +1,22 @@
-import { ICategoryRepository, CategoryQueryOptions } from '../../domain/repositories/category.repository';
-import { Category, CreateCategoryData } from '../../domain/entities/category.entity';
-import { CategoryId } from '../../domain/value-objects/category-id.vo';
-import { Slug } from '../../domain/value-objects/slug.vo';
-import { SlugGeneratorService } from './slug-generator.service';
+import {
+  ICategoryRepository,
+  CategoryQueryOptions,
+} from "../../domain/repositories/category.repository";
+import {
+  Category,
+  CreateCategoryData,
+} from "../../domain/entities/category.entity";
+import { CategoryId } from "../../domain/value-objects/category-id.vo";
+import { Slug } from "../../domain/value-objects/slug.vo";
+import { SlugGeneratorService } from "./slug-generator.service";
 
 export interface CategoryQueryServiceOptions {
   page?: number;
   limit?: number;
   parentId?: string;
   includeChildren?: boolean;
-  sortBy?: 'name' | 'position' | 'createdAt';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "name" | "position" | "createdAt";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface CategoryTreeNode {
@@ -36,7 +42,7 @@ export class CategoryManagementService {
       const parentId = CategoryId.fromString(data.parentId);
       const parentExists = await this.categoryRepository.exists(parentId);
       if (!parentExists) {
-        throw new Error('Parent category not found');
+        throw new Error("Parent category not found");
       }
     }
 
@@ -44,20 +50,23 @@ export class CategoryManagementService {
     const slug = Slug.create(data.name);
     const existingCategory = await this.categoryRepository.findBySlug(slug);
     if (existingCategory) {
-      throw new Error('Category with this name already exists');
+      throw new Error("Category with this name already exists");
     }
 
     // Generate position if not provided
     let position = data.position;
     if (position === undefined) {
-      const parentId = data.parentId ? CategoryId.fromString(data.parentId) : undefined;
-      const maxPosition = await this.categoryRepository.getMaxPosition(parentId);
+      const parentId = data.parentId
+        ? CategoryId.fromString(data.parentId)
+        : undefined;
+      const maxPosition =
+        await this.categoryRepository.getMaxPosition(parentId);
       position = maxPosition + 1;
     }
 
     const category = Category.create({
       ...data,
-      position
+      position,
     });
 
     await this.categoryRepository.save(category);
@@ -74,62 +83,93 @@ export class CategoryManagementService {
     return await this.categoryRepository.findBySlug(slugVo);
   }
 
-  async getCategories(options: CategoryQueryServiceOptions = {}): Promise<Category[]> {
+  async getCategories(
+    options: CategoryQueryServiceOptions = {}
+  ): Promise<Category[]> {
     const {
       page = 1,
       limit = 50,
       parentId,
-      sortBy = 'position',
-      sortOrder = 'asc'
+      includeChildren = false,
+      sortBy = "position",
+      sortOrder = "asc",
     } = options;
 
     const repositoryOptions: CategoryQueryOptions = {
       limit,
       offset: (page - 1) * limit,
       sortBy,
-      sortOrder
+      sortOrder,
     };
 
     if (parentId) {
       const parentCategoryId = CategoryId.fromString(parentId);
-      return await this.categoryRepository.findByParentId(parentCategoryId, repositoryOptions);
+      if (includeChildren) {
+        // Return all descendants recursively
+        return await this.categoryRepository.findDescendants(parentCategoryId);
+      } else {
+        // Return only direct children
+        return await this.categoryRepository.findByParentId(
+          parentCategoryId,
+          repositoryOptions
+        );
+      }
     } else {
-      return await this.categoryRepository.findRootCategories(repositoryOptions);
+      if (includeChildren) {
+        // Return all categories (root and their descendants)
+        return await this.categoryRepository.findAll(repositoryOptions);
+      } else {
+        // Return only root categories
+        return await this.categoryRepository.findRootCategories(
+          repositoryOptions
+        );
+      }
     }
   }
 
-  async getAllCategories(options: CategoryQueryServiceOptions = {}): Promise<Category[]> {
+  async getAllCategories(
+    options: CategoryQueryServiceOptions = {}
+  ): Promise<Category[]> {
     const {
       page = 1,
       limit = 100,
-      sortBy = 'position',
-      sortOrder = 'asc'
+      sortBy = "position",
+      sortOrder = "asc",
     } = options;
 
     const repositoryOptions: CategoryQueryOptions = {
       limit,
       offset: (page - 1) * limit,
       sortBy,
-      sortOrder
+      sortOrder,
     };
 
     return await this.categoryRepository.findAll(repositoryOptions);
   }
 
   async getCategoryHierarchy(): Promise<CategoryTreeNode[]> {
-    const rootCategories = await this.categoryRepository.findRootCategories({ sortBy: 'position', sortOrder: 'asc' });
+    const rootCategories = await this.categoryRepository.findRootCategories({
+      sortBy: "position",
+      sortOrder: "asc",
+    });
 
-    const buildTree = async (categories: Category[], depth: number = 0): Promise<CategoryTreeNode[]> => {
+    const buildTree = async (
+      categories: Category[],
+      depth: number = 0
+    ): Promise<CategoryTreeNode[]> => {
       const nodes: CategoryTreeNode[] = [];
 
       for (const category of categories) {
-        const children = await this.categoryRepository.findByParentId(category.getId(), { sortBy: 'position', sortOrder: 'asc' });
+        const children = await this.categoryRepository.findByParentId(
+          category.getId(),
+          { sortBy: "position", sortOrder: "asc" }
+        );
         const childNodes = await buildTree(children, depth + 1);
 
         nodes.push({
           category,
           children: childNodes,
-          depth
+          depth,
         });
       }
 
@@ -159,21 +199,25 @@ export class CategoryManagementService {
     return await this.categoryRepository.findSiblings(id);
   }
 
-  async updateCategory(id: string, updateData: Partial<CreateCategoryData>): Promise<Category | null> {
+  async updateCategory(
+    id: string,
+    updateData: Partial<CreateCategoryData>
+  ): Promise<Category | null> {
     const categoryId = CategoryId.fromString(id);
     const category = await this.categoryRepository.findById(categoryId);
 
     if (!category) {
-      throw new Error('Category not found');
+      throw new Error("Category not found");
     }
 
     // Update name if provided
     if (updateData.name !== undefined) {
       // Check for duplicate name/slug (excluding current category)
       const newSlug = Slug.create(updateData.name);
-      const existingCategory = await this.categoryRepository.findBySlug(newSlug);
+      const existingCategory =
+        await this.categoryRepository.findBySlug(newSlug);
       if (existingCategory && !existingCategory.getId().equals(categoryId)) {
-        throw new Error('Category with this name already exists');
+        throw new Error("Category with this name already exists");
       }
 
       category.updateName(updateData.name);
@@ -186,20 +230,25 @@ export class CategoryManagementService {
 
         // Prevent circular references
         if (categoryId.equals(newParentId)) {
-          throw new Error('Category cannot be its own parent');
+          throw new Error("Category cannot be its own parent");
         }
 
         // Check if new parent would create circular reference
-        const descendants = await this.categoryRepository.findDescendants(categoryId);
-        const wouldCreateCircularRef = descendants.some(desc => desc.getId().equals(newParentId));
+        const descendants =
+          await this.categoryRepository.findDescendants(categoryId);
+        const wouldCreateCircularRef = descendants.some((desc) =>
+          desc.getId().equals(newParentId)
+        );
         if (wouldCreateCircularRef) {
-          throw new Error('Invalid category hierarchy - would create circular reference');
+          throw new Error(
+            "Invalid category hierarchy - would create circular reference"
+          );
         }
 
         // Verify parent exists
         const parentExists = await this.categoryRepository.exists(newParentId);
         if (!parentExists) {
-          throw new Error('Parent category not found');
+          throw new Error("Parent category not found");
         }
       }
 
@@ -226,14 +275,16 @@ export class CategoryManagementService {
     // Check if category has children
     const children = await this.categoryRepository.findChildren(categoryId);
     if (children.length > 0) {
-      throw new Error('Cannot delete category with existing subcategories');
+      throw new Error("Cannot delete category with existing subcategories");
     }
 
     await this.categoryRepository.delete(categoryId);
     return true;
   }
 
-  async reorderCategories(categoryOrders: CategoryReorderItem[]): Promise<void> {
+  async reorderCategories(
+    categoryOrders: CategoryReorderItem[]
+  ): Promise<void> {
     // Validate all categories exist
     for (const orderItem of categoryOrders) {
       const categoryId = CategoryId.fromString(orderItem.id);
@@ -274,20 +325,27 @@ export class CategoryManagementService {
     // Calculate average children per category
     let totalChildren = 0;
     for (const category of allCategories) {
-      const children = await this.categoryRepository.findChildren(category.getId());
+      const children = await this.categoryRepository.findChildren(
+        category.getId()
+      );
       totalChildren += children.length;
     }
-    const averageChildrenPerCategory = allCategories.length > 0 ? totalChildren / allCategories.length : 0;
+    const averageChildrenPerCategory =
+      allCategories.length > 0 ? totalChildren / allCategories.length : 0;
 
     return {
       totalCategories: allCategories.length,
       rootCategories: rootCategories.length,
       maxDepth,
-      averageChildrenPerCategory: Math.round(averageChildrenPerCategory * 100) / 100
+      averageChildrenPerCategory:
+        Math.round(averageChildrenPerCategory * 100) / 100,
     };
   }
 
-  private async calculateCategoryDepth(categoryId: CategoryId, currentDepth: number = 1): Promise<number> {
+  private async calculateCategoryDepth(
+    categoryId: CategoryId,
+    currentDepth: number = 1
+  ): Promise<number> {
     const children = await this.categoryRepository.findChildren(categoryId);
 
     if (children.length === 0) {
@@ -296,14 +354,20 @@ export class CategoryManagementService {
 
     let maxChildDepth = currentDepth;
     for (const child of children) {
-      const childDepth = await this.calculateCategoryDepth(child.getId(), currentDepth + 1);
+      const childDepth = await this.calculateCategoryDepth(
+        child.getId(),
+        currentDepth + 1
+      );
       maxChildDepth = Math.max(maxChildDepth, childDepth);
     }
 
     return maxChildDepth;
   }
 
-  async validateCategoryHierarchy(categoryId: string, newParentId?: string): Promise<boolean> {
+  async validateCategoryHierarchy(
+    categoryId: string,
+    newParentId?: string
+  ): Promise<boolean> {
     const id = CategoryId.fromString(categoryId);
 
     if (!newParentId) {
@@ -325,7 +389,9 @@ export class CategoryManagementService {
 
     // Check for circular reference
     const descendants = await this.categoryRepository.findDescendants(id);
-    const wouldCreateCircularRef = descendants.some(desc => desc.getId().equals(parentId));
+    const wouldCreateCircularRef = descendants.some((desc) =>
+      desc.getId().equals(parentId)
+    );
 
     return !wouldCreateCircularRef;
   }

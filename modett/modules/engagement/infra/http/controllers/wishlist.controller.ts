@@ -82,8 +82,8 @@ export class WishlistController {
         request.body;
 
       const command: CreateWishlistCommand = {
-        userId,
-        guestToken,
+        userId: request.user?.userId || userId,
+        guestToken: guestToken || (request.headers["x-guest-token"] as string),
         name,
         isDefault,
         isPublic,
@@ -342,16 +342,16 @@ export class WishlistController {
 
   async removeFromWishlist(
     request: FastifyRequest<{
-      Params: { wishlistId: string; variantId: string };
+      Params: { wishlistId: string; wishlistItemId: string };
     }>,
     reply: FastifyReply
   ) {
     try {
-      const { wishlistId, variantId } = request.params;
+      const { wishlistId, wishlistItemId } = request.params;
 
       const command: RemoveFromWishlistCommand = {
         wishlistId,
-        variantId,
+        variantId: wishlistItemId,
       };
 
       const result = await this.removeFromWishlistHandler.handle(command);

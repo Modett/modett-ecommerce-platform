@@ -419,9 +419,16 @@ export class AuthenticationService {
       type: 'access',
     };
 
-    return jwt.sign(payload, this.accessTokenSecret, {
+    console.log("[AUTH SERVICE] Generating access token...");
+    console.log("[AUTH SERVICE] Secret:", this.accessTokenSecret.substring(0, 5) + "...");
+    console.log("[AUTH SERVICE] Payload:", JSON.stringify(payload, null, 2));
+
+    const token = jwt.sign(payload, this.accessTokenSecret, {
       expiresIn: this.accessTokenExpiresIn,
     } as SignOptions);
+
+    console.log("[AUTH SERVICE] Token generated:", token.substring(0, 50) + "...");
+    return token;
   }
 
   private generateRefreshToken(user: User): string {

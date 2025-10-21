@@ -1,5 +1,9 @@
 import { PrismaClient } from "@prisma/client";
-import { ICategoryRepository, CategoryQueryOptions, CategoryCountOptions } from "../../../domain/repositories/category.repository";
+import {
+  ICategoryRepository,
+  CategoryQueryOptions,
+  CategoryCountOptions,
+} from "../../../domain/repositories/category.repository";
 import { Category } from "../../../domain/entities/category.entity";
 import { CategoryId } from "../../../domain/value-objects/category-id.vo";
 import { Slug } from "../../../domain/value-objects/slug.vo";
@@ -61,18 +65,21 @@ export class CategoryRepository implements ICategoryRepository {
     const {
       limit = 100,
       offset = 0,
-      sortBy = 'position',
-      sortOrder = 'asc',
+      sortBy = "position",
+      sortOrder = "asc",
       includeEmpty = true,
     } = options || {};
 
     const categories = await this.prisma.category.findMany({
       take: limit,
       skip: offset,
-      orderBy: { [sortBy]: sortOrder },
+      orderBy: [
+        { position: { sort: sortOrder, nulls: "last" } },
+        { name: "asc" }, // Secondary sort by name for consistency
+      ],
     });
 
-    return categories.map(categoryData => {
+    return categories.map((categoryData) => {
       try {
         return Category.fromDatabaseRow({
           category_id: categoryData.id,
@@ -82,28 +89,37 @@ export class CategoryRepository implements ICategoryRepository {
           position: categoryData.position,
         });
       } catch (error) {
-        console.error(`Error creating category from database row:`, error, categoryData);
+        console.error(
+          `Error creating category from database row:`,
+          error,
+          categoryData
+        );
         throw error;
       }
     });
   }
 
-  async findRootCategories(options?: CategoryQueryOptions): Promise<Category[]> {
+  async findRootCategories(
+    options?: CategoryQueryOptions
+  ): Promise<Category[]> {
     const {
       limit = 100,
       offset = 0,
-      sortBy = 'position',
-      sortOrder = 'asc',
+      sortBy = "position",
+      sortOrder = "asc",
     } = options || {};
 
     const categories = await this.prisma.category.findMany({
       where: { parentId: null },
       take: limit,
       skip: offset,
-      orderBy: { [sortBy]: sortOrder },
+      orderBy: [
+        { position: { sort: sortOrder, nulls: "last" } },
+        { name: "asc" }, // Secondary sort by name for consistency
+      ],
     });
 
-    return categories.map(categoryData => {
+    return categories.map((categoryData) => {
       try {
         return Category.fromDatabaseRow({
           category_id: categoryData.id,
@@ -113,28 +129,38 @@ export class CategoryRepository implements ICategoryRepository {
           position: categoryData.position,
         });
       } catch (error) {
-        console.error(`Error creating category from database row:`, error, categoryData);
+        console.error(
+          `Error creating category from database row:`,
+          error,
+          categoryData
+        );
         throw error;
       }
     });
   }
 
-  async findByParentId(parentId: CategoryId, options?: CategoryQueryOptions): Promise<Category[]> {
+  async findByParentId(
+    parentId: CategoryId,
+    options?: CategoryQueryOptions
+  ): Promise<Category[]> {
     const {
       limit = 100,
       offset = 0,
-      sortBy = 'position',
-      sortOrder = 'asc',
+      sortBy = "position",
+      sortOrder = "asc",
     } = options || {};
 
     const categories = await this.prisma.category.findMany({
       where: { parentId: parentId.getValue() },
       take: limit,
       skip: offset,
-      orderBy: { [sortBy]: sortOrder },
+      orderBy: [
+        { position: { sort: sortOrder, nulls: "last" } },
+        { name: "asc" }, // Secondary sort by name for consistency
+      ],
     });
 
-    return categories.map(categoryData => {
+    return categories.map((categoryData) => {
       try {
         return Category.fromDatabaseRow({
           category_id: categoryData.id,
@@ -144,7 +170,11 @@ export class CategoryRepository implements ICategoryRepository {
           position: categoryData.position,
         });
       } catch (error) {
-        console.error(`Error creating category from database row:`, error, categoryData);
+        console.error(
+          `Error creating category from database row:`,
+          error,
+          categoryData
+        );
         throw error;
       }
     });
@@ -203,11 +233,13 @@ export class CategoryRepository implements ICategoryRepository {
 
     if (parentId) {
       const siblings = await this.findByParentId(parentId);
-      return siblings.filter(sibling => !sibling.getId().equals(categoryId));
+      return siblings.filter((sibling) => !sibling.getId().equals(categoryId));
     } else {
       // Root category - find other root categories
       const rootCategories = await this.findRootCategories();
-      return rootCategories.filter(sibling => !sibling.getId().equals(categoryId));
+      return rootCategories.filter(
+        (sibling) => !sibling.getId().equals(categoryId)
+      );
     }
   }
 

@@ -64,8 +64,11 @@ export class ReminderController {
     reply: FastifyReply
   ) {
     try {
-      const { type, variantId, userId, contact, channel, optInAt } =
+      const { type, variantId, contact, channel, optInAt } =
         request.body;
+
+      // Extract userId from authenticated user (set by auth middleware)
+      const userId = request.user?.userId;
 
       const command: CreateReminderCommand = {
         type,

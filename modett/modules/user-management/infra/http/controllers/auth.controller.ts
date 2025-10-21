@@ -4,7 +4,19 @@ import {
   RegisterUserHandler,
   LoginUserCommand,
   LoginUserHandler,
+  ChangePasswordCommand,
+  ChangePasswordHandler,
+  InitiatePasswordResetCommand,
+  InitiatePasswordResetHandler,
+  ResetPasswordCommand,
+  ResetPasswordHandler,
+  VerifyEmailCommand,
+  VerifyEmailHandler,
 } from "../../../application";
+import {
+  GetUserByEmailQuery,
+  GetUserByEmailHandler,
+} from "../../../application/queries";
 import { AuthenticationService } from "../../../application/services/authentication.service";
 import {
   generateAuthTokens,
@@ -232,10 +244,20 @@ class AuthValidation {
 export class AuthController {
   private registerHandler: RegisterUserHandler;
   private loginHandler: LoginUserHandler;
+  private changePasswordHandler: ChangePasswordHandler;
+  private initiatePasswordResetHandler: InitiatePasswordResetHandler;
+  private resetPasswordHandler: ResetPasswordHandler;
+  private verifyEmailHandler: VerifyEmailHandler;
+  private getUserByEmailHandler: GetUserByEmailHandler;
 
   constructor(private readonly authService: AuthenticationService) {
     this.registerHandler = new RegisterUserHandler(authService);
     this.loginHandler = new LoginUserHandler(authService);
+    this.changePasswordHandler = new ChangePasswordHandler(authService);
+    this.initiatePasswordResetHandler = new InitiatePasswordResetHandler(authService);
+    this.resetPasswordHandler = new ResetPasswordHandler(authService);
+    this.verifyEmailHandler = new VerifyEmailHandler(authService);
+    this.getUserByEmailHandler = new GetUserByEmailHandler(authService);
   }
 
   private logSecurityEvent(
@@ -721,40 +743,48 @@ export class AuthController {
         return;
       }
 
-      // Use authentication service to initiate password reset
-      const resetResult = await this.authService.initiatePasswordReset(email);
+      // Create command
+      const command: InitiatePasswordResetCommand = {
+        email,
+        timestamp: new Date(),
+      };
 
-      if (resetResult.exists && resetResult.token && resetResult.userId) {
-        // Store token for later verification (using existing security store for now)
-        TokenBlacklistService.storePasswordResetToken(
-          resetResult.token,
-          resetResult.userId,
-          email
-        );
+      // Execute command
+      const resetResult = await this.initiatePasswordResetHandler.handle(command);
 
-        // Log password reset request
-        this.logSecurityEvent(
-          "PASSWORD_RESET_REQUESTED",
-          {
-            email,
-            deviceInfo,
-            tokenGenerated: true,
-          },
-          request
-        );
+      if (resetResult.success && resetResult.data) {
+        if (resetResult.data.exists && resetResult.data.token && resetResult.data.userId) {
+          // Store token for later verification (using existing security store for now)
+          TokenBlacklistService.storePasswordResetToken(
+            resetResult.data.token,
+            resetResult.data.userId,
+            email
+          );
 
-        // TODO: Send password reset email with resetResult.token
-        console.log(`Password reset token for ${email}: ${resetResult.token}`);
-      } else {
-        // Log failed attempt (email not found)
-        this.logSecurityEvent(
-          "PASSWORD_RESET_REQUESTED_INVALID_EMAIL",
-          {
-            email,
-            deviceInfo,
-          },
-          request
-        );
+          // Log password reset request
+          this.logSecurityEvent(
+            "PASSWORD_RESET_REQUESTED",
+            {
+              email,
+              deviceInfo,
+              tokenGenerated: true,
+            },
+            request
+          );
+
+          // TODO: Send password reset email with resetResult.data.token
+          console.log(`Password reset token for ${email}: ${resetResult.data.token}`);
+        } else {
+          // Log failed attempt (email not found)
+          this.logSecurityEvent(
+            "PASSWORD_RESET_REQUESTED_INVALID_EMAIL",
+            {
+              email,
+              deviceInfo,
+            },
+            request
+          );
+        }
       }
 
       reply.status(HTTP_STATUS.OK).send({
@@ -825,8 +855,24 @@ export class AuthController {
         return;
       }
 
-      // Update user password in database
-      await this.authService.resetPassword(tokenData.email, newPassword);
+      // Create command
+      const command: ResetPasswordCommand = {
+        email: tokenData.email,
+        newPassword,
+        timestamp: new Date(),
+      };
+
+      // Execute command
+      const result = await this.resetPasswordHandler.handle(command);
+
+      if (!result.success) {
+        reply.status(HTTP_STATUS.BAD_REQUEST).send({
+          success: false,
+          error: result.error || "Failed to reset password",
+          errors: result.errors,
+        });
+        return;
+      }
 
       // Remove used token
       TokenBlacklistService.getPasswordResetToken(token); // This removes it due to expiry check
@@ -887,10 +933,16 @@ export class AuthController {
         return;
       }
 
-      try {
-        // Update user email verification status using authentication service
-        await this.authService.verifyEmail(tokenData.userId);
+      // Create command
+      const command: VerifyEmailCommand = {
+        userId: tokenData.userId,
+        timestamp: new Date(),
+      };
 
+      // Execute command
+      const result = await this.verifyEmailHandler.handle(command);
+
+      if (result.success) {
         // Log email verification
         this.logSecurityEvent(
           "EMAIL_VERIFIED",
@@ -910,15 +962,19 @@ export class AuthController {
             action: "email_verified",
           },
         });
-      } catch (authError: any) {
-        if (authError.message === "Email is already verified") {
+      } else {
+        if (result.error === "Email is already verified") {
           reply.status(HTTP_STATUS.BAD_REQUEST).send({
             success: false,
             error: "Email is already verified",
             code: "ALREADY_VERIFIED",
           });
         } else {
-          throw authError; // Re-throw other errors
+          reply.status(HTTP_STATUS.BAD_REQUEST).send({
+            success: false,
+            error: result.error || "Failed to verify email",
+            errors: result.errors,
+          });
         }
       }
     } catch (error) {
@@ -962,9 +1018,16 @@ export class AuthController {
         return;
       }
 
-      // Check if user exists and get user info
-      const userInfo = await this.authService.getUserByEmail(email);
-      if (!userInfo) {
+      // Create query
+      const query: GetUserByEmailQuery = {
+        email,
+        timestamp: new Date(),
+      };
+
+      // Execute query
+      const userResult = await this.getUserByEmailHandler.handle(query);
+
+      if (!userResult.success || !userResult.data) {
         // For security, don't reveal if email exists or not
         reply.status(HTTP_STATUS.OK).send({
           success: true,
@@ -975,6 +1038,8 @@ export class AuthController {
         });
         return;
       }
+
+      const userInfo = userResult.data;
 
       // Check if email is already verified
       if (userInfo.emailVerified) {
@@ -1076,12 +1141,25 @@ export class AuthController {
         return;
       }
 
-      // Actually change the password in the database
-      await this.authService.changePassword(
+      // Create command
+      const command: ChangePasswordCommand = {
         userId,
         currentPassword,
-        newPassword
-      );
+        newPassword,
+        timestamp: new Date(),
+      };
+
+      // Execute command
+      const result = await this.changePasswordHandler.handle(command);
+
+      if (!result.success) {
+        reply.status(HTTP_STATUS.BAD_REQUEST).send({
+          success: false,
+          error: result.error || "Failed to change password",
+          errors: result.errors,
+        });
+        return;
+      }
 
       // Log password change
       this.logSecurityEvent(

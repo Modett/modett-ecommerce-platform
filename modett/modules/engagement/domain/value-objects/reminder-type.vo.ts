@@ -13,6 +13,7 @@ export class ReminderType {
     const normalized = value.toLowerCase().trim();
     switch (normalized) {
       case "restock":
+      case "back_in_stock":
         return ReminderType.restock();
       case "price_drop":
         return ReminderType.priceDrop();

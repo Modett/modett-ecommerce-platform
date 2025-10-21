@@ -203,9 +203,7 @@ export class PurchaseOrderManagementService {
         variantId,
         locationId,
         receivedQty,
-        "po",
-        "purchase_order",
-        poId
+        `Purchase order ${poId} received`
       );
     }
 
