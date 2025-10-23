@@ -1,10 +1,16 @@
-import { IProductTagRepository, ProductTagQueryOptions, ProductTagCountOptions } from '../../domain/repositories/product-tag.repository';
-import { ProductTag, ProductTagId, CreateProductTagData } from '../../domain/entities/product-tag.entity';
+import {
+  IProductTagRepository,
+  ProductTagQueryOptions,
+  ProductTagCountOptions,
+} from "../../domain/repositories/product-tag.repository";
+import {
+  ProductTag,
+  ProductTagId,
+  CreateProductTagData,
+} from "../../domain/entities/product-tag.entity";
 
 export class ProductTagManagementService {
-  constructor(
-    private readonly productTagRepository: IProductTagRepository
-  ) {}
+  constructor(private readonly productTagRepository: IProductTagRepository) {}
 
   // Core CRUD operations
   async createTag(data: CreateProductTagData): Promise<ProductTag> {
@@ -54,7 +60,7 @@ export class ProductTagManagementService {
 
     const [tags, total] = await Promise.all([
       this.productTagRepository.findAll(options),
-      this.productTagRepository.count()
+      this.productTagRepository.count(),
     ]);
 
     return {
@@ -65,7 +71,10 @@ export class ProductTagManagementService {
     };
   }
 
-  async getTagsByKind(kind: string, options?: ProductTagQueryOptions): Promise<{
+  async getTagsByKind(
+    kind: string,
+    options?: ProductTagQueryOptions
+  ): Promise<{
     tags: ProductTag[];
     total: number;
     page: number;
@@ -76,7 +85,7 @@ export class ProductTagManagementService {
 
     const [tags, total] = await Promise.all([
       this.productTagRepository.findByKind(kind, options),
-      this.productTagRepository.count({ kind })
+      this.productTagRepository.count({ kind }),
     ]);
 
     return {
@@ -87,7 +96,10 @@ export class ProductTagManagementService {
     };
   }
 
-  async updateTag(id: string, updates: { tag?: string; kind?: string }): Promise<ProductTag> {
+  async updateTag(
+    id: string,
+    updates: { tag?: string; kind?: string }
+  ): Promise<ProductTag> {
     const tag = await this.getTagById(id);
 
     // Check if new tag name already exists (if changing tag name)
@@ -119,7 +131,10 @@ export class ProductTagManagementService {
   }
 
   // Search and filtering
-  async searchTags(query: string, options?: ProductTagQueryOptions): Promise<{
+  async searchTags(
+    query: string,
+    options?: ProductTagQueryOptions
+  ): Promise<{
     tags: ProductTag[];
     total: number;
     page: number;
@@ -136,7 +151,13 @@ export class ProductTagManagementService {
     const searchQuery = query.trim();
     const [tags, total] = await Promise.all([
       this.productTagRepository.search(searchQuery, options),
-      this.productTagRepository.search(searchQuery, { ...options, limit: undefined, offset: undefined }).then(results => results.length)
+      this.productTagRepository
+        .search(searchQuery, {
+          ...options,
+          limit: undefined,
+          offset: undefined,
+        })
+        .then((results) => results.length),
     ]);
 
     return {
@@ -147,11 +168,14 @@ export class ProductTagManagementService {
     };
   }
 
-  async getTagSuggestions(partialTag: string, limit: number = 10): Promise<ProductTag[]> {
+  async getTagSuggestions(
+    partialTag: string,
+    limit: number = 10
+  ): Promise<ProductTag[]> {
     const suggestions = await this.productTagRepository.search(partialTag, {
       limit,
-      sortBy: 'tag',
-      sortOrder: 'asc',
+      sortBy: "tag",
+      sortOrder: "asc",
     });
 
     return suggestions;
@@ -176,11 +200,13 @@ export class ProductTagManagementService {
     };
   }
 
-  async getMostUsedTags(limit: number = 10): Promise<Array<{ tag: ProductTag; usageCount: number }>> {
+  async getMostUsedTags(
+    limit: number = 10
+  ): Promise<Array<{ tag: ProductTag; usageCount: number }>> {
     const mostUsed = await this.productTagRepository.getMostUsed(limit);
-    return mostUsed.map(item => ({
+    return mostUsed.map((item) => ({
       tag: item.tag,
-      usageCount: item.count
+      usageCount: item.count,
     }));
   }
 
@@ -191,7 +217,9 @@ export class ProductTagManagementService {
   }
 
   // Bulk operations
-  async createMultipleTags(tagData: CreateProductTagData[]): Promise<ProductTag[]> {
+  async createMultipleTags(
+    tagData: CreateProductTagData[]
+  ): Promise<ProductTag[]> {
     const createdTags: ProductTag[] = [];
     const errors: string[] = [];
 
@@ -200,18 +228,25 @@ export class ProductTagManagementService {
         const tag = await this.createTag(data);
         createdTags.push(tag);
       } catch (error) {
-        errors.push(`Failed to create tag "${data.tag}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+        errors.push(
+          `Failed to create tag "${data.tag}": ${error instanceof Error ? error.message : "Unknown error"}`
+        );
       }
     }
 
     if (errors.length > 0 && createdTags.length === 0) {
-      throw new Error(`Failed to create any tags: ${errors.join(', ')}`);
+      throw new Error(`Failed to create any tags: ${errors.join(", ")}`);
     }
 
     return createdTags;
   }
 
-  async deleteMultipleTags(ids: string[]): Promise<{ deleted: string[]; failed: Array<{ id: string; error: string }> }> {
+  async deleteMultipleTags(
+    ids: string[]
+  ): Promise<{
+    deleted: string[];
+    failed: Array<{ id: string; error: string }>;
+  }> {
     const deleted: string[] = [];
     const failed: Array<{ id: string; error: string }> = [];
 
@@ -222,7 +257,7 @@ export class ProductTagManagementService {
       } catch (error) {
         failed.push({
           id,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
     }
@@ -250,21 +285,69 @@ export class ProductTagManagementService {
   }
 
   async normalizeTagName(tagName: string): Promise<string> {
-    return tagName.trim().toLowerCase().replace(/\s+/g, '-');
+    return tagName.trim().toLowerCase().replace(/\s+/g, "-");
+  }
+
+  // Product Tag Association Methods
+  async getProductTags(productId: string): Promise<ProductTag[]> {
+    return await this.productTagRepository.findByProductId(productId);
+  }
+
+  async associateProductTags(
+    productId: string,
+    tagIds: string[]
+  ): Promise<void> {
+    // Validate that all tags exist
+    for (const tagId of tagIds) {
+      const tag = await this.getTagById(tagId);
+      if (!tag) {
+        throw new Error(`Tag with ID "${tagId}" not found`);
+      }
+    }
+
+    await this.productTagRepository.associateProductTags(productId, tagIds);
+  }
+
+  async removeProductTag(productId: string, tagId: string): Promise<void> {
+    // Validate that the association exists
+    const exists = await this.productTagRepository.isTagAssociatedWithProduct(
+      productId,
+      tagId
+    );
+    if (!exists) {
+      throw new Error(`Tag association not found`);
+    }
+
+    await this.productTagRepository.removeProductTag(productId, tagId);
+  }
+
+  async getTagProducts(
+    tagId: string,
+    options?: { limit?: number; offset?: number }
+  ): Promise<{
+    products: any[];
+    total: number;
+  }> {
+    // Validate that tag exists
+    await this.getTagById(tagId);
+
+    return await this.productTagRepository.findProductsByTagId(tagId, options);
   }
 
   // Private validation methods
   private validateTagFormat(tag: string): void {
     if (!tag || tag.trim().length === 0) {
-      throw new Error('Tag cannot be empty');
+      throw new Error("Tag cannot be empty");
     }
 
     if (tag.trim().length > 50) {
-      throw new Error('Tag cannot be longer than 50 characters');
+      throw new Error("Tag cannot be longer than 50 characters");
     }
 
     if (!/^[a-zA-Z0-9\s\-_]+$/.test(tag)) {
-      throw new Error('Tag can only contain letters, numbers, spaces, hyphens, and underscores');
+      throw new Error(
+        "Tag can only contain letters, numbers, spaces, hyphens, and underscores"
+      );
     }
   }
 }

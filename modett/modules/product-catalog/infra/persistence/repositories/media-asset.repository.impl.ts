@@ -1,6 +1,13 @@
 import { PrismaClient } from "@prisma/client";
-import { IMediaAssetRepository, MediaAssetQueryOptions, MediaAssetCountOptions } from "../../../domain/repositories/media-asset.repository";
-import { MediaAsset, MediaAssetId } from "../../../domain/entities/media-asset.entity";
+import {
+  IMediaAssetRepository,
+  MediaAssetQueryOptions,
+  MediaAssetCountOptions,
+} from "../../../domain/repositories/media-asset.repository";
+import {
+  MediaAsset,
+  MediaAssetId,
+} from "../../../domain/entities/media-asset.entity";
 
 export class MediaAssetRepository implements IMediaAssetRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -10,7 +17,9 @@ export class MediaAssetRepository implements IMediaAssetRepository {
     // Convert BigInt to number, handling potential overflow
     const numberValue = Number(value);
     if (numberValue > Number.MAX_SAFE_INTEGER) {
-      console.warn(`BigInt value ${value} exceeds MAX_SAFE_INTEGER, potential precision loss`);
+      console.warn(
+        `BigInt value ${value} exceeds MAX_SAFE_INTEGER, potential precision loss`
+      );
     }
     return numberValue;
   }
@@ -90,8 +99,8 @@ export class MediaAssetRepository implements IMediaAssetRepository {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
       hasRenditions,
     } = options || {};
 
@@ -118,28 +127,33 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return assets.map(assetData => MediaAsset.fromDatabaseRow({
-      asset_id: assetData.id,
-      storage_key: assetData.storageKey,
-      mime: assetData.mime,
-      width: assetData.width,
-      height: assetData.height,
-      bytes: this.convertBigIntToNumber(assetData.bytes),
-      alt_text: assetData.altText,
-      focal_x: assetData.focalX,
-      focal_y: assetData.focalY,
-      renditions: assetData.renditions as any,
-      version: assetData.version,
-      created_at: assetData.createdAt,
-    }));
+    return assets.map((assetData) =>
+      MediaAsset.fromDatabaseRow({
+        asset_id: assetData.id,
+        storage_key: assetData.storageKey,
+        mime: assetData.mime,
+        width: assetData.width,
+        height: assetData.height,
+        bytes: this.convertBigIntToNumber(assetData.bytes),
+        alt_text: assetData.altText,
+        focal_x: assetData.focalX,
+        focal_y: assetData.focalY,
+        renditions: assetData.renditions as any,
+        version: assetData.version,
+        created_at: assetData.createdAt,
+      })
+    );
   }
 
-  async findByMimeType(mimeType: string, options?: MediaAssetQueryOptions): Promise<MediaAsset[]> {
+  async findByMimeType(
+    mimeType: string,
+    options?: MediaAssetQueryOptions
+  ): Promise<MediaAsset[]> {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = options || {};
 
     const assets = await this.prisma.mediaAsset.findMany({
@@ -149,34 +163,36 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return assets.map(assetData => MediaAsset.fromDatabaseRow({
-      asset_id: assetData.id,
-      storage_key: assetData.storageKey,
-      mime: assetData.mime,
-      width: assetData.width,
-      height: assetData.height,
-      bytes: this.convertBigIntToNumber(assetData.bytes),
-      alt_text: assetData.altText,
-      focal_x: assetData.focalX,
-      focal_y: assetData.focalY,
-      renditions: assetData.renditions as any,
-      version: assetData.version,
-      created_at: assetData.createdAt,
-    }));
+    return assets.map((assetData) =>
+      MediaAsset.fromDatabaseRow({
+        asset_id: assetData.id,
+        storage_key: assetData.storageKey,
+        mime: assetData.mime,
+        width: assetData.width,
+        height: assetData.height,
+        bytes: this.convertBigIntToNumber(assetData.bytes),
+        alt_text: assetData.altText,
+        focal_x: assetData.focalX,
+        focal_y: assetData.focalY,
+        renditions: assetData.renditions as any,
+        version: assetData.version,
+        created_at: assetData.createdAt,
+      })
+    );
   }
 
   async findImages(options?: MediaAssetQueryOptions): Promise<MediaAsset[]> {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = options || {};
 
     const assets = await this.prisma.mediaAsset.findMany({
       where: {
         mime: {
-          startsWith: 'image/',
+          startsWith: "image/",
         },
       },
       take: limit,
@@ -184,34 +200,36 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return assets.map(assetData => MediaAsset.fromDatabaseRow({
-      asset_id: assetData.id,
-      storage_key: assetData.storageKey,
-      mime: assetData.mime,
-      width: assetData.width,
-      height: assetData.height,
-      bytes: this.convertBigIntToNumber(assetData.bytes),
-      alt_text: assetData.altText,
-      focal_x: assetData.focalX,
-      focal_y: assetData.focalY,
-      renditions: assetData.renditions as any,
-      version: assetData.version,
-      created_at: assetData.createdAt,
-    }));
+    return assets.map((assetData) =>
+      MediaAsset.fromDatabaseRow({
+        asset_id: assetData.id,
+        storage_key: assetData.storageKey,
+        mime: assetData.mime,
+        width: assetData.width,
+        height: assetData.height,
+        bytes: this.convertBigIntToNumber(assetData.bytes),
+        alt_text: assetData.altText,
+        focal_x: assetData.focalX,
+        focal_y: assetData.focalY,
+        renditions: assetData.renditions as any,
+        version: assetData.version,
+        created_at: assetData.createdAt,
+      })
+    );
   }
 
   async findVideos(options?: MediaAssetQueryOptions): Promise<MediaAsset[]> {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = options || {};
 
     const assets = await this.prisma.mediaAsset.findMany({
       where: {
         mime: {
-          startsWith: 'video/',
+          startsWith: "video/",
         },
       },
       take: limit,
@@ -219,28 +237,34 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return assets.map(assetData => MediaAsset.fromDatabaseRow({
-      asset_id: assetData.id,
-      storage_key: assetData.storageKey,
-      mime: assetData.mime,
-      width: assetData.width,
-      height: assetData.height,
-      bytes: this.convertBigIntToNumber(assetData.bytes),
-      alt_text: assetData.altText,
-      focal_x: assetData.focalX,
-      focal_y: assetData.focalY,
-      renditions: assetData.renditions as any,
-      version: assetData.version,
-      created_at: assetData.createdAt,
-    }));
+    return assets.map((assetData) =>
+      MediaAsset.fromDatabaseRow({
+        asset_id: assetData.id,
+        storage_key: assetData.storageKey,
+        mime: assetData.mime,
+        width: assetData.width,
+        height: assetData.height,
+        bytes: this.convertBigIntToNumber(assetData.bytes),
+        alt_text: assetData.altText,
+        focal_x: assetData.focalX,
+        focal_y: assetData.focalY,
+        renditions: assetData.renditions as any,
+        version: assetData.version,
+        created_at: assetData.createdAt,
+      })
+    );
   }
 
-  async findByDimensions(width: number, height: number, options?: MediaAssetQueryOptions): Promise<MediaAsset[]> {
+  async findByDimensions(
+    width: number,
+    height: number,
+    options?: MediaAssetQueryOptions
+  ): Promise<MediaAsset[]> {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = options || {};
 
     const assets = await this.prisma.mediaAsset.findMany({
@@ -253,28 +277,34 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return assets.map(assetData => MediaAsset.fromDatabaseRow({
-      asset_id: assetData.id,
-      storage_key: assetData.storageKey,
-      mime: assetData.mime,
-      width: assetData.width,
-      height: assetData.height,
-      bytes: this.convertBigIntToNumber(assetData.bytes),
-      alt_text: assetData.altText,
-      focal_x: assetData.focalX,
-      focal_y: assetData.focalY,
-      renditions: assetData.renditions as any,
-      version: assetData.version,
-      created_at: assetData.createdAt,
-    }));
+    return assets.map((assetData) =>
+      MediaAsset.fromDatabaseRow({
+        asset_id: assetData.id,
+        storage_key: assetData.storageKey,
+        mime: assetData.mime,
+        width: assetData.width,
+        height: assetData.height,
+        bytes: this.convertBigIntToNumber(assetData.bytes),
+        alt_text: assetData.altText,
+        focal_x: assetData.focalX,
+        focal_y: assetData.focalY,
+        renditions: assetData.renditions as any,
+        version: assetData.version,
+        created_at: assetData.createdAt,
+      })
+    );
   }
 
-  async findBySizeRange(minBytes: number, maxBytes: number, options?: MediaAssetQueryOptions): Promise<MediaAsset[]> {
+  async findBySizeRange(
+    minBytes: number,
+    maxBytes: number,
+    options?: MediaAssetQueryOptions
+  ): Promise<MediaAsset[]> {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'bytes',
-      sortOrder = 'asc',
+      sortBy = "bytes",
+      sortOrder = "asc",
     } = options || {};
 
     const assets = await this.prisma.mediaAsset.findMany({
@@ -289,20 +319,22 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return assets.map(assetData => MediaAsset.fromDatabaseRow({
-      asset_id: assetData.id,
-      storage_key: assetData.storageKey,
-      mime: assetData.mime,
-      width: assetData.width,
-      height: assetData.height,
-      bytes: this.convertBigIntToNumber(assetData.bytes),
-      alt_text: assetData.altText,
-      focal_x: assetData.focalX,
-      focal_y: assetData.focalY,
-      renditions: assetData.renditions as any,
-      version: assetData.version,
-      created_at: assetData.createdAt,
-    }));
+    return assets.map((assetData) =>
+      MediaAsset.fromDatabaseRow({
+        asset_id: assetData.id,
+        storage_key: assetData.storageKey,
+        mime: assetData.mime,
+        width: assetData.width,
+        height: assetData.height,
+        bytes: this.convertBigIntToNumber(assetData.bytes),
+        alt_text: assetData.altText,
+        focal_x: assetData.focalX,
+        focal_y: assetData.focalY,
+        renditions: assetData.renditions as any,
+        version: assetData.version,
+        created_at: assetData.createdAt,
+      })
+    );
   }
 
   async findOrphaned(): Promise<MediaAsset[]> {
@@ -327,23 +359,25 @@ export class MediaAssetRepository implements IMediaAssetRepository {
           },
         ],
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
-    return assets.map(assetData => MediaAsset.fromDatabaseRow({
-      asset_id: assetData.id,
-      storage_key: assetData.storageKey,
-      mime: assetData.mime,
-      width: assetData.width,
-      height: assetData.height,
-      bytes: this.convertBigIntToNumber(assetData.bytes),
-      alt_text: assetData.altText,
-      focal_x: assetData.focalX,
-      focal_y: assetData.focalY,
-      renditions: assetData.renditions as any,
-      version: assetData.version,
-      created_at: assetData.createdAt,
-    }));
+    return assets.map((assetData) =>
+      MediaAsset.fromDatabaseRow({
+        asset_id: assetData.id,
+        storage_key: assetData.storageKey,
+        mime: assetData.mime,
+        width: assetData.width,
+        height: assetData.height,
+        bytes: this.convertBigIntToNumber(assetData.bytes),
+        alt_text: assetData.altText,
+        focal_x: assetData.focalX,
+        focal_y: assetData.focalY,
+        renditions: assetData.renditions as any,
+        version: assetData.version,
+        created_at: assetData.createdAt,
+      })
+    );
   }
 
   async update(asset: MediaAsset): Promise<void> {
@@ -395,13 +429,13 @@ export class MediaAssetRepository implements IMediaAssetRepository {
 
     if (options?.isImage) {
       whereClause.mime = {
-        startsWith: 'image/',
+        startsWith: "image/",
       };
     }
 
     if (options?.isVideo) {
       whereClause.mime = {
-        startsWith: 'video/',
+        startsWith: "video/",
       };
     }
 
@@ -434,12 +468,15 @@ export class MediaAssetRepository implements IMediaAssetRepository {
     return this.convertBigIntToNumber(result._sum.bytes) || 0;
   }
 
-  async findWithFilters(filters: any, options?: MediaAssetQueryOptions): Promise<MediaAsset[]> {
+  async findWithFilters(
+    filters: any,
+    options?: MediaAssetQueryOptions
+  ): Promise<MediaAsset[]> {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = options || {};
 
     // Build where clause combining all filters
@@ -450,11 +487,11 @@ export class MediaAssetRepository implements IMediaAssetRepository {
     }
 
     if (filters.isImage) {
-      whereClause.mime = { startsWith: 'image/' };
+      whereClause.mime = { startsWith: "image/" };
     }
 
     if (filters.isVideo) {
-      whereClause.mime = { startsWith: 'video/' };
+      whereClause.mime = { startsWith: "video/" };
     }
 
     if (filters.minWidth !== undefined || filters.maxWidth !== undefined) {
@@ -491,11 +528,14 @@ export class MediaAssetRepository implements IMediaAssetRepository {
       if (filters.hasRenditions) {
         whereClause.renditions = { not: {} };
       } else {
-        whereClause.renditions = {};
+        whereClause.OR = [{ renditions: { equals: {} } }, { renditions: null }];
       }
     }
 
-    console.log("Media search where clause:", JSON.stringify(whereClause, null, 2));
+    console.log(
+      "Media search where clause:",
+      JSON.stringify(whereClause, null, 2)
+    );
 
     const assets = await this.prisma.mediaAsset.findMany({
       where: whereClause,
@@ -506,19 +546,21 @@ export class MediaAssetRepository implements IMediaAssetRepository {
 
     console.log("Found assets:", assets.length);
 
-    return assets.map(assetData => MediaAsset.fromDatabaseRow({
-      asset_id: assetData.id,
-      storage_key: assetData.storageKey,
-      mime: assetData.mime,
-      width: assetData.width,
-      height: assetData.height,
-      bytes: this.convertBigIntToNumber(assetData.bytes),
-      alt_text: assetData.altText,
-      focal_x: assetData.focalX,
-      focal_y: assetData.focalY,
-      renditions: assetData.renditions as any,
-      version: assetData.version,
-      created_at: assetData.createdAt,
-    }));
+    return assets.map((assetData) =>
+      MediaAsset.fromDatabaseRow({
+        asset_id: assetData.id,
+        storage_key: assetData.storageKey,
+        mime: assetData.mime,
+        width: assetData.width,
+        height: assetData.height,
+        bytes: this.convertBigIntToNumber(assetData.bytes),
+        alt_text: assetData.altText,
+        focal_x: assetData.focalX,
+        focal_y: assetData.focalY,
+        renditions: assetData.renditions as any,
+        version: assetData.version,
+        created_at: assetData.createdAt,
+      })
+    );
   }
 }

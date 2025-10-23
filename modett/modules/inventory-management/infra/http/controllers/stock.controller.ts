@@ -8,8 +8,6 @@ import {
   TransferStockCommandHandler,
   ReserveStockCommand,
   ReserveStockCommandHandler,
-  ReleaseReservationCommand,
-  ReleaseReservationCommandHandler,
   FulfillReservationCommand,
   FulfillReservationCommandHandler,
   SetStockThresholdsCommand,
@@ -31,7 +29,6 @@ export class StockController {
   private adjustStockHandler: AdjustStockCommandHandler;
   private transferStockHandler: TransferStockCommandHandler;
   private reserveStockHandler: ReserveStockCommandHandler;
-  private releaseReservationHandler: ReleaseReservationCommandHandler;
   private fulfillReservationHandler: FulfillReservationCommandHandler;
   private setStockThresholdsHandler: SetStockThresholdsCommandHandler;
   private getStockHandler: GetStockQueryHandler;
@@ -48,9 +45,6 @@ export class StockController {
     this.adjustStockHandler = new AdjustStockCommandHandler(stockService);
     this.transferStockHandler = new TransferStockCommandHandler(stockService);
     this.reserveStockHandler = new ReserveStockCommandHandler(stockService);
-    this.releaseReservationHandler = new ReleaseReservationCommandHandler(
-      stockService
-    );
     this.fulfillReservationHandler = new FulfillReservationCommandHandler(
       stockService
     );
@@ -356,44 +350,6 @@ export class StockController {
       }
     } catch (error) {
       request.log.error(error, "Failed to reserve stock");
-      return reply.code(500).send({
-        success: false,
-        error: "Internal server error",
-      });
-    }
-  }
-
-  async releaseReservation(
-    request: FastifyRequest<{
-      Body: {
-        variantId: string;
-        locationId: string;
-        quantity: number;
-
-        referenceId?: string;
-      };
-    }>,
-    reply: FastifyReply
-  ) {
-    try {
-      const command: ReleaseReservationCommand = request.body;
-
-      const result = await this.releaseReservationHandler.handle(command);
-
-      if (result.success) {
-        return reply.code(200).send({
-          success: true,
-          data: result.data,
-        });
-      } else {
-        return reply.code(400).send({
-          success: false,
-          error: result.error || "Failed to release reservation",
-          errors: result.errors,
-        });
-      }
-    } catch (error) {
-      request.log.error(error, "Failed to release reservation");
       return reply.code(500).send({
         success: false,
         error: "Internal server error",

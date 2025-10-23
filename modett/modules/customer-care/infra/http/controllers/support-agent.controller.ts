@@ -8,6 +8,10 @@ import {
   UpdateSupportAgentHandler,
 } from "../../../application/commands/update-support-agent.command";
 import {
+  DeleteSupportAgentCommand,
+  DeleteSupportAgentHandler,
+} from "../../../application/commands/delete-support-agent.command";
+import {
   GetSupportAgentQuery,
   GetSupportAgentHandler,
 } from "../../../application/queries/get-support-agent.query";
@@ -26,11 +30,13 @@ interface CreateSupportAgentRequest {
 interface UpdateSupportAgentRequest {
   name?: string;
   roster?: string[];
+  skills?: string[];
 }
 
 export class SupportAgentController {
   private createSupportAgentHandler: CreateSupportAgentHandler;
   private updateSupportAgentHandler: UpdateSupportAgentHandler;
+  private deleteSupportAgentHandler: DeleteSupportAgentHandler;
   private getSupportAgentHandler: GetSupportAgentHandler;
   private listSupportAgentsHandler: ListSupportAgentsHandler;
 
@@ -39,6 +45,9 @@ export class SupportAgentController {
       supportAgentService
     );
     this.updateSupportAgentHandler = new UpdateSupportAgentHandler(
+      supportAgentService
+    );
+    this.deleteSupportAgentHandler = new DeleteSupportAgentHandler(
       supportAgentService
     );
     this.getSupportAgentHandler = new GetSupportAgentHandler(
@@ -89,7 +98,7 @@ export class SupportAgentController {
   ) {
     try {
       const { agentId } = request.params;
-      const { name, roster } = request.body;
+      const { name, roster, skills } = request.body;
       if (!agentId || typeof agentId !== "string") {
         return reply.code(400).send({
           success: false,
@@ -97,14 +106,14 @@ export class SupportAgentController {
           message: "Agent ID is required and must be a valid string",
         });
       }
-      if (!name && !roster) {
+      if (!name && !roster && !skills) {
         return reply.code(400).send({
           success: false,
           error: "Bad Request",
-          message: "At least one of name or roster must be provided",
+          message: "At least one of name, roster, or skills must be provided",
         });
       }
-      const command: UpdateSupportAgentCommand = { agentId, name, roster };
+      const command: UpdateSupportAgentCommand = { agentId, name, roster, skills };
       const result = await this.updateSupportAgentHandler.handle(command);
       if (result.success) {
         return reply.code(200).send({
@@ -193,6 +202,46 @@ export class SupportAgentController {
         success: false,
         error: "Internal server error",
         message: "Failed to list support agents",
+      });
+    }
+  }
+
+  async deleteAgent(
+    request: FastifyRequest<{ Params: { agentId: string } }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { agentId } = request.params;
+
+      if (!agentId || typeof agentId !== "string") {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: "Agent ID is required and must be a valid string",
+        });
+      }
+
+      const command: DeleteSupportAgentCommand = { agentId };
+      const result = await this.deleteSupportAgentHandler.handle(command);
+
+      if (result.success) {
+        return reply.code(200).send({
+          success: true,
+          message: "Support agent deleted successfully",
+        });
+      } else {
+        return reply.code(400).send({
+          success: false,
+          error: result.error || "Failed to delete support agent",
+          errors: result.errors,
+        });
+      }
+    } catch (error) {
+      request.log.error(error, "Failed to delete support agent");
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to delete support agent",
       });
     }
   }

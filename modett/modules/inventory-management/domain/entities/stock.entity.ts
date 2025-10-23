@@ -55,13 +55,6 @@ export class Stock {
     });
   }
 
-  releaseReservation(quantity: number): Stock {
-    return new Stock({
-      ...this.props,
-      stockLevel: this.props.stockLevel.releaseReservation(quantity),
-    });
-  }
-
   fulfillReservation(quantity: number): Stock {
     return new Stock({
       ...this.props,

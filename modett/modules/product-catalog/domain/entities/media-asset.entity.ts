@@ -1,13 +1,13 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 export class MediaAssetId {
   private constructor(private readonly value: string) {
     if (!value) {
-      throw new Error('Media Asset ID cannot be empty');
+      throw new Error("Media Asset ID cannot be empty");
     }
 
     if (!this.isValidUuid(value)) {
-      throw new Error('Media Asset ID must be a valid UUID');
+      throw new Error("Media Asset ID must be a valid UUID");
     }
   }
 
@@ -32,7 +32,8 @@ export class MediaAssetId {
   }
 
   private isValidUuid(uuid: string): boolean {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   }
 }
@@ -213,13 +214,66 @@ export class MediaAsset {
     }
   }
 
+  updateRenditions(renditions: Record<string, any>): void {
+    this.renditions = renditions || {};
+    this.incrementVersion();
+  }
+
+  updateFields(fields: Partial<CreateMediaAssetData>): void {
+    let changed = false;
+
+    if (fields.mime !== undefined && fields.mime !== this.mime) {
+      this.mime = fields.mime;
+      changed = true;
+    }
+
+    if (fields.width !== undefined && fields.width !== this.width) {
+      this.width = fields.width || null;
+      changed = true;
+    }
+
+    if (fields.height !== undefined && fields.height !== this.height) {
+      this.height = fields.height || null;
+      changed = true;
+    }
+
+    if (fields.bytes !== undefined && fields.bytes !== this.bytes) {
+      this.bytes = fields.bytes || null;
+      changed = true;
+    }
+
+    if (fields.altText !== undefined && fields.altText !== this.altText) {
+      this.altText = fields.altText || null;
+      changed = true;
+    }
+
+    if (fields.focalX !== undefined && fields.focalX !== this.focalX) {
+      this.focalX = fields.focalX || null;
+      changed = true;
+    }
+
+    if (fields.focalY !== undefined && fields.focalY !== this.focalY) {
+      this.focalY = fields.focalY || null;
+      changed = true;
+    }
+
+    if (fields.renditions !== undefined) {
+      this.renditions = fields.renditions || {};
+      changed = true;
+    }
+
+    if (changed) {
+      this.incrementVersion();
+    }
+  }
+
   // Validation methods
   isImage(): boolean {
-    return this.mime.startsWith('image/');
+    return this.mime.startsWith("image/");
   }
 
   isVideo(): boolean {
-    return this.mime.startsWith('video/');
+    return this.mime.startsWith("video/");
   }
 
   hasRendition(name: string): boolean {

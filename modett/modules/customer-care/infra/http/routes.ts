@@ -132,7 +132,7 @@ export async function registerCustomerCareRoutes(
             orderId: { type: "string", format: "uuid" },
             source: {
               type: "string",
-              enum: ["phone", "email", "chat", "web"],
+              enum: ["phone", "email", "chat"],
               description: "Ticket source channel",
             },
             subject: {
@@ -154,7 +154,26 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: {
+                type: "object",
+                properties: {
+                  ticketId: { type: "string", format: "uuid" },
+                  userId: { type: "string", format: "uuid" },
+                  orderId: { type: "string", format: "uuid" },
+                  source: {
+                    type: "string",
+                    enum: ["phone", "email", "chat"],
+                  },
+                  subject: { type: "string" },
+                  priority: {
+                    type: "string",
+                    enum: ["low", "medium", "high", "urgent"],
+                  },
+                  status: { type: "string" },
+                  createdAt: { type: "string", format: "date-time" },
+                  updatedAt: { type: "string", format: "date-time" },
+                },
+              },
               message: { type: "string" },
             },
           },
@@ -188,7 +207,26 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: {
+                type: "object",
+                properties: {
+                  ticketId: { type: "string", format: "uuid" },
+                  userId: { type: "string", format: "uuid" },
+                  orderId: { type: "string", format: "uuid" },
+                  source: {
+                    type: "string",
+                    enum: ["phone", "email", "chat"],
+                  },
+                  subject: { type: "string" },
+                  priority: {
+                    type: "string",
+                    enum: ["low", "medium", "high", "urgent"],
+                  },
+                  status: { type: "string" },
+                  createdAt: { type: "string", format: "date-time" },
+                  updatedAt: { type: "string", format: "date-time" },
+                },
+              },
             },
           },
           ...errorResponses,
@@ -214,7 +252,29 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "array" },
+              data: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    ticketId: { type: "string", format: "uuid" },
+                    userId: { type: "string", format: "uuid" },
+                    orderId: { type: "string", format: "uuid" },
+                    source: {
+                      type: "string",
+                      enum: ["phone", "email", "chat"],
+                    },
+                    subject: { type: "string" },
+                    priority: {
+                      type: "string",
+                      enum: ["low", "medium", "high", "urgent"],
+                    },
+                    status: { type: "string" },
+                    createdAt: { type: "string", format: "date-time" },
+                    updatedAt: { type: "string", format: "date-time" },
+                  },
+                },
+              },
               total: { type: "integer" },
             },
           },
@@ -223,6 +283,93 @@ export async function registerCustomerCareRoutes(
       },
     },
     supportTicketController.listTickets.bind(supportTicketController) as any
+  );
+
+  // Update support ticket
+  fastify.patch(
+    "/customer-care/tickets/:ticketId",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Update support ticket details",
+        tags: ["Customer Care - Tickets"],
+        summary: "Update Support Ticket",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          required: ["ticketId"],
+          properties: {
+            ticketId: { type: "string", format: "uuid" },
+          },
+        },
+        body: {
+          type: "object",
+          properties: {
+            subject: {
+              type: "string",
+              minLength: 1,
+              maxLength: 500,
+              description: "Ticket subject",
+            },
+            status: {
+              type: "string",
+              enum: ["open", "in_progress", "resolved", "closed"],
+              description: "Ticket status",
+            },
+            priority: {
+              type: "string",
+              enum: ["low", "medium", "high", "urgent"],
+              description: "Ticket priority",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Support ticket updated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string" },
+            },
+          },
+          ...errorResponses,
+        },
+      },
+    },
+    supportTicketController.updateTicket.bind(supportTicketController) as any
+  );
+
+  // Delete support ticket
+  fastify.delete(
+    "/customer-care/tickets/:ticketId",
+    {
+      preHandler: authenticateAdmin,
+      schema: {
+        description: "Delete a support ticket",
+        tags: ["Customer Care - Tickets"],
+        summary: "Delete Support Ticket",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          required: ["ticketId"],
+          properties: {
+            ticketId: { type: "string", format: "uuid" },
+          },
+        },
+        response: {
+          200: {
+            description: "Support ticket deleted successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string" },
+            },
+          },
+          ...errorResponses,
+        },
+      },
+    },
+    supportTicketController.deleteTicket.bind(supportTicketController) as any
   );
 
   // =============================================================================
@@ -268,7 +415,19 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: {
+                type: "object",
+                properties: {
+                  messageId: { type: "string", format: "uuid" },
+                  ticketId: { type: "string", format: "uuid" },
+                  sender: {
+                    type: "string",
+                    enum: ["customer", "agent"],
+                  },
+                  body: { type: "string" },
+                  createdAt: { type: "string", format: "date-time" },
+                },
+              },
               message: { type: "string" },
             },
           },
@@ -312,7 +471,22 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "array" },
+              data: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    messageId: { type: "string", format: "uuid" },
+                    ticketId: { type: "string", format: "uuid" },
+                    sender: {
+                      type: "string",
+                      enum: ["customer", "agent"],
+                    },
+                    body: { type: "string" },
+                    createdAt: { type: "string", format: "date-time" },
+                  },
+                },
+              },
               total: { type: "integer" },
             },
           },
@@ -364,7 +538,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
               message: { type: "string" },
             },
           },
@@ -398,7 +572,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
             },
           },
           ...errorResponses,
@@ -432,6 +606,11 @@ export async function registerCustomerCareRoutes(
             roster: {
               type: "array",
               items: { type: "string" },
+            },
+            skills: {
+              type: "array",
+              items: { type: "string" },
+              description: "Agent skills",
             },
           },
         },
@@ -467,7 +646,10 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "array" },
+              data: {
+                type: "array",
+                items: { type: "object", additionalProperties: true },
+              },
               total: { type: "integer" },
             },
           },
@@ -476,6 +658,39 @@ export async function registerCustomerCareRoutes(
       },
     },
     supportAgentController.listAgents.bind(supportAgentController) as any
+  );
+
+  // Delete support agent
+  fastify.delete(
+    "/customer-care/agents/:agentId",
+    {
+      preHandler: authenticateAdmin,
+      schema: {
+        description: "Delete a support agent",
+        tags: ["Customer Care - Agents"],
+        summary: "Delete Support Agent",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          required: ["agentId"],
+          properties: {
+            agentId: { type: "string", format: "uuid" },
+          },
+        },
+        response: {
+          200: {
+            description: "Support agent deleted successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string" },
+            },
+          },
+          ...errorResponses,
+        },
+      },
+    },
+    supportAgentController.deleteAgent.bind(supportAgentController) as any
   );
 
   // =============================================================================
@@ -509,7 +724,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
               message: { type: "string" },
             },
           },
@@ -543,7 +758,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
             },
           },
           ...errorResponses,
@@ -602,7 +817,10 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "array" },
+              data: {
+                type: "array",
+                items: { type: "object", additionalProperties: true },
+              },
               total: { type: "integer" },
             },
           },
@@ -641,10 +859,16 @@ export async function registerCustomerCareRoutes(
             senderId: { type: "string", format: "uuid" },
             senderType: {
               type: "string",
-              enum: ["customer", "agent", "bot"],
+              enum: ["user", "agent"],
             },
             content: { type: "string", minLength: 1 },
             messageType: { type: "string" },
+            metadata: {
+              type: "object",
+              description:
+                "Optional metadata for the message (attachments, formatting, etc.)",
+              additionalProperties: true,
+            },
             isAutomated: { type: "boolean" },
           },
         },
@@ -654,7 +878,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
               message: { type: "string" },
             },
           },
@@ -688,7 +912,10 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "array" },
+              data: {
+                type: "array",
+                items: { type: "object", additionalProperties: true },
+              },
               total: { type: "integer" },
             },
           },
@@ -720,7 +947,7 @@ export async function registerCustomerCareRoutes(
             orderId: { type: "string", format: "uuid" },
             type: {
               type: "string",
-              enum: ["return", "exchange", "repair"],
+              enum: ["return", "exchange", "gift_return"],
             },
             reason: { type: "string", maxLength: 1000 },
           },
@@ -731,7 +958,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
               message: { type: "string" },
             },
           },
@@ -767,7 +994,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
             },
           },
           ...errorResponses,
@@ -795,7 +1022,10 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "array" },
+              data: {
+                type: "array",
+                items: { type: "object", additionalProperties: true },
+              },
               total: { type: "integer" },
             },
           },
@@ -804,6 +1034,98 @@ export async function registerCustomerCareRoutes(
       },
     },
     returnRequestController.listReturnRequests.bind(
+      returnRequestController
+    ) as any
+  );
+
+  // Update return request
+  fastify.patch(
+    "/customer-care/returns/:rmaId",
+    {
+      preHandler: authenticateAdmin,
+      schema: {
+        description: "Update return request details",
+        tags: ["Customer Care - Returns"],
+        summary: "Update Return Request",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          required: ["rmaId"],
+          properties: {
+            rmaId: { type: "string", format: "uuid" },
+          },
+        },
+        body: {
+          type: "object",
+          properties: {
+            status: {
+              type: "string",
+              enum: [
+                "eligibility",
+                "approved",
+                "in_transit",
+                "received",
+                "refunded",
+                "rejected",
+              ],
+              description: "RMA status",
+            },
+            reason: {
+              type: "string",
+              maxLength: 1000,
+              description: "Return reason",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Return request updated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string" },
+            },
+          },
+          ...errorResponses,
+        },
+      },
+    },
+    returnRequestController.updateReturnRequest.bind(
+      returnRequestController
+    ) as any
+  );
+
+  // Delete return request
+  fastify.delete(
+    "/customer-care/returns/:rmaId",
+    {
+      preHandler: authenticateAdmin,
+      schema: {
+        description: "Delete a return request",
+        tags: ["Customer Care - Returns"],
+        summary: "Delete Return Request",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          required: ["rmaId"],
+          properties: {
+            rmaId: { type: "string", format: "uuid" },
+          },
+        },
+        response: {
+          200: {
+            description: "Return request deleted successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string" },
+            },
+          },
+          ...errorResponses,
+        },
+      },
+    },
+    returnRequestController.deleteReturnRequest.bind(
       returnRequestController
     ) as any
   );
@@ -837,11 +1159,11 @@ export async function registerCustomerCareRoutes(
             quantity: { type: "integer", minimum: 1 },
             condition: {
               type: "string",
-              enum: ["new", "opened", "used", "damaged"],
+              enum: ["new", "used", "damaged"],
             },
             disposition: {
               type: "string",
-              enum: ["refund", "replace", "repair", "discard"],
+              enum: ["restock", "repair", "discard"],
             },
             fees: { type: "number", minimum: 0 },
             currency: { type: "string", default: "USD" },
@@ -853,7 +1175,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
               message: { type: "string" },
             },
           },
@@ -887,7 +1209,10 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "array" },
+              data: {
+                type: "array",
+                items: { type: "object", additionalProperties: true },
+              },
               total: { type: "integer" },
             },
           },
@@ -895,7 +1220,7 @@ export async function registerCustomerCareRoutes(
         },
       },
     },
-    returnItemController.getReturnItem.bind(returnItemController) as any
+    returnItemController.getReturnItems.bind(returnItemController) as any
   );
 
   // Update return item condition
@@ -922,7 +1247,7 @@ export async function registerCustomerCareRoutes(
           properties: {
             condition: {
               type: "string",
-              enum: ["new", "opened", "used", "damaged"],
+              enum: ["new", "used", "damaged"],
             },
           },
         },
@@ -972,7 +1297,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
               message: { type: "string" },
             },
           },
@@ -1006,7 +1331,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
             },
           },
           ...errorResponses,
@@ -1075,7 +1400,10 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "array" },
+              data: {
+                type: "array",
+                items: { type: "object", additionalProperties: true },
+              },
               total: { type: "integer" },
             },
           },
@@ -1084,6 +1412,93 @@ export async function registerCustomerCareRoutes(
       },
     },
     repairController.listRepairs.bind(repairController) as any
+  );
+
+  // Update repair
+  fastify.patch(
+    "/customer-care/repairs/:repairId",
+    {
+      preHandler: authenticateAdmin,
+      schema: {
+        description: "Update repair details (notes and/or status)",
+        tags: ["Customer Care - Repairs"],
+        summary: "Update Repair",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          required: ["repairId"],
+          properties: {
+            repairId: { type: "string", format: "uuid" },
+          },
+        },
+        body: {
+          type: "object",
+          properties: {
+            notes: {
+              type: "string",
+              maxLength: 1000,
+              description: "Repair notes",
+            },
+            status: {
+              type: "string",
+              enum: [
+                "pending",
+                "in_progress",
+                "completed",
+                "failed",
+                "cancelled",
+              ],
+              description: "Repair status",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Repair updated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string" },
+            },
+          },
+          ...errorResponses,
+        },
+      },
+    },
+    repairController.updateRepair.bind(repairController) as any
+  );
+
+  // Delete repair
+  fastify.delete(
+    "/customer-care/repairs/:repairId",
+    {
+      preHandler: authenticateAdmin,
+      schema: {
+        description: "Delete a repair",
+        tags: ["Customer Care - Repairs"],
+        summary: "Delete Repair",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          required: ["repairId"],
+          properties: {
+            repairId: { type: "string", format: "uuid" },
+          },
+        },
+        response: {
+          200: {
+            description: "Repair deleted successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string" },
+            },
+          },
+          ...errorResponses,
+        },
+      },
+    },
+    repairController.deleteRepair.bind(repairController) as any
   );
 
   // =============================================================================
@@ -1108,7 +1523,7 @@ export async function registerCustomerCareRoutes(
             orderId: { type: "string", format: "uuid" },
             type: {
               type: "string",
-              enum: ["refund", "discount", "credit", "gift"],
+              enum: ["store_credit", "discount", "points"],
             },
             value: { type: "number", minimum: 0 },
             currency: { type: "string", default: "USD" },
@@ -1121,7 +1536,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
               message: { type: "string" },
             },
           },
@@ -1155,7 +1570,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
             },
           },
           ...errorResponses,
@@ -1181,7 +1596,10 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "array" },
+              data: {
+                type: "array",
+                items: { type: "object", additionalProperties: true },
+              },
               total: { type: "integer" },
             },
           },
@@ -1209,9 +1627,24 @@ export async function registerCustomerCareRoutes(
         body: {
           type: "object",
           properties: {
-            userId: { type: "string", format: "uuid" },
-            ticketId: { type: "string", format: "uuid" },
-            orderId: { type: "string", format: "uuid" },
+            userId: {
+              type: "string",
+              format: "uuid",
+              description:
+                "User ID - must be the owner of the ticket/order if provided",
+            },
+            ticketId: {
+              type: "string",
+              format: "uuid",
+              description:
+                "Support ticket ID - must belong to the specified userId if provided",
+            },
+            orderId: {
+              type: "string",
+              format: "uuid",
+              description:
+                "Order ID - must belong to the specified userId if provided",
+            },
             npsScore: {
               type: "integer",
               minimum: 0,
@@ -1226,6 +1659,12 @@ export async function registerCustomerCareRoutes(
             },
             comment: { type: "string", maxLength: 2000 },
           },
+          additionalProperties: false,
+          anyOf: [
+            { required: ["npsScore"] },
+            { required: ["csatScore"] },
+            { required: ["comment"] },
+          ],
         },
         response: {
           201: {
@@ -1233,7 +1672,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
               message: { type: "string" },
             },
           },
@@ -1269,7 +1708,7 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object" },
+              data: { type: "object", additionalProperties: true },
             },
           },
           ...errorResponses,
@@ -1297,7 +1736,10 @@ export async function registerCustomerCareRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "array" },
+              data: {
+                type: "array",
+                items: { type: "object", additionalProperties: true },
+              },
               total: { type: "integer" },
             },
           },

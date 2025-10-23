@@ -1,0 +1,3 @@
+-- CreateSchema
+-- This is a baseline migration for existing database
+-- All tables and schemas already exist

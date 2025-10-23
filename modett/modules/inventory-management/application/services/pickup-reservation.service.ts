@@ -5,21 +5,6 @@ import { IPickupReservationRepository } from "../../domain/repositories/pickup-r
 import { StockManagementService } from "./stock-management.service";
 
 export class PickupReservationService {
-  async getAllReservations(): Promise<PickupReservation[]> {
-    // You should implement this in your repository for efficiency; here we combine byOrder/byLocation as fallback
-    // If your repository has a findAll method, use it instead
-    if (
-      typeof (this.pickupReservationRepository as any).findAll === "function"
-    ) {
-      return (this.pickupReservationRepository as any).findAll();
-    }
-    // Fallback: get all active + all expired
-    const active =
-      await this.pickupReservationRepository.findActiveReservations();
-    const expired =
-      await this.pickupReservationRepository.findExpiredReservations();
-    return [...active, ...expired];
-  }
   constructor(
     private readonly pickupReservationRepository: IPickupReservationRepository,
     private readonly stockManagementService: StockManagementService
@@ -72,15 +57,8 @@ export class PickupReservationService {
       throw new Error("Can only cancel active reservations");
     }
 
-    // Release stock reservation
-    await this.stockManagementService.releaseReservation(
-      reservation.getVariantId(),
-      reservation.getLocationId(),
-      reservation.getQty(),
-      reservation.getOrderId()
-    );
-
     // Mark reservation as cancelled (keep record for history)
+    // Note: Stock is not automatically released - manual intervention required
     const cancelledReservation = reservation.cancel();
     await this.pickupReservationRepository.save(cancelledReservation);
 
@@ -112,88 +90,6 @@ export class PickupReservationService {
     return extendedReservation;
   }
 
-  async cleanupExpiredReservations(): Promise<number> {
-    // Find active reservations that have expired by time
-    const activeReservations =
-      await this.pickupReservationRepository.findActiveReservations();
-    const now = new Date();
-    const timeExpiredReservations = activeReservations.filter(
-      (r) => now > r.getExpiresAt()
-    );
-
-    let cleanedCount = 0;
-
-    for (const reservation of timeExpiredReservations) {
-      try {
-        // Release stock reservation
-        await this.stockManagementService.releaseReservation(
-          reservation.getVariantId(),
-          reservation.getLocationId(),
-          reservation.getQty(),
-          reservation.getOrderId()
-        );
-
-        // Mark reservation as expired (don't delete)
-        const expiredReservation = reservation.markAsExpired();
-        await this.pickupReservationRepository.save(expiredReservation);
-
-        cleanedCount++;
-      } catch (error) {
-        // If stock release fails due to data inconsistency, try to fix it
-        if (
-          error instanceof Error &&
-          error.message?.includes("Cannot release more than reserved quantity")
-        ) {
-          console.warn(
-            `Data inconsistency detected for reservation ${reservation.getReservationId().getValue()}. Attempting graceful cleanup...`
-          );
-
-          try {
-            // Get current stock to see actual reserved quantity
-            const currentStock = await this.stockManagementService.getStock(
-              reservation.getVariantId(),
-              reservation.getLocationId()
-            );
-
-            if (
-              currentStock &&
-              currentStock.getStockLevel().getReserved() > 0
-            ) {
-              // Release only what's actually reserved
-              await this.stockManagementService.releaseReservation(
-                reservation.getVariantId(),
-                reservation.getLocationId(),
-                currentStock.getStockLevel().getReserved(),
-                reservation.getOrderId()
-              );
-            }
-
-            // Mark the problematic reservation as expired (keep record for history)
-            const expiredReservation = reservation.markAsExpired();
-            await this.pickupReservationRepository.save(expiredReservation);
-
-            cleanedCount++;
-            console.log(
-              `Successfully cleaned up inconsistent reservation ${reservation.getReservationId().getValue()}`
-            );
-          } catch (secondError) {
-            console.error(
-              `Failed to cleanup inconsistent reservation ${reservation.getReservationId().getValue()}:`,
-              secondError
-            );
-          }
-        } else {
-          console.error(
-            `Failed to cleanup reservation ${reservation.getReservationId().getValue()}:`,
-            error
-          );
-        }
-      }
-    }
-
-    return cleanedCount;
-  }
-
   async getPickupReservation(
     reservationId: string
   ): Promise<PickupReservation | null> {
@@ -214,6 +110,10 @@ export class PickupReservationService {
 
   async getActiveReservations(): Promise<PickupReservation[]> {
     return this.pickupReservationRepository.findActiveReservations();
+  }
+
+  async getAllReservations(): Promise<PickupReservation[]> {
+    return this.pickupReservationRepository.findAllReservations();
   }
 
   async fulfillPickupReservation(

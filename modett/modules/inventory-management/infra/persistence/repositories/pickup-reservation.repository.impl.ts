@@ -202,6 +202,17 @@ export class PickupReservationRepositoryImpl
       .filter((r: PickupReservation) => r.isActive());
   }
 
+  async findAllReservations(): Promise<PickupReservation[]> {
+    const reservations = await (this.prisma as any).pickupReservation.findMany({
+      orderBy: { expiresAt: "asc" },
+    });
+
+    // Return all reservations mapped to entities
+    return reservations.map((r: PickupReservationDatabaseRow) =>
+      this.toEntity(r)
+    );
+  }
+
   async findActiveByVariantAndLocation(
     variantId: string,
     locationId: string

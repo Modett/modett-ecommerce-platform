@@ -23,15 +23,26 @@ export interface ReservationRepository {
   getActiveReservedQuantity(variantId: VariantId): Promise<number>;
 
   // Cart-Variant specific operations
-  findByCartAndVariant(cartId: CartId, variantId: VariantId): Promise<Reservation | null>;
-  existsForCartAndVariant(cartId: CartId, variantId: VariantId): Promise<boolean>;
-  deleteByCartAndVariant(cartId: CartId, variantId: VariantId): Promise<boolean>;
+  findByCartAndVariant(
+    cartId: CartId,
+    variantId: VariantId
+  ): Promise<Reservation | null>;
+  existsForCartAndVariant(
+    cartId: CartId,
+    variantId: VariantId
+  ): Promise<boolean>;
+  deleteByCartAndVariant(
+    cartId: CartId,
+    variantId: VariantId
+  ): Promise<boolean>;
 
   // Expiration management
   findExpiredReservations(): Promise<Reservation[]>;
   findExpiringSoon(thresholdMinutes?: number): Promise<Reservation[]>;
-  findReservationsExpiringBetween(startTime: Date, endTime: Date): Promise<Reservation[]>;
-  cleanupExpiredReservations(): Promise<number>;
+  findReservationsExpiringBetween(
+    startTime: Date,
+    endTime: Date
+  ): Promise<Reservation[]>;
 
   // Bulk operations
   saveBulk(reservations: Reservation[]): Promise<void>;
@@ -47,12 +58,21 @@ export interface ReservationRepository {
     durationMinutes?: number
   ): Promise<Reservation>;
 
-  extendReservation(reservationId: string, additionalMinutes: number): Promise<boolean>;
-  renewReservation(reservationId: string, durationMinutes?: number): Promise<boolean>;
+  extendReservation(
+    reservationId: string,
+    additionalMinutes: number
+  ): Promise<boolean>;
+  renewReservation(
+    reservationId: string,
+    durationMinutes?: number
+  ): Promise<boolean>;
   releaseReservation(reservationId: string): Promise<boolean>;
 
   // Inventory management
-  checkAvailability(variantId: VariantId, requestedQuantity: number): Promise<{
+  checkAvailability(
+    variantId: VariantId,
+    requestedQuantity: number
+  ): Promise<{
     available: boolean;
     totalReserved: number;
     activeReserved: number;
@@ -73,15 +93,20 @@ export interface ReservationRepository {
   ): Promise<Reservation | null>;
 
   // Query operations
-  findByStatus(status: 'active' | 'expiring_soon' | 'expired' | 'recently_expired'): Promise<Reservation[]>;
+  findByStatus(
+    status: "active" | "expiring_soon" | "expired" | "recently_expired"
+  ): Promise<Reservation[]>;
   findRecentReservations(hours: number, limit?: number): Promise<Reservation[]>;
-  findReservationsByDateRange(startDate: Date, endDate: Date): Promise<Reservation[]>;
+  findReservationsByDateRange(
+    startDate: Date,
+    endDate: Date
+  ): Promise<Reservation[]>;
 
   // Advanced filtering
   searchReservations(criteria: {
     cartId?: string;
     variantId?: string;
-    status?: 'active' | 'expiring_soon' | 'expired' | 'recently_expired';
+    status?: "active" | "expiring_soon" | "expired" | "recently_expired";
     minQuantity?: number;
     maxQuantity?: number;
     createdAfter?: Date;
@@ -108,15 +133,17 @@ export interface ReservationRepository {
   }>;
 
   getReservationsByTimeframe(
-    timeframe: 'hour' | 'day' | 'week' | 'month',
+    timeframe: "hour" | "day" | "week" | "month",
     count?: number
-  ): Promise<Array<{
-    period: string;
-    reservationCount: number;
-    totalQuantity: number;
-    uniqueVariants: number;
-    uniqueCarts: number;
-  }>>;
+  ): Promise<
+    Array<{
+      period: string;
+      reservationCount: number;
+      totalQuantity: number;
+      uniqueVariants: number;
+      uniqueCarts: number;
+    }>
+  >;
 
   // Maintenance operations
   optimizeReservations(): Promise<number>;
@@ -124,9 +151,16 @@ export interface ReservationRepository {
   archiveOldReservations(olderThanDays: number): Promise<number>;
 
   // Validation operations
-  validateReservationCapacity(variantId: VariantId, requestedQuantity: number): Promise<boolean>;
+  validateReservationCapacity(
+    variantId: VariantId,
+    requestedQuantity: number
+  ): Promise<boolean>;
   isReservationExtendable(reservationId: string): Promise<boolean>;
-  canCreateReservation(cartId: CartId, variantId: VariantId, quantity: number): Promise<boolean>;
+  canCreateReservation(
+    cartId: CartId,
+    variantId: VariantId,
+    quantity: number
+  ): Promise<boolean>;
 
   // Conflict resolution
   findConflictingReservations(
@@ -139,7 +173,7 @@ export interface ReservationRepository {
     resolved: number;
     conflicts: number;
     actions: Array<{
-      action: 'extended' | 'reduced' | 'cancelled';
+      action: "extended" | "reduced" | "cancelled";
       reservationId: string;
       details: string;
     }>;
@@ -158,12 +192,27 @@ export interface ReservationRepository {
   } | null>;
 
   // Transaction support
-  saveWithTransaction(reservation: Reservation, transactionContext?: any): Promise<void>;
-  deleteWithTransaction(reservationId: string, transactionContext?: any): Promise<void>;
-  saveBulkWithTransaction(reservations: Reservation[], transactionContext?: any): Promise<void>;
+  saveWithTransaction(
+    reservation: Reservation,
+    transactionContext?: any
+  ): Promise<void>;
+  deleteWithTransaction(
+    reservationId: string,
+    transactionContext?: any
+  ): Promise<void>;
+  saveBulkWithTransaction(
+    reservations: Reservation[],
+    transactionContext?: any
+  ): Promise<void>;
 
   // Batch processing for background jobs
   getReservationsForCleanup(batchSize?: number): Promise<Reservation[]>;
-  getReservationsForExtension(thresholdMinutes: number, batchSize?: number): Promise<Reservation[]>;
-  getReservationsForNotification(thresholdMinutes: number, batchSize?: number): Promise<Reservation[]>;
+  getReservationsForExtension(
+    thresholdMinutes: number,
+    batchSize?: number
+  ): Promise<Reservation[]>;
+  getReservationsForNotification(
+    thresholdMinutes: number,
+    batchSize?: number
+  ): Promise<Reservation[]>;
 }

@@ -19,6 +19,7 @@ export interface IPickupReservationRepository {
   // Specific queries
   findExpiredReservations(): Promise<PickupReservation[]>;
   findActiveReservations(): Promise<PickupReservation[]>;
+  findAllReservations(): Promise<PickupReservation[]>;
   findActiveByVariantAndLocation(
     variantId: string,
     locationId: string

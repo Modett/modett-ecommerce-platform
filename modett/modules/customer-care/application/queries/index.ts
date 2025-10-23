@@ -1,7 +1,11 @@
 // Barrel for queries
 
 // Base Query Types (exported once from get-support-ticket.query.js)
-export { IQuery, IQueryHandler, QueryResult } from "./get-support-ticket.query.js";
+export {
+  IQuery,
+  IQueryHandler,
+  QueryResult,
+} from "./get-support-ticket.query.js";
 
 // Support Ticket Queries
 export {
@@ -58,8 +62,10 @@ export {
 } from "./list-return-requests.query.js";
 export {
   GetReturnItemQuery,
+  GetReturnItemsQuery,
   ReturnItemDto,
   GetReturnItemHandler,
+  GetReturnItemsHandler,
 } from "./get-return-items.query.js";
 
 // Repair Queries
@@ -68,10 +74,7 @@ export {
   RepairDto,
   GetRepairHandler,
 } from "./get-repair.query.js";
-export {
-  ListRepairsQuery,
-  ListRepairsHandler,
-} from "./list-repairs.query.js";
+export { ListRepairsQuery, ListRepairsHandler } from "./list-repairs.query.js";
 
 // Goodwill Queries
 export {

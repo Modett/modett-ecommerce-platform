@@ -1,5 +1,8 @@
-import { EditorialLook, EditorialLookId } from '../entities/editorial-look.entity';
-import { MediaAssetId } from '../entities/media-asset.entity';
+import {
+  EditorialLook,
+  EditorialLookId,
+} from "../entities/editorial-look.entity";
+import { MediaAssetId } from "../entities/media-asset.entity";
 
 export interface IEditorialLookRepository {
   save(look: EditorialLook): Promise<void>;
@@ -8,7 +11,10 @@ export interface IEditorialLookRepository {
   findPublished(options?: EditorialLookQueryOptions): Promise<EditorialLook[]>;
   findScheduled(options?: EditorialLookQueryOptions): Promise<EditorialLook[]>;
   findDrafts(options?: EditorialLookQueryOptions): Promise<EditorialLook[]>;
-  findByProductId(productId: string, options?: EditorialLookQueryOptions): Promise<EditorialLook[]>;
+  findByProductId(
+    productId: string,
+    options?: EditorialLookQueryOptions
+  ): Promise<EditorialLook[]>;
   findByHeroAsset(assetId: MediaAssetId): Promise<EditorialLook[]>;
   findReadyToPublish(): Promise<EditorialLook[]>; // Scheduled looks ready to publish
   update(look: EditorialLook): Promise<void>;
@@ -18,18 +24,24 @@ export interface IEditorialLookRepository {
 
   // Product-Look associations
   addProductToLook(lookId: EditorialLookId, productId: string): Promise<void>;
-  removeProductFromLook(lookId: EditorialLookId, productId: string): Promise<void>;
+  removeProductFromLook(
+    lookId: EditorialLookId,
+    productId: string
+  ): Promise<void>;
   setLookProducts(lookId: EditorialLookId, productIds: string[]): Promise<void>;
   getLookProducts(lookId: EditorialLookId): Promise<string[]>;
   getProductLooks(productId: string): Promise<EditorialLookId[]>;
-  existsProductInLook(lookId: EditorialLookId, productId: string): Promise<boolean>;
+  existsProductInLook(
+    lookId: EditorialLookId,
+    productId: string
+  ): Promise<boolean>;
 }
 
 export interface EditorialLookQueryOptions {
   limit?: number;
   offset?: number;
-  sortBy?: 'title' | 'publishedAt' | 'createdAt';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "title" | "publishedAt" | "id";
+  sortOrder?: "asc" | "desc";
   includeUnpublished?: boolean;
   hasHeroImage?: boolean;
   hasProducts?: boolean;

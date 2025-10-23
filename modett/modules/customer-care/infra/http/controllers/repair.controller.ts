@@ -8,6 +8,14 @@ import {
   UpdateRepairStatusHandler,
 } from "../../../application/commands/update-repair-status.command";
 import {
+  UpdateRepairCommand,
+  UpdateRepairHandler,
+} from "../../../application/commands/update-repair.command";
+import {
+  DeleteRepairCommand,
+  DeleteRepairHandler,
+} from "../../../application/commands/delete-repair.command";
+import {
   GetRepairQuery,
   GetRepairHandler,
 } from "../../../application/queries/get-repair.query";
@@ -26,9 +34,16 @@ interface UpdateRepairStatusRequest {
   status: string;
 }
 
+interface UpdateRepairRequest {
+  notes?: string;
+  status?: string;
+}
+
 export class RepairController {
   private createRepairHandler: CreateRepairHandler;
   private updateRepairStatusHandler: UpdateRepairStatusHandler;
+  private updateRepairHandler: UpdateRepairHandler;
+  private deleteRepairHandler: DeleteRepairHandler;
   private getRepairHandler: GetRepairHandler;
   private listRepairsHandler: ListRepairsHandler;
 
@@ -37,6 +52,8 @@ export class RepairController {
     this.updateRepairStatusHandler = new UpdateRepairStatusHandler(
       repairService
     );
+    this.updateRepairHandler = new UpdateRepairHandler(repairService);
+    this.deleteRepairHandler = new DeleteRepairHandler(repairService);
     this.getRepairHandler = new GetRepairHandler(repairService);
     this.listRepairsHandler = new ListRepairsHandler(repairService);
   }
@@ -185,6 +202,95 @@ export class RepairController {
         success: false,
         error: "Internal server error",
         message: "Failed to list repairs",
+      });
+    }
+  }
+
+  async updateRepair(
+    request: FastifyRequest<{
+      Params: { repairId: string };
+      Body: UpdateRepairRequest;
+    }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { repairId } = request.params;
+      const { notes, status } = request.body;
+
+      if (!repairId || typeof repairId !== "string") {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: "Repair ID is required and must be a valid string",
+        });
+      }
+
+      const command: UpdateRepairCommand = {
+        repairId,
+        notes,
+        status,
+      };
+
+      const result = await this.updateRepairHandler.handle(command);
+
+      if (result.success) {
+        return reply.code(200).send({
+          success: true,
+          message: "Repair updated successfully",
+        });
+      } else {
+        return reply.code(400).send({
+          success: false,
+          error: result.error || "Failed to update repair",
+          errors: result.errors,
+        });
+      }
+    } catch (error) {
+      request.log.error(error, "Failed to update repair");
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to update repair",
+      });
+    }
+  }
+
+  async deleteRepair(
+    request: FastifyRequest<{ Params: { repairId: string } }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { repairId } = request.params;
+
+      if (!repairId || typeof repairId !== "string") {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: "Repair ID is required and must be a valid string",
+        });
+      }
+
+      const command: DeleteRepairCommand = { repairId };
+      const result = await this.deleteRepairHandler.handle(command);
+
+      if (result.success) {
+        return reply.code(200).send({
+          success: true,
+          message: "Repair deleted successfully",
+        });
+      } else {
+        return reply.code(400).send({
+          success: false,
+          error: result.error || "Failed to delete repair",
+          errors: result.errors,
+        });
+      }
+    } catch (error) {
+      request.log.error(error, "Failed to delete repair");
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to delete repair",
       });
     }
   }

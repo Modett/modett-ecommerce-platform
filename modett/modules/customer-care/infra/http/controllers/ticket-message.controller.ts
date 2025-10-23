@@ -137,11 +137,8 @@ export class TicketMessageController {
       if (result.success && result.data) {
         return reply.code(200).send({
           success: true,
-          data: {
-            ticketId,
-            messages: result.data,
-            total: result.data.length,
-          },
+          data: result.data,
+          total: result.data.length,
         });
       } else {
         return reply.code(404).send({

@@ -1,6 +1,9 @@
 import { ReservationRepository } from "../../domain/repositories/reservation.repository";
 import { CartRepository } from "../../domain/repositories/cart.repository";
-import { Reservation, CreateReservationData } from "../../domain/entities/reservation.entity";
+import {
+  Reservation,
+  CreateReservationData,
+} from "../../domain/entities/reservation.entity";
 import { CartId } from "../../domain/value-objects/cart-id.vo";
 import { VariantId } from "../../domain/value-objects/variant-id.vo";
 import { Quantity } from "../../domain/value-objects/quantity.vo";
@@ -35,7 +38,7 @@ export interface ReservationDto {
   variantId: string;
   quantity: number;
   expiresAt: Date;
-  status: 'active' | 'expiring_soon' | 'expired' | 'recently_expired';
+  status: "active" | "expiring_soon" | "expired" | "recently_expired";
   isExpired: boolean;
   isExpiringSoon: boolean;
   timeUntilExpirySeconds: number;
@@ -54,7 +57,7 @@ export interface ReservationConflictResolutionDto {
   resolved: number;
   conflicts: number;
   actions: Array<{
-    action: 'extended' | 'reduced' | 'cancelled';
+    action: "extended" | "reduced" | "cancelled";
     reservationId: string;
     details: string;
   }>;
@@ -102,20 +105,24 @@ export class ReservationService {
   // Core reservation operations
   async createReservation(dto: CreateReservationDto): Promise<ReservationDto> {
     // Validate cart exists
-    const cart = await this.cartRepository.findById(CartId.fromString(dto.cartId));
+    const cart = await this.cartRepository.findById(
+      CartId.fromString(dto.cartId)
+    );
     if (!cart) {
       throw new Error("Cart not found");
     }
 
     // Check if reservation already exists for this cart-variant combination
-    const existingReservation = await this.reservationRepository.findByCartAndVariant(
-      CartId.fromString(dto.cartId),
-      VariantId.fromString(dto.variantId)
-    );
+    const existingReservation =
+      await this.reservationRepository.findByCartAndVariant(
+        CartId.fromString(dto.cartId),
+        VariantId.fromString(dto.variantId)
+      );
 
     if (existingReservation) {
       // Update existing reservation quantity
-      const newQuantity = existingReservation.getQuantity().getValue() + dto.quantity;
+      const newQuantity =
+        existingReservation.getQuantity().getValue() + dto.quantity;
       existingReservation.updateQuantity(newQuantity);
       await this.reservationRepository.update(existingReservation);
       return this.mapReservationToDto(existingReservation);
@@ -133,7 +140,8 @@ export class ReservationService {
   }
 
   async getReservation(reservationId: string): Promise<ReservationDto | null> {
-    const reservation = await this.reservationRepository.findById(reservationId);
+    const reservation =
+      await this.reservationRepository.findById(reservationId);
     return reservation ? this.mapReservationToDto(reservation) : null;
   }
 
@@ -141,26 +149,28 @@ export class ReservationService {
     const reservations = await this.reservationRepository.findByCartId(
       CartId.fromString(cartId)
     );
-    return reservations.map(r => this.mapReservationToDto(r));
+    return reservations.map((r) => this.mapReservationToDto(r));
   }
 
   async getActiveCartReservations(cartId: string): Promise<ReservationDto[]> {
     const reservations = await this.reservationRepository.findActiveByCartId(
       CartId.fromString(cartId)
     );
-    return reservations.map(r => this.mapReservationToDto(r));
+    return reservations.map((r) => this.mapReservationToDto(r));
   }
 
   async getVariantReservations(variantId: string): Promise<ReservationDto[]> {
     const reservations = await this.reservationRepository.findByVariantId(
       VariantId.fromString(variantId)
     );
-    return reservations.map(r => this.mapReservationToDto(r));
+    return reservations.map((r) => this.mapReservationToDto(r));
   }
 
   // Reservation management
   async extendReservation(dto: ExtendReservationDto): Promise<ReservationDto> {
-    const reservation = await this.reservationRepository.findById(dto.reservationId);
+    const reservation = await this.reservationRepository.findById(
+      dto.reservationId
+    );
     if (!reservation) {
       throw new Error("Reservation not found");
     }
@@ -178,12 +188,16 @@ export class ReservationService {
       throw new Error("Failed to extend reservation");
     }
 
-    const updatedReservation = await this.reservationRepository.findById(dto.reservationId);
+    const updatedReservation = await this.reservationRepository.findById(
+      dto.reservationId
+    );
     return this.mapReservationToDto(updatedReservation!);
   }
 
   async renewReservation(dto: RenewReservationDto): Promise<ReservationDto> {
-    const reservation = await this.reservationRepository.findById(dto.reservationId);
+    const reservation = await this.reservationRepository.findById(
+      dto.reservationId
+    );
     if (!reservation) {
       throw new Error("Reservation not found");
     }
@@ -197,12 +211,15 @@ export class ReservationService {
       throw new Error("Failed to renew reservation");
     }
 
-    const updatedReservation = await this.reservationRepository.findById(dto.reservationId);
+    const updatedReservation = await this.reservationRepository.findById(
+      dto.reservationId
+    );
     return this.mapReservationToDto(updatedReservation!);
   }
 
   async releaseReservation(reservationId: string): Promise<boolean> {
-    const reservation = await this.reservationRepository.findById(reservationId);
+    const reservation =
+      await this.reservationRepository.findById(reservationId);
     if (!reservation) {
       return false;
     }
@@ -210,7 +227,9 @@ export class ReservationService {
     return await this.reservationRepository.releaseReservation(reservationId);
   }
 
-  async adjustReservation(dto: AdjustReservationDto): Promise<ReservationDto | null> {
+  async adjustReservation(
+    dto: AdjustReservationDto
+  ): Promise<ReservationDto | null> {
     const reservation = await this.reservationRepository.adjustReservation(
       CartId.fromString(dto.cartId),
       VariantId.fromString(dto.variantId),
@@ -221,7 +240,10 @@ export class ReservationService {
   }
 
   // Inventory management
-  async checkAvailability(variantId: string, requestedQuantity: number): Promise<AvailabilityDto> {
+  async checkAvailability(
+    variantId: string,
+    requestedQuantity: number
+  ): Promise<AvailabilityDto> {
     return await this.reservationRepository.checkAvailability(
       VariantId.fromString(variantId),
       requestedQuantity
@@ -257,7 +279,9 @@ export class ReservationService {
   }
 
   // Bulk operations
-  async createBulkReservations(dto: BulkReservationDto): Promise<BulkReservationResultDto> {
+  async createBulkReservations(
+    dto: BulkReservationDto
+  ): Promise<BulkReservationResultDto> {
     const successful: ReservationDto[] = [];
     const failed: Array<{ variantId: string; error: string }> = [];
 
@@ -286,31 +310,10 @@ export class ReservationService {
     };
   }
 
-  // Expiration management
-  async getExpiredReservations(): Promise<ReservationDto[]> {
-    const reservations = await this.reservationRepository.findExpiredReservations();
-    return reservations.map(r => this.mapReservationToDto(r));
-  }
-
-  async getExpiringSoonReservations(thresholdMinutes: number = 5): Promise<ReservationDto[]> {
-    const reservations = await this.reservationRepository.findExpiringSoon(thresholdMinutes);
-    return reservations.map(r => this.mapReservationToDto(r));
-  }
-
-  async cleanupExpiredReservations(): Promise<number> {
-    return await this.reservationRepository.cleanupExpiredReservations();
-  }
-
-  async getReservationsExpiringBetween(startTime: Date, endTime: Date): Promise<ReservationDto[]> {
-    const reservations = await this.reservationRepository.findReservationsExpiringBetween(
-      startTime,
-      endTime
-    );
-    return reservations.map(r => this.mapReservationToDto(r));
-  }
-
   // Advanced operations
-  async resolveReservationConflicts(variantId: string): Promise<ReservationConflictResolutionDto> {
+  async resolveReservationConflicts(
+    variantId: string
+  ): Promise<ReservationConflictResolutionDto> {
     return await this.reservationRepository.resolveReservationConflicts(
       VariantId.fromString(variantId)
     );
@@ -321,12 +324,13 @@ export class ReservationService {
     quantity: number,
     excludeCartId?: string
   ): Promise<ReservationDto[]> {
-    const reservations = await this.reservationRepository.findConflictingReservations(
-      VariantId.fromString(variantId),
-      quantity,
-      excludeCartId ? CartId.fromString(excludeCartId) : undefined
-    );
-    return reservations.map(r => this.mapReservationToDto(r));
+    const reservations =
+      await this.reservationRepository.findConflictingReservations(
+        VariantId.fromString(variantId),
+        quantity,
+        excludeCartId ? CartId.fromString(excludeCartId) : undefined
+      );
+    return reservations.map((r) => this.mapReservationToDto(r));
   }
 
   // Analytics and reporting
@@ -335,27 +339,35 @@ export class ReservationService {
   }
 
   async getReservationsByTimeframe(
-    timeframe: 'hour' | 'day' | 'week' | 'month',
+    timeframe: "hour" | "day" | "week" | "month",
     count?: number
-  ): Promise<Array<{
-    period: string;
-    reservationCount: number;
-    totalQuantity: number;
-    uniqueVariants: number;
-    uniqueCarts: number;
-  }>> {
-    return await this.reservationRepository.getReservationsByTimeframe(timeframe, count);
+  ): Promise<
+    Array<{
+      period: string;
+      reservationCount: number;
+      totalQuantity: number;
+      uniqueVariants: number;
+      uniqueCarts: number;
+    }>
+  > {
+    return await this.reservationRepository.getReservationsByTimeframe(
+      timeframe,
+      count
+    );
   }
 
   async getReservationsByStatus(
-    status: 'active' | 'expiring_soon' | 'expired' | 'recently_expired'
+    status: "active" | "expiring_soon" | "expired" | "recently_expired"
   ): Promise<ReservationDto[]> {
     const reservations = await this.reservationRepository.findByStatus(status);
-    return reservations.map(r => this.mapReservationToDto(r));
+    return reservations.map((r) => this.mapReservationToDto(r));
   }
 
   // Validation operations
-  async validateReservationCapacity(variantId: string, requestedQuantity: number): Promise<boolean> {
+  async validateReservationCapacity(
+    variantId: string,
+    requestedQuantity: number
+  ): Promise<boolean> {
     return await this.reservationRepository.validateReservationCapacity(
       VariantId.fromString(variantId),
       requestedQuantity
@@ -363,10 +375,16 @@ export class ReservationService {
   }
 
   async isReservationExtendable(reservationId: string): Promise<boolean> {
-    return await this.reservationRepository.isReservationExtendable(reservationId);
+    return await this.reservationRepository.isReservationExtendable(
+      reservationId
+    );
   }
 
-  async canCreateReservation(cartId: string, variantId: string, quantity: number): Promise<boolean> {
+  async canCreateReservation(
+    cartId: string,
+    variantId: string,
+    quantity: number
+  ): Promise<boolean> {
     return await this.reservationRepository.canCreateReservation(
       CartId.fromString(cartId),
       VariantId.fromString(variantId),
@@ -374,45 +392,48 @@ export class ReservationService {
     );
   }
 
-  // Maintenance operations
   async optimizeReservations(): Promise<number> {
-    return await this.reservationRepository.optimizeReservations();
-  }
-
-  async consolidateExpiredReservations(): Promise<number> {
-    return await this.reservationRepository.consolidateExpiredReservations();
+    // For now, just return 0 since we removed cleanup functionality
+    return 0;
   }
 
   async archiveOldReservations(olderThanDays: number): Promise<number> {
-    return await this.reservationRepository.archiveOldReservations(olderThanDays);
+    return await this.reservationRepository.archiveOldReservations(
+      olderThanDays
+    );
   }
 
   // Background job support
-  async getReservationsForCleanup(batchSize: number = 100): Promise<ReservationDto[]> {
-    const reservations = await this.reservationRepository.getReservationsForCleanup(batchSize);
-    return reservations.map(r => this.mapReservationToDto(r));
+  async getReservationsForCleanup(
+    batchSize: number = 100
+  ): Promise<ReservationDto[]> {
+    const reservations =
+      await this.reservationRepository.getReservationsForCleanup(batchSize);
+    return reservations.map((r) => this.mapReservationToDto(r));
   }
 
   async getReservationsForExtension(
     thresholdMinutes: number,
     batchSize: number = 100
   ): Promise<ReservationDto[]> {
-    const reservations = await this.reservationRepository.getReservationsForExtension(
-      thresholdMinutes,
-      batchSize
-    );
-    return reservations.map(r => this.mapReservationToDto(r));
+    const reservations =
+      await this.reservationRepository.getReservationsForExtension(
+        thresholdMinutes,
+        batchSize
+      );
+    return reservations.map((r) => this.mapReservationToDto(r));
   }
 
   async getReservationsForNotification(
     thresholdMinutes: number,
     batchSize: number = 100
   ): Promise<ReservationDto[]> {
-    const reservations = await this.reservationRepository.getReservationsForNotification(
-      thresholdMinutes,
-      batchSize
-    );
-    return reservations.map(r => this.mapReservationToDto(r));
+    const reservations =
+      await this.reservationRepository.getReservationsForNotification(
+        thresholdMinutes,
+        batchSize
+      );
+    return reservations.map((r) => this.mapReservationToDto(r));
   }
 
   // Utility methods
@@ -431,63 +452,5 @@ export class ReservationService {
       timeUntilExpiryMinutes: summary.timeUntilExpiryMinutes,
       canBeExtended: summary.canBeExtended,
     };
-  }
-
-  // Batch processing helpers
-  async processExpiredReservations(): Promise<{
-    cleaned: number;
-    consolidated: number;
-    errors: string[];
-  }> {
-    const errors: string[] = [];
-    let cleaned = 0;
-    let consolidated = 0;
-
-    try {
-      cleaned = await this.cleanupExpiredReservations();
-    } catch (error) {
-      errors.push(`Cleanup failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-    }
-
-    try {
-      consolidated = await this.consolidateExpiredReservations();
-    } catch (error) {
-      errors.push(`Consolidation failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-    }
-
-    return { cleaned, consolidated, errors };
-  }
-
-  async extendExpiringSoonReservations(
-    thresholdMinutes: number = 5,
-    extensionMinutes: number = 30
-  ): Promise<{
-    extended: number;
-    failed: number;
-    errors: string[];
-  }> {
-    const expiringSoon = await this.getExpiringSoonReservations(thresholdMinutes);
-    const errors: string[] = [];
-    let extended = 0;
-    let failed = 0;
-
-    for (const reservation of expiringSoon) {
-      try {
-        await this.extendReservation({
-          reservationId: reservation.reservationId,
-          additionalMinutes: extensionMinutes,
-        });
-        extended++;
-      } catch (error) {
-        failed++;
-        errors.push(
-          `Failed to extend reservation ${reservation.reservationId}: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
-      }
-    }
-
-    return { extended, failed, errors };
   }
 }

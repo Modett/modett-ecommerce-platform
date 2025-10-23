@@ -43,7 +43,6 @@ interface AddToCartRequest {
   }>;
   isGift?: boolean;
   giftMessage?: string;
-  createReservation?: boolean;
 }
 
 interface UpdateCartItemRequest {
@@ -52,7 +51,6 @@ interface UpdateCartItemRequest {
 
 interface CreateCartRequest {
   currency?: string;
-  createReservation?: boolean;
   reservationDurationMinutes?: number;
 }
 
@@ -79,20 +77,29 @@ export class CartController {
   private getActiveCartByUserHandler: GetActiveCartByUserHandler;
   private getActiveCartByGuestTokenHandler: GetActiveCartByGuestTokenHandler;
 
-  constructor(
-    private readonly cartManagementService: CartManagementService
-  ) {
+  constructor(private readonly cartManagementService: CartManagementService) {
     // Initialize CQRS handlers
     this.addToCartHandler = new AddToCartHandler(cartManagementService);
-    this.updateCartItemHandler = new UpdateCartItemHandler(cartManagementService);
-    this.removeFromCartHandler = new RemoveFromCartHandler(cartManagementService);
+    this.updateCartItemHandler = new UpdateCartItemHandler(
+      cartManagementService
+    );
+    this.removeFromCartHandler = new RemoveFromCartHandler(
+      cartManagementService
+    );
     this.clearCartHandler = new ClearCartHandler(cartManagementService);
-    this.createUserCartHandler = new CreateUserCartHandler(cartManagementService);
-    this.createGuestCartHandler = new CreateGuestCartHandler(cartManagementService);
+    this.createUserCartHandler = new CreateUserCartHandler(
+      cartManagementService
+    );
+    this.createGuestCartHandler = new CreateGuestCartHandler(
+      cartManagementService
+    );
     this.transferCartHandler = new TransferCartHandler(cartManagementService);
     this.getCartHandler = new GetCartHandler(cartManagementService);
-    this.getActiveCartByUserHandler = new GetActiveCartByUserHandler(cartManagementService);
-    this.getActiveCartByGuestTokenHandler = new GetActiveCartByGuestTokenHandler(cartManagementService);
+    this.getActiveCartByUserHandler = new GetActiveCartByUserHandler(
+      cartManagementService
+    );
+    this.getActiveCartByGuestTokenHandler =
+      new GetActiveCartByGuestTokenHandler(cartManagementService);
   }
 
   // Get cart by ID
@@ -210,12 +217,13 @@ export class CartController {
   ) {
     try {
       // Check if user is authenticated - authenticated users cannot access guest carts
-      // This check catches both JWT authentication and any Authorization header
-      if (request.user || request.headers.authorization) {
+      // Only block if user is actually authenticated (has a valid user object with userId)
+      if (request.user && request.user.userId) {
         return reply.code(400).send({
           success: false,
           error: "Bad Request",
-          message: "Authenticated users cannot access guest carts. Use the user cart endpoint instead. If testing in Swagger, please logout (click the 'Logout' button) before accessing guest carts.",
+          message:
+            "Authenticated users cannot access guest carts. Use the user cart endpoint instead. If testing in Swagger, please logout (click the 'Logout' button) before accessing guest carts.",
           code: "AUTHENTICATED_USER_CANNOT_ACCESS_GUEST_CART",
         });
       }
@@ -283,7 +291,6 @@ export class CartController {
       const command: CreateUserCartCommand = {
         userId,
         currency: cartData.currency || "USD",
-        createReservation: cartData.createReservation,
         reservationDurationMinutes: cartData.reservationDurationMinutes,
       };
 
@@ -323,12 +330,13 @@ export class CartController {
   ) {
     try {
       // Check if user is authenticated - authenticated users cannot create guest carts
-      // This check catches both JWT authentication and any Authorization header
-      if (request.user || request.headers.authorization) {
+      // Only check if request.user is actually set (valid authentication)
+      if (request.user && request.user.userId) {
         return reply.code(400).send({
           success: false,
           error: "Bad Request",
-          message: "Authenticated users cannot create guest carts. Use the user cart endpoint instead. If testing in Swagger, please logout (click the 'Logout' button) before creating guest carts.",
+          message:
+            "Authenticated users cannot create guest carts. Use the user cart endpoint instead. If testing in Swagger, please logout (click the 'Logout' button) before creating guest carts.",
           code: "AUTHENTICATED_USER_CANNOT_CREATE_GUEST_CART",
         });
       }
@@ -348,7 +356,6 @@ export class CartController {
       const command: CreateGuestCartCommand = {
         guestToken,
         currency: cartData.currency || "USD",
-        createReservation: cartData.createReservation,
         reservationDurationMinutes: cartData.reservationDurationMinutes,
       };
 
@@ -417,14 +424,15 @@ export class CartController {
       // At this point, we have either userId (from JWT) or guestToken (from header)
 
       // Convert appliedPromos from request format to PromoData format
-      const appliedPromos: PromoData[] | undefined = itemData.appliedPromos?.map(promo => ({
-        id: promo.id,
-        code: promo.code,
-        type: promo.type,
-        value: promo.value,
-        description: promo.description,
-        appliedAt: new Date(promo.appliedAt),
-      }));
+      const appliedPromos: PromoData[] | undefined =
+        itemData.appliedPromos?.map((promo) => ({
+          id: promo.id,
+          code: promo.code,
+          type: promo.type,
+          value: promo.value,
+          description: promo.description,
+          appliedAt: new Date(promo.appliedAt),
+        }));
 
       // Create command
       const command: AddToCartCommand = {
@@ -436,7 +444,6 @@ export class CartController {
         appliedPromos,
         isGift: itemData.isGift,
         giftMessage: itemData.giftMessage,
-        createReservation: itemData.createReservation,
       };
 
       // Execute command using handler
@@ -666,7 +673,7 @@ export class CartController {
     }
   }
 
-  // Clear cart
+  // Clear cart (internal method - not exposed via routes)
   async clearCart(
     request: FastifyRequest<{
       Params: { cartId: string };
@@ -822,10 +829,7 @@ export class CartController {
   }
 
   // Get cart statistics (admin endpoint)
-  async getCartStatistics(
-    request: FastifyRequest,
-    reply: FastifyReply
-  ) {
+  async getCartStatistics(request: FastifyRequest, reply: FastifyReply) {
     try {
       const statistics = await this.cartManagementService.getCartStatistics();
 
@@ -844,12 +848,10 @@ export class CartController {
   }
 
   // Cleanup expired carts (admin endpoint)
-  async cleanupExpiredCarts(
-    request: FastifyRequest,
-    reply: FastifyReply
-  ) {
+  async cleanupExpiredCarts(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const deletedCount = await this.cartManagementService.cleanupExpiredCarts();
+      const deletedCount =
+        await this.cartManagementService.cleanupExpiredCarts();
 
       return reply.code(200).send({
         success: true,
@@ -867,10 +869,7 @@ export class CartController {
   }
 
   // Generate guest token
-  async generateGuestToken(
-    request: FastifyRequest,
-    reply: FastifyReply
-  ) {
+  async generateGuestToken(request: FastifyRequest, reply: FastifyReply) {
     try {
       const { randomBytes } = await import("crypto");
       const guestToken = randomBytes(32).toString("hex");
@@ -888,6 +887,121 @@ export class CartController {
         success: false,
         error: "Internal server error",
         message: "Failed to generate guest token",
+      });
+    }
+  }
+
+  // Clear user cart (by userId)
+  async clearUserCart(
+    request: FastifyRequest<{
+      Params: { userId: string };
+    }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { userId } = request.params;
+
+      if (!userId || typeof userId !== "string") {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: "User ID is required and must be a valid string",
+        });
+      }
+
+      // Find user's active cart
+      const activeCart =
+        await this.cartManagementService.getActiveCartByUser(userId);
+
+      if (!activeCart) {
+        return reply.code(404).send({
+          success: false,
+          error: "Not Found",
+          message: "No active cart found for this user",
+        });
+      }
+
+      // Clear the cart
+      const result = await this.cartManagementService.clearCart(
+        activeCart.cartId,
+        userId
+      );
+
+      return reply.code(200).send({
+        success: true,
+        data: result,
+        message: "Cart cleared successfully",
+      });
+    } catch (error) {
+      request.log.error(error, "Failed to clear user cart");
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to clear cart",
+      });
+    }
+  }
+
+  // Clear guest cart (by guestToken)
+  async clearGuestCart(
+    request: FastifyRequest<{
+      Params: { guestToken: string };
+    }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { guestToken } = request.params;
+
+      // Check if user is authenticated (should not access guest endpoints)
+      const userId = request.user?.userId;
+      if (userId) {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message:
+            "Authenticated users cannot clear guest carts. Use the user cart endpoint instead.",
+          code: "AUTHENTICATED_USER_CANNOT_CLEAR_GUEST_CART",
+        });
+      }
+
+      if (!guestToken || typeof guestToken !== "string") {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: "Guest token is required and must be a valid string",
+        });
+      }
+
+      // Find guest's active cart
+      const activeCart =
+        await this.cartManagementService.getActiveCartByGuestToken(guestToken);
+
+      if (!activeCart) {
+        return reply.code(404).send({
+          success: false,
+          error: "Not Found",
+          message: "No active cart found for this guest",
+        });
+      }
+
+      // Clear the cart
+      const result = await this.cartManagementService.clearCart(
+        activeCart.cartId,
+        undefined,
+        guestToken
+      );
+
+      return reply.code(200).send({
+        success: true,
+        data: result,
+        message: "Cart cleared successfully",
+      });
+    } catch (error) {
+      request.log.error(error, "Failed to clear guest cart");
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to clear cart",
       });
     }
   }

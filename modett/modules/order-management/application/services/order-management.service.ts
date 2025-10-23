@@ -23,6 +23,7 @@ import { ProductSnapshot } from "../../domain/value-objects/product-snapshot.vo"
 import { AddressSnapshot } from "../../domain/value-objects/address-snapshot.vo";
 import { VariantManagementService } from "../../../product-catalog/application/services/variant-management.service";
 import { ProductManagementService } from "../../../product-catalog/application/services/product-management.service";
+import { StockManagementService } from "../../../inventory-management/application/services/stock-management.service";
 import { OrderEventService } from "./order-event.service";
 
 export interface CreateOrderData {
@@ -47,6 +48,7 @@ export class OrderManagementService {
     private readonly orderStatusHistoryRepository: IOrderStatusHistoryRepository,
     private readonly variantManagementService: VariantManagementService,
     private readonly productManagementService: ProductManagementService,
+    private readonly stockManagementService: StockManagementService,
     private readonly orderEventService: OrderEventService
   ) {}
 
@@ -390,6 +392,26 @@ export class OrderManagementService {
     // Update order status
     order.markAsPaid();
 
+    // Reserve stock for all order items when payment is confirmed
+    const orderItems = order.getItems();
+    const defaultLocationId = "main-warehouse"; // Default location for stock reservation
+
+    for (const item of orderItems) {
+      try {
+        await this.stockManagementService.reserveStock(
+          item.getVariantId(),
+          defaultLocationId,
+          item.getQuantity()
+        );
+      } catch (error) {
+        // Log error but don't fail the entire payment process
+        // This allows orders to be marked as paid even if stock reservation fails
+        console.error(
+          `Failed to reserve stock for item ${item.getOrderItemId()}: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+      }
+    }
+
     // Save order
     await this.orderRepository.update(order);
 
@@ -420,8 +442,36 @@ export class OrderManagementService {
     // Capture old status before change
     const oldStatus = order.getStatus().getValue();
 
-    // Update order status
+    // Update order status (this validates business rules like having shipments)
     order.markAsFulfilled();
+
+    // Fulfill inventory reservations for all order items
+    const orderItems = order.getItems();
+    const shipments = order.getShipments();
+
+    // Determine fulfillment location from shipment data
+    // Use the pickupLocationId from the first shipment, or default to "main-warehouse"
+    const fulfillmentLocationId =
+      shipments.length > 0 && shipments[0].getPickupLocationId()
+        ? shipments[0].getPickupLocationId()!
+        : "main-warehouse"; // Default location
+
+    // Fulfill stock reservations for each order item
+    for (const item of orderItems) {
+      try {
+        await this.stockManagementService.fulfillReservation(
+          item.getVariantId(),
+          fulfillmentLocationId,
+          item.getQuantity()
+        );
+      } catch (error) {
+        // Log error but don't fail the entire fulfillment
+        // This allows partial fulfillment if some items have stock issues
+        console.error(
+          `Failed to fulfill inventory for item ${item.getOrderItemId()}: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+      }
+    }
 
     // Save order
     await this.orderRepository.update(order);
@@ -445,6 +495,31 @@ export class OrderManagementService {
     const order = await this.getOrderById(id);
     if (!order) {
       return null;
+    }
+
+    // If order was paid, we need to release reserved stock
+    // Only paid orders would have had stock reserved
+    if (order.getStatus().getValue() === "paid") {
+      const orderItems = order.getItems();
+      const defaultLocationId = "main-warehouse"; // Default location
+
+      for (const item of orderItems) {
+        try {
+          // Since releaseReservation was removed, we'll adjust stock positively
+          // to compensate for the reserved stock that won't be fulfilled
+          await this.stockManagementService.adjustStock(
+            item.getVariantId(),
+            defaultLocationId,
+            item.getQuantity(), // Positive adjustment to release reserved stock
+            `Order ${order.getOrderNumber().getValue()} cancelled - releasing reserved stock`
+          );
+        } catch (error) {
+          // Log error but don't fail the entire cancellation
+          console.error(
+            `Failed to release reserved stock for item ${item.getOrderItemId()}: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
+        }
+      }
     }
 
     order.cancel();
@@ -1167,10 +1242,11 @@ export class OrderManagementService {
       changedBy: data.changedBy,
     });
 
-    // Save status history
-    await this.orderStatusHistoryRepository.save(statusHistory);
+    // Save status history and get the saved entity with correct historyId
+    const savedStatusHistory =
+      await this.orderStatusHistoryRepository.save(statusHistory);
 
-    return statusHistory;
+    return savedStatusHistory;
   }
 
   async getOrderStatusHistory(

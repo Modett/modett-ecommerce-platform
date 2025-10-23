@@ -1,15 +1,15 @@
-import { v4 as uuidv4 } from 'uuid';
-import { MediaAssetId } from './media-asset.entity';
-import { ProductId } from '../value-objects/product-id.vo';
+import { v4 as uuidv4 } from "uuid";
+import { MediaAssetId } from "./media-asset.entity";
+import { ProductId } from "../value-objects/product-id.vo";
 
 export class EditorialLookId {
   private constructor(private readonly value: string) {
     if (!value) {
-      throw new Error('Editorial Look ID cannot be empty');
+      throw new Error("Editorial Look ID cannot be empty");
     }
 
     if (!this.isValidUuid(value)) {
-      throw new Error('Editorial Look ID must be a valid UUID');
+      throw new Error("Editorial Look ID must be a valid UUID");
     }
   }
 
@@ -34,7 +34,8 @@ export class EditorialLookId {
   }
 
   private isValidUuid(uuid: string): boolean {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   }
 }
@@ -58,7 +59,7 @@ export class EditorialLook {
       data.storyHtml || null,
       data.heroAssetId ? MediaAssetId.fromString(data.heroAssetId) : null,
       data.publishedAt || null,
-      new Set(data.productIds?.map(id => ProductId.fromString(id)) || [])
+      new Set(data.productIds?.map((id) => ProductId.fromString(id)) || [])
     );
   }
 
@@ -69,18 +70,21 @@ export class EditorialLook {
       data.storyHtml,
       data.heroAssetId ? MediaAssetId.fromString(data.heroAssetId) : null,
       data.publishedAt,
-      new Set(data.productIds.map(id => ProductId.fromString(id)))
+      new Set(data.productIds.map((id) => ProductId.fromString(id)))
     );
   }
 
-  static fromDatabaseRow(row: EditorialLookRow, productIds: string[] = []): EditorialLook {
+  static fromDatabaseRow(
+    row: EditorialLookRow,
+    productIds: string[] = []
+  ): EditorialLook {
     return new EditorialLook(
       EditorialLookId.fromString(row.look_id),
       row.title,
       row.story_html,
       row.hero_asset_id ? MediaAssetId.fromString(row.hero_asset_id) : null,
       row.published_at,
-      new Set(productIds.map(id => ProductId.fromString(id)))
+      new Set(productIds.map((id) => ProductId.fromString(id)))
     );
   }
 
@@ -150,7 +154,7 @@ export class EditorialLook {
 
   setProducts(productIds: string[]): void {
     this.productIds.clear();
-    productIds.forEach(id => this.addProduct(id));
+    productIds.forEach((id) => this.addProduct(id));
   }
 
   publish(): void {
@@ -166,10 +170,7 @@ export class EditorialLook {
   }
 
   schedulePublication(publishDate: Date): void {
-    if (publishDate <= new Date()) {
-      throw new Error("Scheduled publication date must be in the future");
-    }
-
+    // Allow any scheduled publication date (past, present, future)
     this.publishedAt = publishDate;
   }
 
@@ -200,7 +201,7 @@ export class EditorialLook {
 
   includesProduct(productId: string): boolean {
     const productIdVo = ProductId.fromString(productId);
-    return Array.from(this.productIds).some(id => id.equals(productIdVo));
+    return Array.from(this.productIds).some((id) => id.equals(productIdVo));
   }
 
   canBePublished(): boolean {
@@ -215,7 +216,7 @@ export class EditorialLook {
       storyHtml: this.storyHtml,
       heroAssetId: this.heroAssetId?.getValue() || null,
       publishedAt: this.publishedAt,
-      productIds: Array.from(this.productIds).map(id => id.getValue()),
+      productIds: Array.from(this.productIds).map((id) => id.getValue()),
     };
   }
 

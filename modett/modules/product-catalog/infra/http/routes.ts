@@ -644,7 +644,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/categories",
     {
-      // preHandler: authenticateAdmin, // Temporarily disabled for testing
+      preHandler: authenticateUser,
       schema: {
         description: "Create a new category",
         tags: ["Categories"],
@@ -1146,10 +1146,9 @@ export async function registerProductCatalogRoutes(
             page: { type: "integer", minimum: 1, default: 1 },
             limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
             kind: { type: "string" },
-            search: { type: "string" },
             sortBy: {
               type: "string",
-              enum: ["tag", "kind", "usage_count"],
+              enum: ["tag", "kind"],
               default: "tag",
             },
             sortOrder: {
@@ -1639,6 +1638,226 @@ export async function registerProductCatalogRoutes(
   );
 
   // =============================================================================
+  // PRODUCT TAG ASSOCIATIONS
+  // =============================================================================
+
+  // Get tags for a specific product
+  fastify.get(
+    "/products/:productId/tags",
+    {
+      schema: {
+        description: "Get all tags associated with a product",
+        tags: ["Product Tag Associations"],
+        summary: "Get Product Tags",
+        params: {
+          type: "object",
+          properties: {
+            productId: { type: "string", format: "uuid" },
+          },
+          required: ["productId"],
+        },
+        response: {
+          200: {
+            description: "Product tags retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string", format: "uuid" },
+                    tag: { type: "string" },
+                    kind: { type: "string", nullable: true },
+                  },
+                },
+              },
+            },
+          },
+          404: {
+            description: "Product not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Product not found" },
+            },
+          },
+        },
+      },
+    },
+    productTagController.getProductTags.bind(productTagController) as any
+  );
+
+  // Associate tags with a product
+  fastify.post(
+    "/products/:productId/tags",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Associate tags with a product",
+        tags: ["Product Tag Associations"],
+        summary: "Associate Product Tags",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            productId: { type: "string", format: "uuid" },
+          },
+          required: ["productId"],
+        },
+        body: {
+          type: "object",
+          properties: {
+            tagIds: {
+              type: "array",
+              items: { type: "string", format: "uuid" },
+              minItems: 1,
+            },
+          },
+          required: ["tagIds"],
+        },
+        response: {
+          200: {
+            description: "Tags associated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: {
+                type: "string",
+                example: "Tags associated successfully",
+              },
+            },
+          },
+          404: {
+            description: "Product or tag not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productTagController.associateProductTags.bind(productTagController) as any
+  );
+
+  // Remove a specific tag from a product
+  fastify.delete(
+    "/products/:productId/tags/:tagId",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Remove a tag from a product",
+        tags: ["Product Tag Associations"],
+        summary: "Remove Product Tag",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            productId: { type: "string", format: "uuid" },
+            tagId: { type: "string", format: "uuid" },
+          },
+          required: ["productId", "tagId"],
+        },
+        response: {
+          200: {
+            description: "Tag removed successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string", example: "Tag removed successfully" },
+            },
+          },
+          404: {
+            description: "Product or tag association not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productTagController.removeProductTag.bind(productTagController) as any
+  );
+
+  // Get products for a specific tag
+  fastify.get(
+    "/tags/:tagId/products",
+    {
+      schema: {
+        description: "Get all products associated with a tag",
+        tags: ["Product Tag Associations"],
+        summary: "Get Tag Products",
+        params: {
+          type: "object",
+          properties: {
+            tagId: { type: "string", format: "uuid" },
+          },
+          required: ["tagId"],
+        },
+        querystring: {
+          type: "object",
+          properties: {
+            page: { type: "integer", minimum: 1, default: 1 },
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+          },
+        },
+        response: {
+          200: {
+            description: "Tag products retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  products: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string", format: "uuid" },
+                        title: { type: "string" },
+                        slug: { type: "string" },
+                        brand: { type: "string", nullable: true },
+                        status: { type: "string" },
+                      },
+                    },
+                  },
+                  pagination: {
+                    type: "object",
+                    properties: {
+                      page: { type: "integer" },
+                      limit: { type: "integer" },
+                      total: { type: "integer" },
+                      total_pages: { type: "integer" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          404: {
+            description: "Tag not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Tag not found" },
+            },
+          },
+        },
+      },
+    },
+    productTagController.getTagProducts.bind(productTagController) as any
+  );
+
+  // =============================================================================
   // SIZE GUIDE ROUTES
   // =============================================================================
 
@@ -1779,7 +1998,7 @@ export async function registerProductCatalogRoutes(
         params: {
           type: "object",
           properties: {
-            region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
+            region: { type: "string", enum: ["US", "UK", "EU"] },
           },
           required: ["region"],
         },
@@ -1869,7 +2088,7 @@ export async function registerProductCatalogRoutes(
                 properties: {
                   title: { type: "string", minLength: 1 },
                   bodyHtml: { type: "string" },
-                  region: { type: "string", enum: ["US", "UK", "EU", "ASIA"] },
+                  region: { type: "string", enum: ["US", "UK", "EU"] },
                   category: { type: "string" },
                 },
                 required: ["title", "region"],
@@ -2176,8 +2395,8 @@ export async function registerProductCatalogRoutes(
             hasHeroImage: { type: "boolean" },
             sortBy: {
               type: "string",
-              enum: ["title", "publishedAt", "createdAt"],
-              default: "createdAt",
+              enum: ["title", "publishedAt", "id"],
+              default: "id",
             },
             sortOrder: {
               type: "string",
@@ -2630,10 +2849,16 @@ export async function registerProductCatalogRoutes(
           properties: {
             page: { type: "integer", minimum: 1, default: 1 },
             limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+            includeUnpublished: {
+              type: "boolean",
+              default: false,
+              description:
+                "Include unpublished/draft editorial looks in results",
+            },
             sortBy: {
               type: "string",
-              enum: ["title", "publishedAt", "createdAt"],
-              default: "createdAt",
+              enum: ["title", "publishedAt", "id"],
+              default: "id",
             },
             sortOrder: {
               type: "string",

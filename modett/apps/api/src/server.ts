@@ -524,38 +524,31 @@ export async function createServer(): Promise<FastifyInstance> {
         },
         {
           name: "Customer Care - Tickets",
-          description:
-            "Support ticket management, creation, and tracking",
+          description: "Support ticket management, creation, and tracking",
         },
         {
           name: "Customer Care - Agents",
-          description:
-            "Support agent management and assignment",
+          description: "Support agent management and assignment",
         },
         {
           name: "Customer Care - Chat",
-          description:
-            "Live chat session and message management",
+          description: "Live chat session and message management",
         },
         {
           name: "Customer Care - Returns",
-          description:
-            "Return/RMA request and item management",
+          description: "Return/RMA request and item management",
         },
         {
           name: "Customer Care - Repairs",
-          description:
-            "Product repair request and tracking",
+          description: "Product repair request and tracking",
         },
         {
           name: "Customer Care - Goodwill",
-          description:
-            "Goodwill records for refunds, discounts, and credits",
+          description: "Goodwill records for refunds, discounts, and credits",
         },
         {
           name: "Customer Care - Feedback",
-          description:
-            "Customer feedback collection and NPS/CSAT tracking",
+          description: "Customer feedback collection and NPS/CSAT tracking",
         },
         {
           name: "Engagement - Wishlists",
@@ -579,13 +572,11 @@ export async function createServer(): Promise<FastifyInstance> {
         },
         {
           name: "Engagement - Reviews",
-          description:
-            "Product review and rating management with moderation",
+          description: "Product review and rating management with moderation",
         },
         {
           name: "Engagement - Newsletter",
-          description:
-            "Newsletter subscription management",
+          description: "Newsletter subscription management",
         },
         {
           name: "System",
@@ -1129,10 +1120,7 @@ export async function createServer(): Promise<FastifyInstance> {
 
     server.log.info("Engagement routes registered successfully");
   } catch (error) {
-    server.log.error(
-      error as Error,
-      "Failed to register engagement routes:"
-    );
+    server.log.error(error as Error, "Failed to register engagement routes:");
     server.log.info("Continuing without engagement endpoints");
   }
 

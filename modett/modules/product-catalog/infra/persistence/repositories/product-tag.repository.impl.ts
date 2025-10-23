@@ -1,6 +1,13 @@
 import { PrismaClient } from "@prisma/client";
-import { IProductTagRepository, ProductTagQueryOptions, ProductTagCountOptions } from "../../../domain/repositories/product-tag.repository";
-import { ProductTag, ProductTagId } from "../../../domain/entities/product-tag.entity";
+import {
+  IProductTagRepository,
+  ProductTagQueryOptions,
+  ProductTagCountOptions,
+} from "../../../domain/repositories/product-tag.repository";
+import {
+  ProductTag,
+  ProductTagId,
+} from "../../../domain/entities/product-tag.entity";
 
 export class ProductTagRepository implements IProductTagRepository {
   constructor(private readonly prisma: PrismaClient) {
@@ -65,8 +72,8 @@ export class ProductTagRepository implements IProductTagRepository {
     const {
       limit = 100,
       offset = 0,
-      sortBy = 'tag',
-      sortOrder = 'asc',
+      sortBy = "tag",
+      sortOrder = "asc",
       kind,
     } = options || {};
 
@@ -82,19 +89,24 @@ export class ProductTagRepository implements IProductTagRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return tags.map((tagData: any) => ProductTag.fromDatabaseRow({
-      tag_id: tagData.id,
-      tag: tagData.tag,
-      kind: tagData.kind,
-    }));
+    return tags.map((tagData: any) =>
+      ProductTag.fromDatabaseRow({
+        tag_id: tagData.id,
+        tag: tagData.tag,
+        kind: tagData.kind,
+      })
+    );
   }
 
-  async findByKind(kind: string, options?: ProductTagQueryOptions): Promise<ProductTag[]> {
+  async findByKind(
+    kind: string,
+    options?: ProductTagQueryOptions
+  ): Promise<ProductTag[]> {
     const {
       limit = 100,
       offset = 0,
-      sortBy = 'tag',
-      sortOrder = 'asc',
+      sortBy = "tag",
+      sortOrder = "asc",
     } = options || {};
 
     const tags = await this.productTagModel.findMany({
@@ -104,11 +116,13 @@ export class ProductTagRepository implements IProductTagRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return tags.map((tagData: any) => ProductTag.fromDatabaseRow({
-      tag_id: tagData.id,
-      tag: tagData.tag,
-      kind: tagData.kind,
-    }));
+    return tags.map((tagData: any) =>
+      ProductTag.fromDatabaseRow({
+        tag_id: tagData.id,
+        tag: tagData.tag,
+        kind: tagData.kind,
+      })
+    );
   }
 
   async findByProductId(productId: string): Promise<ProductTag[]> {
@@ -117,26 +131,31 @@ export class ProductTagRepository implements IProductTagRepository {
       include: { tag: true },
     });
 
-    return associations.map((assoc: any) => ProductTag.fromDatabaseRow({
-      tag_id: assoc.tag.id,
-      tag: assoc.tag.tag,
-      kind: assoc.tag.kind,
-    }));
+    return associations.map((assoc: any) =>
+      ProductTag.fromDatabaseRow({
+        tag_id: assoc.tag.id,
+        tag: assoc.tag.tag,
+        kind: assoc.tag.kind,
+      })
+    );
   }
 
-  async search(query: string, options?: ProductTagQueryOptions): Promise<ProductTag[]> {
+  async search(
+    query: string,
+    options?: ProductTagQueryOptions
+  ): Promise<ProductTag[]> {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'tag',
-      sortOrder = 'asc',
+      sortBy = "tag",
+      sortOrder = "asc",
     } = options || {};
 
     const tags = await this.productTagModel.findMany({
       where: {
         tag: {
           contains: query,
-          mode: 'insensitive',
+          mode: "insensitive",
         },
       },
       take: limit,
@@ -144,14 +163,18 @@ export class ProductTagRepository implements IProductTagRepository {
       orderBy: { [sortBy]: sortOrder },
     });
 
-    return tags.map((tagData: any) => ProductTag.fromDatabaseRow({
-      tag_id: tagData.id,
-      tag: tagData.tag,
-      kind: tagData.kind,
-    }));
+    return tags.map((tagData: any) =>
+      ProductTag.fromDatabaseRow({
+        tag_id: tagData.id,
+        tag: tagData.tag,
+        kind: tagData.kind,
+      })
+    );
   }
 
-  async getMostUsed(limit: number = 10): Promise<Array<{ tag: ProductTag; count: number }>> {
+  async getMostUsed(
+    limit: number = 10
+  ): Promise<Array<{ tag: ProductTag; count: number }>> {
     const results = await this.productTagModel.findMany({
       include: {
         _count: {
@@ -160,7 +183,7 @@ export class ProductTagRepository implements IProductTagRepository {
       },
       orderBy: {
         products: {
-          _count: 'desc',
+          _count: "desc",
         },
       },
       take: limit,
@@ -238,7 +261,10 @@ export class ProductTagRepository implements IProductTagRepository {
     });
   }
 
-  async removeTagFromProduct(productId: string, tagId: ProductTagId): Promise<void> {
+  async removeTagFromProduct(
+    productId: string,
+    tagId: ProductTagId
+  ): Promise<void> {
     await this.productTagAssociationModel.delete({
       where: {
         productId_tagId: {
@@ -255,7 +281,9 @@ export class ProductTagRepository implements IProductTagRepository {
       select: { tagId: true },
     });
 
-    return associations.map((assoc: any) => ProductTagId.fromString(assoc.tagId));
+    return associations.map((assoc: any) =>
+      ProductTagId.fromString(assoc.tagId)
+    );
   }
 
   async getTagProductAssociations(tagId: ProductTagId): Promise<string[]> {
@@ -273,14 +301,16 @@ export class ProductTagRepository implements IProductTagRepository {
   }> {
     // Use database aggregation for better performance
     const kindStats = await this.productTagModel.groupBy({
-      by: ['kind'],
+      by: ["kind"],
       _count: {
         id: true,
       },
     });
 
     // Get average tag length using raw query since Prisma doesn't support string length aggregation
-    const avgLengthQuery = await this.prisma.$queryRaw<Array<{ avg_length: bigint | number | null }>>`
+    const avgLengthQuery = await this.prisma.$queryRaw<
+      Array<{ avg_length: bigint | number | null }>
+    >`
       SELECT AVG(LENGTH(tag)) as avg_length FROM product_catalog.product_tags
     `;
 
@@ -295,6 +325,90 @@ export class ProductTagRepository implements IProductTagRepository {
     return {
       tagsByKind,
       averageTagLength,
+    };
+  }
+
+  // Bulk association methods
+  async associateProductTags(
+    productId: string,
+    tagIds: string[]
+  ): Promise<void> {
+    // First, delete existing associations for this product to avoid duplicates
+    await this.productTagAssociationModel.deleteMany({
+      where: { productId },
+    });
+
+    // Create new associations
+    const associations = tagIds.map((tagId) => ({
+      productId,
+      tagId,
+    }));
+
+    await this.productTagAssociationModel.createMany({
+      data: associations,
+      skipDuplicates: true,
+    });
+  }
+
+  async removeProductTag(productId: string, tagId: string): Promise<void> {
+    await this.productTagAssociationModel.deleteMany({
+      where: {
+        productId,
+        tagId,
+      },
+    });
+  }
+
+  async isTagAssociatedWithProduct(
+    productId: string,
+    tagId: string
+  ): Promise<boolean> {
+    const association = await this.productTagAssociationModel.findFirst({
+      where: {
+        productId,
+        tagId,
+      },
+    });
+
+    return !!association;
+  }
+
+  async findProductsByTagId(
+    tagId: string,
+    options?: { limit?: number; offset?: number }
+  ): Promise<{
+    products: any[];
+    total: number;
+  }> {
+    const { limit = 20, offset = 0 } = options || {};
+
+    const [associations, total] = await Promise.all([
+      this.productTagAssociationModel.findMany({
+        where: { tagId },
+        include: {
+          product: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              brand: true,
+              status: true,
+            },
+          },
+        },
+        take: limit,
+        skip: offset,
+      }),
+      this.productTagAssociationModel.count({
+        where: { tagId },
+      }),
+    ]);
+
+    const products = associations.map((assoc: any) => assoc.product);
+
+    return {
+      products,
+      total,
     };
   }
 }

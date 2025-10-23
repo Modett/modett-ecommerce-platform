@@ -11,8 +11,6 @@ export type { TransferStockCommand } from "./transfer-stock.command";
 export { TransferStockCommandHandler } from "./transfer-stock.command";
 export type { ReserveStockCommand } from "./reserve-stock.command";
 export { ReserveStockCommandHandler } from "./reserve-stock.command";
-export type { ReleaseReservationCommand } from "./release-reservation.command";
-export { ReleaseReservationCommandHandler } from "./release-reservation.command";
 export type { FulfillReservationCommand } from "./fulfill-reservation.command";
 export { FulfillReservationCommandHandler } from "./fulfill-reservation.command";
 export type { SetStockThresholdsCommand } from "./set-stock-thresholds.command";

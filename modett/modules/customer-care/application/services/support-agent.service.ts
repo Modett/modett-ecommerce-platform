@@ -37,6 +37,7 @@ export class SupportAgentService {
     data: {
       name?: string;
       roster?: string[];
+      skills?: string[];
     }
   ): Promise<void> {
     const agent = await this.agentRepository.findById(AgentId.create(agentId));
@@ -51,6 +52,10 @@ export class SupportAgentService {
 
     if (data.roster) {
       agent.updateRoster(data.roster);
+    }
+
+    if (data.skills) {
+      agent.updateSkills(data.skills);
     }
 
     await this.agentRepository.update(agent);

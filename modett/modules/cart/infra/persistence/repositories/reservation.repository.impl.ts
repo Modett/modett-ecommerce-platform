@@ -7,9 +7,13 @@ import {
 import { CartId } from "../../../domain/value-objects/cart-id.vo";
 import { VariantId } from "../../../domain/value-objects/variant-id.vo";
 import { Quantity } from "../../../domain/value-objects/quantity.vo";
+import { StockManagementService } from "../../../../inventory-management/application/services/stock-management.service";
 
 export class ReservationRepositoryImpl implements ReservationRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly stockService?: StockManagementService
+  ) {}
 
   // Core CRUD operations
   async save(reservation: Reservation): Promise<void> {
@@ -253,15 +257,6 @@ export class ReservationRepositoryImpl implements ReservationRepository {
     );
   }
 
-  async cleanupExpiredReservations(): Promise<number> {
-    const now = new Date();
-    const result = await this.prisma.reservation.deleteMany({
-      where: { expiresAt: { lte: now } },
-    });
-
-    return result.count;
-  }
-
   // Bulk operations
   async saveBulk(reservations: Reservation[]): Promise<void> {
     const data = reservations.map((reservation) => {
@@ -356,7 +351,7 @@ export class ReservationRepositoryImpl implements ReservationRepository {
 
   async renewReservation(
     reservationId: string,
-    durationMinutes: number = 30
+    durationMinutes?: number
   ): Promise<boolean> {
     const reservation = await this.findById(reservationId);
     if (!reservation) {
@@ -364,7 +359,8 @@ export class ReservationRepositoryImpl implements ReservationRepository {
     }
 
     const now = new Date();
-    const newExpiry = new Date(now.getTime() + durationMinutes * 60 * 1000);
+    const actualDuration = durationMinutes ?? 30; // Use 30 only if durationMinutes is null/undefined
+    const newExpiry = new Date(now.getTime() + actualDuration * 60 * 1000);
 
     await this.prisma.reservation.update({
       where: { id: reservationId },
@@ -396,11 +392,15 @@ export class ReservationRepositoryImpl implements ReservationRepository {
     const totalReserved = await this.getTotalReservedQuantity(variantId);
     const activeReserved = await this.getActiveReservedQuantity(variantId);
 
-    // This is a simplified check - in a real system you'd also check actual inventory
-    const assumedInventory = 1000; // Would come from inventory service
+    // TODO: Integrate with actual inventory service
+    // This should call your inventory management service to get real stock levels
+    const actualInventory = await this.getVariantInventory(
+      variantId.getValue()
+    );
+
     const availableForReservation = Math.max(
       0,
-      assumedInventory - activeReserved
+      actualInventory - activeReserved
     );
     const available = availableForReservation >= requestedQuantity;
 
@@ -410,6 +410,34 @@ export class ReservationRepositoryImpl implements ReservationRepository {
       activeReserved,
       availableForReservation,
     };
+  }
+
+  // TODO: Implement this method to call your inventory service
+  private async getVariantInventory(variantId: string): Promise<number> {
+    if (this.stockService) {
+      try {
+        // Call the actual inventory service to get available stock
+        const availableStock =
+          await this.stockService.getTotalAvailableStock(variantId);
+        return availableStock;
+      } catch (error) {
+        console.error(
+          `Error fetching inventory for variant ${variantId}:`,
+          error
+        );
+        // Fallback to hardcoded value if inventory service fails
+        console.warn(
+          `⚠️  Falling back to hardcoded inventory for variant ${variantId}`
+        );
+        return 1000;
+      }
+    } else {
+      // TEMPORARY: Return hardcoded value until inventory service is properly injected
+      console.warn(
+        `⚠️  Using hardcoded inventory for variant ${variantId}. StockService not injected!`
+      );
+      return 1000;
+    }
   }
 
   async reserveInventory(
@@ -732,13 +760,13 @@ export class ReservationRepositoryImpl implements ReservationRepository {
 
   // Maintenance operations
   async optimizeReservations(): Promise<number> {
-    // Clean up expired reservations
-    return this.cleanupExpiredReservations();
+    // No cleanup functionality - return 0
+    return 0;
   }
 
   async consolidateExpiredReservations(): Promise<number> {
-    // This would involve more complex business logic
-    return this.cleanupExpiredReservations();
+    // No cleanup functionality - return 0
+    return 0;
   }
 
   async archiveOldReservations(olderThanDays: number): Promise<number> {

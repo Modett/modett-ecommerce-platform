@@ -55,7 +55,10 @@ export class PurchaseOrderManagementService {
     return updatedPurchaseOrder;
   }
 
-  async updatePurchaseOrderEta(poId: string, eta: Date): Promise<PurchaseOrder> {
+  async updatePurchaseOrderEta(
+    poId: string,
+    eta: Date
+  ): Promise<PurchaseOrder> {
     const purchaseOrder = await this.purchaseOrderRepository.findById(
       PurchaseOrderId.create(poId)
     );
@@ -203,7 +206,7 @@ export class PurchaseOrderManagementService {
         variantId,
         locationId,
         receivedQty,
-        `Purchase order ${poId} received`
+        "po"
       );
     }
 
