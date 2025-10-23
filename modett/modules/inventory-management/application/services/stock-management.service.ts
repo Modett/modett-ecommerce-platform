@@ -191,33 +191,7 @@ export class StockManagementService {
 
     // Note: Reservations don't create inventory transactions since they don't change on-hand quantity
     // Only changes to on-hand stock (add, remove, adjust) create transactions
-
-    return updatedStock;
-  }
-
-  async releaseReservation(
-    variantId: string,
-    locationId: string,
-    quantity: number,
-
-    referenceId?: string
-  ): Promise<Stock> {
-    const stock = await this.stockRepository.findByVariantAndLocation(
-      variantId,
-      locationId
-    );
-
-    if (!stock) {
-      throw new Error(
-        `Stock not found for variant ${variantId} at location ${locationId}`
-      );
-    }
-
-    const updatedStock = stock.releaseReservation(quantity);
-    await this.stockRepository.save(updatedStock);
-
-    // Note: Reservation releases don't create inventory transactions since they don't change on-hand quantity
-    // Only changes to on-hand stock (add, remove, adjust) create transactions
+    // Stock release for expired reservations is handled by ReservationExpiryHandler
 
     return updatedStock;
   }

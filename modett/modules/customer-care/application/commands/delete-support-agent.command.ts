@@ -1,6 +1,5 @@
 import { SupportAgentService } from "../services/support-agent.service.js";
 
-// Base interfaces
 export interface ICommand {
   readonly commandId?: string;
   readonly timestamp?: Date;
@@ -27,47 +26,35 @@ export class CommandResult<T = any> {
   }
 }
 
-export interface UpdateSupportAgentCommand extends ICommand {
+export interface DeleteSupportAgentCommand extends ICommand {
   agentId: string;
-  name?: string;
-  roster?: string[];
-  skills?: string[];
 }
 
-export class UpdateSupportAgentHandler
-  implements ICommandHandler<UpdateSupportAgentCommand, CommandResult<void>>
+export class DeleteSupportAgentHandler
+  implements ICommandHandler<DeleteSupportAgentCommand, CommandResult<void>>
 {
-  constructor(private readonly supportAgentService: SupportAgentService) {}
+  constructor(private readonly agentService: SupportAgentService) {}
 
   async handle(
-    command: UpdateSupportAgentCommand
+    command: DeleteSupportAgentCommand
   ): Promise<CommandResult<void>> {
     try {
       if (!command.agentId) {
         return CommandResult.failure<void>("Agent ID is required", ["agentId"]);
       }
-      if (!command.name && !command.roster && !command.skills) {
-        return CommandResult.failure<void>(
-          "At least one of name, roster, or skills must be provided",
-          ["name", "roster", "skills"]
-        );
-      }
 
-      await this.supportAgentService.updateAgent(command.agentId, {
-        name: command.name,
-        roster: command.roster,
-        skills: command.skills,
-      });
+      await this.agentService.deleteAgent(command.agentId);
 
       return CommandResult.success<void>();
     } catch (error) {
       if (error instanceof Error) {
-        return CommandResult.failure<void>("Failed to update support agent", [
+        return CommandResult.failure<void>("Failed to delete support agent", [
           error.message,
         ]);
       }
+
       return CommandResult.failure<void>(
-        "An unexpected error occurred while updating support agent"
+        "An unexpected error occurred while deleting support agent"
       );
     }
   }

@@ -94,7 +94,9 @@ export class Reservation {
   decrementQuantity(amount: number = 1): void {
     const newQuantity = this.quantity.getValue() - amount;
     if (newQuantity <= 0) {
-      throw new Error("Cannot decrease reservation quantity to zero or below. Use release() instead.");
+      throw new Error(
+        "Cannot decrease reservation quantity to zero or below. Use release() instead."
+      );
     }
     this.updateQuantity(newQuantity);
   }
@@ -111,7 +113,9 @@ export class Reservation {
 
     const now = new Date();
     const currentExpiry = this.isExpired() ? now : this.expiresAt;
-    this.expiresAt = new Date(currentExpiry.getTime() + additionalMinutes * 60 * 1000);
+    this.expiresAt = new Date(
+      currentExpiry.getTime() + additionalMinutes * 60 * 1000
+    );
   }
 
   renew(durationMinutes: number = 30): void {
@@ -145,22 +149,24 @@ export class Reservation {
     }
 
     const now = new Date();
-    const hoursSinceExpiry = (now.getTime() - this.expiresAt.getTime()) / (1000 * 60 * 60);
+    const hoursSinceExpiry =
+      (now.getTime() - this.expiresAt.getTime()) / (1000 * 60 * 60);
     return hoursSinceExpiry <= 1;
   }
 
-  getStatus(): 'active' | 'expiring_soon' | 'expired' | 'recently_expired' {
+  getStatus(): "active" | "expiring_soon" | "expired" | "recently_expired" {
     if (this.isExpired()) {
       const now = new Date();
-      const hoursSinceExpiry = (now.getTime() - this.expiresAt.getTime()) / (1000 * 60 * 60);
-      return hoursSinceExpiry <= 1 ? 'recently_expired' : 'expired';
+      const hoursSinceExpiry =
+        (now.getTime() - this.expiresAt.getTime()) / (1000 * 60 * 60);
+      return hoursSinceExpiry <= 1 ? "recently_expired" : "expired";
     }
 
     if (this.isExpiringSoon()) {
-      return 'expiring_soon';
+      return "expiring_soon";
     }
 
-    return 'active';
+    return "active";
   }
 
   // Validation methods
@@ -223,7 +229,7 @@ export class Reservation {
     items: Array<{ variantId: string; quantity: number }>,
     durationMinutes?: number
   ): Reservation[] {
-    return items.map(item =>
+    return items.map((item) =>
       Reservation.create({
         cartId,
         variantId: item.variantId,

@@ -37,8 +37,8 @@ export interface TicketMessageResult {
   messageId: string;
   ticketId: string;
   sender: string;
-  message: string;
-  createdAt: Date;
+  body: string;
+  createdAt: string;
 }
 
 export class AddTicketMessageHandler
@@ -82,8 +82,8 @@ export class AddTicketMessageHandler
         messageId: message.getMessageId().getValue(),
         ticketId: message.getTicketId(),
         sender: message.getSender().getValue(),
-        message: message.getBody(),
-        createdAt: message.getCreatedAt(),
+        body: message.getBody(),
+        createdAt: message.getCreatedAt().toISOString(),
       };
 
       return CommandResult.success<TicketMessageResult>(result);

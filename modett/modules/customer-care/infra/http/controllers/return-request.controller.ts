@@ -4,6 +4,14 @@ import {
   CreateReturnRequestHandler,
 } from "../../../application/commands/create-return-request.command";
 import {
+  UpdateReturnRequestCommand,
+  UpdateReturnRequestHandler,
+} from "../../../application/commands/update-return-request.command";
+import {
+  DeleteReturnRequestCommand,
+  DeleteReturnRequestHandler,
+} from "../../../application/commands/delete-return-request.command";
+import {
   GetReturnRequestQuery,
   GetReturnRequestHandler,
 } from "../../../application/queries/get-return-request.query";
@@ -19,13 +27,26 @@ interface CreateReturnRequestRequest {
   reason?: string;
 }
 
+interface UpdateReturnRequestRequest {
+  status?: string;
+  reason?: string;
+}
+
 export class ReturnRequestController {
   private createReturnRequestHandler: CreateReturnRequestHandler;
+  private updateReturnRequestHandler: UpdateReturnRequestHandler;
+  private deleteReturnRequestHandler: DeleteReturnRequestHandler;
   private getReturnRequestHandler: GetReturnRequestHandler;
   private listReturnRequestsHandler: ListReturnRequestsHandler;
 
   constructor(private readonly returnRequestService: ReturnRequestService) {
     this.createReturnRequestHandler = new CreateReturnRequestHandler(
+      returnRequestService
+    );
+    this.updateReturnRequestHandler = new UpdateReturnRequestHandler(
+      returnRequestService
+    );
+    this.deleteReturnRequestHandler = new DeleteReturnRequestHandler(
       returnRequestService
     );
     this.getReturnRequestHandler = new GetReturnRequestHandler(
@@ -132,6 +153,95 @@ export class ReturnRequestController {
         success: false,
         error: "Internal server error",
         message: "Failed to list return requests",
+      });
+    }
+  }
+
+  async updateReturnRequest(
+    request: FastifyRequest<{
+      Params: { rmaId: string };
+      Body: UpdateReturnRequestRequest;
+    }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { rmaId } = request.params;
+      const { status, reason } = request.body;
+
+      if (!rmaId || typeof rmaId !== "string") {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: "RMA ID is required and must be a valid string",
+        });
+      }
+
+      const command: UpdateReturnRequestCommand = {
+        rmaId,
+        status,
+        reason,
+      };
+
+      const result = await this.updateReturnRequestHandler.handle(command);
+
+      if (result.success) {
+        return reply.code(200).send({
+          success: true,
+          message: "Return request updated successfully",
+        });
+      } else {
+        return reply.code(400).send({
+          success: false,
+          error: result.error || "Failed to update return request",
+          errors: result.errors,
+        });
+      }
+    } catch (error) {
+      request.log.error(error, "Failed to update return request");
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to update return request",
+      });
+    }
+  }
+
+  async deleteReturnRequest(
+    request: FastifyRequest<{ Params: { rmaId: string } }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { rmaId } = request.params;
+
+      if (!rmaId || typeof rmaId !== "string") {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: "RMA ID is required and must be a valid string",
+        });
+      }
+
+      const command: DeleteReturnRequestCommand = { rmaId };
+      const result = await this.deleteReturnRequestHandler.handle(command);
+
+      if (result.success) {
+        return reply.code(200).send({
+          success: true,
+          message: "Return request deleted successfully",
+        });
+      } else {
+        return reply.code(400).send({
+          success: false,
+          error: result.error || "Failed to delete return request",
+          errors: result.errors,
+        });
+      }
+    } catch (error) {
+      request.log.error(error, "Failed to delete return request");
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to delete return request",
       });
     }
   }

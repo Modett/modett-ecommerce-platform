@@ -9,7 +9,9 @@ import {
 } from "../../../application/commands/update-return-item-condition.command";
 import {
   GetReturnItemQuery,
+  GetReturnItemsQuery,
   GetReturnItemHandler,
+  GetReturnItemsHandler,
 } from "../../../application/queries/get-return-items.query";
 import { ReturnItemService } from "../../../application/services/return-item.service";
 
@@ -30,6 +32,7 @@ export class ReturnItemController {
   private addReturnItemHandler: AddReturnItemHandler;
   private updateReturnItemConditionHandler: UpdateReturnItemConditionHandler;
   private getReturnItemHandler: GetReturnItemHandler;
+  private getReturnItemsHandler: GetReturnItemsHandler;
 
   constructor(private readonly returnItemService: ReturnItemService) {
     // Initialize CQRS handlers
@@ -37,6 +40,7 @@ export class ReturnItemController {
     this.updateReturnItemConditionHandler =
       new UpdateReturnItemConditionHandler(returnItemService);
     this.getReturnItemHandler = new GetReturnItemHandler(returnItemService);
+    this.getReturnItemsHandler = new GetReturnItemsHandler(returnItemService);
   }
 
   async addReturnItem(
@@ -170,6 +174,54 @@ export class ReturnItemController {
         success: false,
         error: "Internal server error",
         message: "Failed to retrieve return item",
+      });
+    }
+  }
+
+  async getReturnItems(
+    request: FastifyRequest<{
+      Params: { rmaId: string };
+    }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { rmaId } = request.params;
+
+      if (!rmaId || typeof rmaId !== "string") {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: "RMA ID is required and must be a valid string",
+        });
+      }
+
+      // Create query
+      const query: GetReturnItemsQuery = {
+        rmaId,
+      };
+
+      // Execute query using handler
+      const result = await this.getReturnItemsHandler.handle(query);
+
+      if (result.success && result.data) {
+        return reply.code(200).send({
+          success: true,
+          data: result.data,
+          total: result.data.length,
+        });
+      } else {
+        return reply.code(400).send({
+          success: false,
+          error: result.error || "Failed to retrieve return items",
+          errors: result.errors,
+        });
+      }
+    } catch (error) {
+      request.log.error(error, "Failed to get return items");
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to retrieve return items",
       });
     }
   }

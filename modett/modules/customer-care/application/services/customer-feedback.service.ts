@@ -5,10 +5,14 @@ import {
 } from "../../domain/repositories/customer-feedback.repository.js";
 import { CustomerFeedback } from "../../domain/entities/customer-feedback.entity.js";
 import { FeedbackId } from "../../domain/value-objects/index.js";
+import { SupportTicketService } from "./support-ticket.service.js";
+import { OrderManagementService } from "../../../order-management/application/services/order-management.service.js";
 
 export class CustomerFeedbackService {
   constructor(
-    private readonly feedbackRepository: ICustomerFeedbackRepository
+    private readonly feedbackRepository: ICustomerFeedbackRepository,
+    private readonly supportTicketService?: SupportTicketService,
+    private readonly orderManagementService?: OrderManagementService
   ) {}
 
   async createFeedback(data: {
@@ -19,6 +23,58 @@ export class CustomerFeedbackService {
     csatScore?: number;
     comment?: string;
   }): Promise<CustomerFeedback> {
+    // Validation: If userId is provided with ticketId or orderId, validate ownership
+    if (data.userId && data.ticketId && this.supportTicketService) {
+      const ticket = await this.supportTicketService.getTicket(data.ticketId);
+      if (!ticket) {
+        throw new Error(`Ticket with ID ${data.ticketId} not found`);
+      }
+
+      // Check if the ticket belongs to the user
+      const userTickets = await this.supportTicketService.getTicketsByUser(
+        data.userId
+      );
+      const ticketBelongsToUser = userTickets.some(
+        (t) => t.getTicketId().getValue() === data.ticketId
+      );
+
+      if (!ticketBelongsToUser) {
+        throw new Error(
+          `Ticket ${data.ticketId} does not belong to user ${data.userId}`
+        );
+      }
+    }
+
+    if (data.userId && data.orderId && this.orderManagementService) {
+      const order = await this.orderManagementService.getOrderById(
+        data.orderId
+      );
+      if (!order) {
+        throw new Error(`Order with ID ${data.orderId} not found`);
+      }
+
+      // Check if the order belongs to the user
+      if (order.getUserId() !== data.userId) {
+        throw new Error(
+          `Order ${data.orderId} does not belong to user ${data.userId}`
+        );
+      }
+    }
+
+    // If both ticketId and orderId are provided, validate they are related
+    if (data.ticketId && data.orderId && this.supportTicketService) {
+      const ticket = await this.supportTicketService.getTicket(data.ticketId);
+      if (
+        ticket &&
+        ticket.getOrderId() &&
+        ticket.getOrderId() !== data.orderId
+      ) {
+        throw new Error(
+          `Ticket ${data.ticketId} is not related to order ${data.orderId}`
+        );
+      }
+    }
+
     const feedback = CustomerFeedback.create({
       userId: data.userId,
       ticketId: data.ticketId,

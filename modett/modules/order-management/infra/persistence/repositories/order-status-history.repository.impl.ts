@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 import {
   IOrderStatusHistoryRepository,
   StatusHistoryQueryOptions,
-} from '../../../domain/repositories/order-status-history.repository';
-import { OrderStatusHistory } from '../../../domain/entities/order-status-history.entity';
-import { OrderStatus } from '../../../domain/value-objects/order-status.vo';
+} from "../../../domain/repositories/order-status-history.repository";
+import { OrderStatusHistory } from "../../../domain/entities/order-status-history.entity";
+import { OrderStatus } from "../../../domain/value-objects/order-status.vo";
 
 interface OrderStatusHistoryDatabaseRow {
   id: bigint;
@@ -15,7 +15,9 @@ interface OrderStatusHistoryDatabaseRow {
   changedBy: string | null;
 }
 
-export class OrderStatusHistoryRepositoryImpl implements IOrderStatusHistoryRepository {
+export class OrderStatusHistoryRepositoryImpl
+  implements IOrderStatusHistoryRepository
+{
   constructor(private readonly prisma: PrismaClient) {}
 
   // Hydration: Database row → Entity
@@ -23,15 +25,17 @@ export class OrderStatusHistoryRepositoryImpl implements IOrderStatusHistoryRepo
     return OrderStatusHistory.reconstitute({
       historyId: Number(row.id),
       orderId: row.orderId,
-      fromStatus: row.fromStatus ? OrderStatus.create(row.fromStatus) : undefined,
+      fromStatus: row.fromStatus
+        ? OrderStatus.create(row.fromStatus)
+        : undefined,
       toStatus: OrderStatus.create(row.toStatus),
       changedAt: row.changedAt,
       changedBy: row.changedBy || undefined,
     });
   }
 
-  async save(statusHistory: OrderStatusHistory): Promise<void> {
-    await this.prisma.orderStatusHistory.create({
+  async save(statusHistory: OrderStatusHistory): Promise<OrderStatusHistory> {
+    const created = await this.prisma.orderStatusHistory.create({
       data: {
         orderId: statusHistory.getOrderId(),
         fromStatus: statusHistory.getFromStatus()?.getValue() || null,
@@ -40,6 +44,9 @@ export class OrderStatusHistoryRepositoryImpl implements IOrderStatusHistoryRepo
         changedBy: statusHistory.getChangedBy() || null,
       },
     });
+
+    // Return the entity with the actual database ID
+    return this.toEntity(created as any);
   }
 
   async delete(historyId: number): Promise<void> {
@@ -73,8 +80,8 @@ export class OrderStatusHistoryRepositoryImpl implements IOrderStatusHistoryRepo
     const {
       limit,
       offset,
-      sortBy = 'changedAt',
-      sortOrder = 'desc',
+      sortBy = "changedAt",
+      sortOrder = "desc",
     } = options || {};
 
     const histories = await this.prisma.orderStatusHistory.findMany({
@@ -94,8 +101,8 @@ export class OrderStatusHistoryRepositoryImpl implements IOrderStatusHistoryRepo
     const {
       limit,
       offset,
-      sortBy = 'changedAt',
-      sortOrder = 'desc',
+      sortBy = "changedAt",
+      sortOrder = "desc",
     } = options || {};
 
     const histories = await this.prisma.orderStatusHistory.findMany({
@@ -115,8 +122,8 @@ export class OrderStatusHistoryRepositoryImpl implements IOrderStatusHistoryRepo
     const {
       limit,
       offset,
-      sortBy = 'changedAt',
-      sortOrder = 'desc',
+      sortBy = "changedAt",
+      sortOrder = "desc",
     } = options || {};
 
     const histories = await this.prisma.orderStatusHistory.findMany({
@@ -135,10 +142,12 @@ export class OrderStatusHistoryRepositoryImpl implements IOrderStatusHistoryRepo
     });
   }
 
-  async getLatestByOrderId(orderId: string): Promise<OrderStatusHistory | null> {
+  async getLatestByOrderId(
+    orderId: string
+  ): Promise<OrderStatusHistory | null> {
     const history = await this.prisma.orderStatusHistory.findFirst({
       where: { orderId },
-      orderBy: { changedAt: 'desc' },
+      orderBy: { changedAt: "desc" },
     });
 
     if (!history) {

@@ -15,6 +15,7 @@ export class ChatMessageService {
     senderType: ChatSenderType;
     content: string;
     messageType?: string;
+    metadata?: Record<string, any>;
     isAutomated?: boolean;
   }): Promise<ChatMessage> {
     const message = ChatMessage.create({
@@ -23,6 +24,7 @@ export class ChatMessageService {
       senderType: data.senderType,
       content: data.content,
       messageType: data.messageType,
+      metadata: data.metadata,
       isAutomated: data.isAutomated,
     });
 

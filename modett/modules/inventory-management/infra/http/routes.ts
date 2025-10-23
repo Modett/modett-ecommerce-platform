@@ -208,7 +208,7 @@ export async function registerInventoryManagementRoutes(
             quantity: { type: "integer", minimum: 1 },
             reason: {
               type: "string",
-              enum: ["purchase", "return", "adjustment", "po"],
+              enum: ["return", "adjustment", "po"],
             },
           },
         },
@@ -310,36 +310,6 @@ export async function registerInventoryManagementRoutes(
       },
     },
     stockController.reserveStock.bind(stockController) as any
-  );
-
-  // Release reservation
-  fastify.post(
-    "/stocks/release",
-    {
-      preHandler: authenticateUser,
-      schema: {
-        description: "Release stock reservation",
-        tags: ["Stock Management"],
-        summary: "Release Reservation",
-        security: [{ bearerAuth: [] }],
-        body: {
-          type: "object",
-          required: ["variantId", "locationId", "quantity"],
-          properties: {
-            variantId: { type: "string", format: "uuid" },
-            locationId: { type: "string", format: "uuid" },
-            quantity: { type: "integer", minimum: 1 },
-
-            // referenceId removed
-          },
-        },
-        response: {
-          200: { description: "Reservation released successfully" },
-          ...errorResponses,
-        },
-      },
-    },
-    stockController.releaseReservation.bind(stockController) as any
   );
 
   // Fulfill reservation

@@ -32,6 +32,11 @@ export interface GetReturnItemQuery extends IQuery {
   orderItemId: string;
 }
 
+// New query for getting all items for an RMA
+export interface GetReturnItemsQuery extends IQuery {
+  rmaId: string;
+}
+
 export interface ReturnItemDto {
   rmaId: string;
   orderItemId: string;
@@ -88,6 +93,48 @@ export class GetReturnItemHandler
       }
       return QueryResult.failure<ReturnItemDto | null>(
         "An unexpected error occurred while getting return item"
+      );
+    }
+  }
+}
+
+// New handler for getting all return items for an RMA
+export class GetReturnItemsHandler
+  implements IQueryHandler<GetReturnItemsQuery, QueryResult<ReturnItemDto[]>>
+{
+  constructor(private readonly returnItemService: ReturnItemService) {}
+
+  async handle(
+    query: GetReturnItemsQuery
+  ): Promise<QueryResult<ReturnItemDto[]>> {
+    try {
+      if (!query.rmaId) {
+        return QueryResult.failure<ReturnItemDto[]>("RMA ID is required", [
+          "rmaId",
+        ]);
+      }
+
+      const items = await this.returnItemService.getItemsByRmaId(query.rmaId);
+
+      const result: ReturnItemDto[] = items.map((item) => ({
+        rmaId: item.getRmaId(),
+        orderItemId: item.getOrderItemId(),
+        quantity: item.getQuantity(),
+        condition: item.getCondition()?.getValue(),
+        disposition: item.getDisposition()?.getValue(),
+        fees: item.getFees()?.getAmount(),
+      }));
+
+      return QueryResult.success<ReturnItemDto[]>(result);
+    } catch (error) {
+      if (error instanceof Error) {
+        return QueryResult.failure<ReturnItemDto[]>(
+          "Failed to get return items",
+          [error.message]
+        );
+      }
+      return QueryResult.failure<ReturnItemDto[]>(
+        "An unexpected error occurred while getting return items"
       );
     }
   }

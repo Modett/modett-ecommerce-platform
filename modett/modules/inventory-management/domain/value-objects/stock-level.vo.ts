@@ -122,21 +122,6 @@ export class StockLevel {
     );
   }
 
-  releaseReservation(quantity: number): StockLevel {
-    if (quantity <= 0) {
-      throw new Error("Quantity to release must be positive");
-    }
-    if (this.reserved < quantity) {
-      throw new Error("Cannot release more than reserved quantity");
-    }
-    return new StockLevel(
-      this.onHand,
-      this.reserved - quantity,
-      this.lowStockThreshold,
-      this.safetyStock
-    );
-  }
-
   fulfillReservation(quantity: number): StockLevel {
     if (quantity <= 0) {
       throw new Error("Quantity to fulfill must be positive");

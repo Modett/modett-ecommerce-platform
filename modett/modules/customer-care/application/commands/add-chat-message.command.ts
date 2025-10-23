@@ -33,6 +33,7 @@ export interface AddChatMessageCommand extends ICommand {
   senderType: string;
   content: string;
   messageType?: string;
+  metadata?: Record<string, any>;
   isAutomated?: boolean;
 }
 
@@ -87,6 +88,7 @@ export class AddChatMessageHandler
         senderType: ChatSenderType.fromString(command.senderType),
         content: command.content,
         messageType: command.messageType,
+        metadata: command.metadata,
         isAutomated: command.isAutomated,
       });
 

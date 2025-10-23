@@ -54,6 +54,7 @@ export class ListPickupReservationsQueryHandler
               query.locationId
             );
         } else {
+          // Get all reservations (active, expired, cancelled, fulfilled)
           reservations = await this.reservationService.getAllReservations();
         }
       }

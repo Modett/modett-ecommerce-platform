@@ -61,7 +61,7 @@ export class GetChatMessagesHandler
       const messages = await this.chatMessageService.getMessagesBySession(
         query.sessionId
       );
-      const result: ChatMessageDto[] = messages.map((msg) => ({
+      const result = messages.map((msg) => ({
         messageId: msg.getMessageId().getValue(),
         sessionId: msg.getSessionId(),
         senderId: msg.getSenderId(),

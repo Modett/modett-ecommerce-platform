@@ -274,27 +274,27 @@ export async function registerUserManagementRoutes(
     authController.resetPassword.bind(authController)
   );
 
-  fastify.post(
-    "/auth/verify-email",
-    {
-      schema: {
-        description: "Verify user email address using verification token",
-        tags: ["Authentication"],
-        summary: "Verify Email",
-        body: {
-          type: "object",
-          required: ["token"],
-          properties: {
-            token: {
-              type: "string",
-              description: "Email verification token from email",
-            },
-          },
-        },
-      },
-    },
-    authController.verifyEmail.bind(authController)
-  );
+  // fastify.post(
+  //   "/auth/verify-email",
+  //   {
+  //     schema: {
+  //       description: "Verify user email address using verification token",
+  //       tags: ["Authentication"],
+  //       summary: "Verify Email",
+  //       body: {
+  //         type: "object",
+  //         required: ["token"],
+  //         properties: {
+  //           token: {
+  //             type: "string",
+  //             description: "Email verification token from email",
+  //           },
+  //         },
+  //       },
+  //     },
+  //   },
+  //   authController.verifyEmail.bind(authController)
+  // );
 
   fastify.post(
     "/auth/resend-verification",

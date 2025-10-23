@@ -6,7 +6,7 @@ import { ReservationService } from "../../application/services/reservation.servi
 import { optionalAuth } from "../../../user-management/infra/http/middleware/auth.middleware";
 import {
   extractGuestToken,
-  requireCartAuth
+  requireCartAuth,
 } from "./middleware/cart-auth.middleware";
 
 // Standard authentication error responses for Swagger
@@ -41,7 +41,9 @@ export async function registerCartRoutes(
 ) {
   // Initialize controllers
   const cartController = new CartController(services.cartManagementService);
-  const reservationController = new ReservationController(services.reservationService);
+  const reservationController = new ReservationController(
+    services.reservationService
+  );
 
   // =============================================================================
   // CART ROUTES
@@ -64,16 +66,24 @@ export async function registerCartRoutes(
               data: {
                 type: "object",
                 properties: {
-                  guestToken: { type: "string", example: "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456" },
+                  guestToken: {
+                    type: "string",
+                    example:
+                      "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+                  },
                 },
               },
-              message: { type: "string", example: "Guest token generated successfully" },
+              message: {
+                type: "string",
+                example: "Guest token generated successfully",
+              },
             },
           },
         },
       },
     },
-    async (request: any, reply: any) => cartController.generateGuestToken(request, reply)
+    async (request: any, reply: any) =>
+      cartController.generateGuestToken(request, reply)
   );
 
   // Get cart by ID
@@ -82,12 +92,11 @@ export async function registerCartRoutes(
     {
       preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Get cart details by cart ID. Requires authentication - provide either Bearer token (for user carts) or X-Guest-Token header (for guest carts).",
+        description:
+          "Get cart details by cart ID. Requires authentication - provide either Bearer token (for user carts) or X-Guest-Token header (for guest carts).",
         tags: ["Cart"],
         summary: "Get Cart",
-        security: [
-          { bearerAuth: [] }
-        ],
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["cartId"],
@@ -127,7 +136,7 @@ export async function registerCartRoutes(
                     properties: {
                       itemCount: { type: "integer", example: 5 },
                       subtotal: { type: "number", example: 149.95 },
-                      discount: { type: "number", example: 10.00 },
+                      discount: { type: "number", example: 10.0 },
                       total: { type: "number", example: 139.95 },
                     },
                   },
@@ -181,13 +190,17 @@ export async function registerCartRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
-              error: { type: "string", example: "No active cart found for this user" },
+              error: {
+                type: "string",
+                example: "No active cart found for this user",
+              },
             },
           },
         },
       },
     },
-    async (request: any, reply: any) => cartController.getActiveCartByUser(request, reply)
+    async (request: any, reply: any) =>
+      cartController.getActiveCartByUser(request, reply)
   );
 
   // Get active cart by guest token
@@ -196,7 +209,8 @@ export async function registerCartRoutes(
     {
       preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Get active cart for a guest. WARNING: Do NOT provide Authorization header - this endpoint is for guest users only. If you are logged in (have a bearer token), you must logout first.",
+        description:
+          "Get active cart for a guest. WARNING: Do NOT provide Authorization header - this endpoint is for guest users only. If you are logged in (have a bearer token), you must logout first.",
         tags: ["Cart"],
         summary: "Get Guest Cart",
         security: [{ bearerAuth: [] }, {}], // Optional authentication - will be rejected if provided
@@ -217,13 +231,21 @@ export async function registerCartRoutes(
             },
           },
           400: {
-            description: "Bad request - Authenticated user cannot access guest cart",
+            description:
+              "Bad request - Authenticated user cannot access guest cart",
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
               error: { type: "string", example: "Bad Request" },
-              message: { type: "string", example: "Authenticated users cannot access guest carts. Use the user cart endpoint instead." },
-              code: { type: "string", example: "AUTHENTICATED_USER_CANNOT_ACCESS_GUEST_CART" },
+              message: {
+                type: "string",
+                example:
+                  "Authenticated users cannot access guest carts. Use the user cart endpoint instead.",
+              },
+              code: {
+                type: "string",
+                example: "AUTHENTICATED_USER_CANNOT_ACCESS_GUEST_CART",
+              },
             },
           },
           404: {
@@ -231,13 +253,17 @@ export async function registerCartRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
-              error: { type: "string", example: "No active cart found for this guest" },
+              error: {
+                type: "string",
+                example: "No active cart found for this guest",
+              },
             },
           },
         },
       },
     },
-    async (request: any, reply: any) => cartController.getActiveCartByGuestToken(request, reply)
+    async (request: any, reply: any) =>
+      cartController.getActiveCartByGuestToken(request, reply)
   );
 
   // Create user cart
@@ -259,7 +285,6 @@ export async function registerCartRoutes(
           type: "object",
           properties: {
             currency: { type: "string", default: "USD", example: "USD" },
-            createReservation: { type: "boolean", default: false },
             reservationDurationMinutes: { type: "integer", example: 30 },
           },
         },
@@ -276,7 +301,8 @@ export async function registerCartRoutes(
         },
       },
     },
-    async (request: any, reply: any) => cartController.createUserCart(request, reply)
+    async (request: any, reply: any) =>
+      cartController.createUserCart(request, reply)
   );
 
   // Create guest cart
@@ -285,7 +311,8 @@ export async function registerCartRoutes(
     {
       preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Create a new cart for a guest. WARNING: Do NOT provide Authorization header - this endpoint is for guest users only. If you are logged in (have a bearer token), you must logout first.",
+        description:
+          "Create a new cart for a guest. WARNING: Do NOT provide Authorization header - this endpoint is for guest users only. If you are logged in (have a bearer token), you must logout first.",
         tags: ["Cart"],
         summary: "Create Guest Cart",
         security: [{ bearerAuth: [] }, {}], // Optional authentication - will be rejected if provided
@@ -300,7 +327,6 @@ export async function registerCartRoutes(
           type: "object",
           properties: {
             currency: { type: "string", default: "USD", example: "USD" },
-            createReservation: { type: "boolean", default: false },
             reservationDurationMinutes: { type: "integer", example: 30 },
           },
         },
@@ -315,19 +341,28 @@ export async function registerCartRoutes(
             },
           },
           400: {
-            description: "Bad request - Authenticated user cannot create guest cart",
+            description:
+              "Bad request - Authenticated user cannot create guest cart",
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
               error: { type: "string", example: "Bad Request" },
-              message: { type: "string", example: "Authenticated users cannot create guest carts. Use the user cart endpoint instead." },
-              code: { type: "string", example: "AUTHENTICATED_USER_CANNOT_CREATE_GUEST_CART" },
+              message: {
+                type: "string",
+                example:
+                  "Authenticated users cannot create guest carts. Use the user cart endpoint instead.",
+              },
+              code: {
+                type: "string",
+                example: "AUTHENTICATED_USER_CANNOT_CREATE_GUEST_CART",
+              },
             },
           },
         },
       },
     },
-    async (request: any, reply: any) => cartController.createGuestCart(request, reply)
+    async (request: any, reply: any) =>
+      cartController.createGuestCart(request, reply)
   );
 
   // Add item to cart
@@ -336,33 +371,41 @@ export async function registerCartRoutes(
     {
       preHandler: [optionalAuth, extractGuestToken, requireCartAuth],
       schema: {
-        description: "Add an item to cart. Cart will be automatically created if it doesn't exist. Requires either Bearer token authentication (for registered users) or X-Guest-Token header (for guest users).",
+        description:
+          "Add an item to cart. Cart will be automatically created if it doesn't exist. Requires either Bearer token authentication (for registered users) or X-Guest-Token header (for guest users).",
         tags: ["Cart"],
         summary: "Add to Cart",
-        security: [
-          { bearerAuth: [] }
-        ],
+        security: [{ bearerAuth: [] }],
         headers: {
           type: "object",
           properties: {
-            "authorization": {
+            authorization: {
               type: "string",
-              description: "Bearer token for registered users"
+              description: "Bearer token for registered users",
             },
             "x-guest-token": {
               type: "string",
-              description: "Guest token (64-char hex). Get from /generate-guest-token endpoint.",
-              pattern: "^[a-f0-9]{64}$"
-            }
+              description:
+                "Guest token (64-char hex). Get from /generate-guest-token endpoint.",
+              pattern: "^[a-f0-9]{64}$",
+            },
           },
-          additionalProperties: true
+          additionalProperties: true,
         },
         body: {
           type: "object",
           required: ["variantId", "quantity"],
           properties: {
-            cartId: { type: "string", format: "uuid", description: "Cart ID (optional for guest users)" },
-            variantId: { type: "string", format: "uuid", description: "Product variant ID" },
+            cartId: {
+              type: "string",
+              format: "uuid",
+              description: "Cart ID (optional for guest users)",
+            },
+            variantId: {
+              type: "string",
+              format: "uuid",
+              description: "Product variant ID",
+            },
             quantity: { type: "integer", minimum: 1, example: 2 },
             appliedPromos: {
               type: "array",
@@ -371,7 +414,15 @@ export async function registerCartRoutes(
                 properties: {
                   id: { type: "string" },
                   code: { type: "string" },
-                  type: { type: "string", enum: ["percentage", "fixed_amount", "free_shipping", "buy_x_get_y"] },
+                  type: {
+                    type: "string",
+                    enum: [
+                      "percentage",
+                      "fixed_amount",
+                      "free_shipping",
+                      "buy_x_get_y",
+                    ],
+                  },
                   value: { type: "number" },
                   description: { type: "string" },
                   appliedAt: { type: "string", format: "date-time" },
@@ -380,7 +431,6 @@ export async function registerCartRoutes(
             },
             isGift: { type: "boolean", default: false },
             giftMessage: { type: "string" },
-            createReservation: { type: "boolean", default: false },
           },
         },
         response: {
@@ -390,7 +440,10 @@ export async function registerCartRoutes(
             properties: {
               success: { type: "boolean", example: true },
               data: { type: "object", additionalProperties: true },
-              message: { type: "string", example: "Item added to cart successfully" },
+              message: {
+                type: "string",
+                example: "Item added to cart successfully",
+              },
             },
           },
           400: {
@@ -419,9 +472,7 @@ export async function registerCartRoutes(
         description: "Update cart item quantity. Requires authentication.",
         tags: ["Cart"],
         summary: "Update Cart Item",
-        security: [
-          { bearerAuth: [] }
-        ],
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["cartId", "variantId"],
@@ -450,7 +501,8 @@ export async function registerCartRoutes(
         },
       },
     },
-    async (request: any, reply: any) => cartController.updateCartItem(request, reply)
+    async (request: any, reply: any) =>
+      cartController.updateCartItem(request, reply)
   );
 
   // Remove item from cart
@@ -462,9 +514,7 @@ export async function registerCartRoutes(
         description: "Remove item from cart. Requires authentication.",
         tags: ["Cart"],
         summary: "Remove from Cart",
-        security: [
-          { bearerAuth: [] }
-        ],
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["cartId", "variantId"],
@@ -480,32 +530,32 @@ export async function registerCartRoutes(
             properties: {
               success: { type: "boolean", example: true },
               data: { type: "object", additionalProperties: true },
-              message: { type: "string", example: "Item removed from cart successfully" },
+              message: {
+                type: "string",
+                example: "Item removed from cart successfully",
+              },
             },
           },
         },
       },
     },
-    async (request: any, reply: any) => cartController.removeFromCart(request, reply)
+    async (request: any, reply: any) =>
+      cartController.removeFromCart(request, reply)
   );
 
-  // Clear cart
+  // Clear user cart
   fastify.delete(
-    "/carts/:cartId",
+    "/users/:userId/cart",
     {
-      preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Clear all items from cart. Requires authentication.",
+        description: "Clear all items from user cart.",
         tags: ["Cart"],
-        summary: "Clear Cart",
-        security: [
-          { bearerAuth: [] }
-        ],
+        summary: "Clear User Cart",
         params: {
           type: "object",
-          required: ["cartId"],
+          required: ["userId"],
           properties: {
-            cartId: { type: "string", format: "uuid" },
+            userId: { type: "string", format: "uuid", description: "User ID" },
           },
         },
         response: {
@@ -518,10 +568,86 @@ export async function registerCartRoutes(
               message: { type: "string", example: "Cart cleared successfully" },
             },
           },
+          404: {
+            description: "No active cart found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: {
+                type: "string",
+                example: "No active cart found for this user",
+              },
+            },
+          },
         },
       },
     },
-    async (request: any, reply: any) => cartController.clearCart(request, reply)
+    async (request: any, reply: any) =>
+      cartController.clearUserCart(request, reply)
+  );
+
+  // Clear guest cart
+  fastify.delete(
+    "/guests/:guestToken/cart",
+    {
+      preHandler: [optionalAuth, extractGuestToken],
+      schema: {
+        description:
+          "Clear all items from guest cart. WARNING: Do NOT provide Authorization header - this endpoint is for guest users only.",
+        tags: ["Cart"],
+        summary: "Clear Guest Cart",
+        security: [{ bearerAuth: [] }, {}], // Optional authentication - will be rejected if provided
+        params: {
+          type: "object",
+          required: ["guestToken"],
+          properties: {
+            guestToken: { type: "string", description: "Guest token" },
+          },
+        },
+        response: {
+          200: {
+            description: "Cart cleared successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: { type: "object", additionalProperties: true },
+              message: { type: "string", example: "Cart cleared successfully" },
+            },
+          },
+          400: {
+            description:
+              "Bad request - Authenticated user cannot clear guest cart",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Bad Request" },
+              message: {
+                type: "string",
+                example:
+                  "Authenticated users cannot clear guest carts. Use the user cart endpoint instead.",
+              },
+              code: {
+                type: "string",
+                example: "AUTHENTICATED_USER_CANNOT_CLEAR_GUEST_CART",
+              },
+            },
+          },
+          404: {
+            description: "No active cart found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: {
+                type: "string",
+                example: "No active cart found for this guest",
+              },
+            },
+          },
+        },
+      },
+    },
+    async (request: any, reply: any) =>
+      cartController.clearGuestCart(request, reply)
   );
 
   // Transfer guest cart to user
@@ -530,7 +656,8 @@ export async function registerCartRoutes(
     {
       preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Transfer guest cart to authenticated user. This endpoint can optionally use Bearer token to verify the user.",
+        description:
+          "Transfer guest cart to authenticated user. This endpoint can optionally use Bearer token to verify the user.",
         tags: ["Cart"],
         summary: "Transfer Cart",
         security: [{ bearerAuth: [] }], // Optional authentication
@@ -556,13 +683,17 @@ export async function registerCartRoutes(
             properties: {
               success: { type: "boolean", example: true },
               data: { type: "object", additionalProperties: true },
-              message: { type: "string", example: "Cart transferred successfully" },
+              message: {
+                type: "string",
+                example: "Cart transferred successfully",
+              },
             },
           },
         },
       },
     },
-    async (request: any, reply: any) => cartController.transferGuestCartToUser(request, reply)
+    async (request: any, reply: any) =>
+      cartController.transferGuestCartToUser(request, reply)
   );
 
   // Get cart statistics (admin)
@@ -585,7 +716,8 @@ export async function registerCartRoutes(
         },
       },
     },
-    async (request: any, reply: any) => cartController.getCartStatistics(request, reply)
+    async (request: any, reply: any) =>
+      cartController.getCartStatistics(request, reply)
   );
 
   // Cleanup expired carts (admin)
@@ -614,7 +746,8 @@ export async function registerCartRoutes(
         },
       },
     },
-    async (request: any, reply: any) => cartController.cleanupExpiredCarts(request, reply)
+    async (request: any, reply: any) =>
+      cartController.cleanupExpiredCarts(request, reply)
   );
 
   // =============================================================================
@@ -653,16 +786,23 @@ export async function registerCartRoutes(
                   variantId: { type: "string", format: "uuid" },
                   quantity: { type: "integer" },
                   expiresAt: { type: "string", format: "date-time" },
-                  status: { type: "string", enum: ["active", "expiring_soon", "expired"] },
+                  status: {
+                    type: "string",
+                    enum: ["active", "expiring_soon", "expired"],
+                  },
                 },
               },
-              message: { type: "string", example: "Reservation created successfully" },
+              message: {
+                type: "string",
+                example: "Reservation created successfully",
+              },
             },
           },
         },
       },
     },
-    async (request: any, reply: any) => reservationController.createReservation(request, reply)
+    async (request: any, reply: any) =>
+      reservationController.createReservation(request, reply)
   );
 
   // Get reservation by ID
@@ -686,7 +826,24 @@ export async function registerCartRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "object", additionalProperties: true },
+              data: {
+                type: "object",
+                properties: {
+                  reservationId: { type: "string", format: "uuid" },
+                  cartId: { type: "string", format: "uuid" },
+                  variantId: { type: "string", format: "uuid" },
+                  quantity: { type: "integer" },
+                  expiresAt: { type: "string", format: "date-time" },
+                  status: {
+                    type: "string",
+                    enum: ["active", "expiring_soon", "expired"],
+                  },
+                  isExpired: { type: "boolean" },
+                  timeRemaining: { type: "string" },
+                  createdAt: { type: "string", format: "date-time" },
+                  updatedAt: { type: "string", format: "date-time" },
+                },
+              },
             },
           },
           404: {
@@ -700,7 +857,8 @@ export async function registerCartRoutes(
         },
       },
     },
-    async (request: any, reply: any) => reservationController.getReservation(request, reply)
+    async (request: any, reply: any) =>
+      reservationController.getReservation(request, reply)
   );
 
   // Get cart reservations
@@ -732,14 +890,38 @@ export async function registerCartRoutes(
               success: { type: "boolean", example: true },
               data: {
                 type: "array",
-                items: { type: "object" },
+                items: {
+                  type: "object",
+                  properties: {
+                    reservationId: { type: "string", format: "uuid" },
+                    cartId: { type: "string", format: "uuid" },
+                    variantId: { type: "string", format: "uuid" },
+                    quantity: { type: "integer", minimum: 1 },
+                    expiresAt: { type: "string", format: "date-time" },
+                    status: {
+                      type: "string",
+                      enum: [
+                        "active",
+                        "expiring_soon",
+                        "expired",
+                        "recently_expired",
+                      ],
+                    },
+                    isExpired: { type: "boolean" },
+                    isExpiringSoon: { type: "boolean" },
+                    timeUntilExpirySeconds: { type: "integer" },
+                    timeUntilExpiryMinutes: { type: "integer" },
+                    canBeExtended: { type: "boolean" },
+                  },
+                },
               },
             },
           },
         },
       },
     },
-    async (request: any, reply: any) => reservationController.getCartReservations(request, reply)
+    async (request: any, reply: any) =>
+      reservationController.getCartReservations(request, reply)
   );
 
   // Get variant reservations
@@ -765,14 +947,38 @@ export async function registerCartRoutes(
               success: { type: "boolean", example: true },
               data: {
                 type: "array",
-                items: { type: "object" },
+                items: {
+                  type: "object",
+                  properties: {
+                    reservationId: { type: "string", format: "uuid" },
+                    cartId: { type: "string", format: "uuid" },
+                    variantId: { type: "string", format: "uuid" },
+                    quantity: { type: "integer", minimum: 1 },
+                    expiresAt: { type: "string", format: "date-time" },
+                    status: {
+                      type: "string",
+                      enum: [
+                        "active",
+                        "expiring_soon",
+                        "expired",
+                        "recently_expired",
+                      ],
+                    },
+                    isExpired: { type: "boolean" },
+                    isExpiringSoon: { type: "boolean" },
+                    timeUntilExpirySeconds: { type: "integer" },
+                    timeUntilExpiryMinutes: { type: "integer" },
+                    canBeExtended: { type: "boolean" },
+                  },
+                },
               },
             },
           },
         },
       },
     },
-    async (request: any, reply: any) => reservationController.getVariantReservations(request, reply)
+    async (request: any, reply: any) =>
+      reservationController.getVariantReservations(request, reply)
   );
 
   // Extend reservation
@@ -804,13 +1010,17 @@ export async function registerCartRoutes(
             properties: {
               success: { type: "boolean", example: true },
               data: { type: "object", additionalProperties: true },
-              message: { type: "string", example: "Reservation extended successfully" },
+              message: {
+                type: "string",
+                example: "Reservation extended successfully",
+              },
             },
           },
         },
       },
     },
-    async (request: any, reply: any) => reservationController.extendReservation(request, reply)
+    async (request: any, reply: any) =>
+      reservationController.extendReservation(request, reply)
   );
 
   // Release reservation
@@ -834,13 +1044,17 @@ export async function registerCartRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              message: { type: "string", example: "Reservation released successfully" },
+              message: {
+                type: "string",
+                example: "Reservation released successfully",
+              },
             },
           },
         },
       },
     },
-    async (request: any, reply: any) => reservationController.releaseReservation(request, reply)
+    async (request: any, reply: any) =>
+      reservationController.releaseReservation(request, reply)
   );
 
   // Check availability
@@ -879,36 +1093,8 @@ export async function registerCartRoutes(
         },
       },
     },
-    async (request: any, reply: any) => reservationController.checkAvailability(request, reply)
-  );
-
-  // Cleanup expired reservations (admin)
-  fastify.post(
-    "/admin/reservations/cleanup",
-    {
-      schema: {
-        description: "Cleanup expired reservations (admin only)",
-        tags: ["Reservations Admin"],
-        summary: "Cleanup Expired Reservations",
-        response: {
-          200: {
-            description: "Cleanup completed successfully",
-            type: "object",
-            properties: {
-              success: { type: "boolean", example: true },
-              data: {
-                type: "object",
-                properties: {
-                  deletedCount: { type: "integer" },
-                },
-              },
-              message: { type: "string" },
-            },
-          },
-        },
-      },
-    },
-    async (request, reply) => reservationController.cleanupExpiredReservations(request, reply)
+    async (request: any, reply: any) =>
+      reservationController.checkAvailability(request, reply)
   );
 
   // Get reservation statistics (admin)
@@ -931,6 +1117,7 @@ export async function registerCartRoutes(
         },
       },
     },
-    async (request, reply) => reservationController.getReservationStatistics(request, reply)
+    async (request, reply) =>
+      reservationController.getReservationStatistics(request, reply)
   );
 }

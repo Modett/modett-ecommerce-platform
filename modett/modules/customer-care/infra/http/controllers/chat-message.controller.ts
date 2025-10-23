@@ -14,6 +14,7 @@ interface AddMessageRequest {
   senderType: string;
   content: string;
   messageType?: string;
+  metadata?: Record<string, any>;
   isAutomated?: boolean;
 }
 
@@ -38,8 +39,14 @@ export class ChatMessageController {
   ) {
     try {
       const { sessionId } = request.params;
-      const { senderId, senderType, content, messageType, isAutomated } =
-        request.body;
+      const {
+        senderId,
+        senderType,
+        content,
+        messageType,
+        metadata,
+        isAutomated,
+      } = request.body;
 
       // Basic HTTP validation
       if (!sessionId || typeof sessionId !== "string") {
@@ -85,6 +92,7 @@ export class ChatMessageController {
         senderType,
         content,
         messageType,
+        metadata,
         isAutomated,
       };
 
@@ -142,11 +150,8 @@ export class ChatMessageController {
       if (result.success && result.data) {
         return reply.code(200).send({
           success: true,
-          data: {
-            sessionId,
-            messages: result.data,
-            total: result.data.length,
-          },
+          data: result.data,
+          total: result.data.length,
         });
       } else {
         return reply.code(404).send({

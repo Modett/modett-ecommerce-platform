@@ -52,8 +52,12 @@ export class ReservationController {
 
   constructor(private readonly reservationService: ReservationService) {
     // Initialize CQRS handlers
-    this.createReservationHandler = new CreateReservationHandler(reservationService);
-    this.getReservationsHandler = new GetReservationsHandler(reservationService);
+    this.createReservationHandler = new CreateReservationHandler(
+      reservationService
+    );
+    this.getReservationsHandler = new GetReservationsHandler(
+      reservationService
+    );
   }
 
   // Create reservation
@@ -65,7 +69,10 @@ export class ReservationController {
       const reservationData = request.body;
 
       // Validate required fields
-      if (!reservationData.cartId || typeof reservationData.cartId !== "string") {
+      if (
+        !reservationData.cartId ||
+        typeof reservationData.cartId !== "string"
+      ) {
         return reply.code(400).send({
           success: false,
           error: "Bad Request",
@@ -73,7 +80,10 @@ export class ReservationController {
         });
       }
 
-      if (!reservationData.variantId || typeof reservationData.variantId !== "string") {
+      if (
+        !reservationData.variantId ||
+        typeof reservationData.variantId !== "string"
+      ) {
         return reply.code(400).send({
           success: false,
           error: "Bad Request",
@@ -152,7 +162,8 @@ export class ReservationController {
         });
       }
 
-      const reservation = await this.reservationService.getReservation(reservationId);
+      const reservation =
+        await this.reservationService.getReservation(reservationId);
 
       if (!reservation) {
         return reply.code(404).send({
@@ -199,6 +210,7 @@ export class ReservationController {
       // Create query
       const query: GetReservationsQuery = {
         cartId,
+        activeOnly,
       };
 
       // Execute query using handler (gets active reservations)
@@ -242,7 +254,8 @@ export class ReservationController {
         });
       }
 
-      const reservations = await this.reservationService.getVariantReservations(variantId);
+      const reservations =
+        await this.reservationService.getVariantReservations(variantId);
 
       return reply.code(200).send({
         success: true,
@@ -394,7 +407,8 @@ export class ReservationController {
         });
       }
 
-      const success = await this.reservationService.releaseReservation(reservationId);
+      const success =
+        await this.reservationService.releaseReservation(reservationId);
 
       if (!success) {
         return reply.code(404).send({
@@ -546,7 +560,8 @@ export class ReservationController {
         });
       }
 
-      const totalReserved = await this.reservationService.getTotalReservedQuantity(variantId);
+      const totalReserved =
+        await this.reservationService.getTotalReservedQuantity(variantId);
 
       return reply.code(200).send({
         success: true,
@@ -578,7 +593,8 @@ export class ReservationController {
         });
       }
 
-      const activeReserved = await this.reservationService.getActiveReservedQuantity(variantId);
+      const activeReserved =
+        await this.reservationService.getActiveReservedQuantity(variantId);
 
       return reply.code(200).send({
         success: true,
@@ -610,7 +626,11 @@ export class ReservationController {
         });
       }
 
-      if (!bulkData.items || !Array.isArray(bulkData.items) || bulkData.items.length === 0) {
+      if (
+        !bulkData.items ||
+        !Array.isArray(bulkData.items) ||
+        bulkData.items.length === 0
+      ) {
         return reply.code(400).send({
           success: false,
           error: "Bad Request",
@@ -642,73 +662,11 @@ export class ReservationController {
     }
   }
 
-  // Get expired reservations
-  async getExpiredReservations(request: FastifyRequest, reply: FastifyReply) {
-    try {
-      const reservations = await this.reservationService.getExpiredReservations();
-
-      return reply.code(200).send({
-        success: true,
-        data: reservations,
-      });
-    } catch (error) {
-      request.log.error(error, "Failed to get expired reservations");
-      return reply.code(500).send({
-        success: false,
-        error: "Internal server error",
-        message: "Failed to retrieve expired reservations",
-      });
-    }
-  }
-
-  // Get expiring soon reservations
-  async getExpiringSoonReservations(
-    request: FastifyRequest<{ Querystring: { thresholdMinutes?: number } }>,
-    reply: FastifyReply
-  ) {
-    try {
-      const { thresholdMinutes = 5 } = request.query;
-
-      const reservations = await this.reservationService.getExpiringSoonReservations(thresholdMinutes);
-
-      return reply.code(200).send({
-        success: true,
-        data: reservations,
-      });
-    } catch (error) {
-      request.log.error(error, "Failed to get expiring soon reservations");
-      return reply.code(500).send({
-        success: false,
-        error: "Internal server error",
-        message: "Failed to retrieve expiring soon reservations",
-      });
-    }
-  }
-
-  // Cleanup expired reservations (admin endpoint)
-  async cleanupExpiredReservations(request: FastifyRequest, reply: FastifyReply) {
-    try {
-      const deletedCount = await this.reservationService.cleanupExpiredReservations();
-
-      return reply.code(200).send({
-        success: true,
-        data: { deletedCount },
-        message: `Successfully cleaned up ${deletedCount} expired reservation(s)`,
-      });
-    } catch (error) {
-      request.log.error(error, "Failed to cleanup expired reservations");
-      return reply.code(500).send({
-        success: false,
-        error: "Internal server error",
-        message: "Failed to cleanup expired reservations",
-      });
-    }
-  }
-
   // Get reservation statistics (admin endpoint)
   async getReservationStatistics(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const statistics = await this.reservationService.getReservationStatistics();
+      const statistics =
+        await this.reservationService.getReservationStatistics();
 
       return reply.code(200).send({
         success: true,
@@ -742,7 +700,11 @@ export class ReservationController {
         });
       }
 
-      if (!["active", "expiring_soon", "expired", "recently_expired"].includes(status)) {
+      if (
+        !["active", "expiring_soon", "expired", "recently_expired"].includes(
+          status
+        )
+      ) {
         return reply.code(400).send({
           success: false,
           error: "Bad Request",
@@ -750,7 +712,8 @@ export class ReservationController {
         });
       }
 
-      const reservations = await this.reservationService.getReservationsByStatus(status);
+      const reservations =
+        await this.reservationService.getReservationsByStatus(status);
 
       return reply.code(200).send({
         success: true,
@@ -782,7 +745,8 @@ export class ReservationController {
         });
       }
 
-      const result = await this.reservationService.resolveReservationConflicts(variantId);
+      const result =
+        await this.reservationService.resolveReservationConflicts(variantId);
 
       return reply.code(200).send({
         success: true,
@@ -802,7 +766,8 @@ export class ReservationController {
   // Optimize reservations (admin endpoint)
   async optimizeReservations(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const optimizedCount = await this.reservationService.optimizeReservations();
+      const optimizedCount =
+        await this.reservationService.optimizeReservations();
 
       return reply.code(200).send({
         success: true,

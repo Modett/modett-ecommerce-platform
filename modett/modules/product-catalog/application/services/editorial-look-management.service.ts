@@ -1,11 +1,18 @@
-import { IEditorialLookRepository, EditorialLookQueryOptions, EditorialLookCountOptions } from '../../domain/repositories/editorial-look.repository';
-import { IMediaAssetRepository } from '../../domain/repositories/media-asset.repository';
-import { IProductRepository } from '../../domain/repositories/product.repository';
-import { EditorialLook, CreateEditorialLookData } from '../../domain/entities/editorial-look.entity';
-import { EditorialLookId as EntityEditorialLookId } from '../../domain/entities/editorial-look.entity';
-import { MediaAssetId as EntityMediaAssetId } from '../../domain/entities/media-asset.entity';
-import { EditorialLookId } from '../../domain/value-objects/editorial-look-id.vo';
-import { ProductId } from '../../domain/value-objects/product-id.vo';
+import {
+  IEditorialLookRepository,
+  EditorialLookQueryOptions,
+  EditorialLookCountOptions,
+} from "../../domain/repositories/editorial-look.repository";
+import { IMediaAssetRepository } from "../../domain/repositories/media-asset.repository";
+import { IProductRepository } from "../../domain/repositories/product.repository";
+import {
+  EditorialLook,
+  CreateEditorialLookData,
+} from "../../domain/entities/editorial-look.entity";
+import { EditorialLookId as EntityEditorialLookId } from "../../domain/entities/editorial-look.entity";
+import { MediaAssetId as EntityMediaAssetId } from "../../domain/entities/media-asset.entity";
+import { EditorialLookId } from "../../domain/value-objects/editorial-look-id.vo";
+import { ProductId } from "../../domain/value-objects/product-id.vo";
 
 export class EditorialLookManagementService {
   constructor(
@@ -15,28 +22,29 @@ export class EditorialLookManagementService {
   ) {}
 
   // Core CRUD operations
-  async createEditorialLook(data: CreateEditorialLookData): Promise<EditorialLook> {
+  async createEditorialLook(
+    data: CreateEditorialLookData
+  ): Promise<EditorialLook> {
     this.validateTitle(data.title);
 
     if (data.storyHtml) {
       this.validateHtmlContent(data.storyHtml);
     }
 
-    if (data.publishedAt && data.publishedAt <= new Date()) {
-      throw new Error('Publication date must be in the future for scheduled publication');
-    }
+    // Allow any publishedAt date (past, present, future)
 
     // Validate hero asset exists if provided
     if (data.heroAssetId) {
       const heroAssetIdEntity = EntityMediaAssetId.fromString(data.heroAssetId);
-      const heroAsset = await this.mediaAssetRepository.findById(heroAssetIdEntity);
+      const heroAsset =
+        await this.mediaAssetRepository.findById(heroAssetIdEntity);
       if (!heroAsset) {
         throw new Error(`Hero asset with ID "${data.heroAssetId}" not found`);
       }
 
       // Validate it's an image
       if (!heroAsset.isImage()) {
-        throw new Error('Hero asset must be an image');
+        throw new Error("Hero asset must be an image");
       }
     }
 
@@ -56,8 +64,14 @@ export class EditorialLookManagementService {
     try {
       await this.editorialLookRepository.save(look);
     } catch (error) {
-      if (error instanceof Error && error.message.includes('duplicate') && error.message.includes('title')) {
-        throw new Error(`Editorial look with title "${data.title}" already exists`);
+      if (
+        error instanceof Error &&
+        error.message.includes("duplicate") &&
+        error.message.includes("title")
+      ) {
+        throw new Error(
+          `Editorial look with title "${data.title}" already exists`
+        );
       }
       throw error;
     }
@@ -76,28 +90,39 @@ export class EditorialLookManagementService {
     return look;
   }
 
-  async getAllEditorialLooks(options?: EditorialLookQueryOptions): Promise<EditorialLook[]> {
+  async getAllEditorialLooks(
+    options?: EditorialLookQueryOptions
+  ): Promise<EditorialLook[]> {
     return await this.editorialLookRepository.findAll(options);
   }
 
-  async getPublishedLooks(options?: EditorialLookQueryOptions): Promise<EditorialLook[]> {
+  async getPublishedLooks(
+    options?: EditorialLookQueryOptions
+  ): Promise<EditorialLook[]> {
     return await this.editorialLookRepository.findPublished(options);
   }
 
-  async getScheduledLooks(options?: EditorialLookQueryOptions): Promise<EditorialLook[]> {
+  async getScheduledLooks(
+    options?: EditorialLookQueryOptions
+  ): Promise<EditorialLook[]> {
     return await this.editorialLookRepository.findScheduled(options);
   }
 
-  async getDraftLooks(options?: EditorialLookQueryOptions): Promise<EditorialLook[]> {
+  async getDraftLooks(
+    options?: EditorialLookQueryOptions
+  ): Promise<EditorialLook[]> {
     return await this.editorialLookRepository.findDrafts(options);
   }
 
-  async updateEditorialLook(id: string, updates: {
-    title?: string;
-    storyHtml?: string;
-    heroAssetId?: string | null;
-    publishedAt?: Date | null;
-  }): Promise<EditorialLook> {
+  async updateEditorialLook(
+    id: string,
+    updates: {
+      title?: string;
+      storyHtml?: string | null;
+      heroAssetId?: string | null;
+      publishedAt?: Date | null;
+    }
+  ): Promise<EditorialLook> {
     const look = await this.getEditorialLookById(id);
 
     if (updates.title !== undefined) {
@@ -115,26 +140,33 @@ export class EditorialLookManagementService {
     if (updates.heroAssetId !== undefined) {
       if (updates.heroAssetId !== null) {
         // Validate hero asset exists
-        const heroAssetIdEntity = EntityMediaAssetId.fromString(updates.heroAssetId);
-        const heroAsset = await this.mediaAssetRepository.findById(heroAssetIdEntity);
+        const heroAssetIdEntity = EntityMediaAssetId.fromString(
+          updates.heroAssetId
+        );
+        const heroAsset =
+          await this.mediaAssetRepository.findById(heroAssetIdEntity);
         if (!heroAsset) {
-          throw new Error(`Hero asset with ID "${updates.heroAssetId}" not found`);
+          throw new Error(
+            `Hero asset with ID "${updates.heroAssetId}" not found`
+          );
         }
 
         // Validate it's an image
         if (!heroAsset.isImage()) {
-          throw new Error('Hero asset must be an image');
+          throw new Error("Hero asset must be an image");
         }
       }
       look.setHeroAsset(updates.heroAssetId);
     }
 
     if (updates.publishedAt !== undefined) {
-      if (updates.publishedAt && updates.publishedAt <= new Date()) {
-        throw new Error('Publication date must be in the future for scheduled publication');
-      }
-
       if (updates.publishedAt) {
+        // Only enforce future date if look is not already published
+        if (!look.isPublished() && updates.publishedAt <= new Date()) {
+          throw new Error(
+            "Publication date must be in the future for scheduled publication"
+          );
+        }
         look.schedulePublication(updates.publishedAt);
       } else {
         look.unpublish();
@@ -160,7 +192,9 @@ export class EditorialLookManagementService {
     const look = await this.getEditorialLookById(id);
 
     if (!look.canBePublished()) {
-      throw new Error('Editorial look cannot be published: missing title or hero image');
+      throw new Error(
+        "Editorial look cannot be published: missing title or hero image"
+      );
     }
 
     look.publish();
@@ -177,15 +211,20 @@ export class EditorialLookManagementService {
     return look;
   }
 
-  async scheduleLookPublication(id: string, publishDate: Date): Promise<EditorialLook> {
+  async scheduleLookPublication(
+    id: string,
+    publishDate: Date
+  ): Promise<EditorialLook> {
     if (publishDate <= new Date()) {
-      throw new Error('Publication date must be in the future');
+      throw new Error("Publication date must be in the future");
     }
 
     const look = await this.getEditorialLookById(id);
 
     if (!look.canBePublished()) {
-      throw new Error('Editorial look cannot be scheduled: missing title or hero image');
+      throw new Error(
+        "Editorial look cannot be scheduled: missing title or hero image"
+      );
     }
 
     look.schedulePublication(publishDate);
@@ -198,20 +237,26 @@ export class EditorialLookManagementService {
     return await this.editorialLookRepository.findReadyToPublish();
   }
 
-  async processScheduledPublications(): Promise<{ published: EditorialLook[]; errors: string[] }> {
+  async processScheduledPublications(): Promise<{
+    published: EditorialLook[];
+    errors: string[];
+  }> {
     const readyLooks = await this.getReadyToPublishLooks();
     const published: EditorialLook[] = [];
     const errors: string[] = [];
 
     for (const look of readyLooks) {
       try {
-        if (look.canBePublished() && look.isScheduled()) {
+        if (look.canBePublished()) {
+          // Publish the look (this will set publishedAt to now if it's not already published)
           look.publish();
           await this.editorialLookRepository.update(look);
           published.push(look);
         }
       } catch (error) {
-        errors.push(`Failed to publish look ${look.getId().getValue()}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        errors.push(
+          `Failed to publish look ${look.getId().getValue()}: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
       }
     }
 
@@ -224,14 +269,15 @@ export class EditorialLookManagementService {
 
     // Validate hero asset exists
     const heroAssetIdEntity = EntityMediaAssetId.fromString(assetId);
-    const heroAsset = await this.mediaAssetRepository.findById(heroAssetIdEntity);
+    const heroAsset =
+      await this.mediaAssetRepository.findById(heroAssetIdEntity);
     if (!heroAsset) {
       throw new Error(`Hero asset with ID "${assetId}" not found`);
     }
 
     // Validate it's an image
     if (!heroAsset.isImage()) {
-      throw new Error('Hero asset must be an image');
+      throw new Error("Hero asset must be an image");
     }
 
     look.setHeroAsset(assetId);
@@ -272,28 +318,47 @@ export class EditorialLookManagementService {
     }
 
     try {
-      await this.editorialLookRepository.addProductToLook(lookIdEntity, productId);
+      await this.editorialLookRepository.addProductToLook(
+        lookIdEntity,
+        productId
+      );
     } catch (error) {
-      if (error instanceof Error && error.message.includes('duplicate')) {
-        throw new Error(`Product "${productId}" is already associated with this editorial look`);
+      if (error instanceof Error && error.message.includes("duplicate")) {
+        throw new Error(
+          `Product "${productId}" is already associated with this editorial look`
+        );
       }
       throw error;
     }
   }
 
-  async removeProductFromLook(lookId: string, productId: string): Promise<void> {
+  async removeProductFromLook(
+    lookId: string,
+    productId: string
+  ): Promise<void> {
     const lookIdEntity = EntityEditorialLookId.fromString(lookId);
 
     // Validate association exists
-    const exists = await this.editorialLookRepository.existsProductInLook(lookIdEntity, productId);
+    const exists = await this.editorialLookRepository.existsProductInLook(
+      lookIdEntity,
+      productId
+    );
     if (!exists) {
-      throw new Error(`Product "${productId}" is not associated with look "${lookId}"`);
+      throw new Error(
+        `Product "${productId}" is not associated with look "${lookId}"`
+      );
     }
 
-    await this.editorialLookRepository.removeProductFromLook(lookIdEntity, productId);
+    await this.editorialLookRepository.removeProductFromLook(
+      lookIdEntity,
+      productId
+    );
   }
 
-  async setLookProducts(id: string, productIds: string[]): Promise<EditorialLook> {
+  async setLookProducts(
+    id: string,
+    productIds: string[]
+  ): Promise<EditorialLook> {
     // Validate look exists (this also serves as validation)
     await this.getEditorialLookById(id);
 
@@ -308,7 +373,10 @@ export class EditorialLookManagementService {
 
     // Use repository for consistency instead of entity method
     const lookIdEntity = EntityEditorialLookId.fromString(id);
-    await this.editorialLookRepository.setLookProducts(lookIdEntity, productIds);
+    await this.editorialLookRepository.setLookProducts(
+      lookIdEntity,
+      productIds
+    );
 
     // Return updated look
     return await this.getEditorialLookById(id);
@@ -323,7 +391,8 @@ export class EditorialLookManagementService {
       throw new Error(`Editorial look with ID "${id}" not found`);
     }
 
-    const productIds = await this.editorialLookRepository.getLookProducts(lookIdEntity);
+    const productIds =
+      await this.editorialLookRepository.getLookProducts(lookIdEntity);
     return productIds;
   }
 
@@ -336,34 +405,48 @@ export class EditorialLookManagementService {
       throw new Error(`Product with ID "${productId}" not found`);
     }
 
-    const lookIds = await this.editorialLookRepository.getProductLooks(productId);
-    return lookIds.map(id => id.getValue());
+    const lookIds =
+      await this.editorialLookRepository.getProductLooks(productId);
+    return lookIds.map((id) => id.getValue());
   }
 
-  async getLooksByProduct(productId: string, options?: EditorialLookQueryOptions): Promise<EditorialLook[]> {
-    return await this.editorialLookRepository.findByProductId(productId, options);
+  async getLooksByProduct(
+    productId: string,
+    options?: EditorialLookQueryOptions
+  ): Promise<EditorialLook[]> {
+    return await this.editorialLookRepository.findByProductId(
+      productId,
+      options
+    );
   }
 
   // Content management
-  async updateStoryContent(id: string, storyHtml: string): Promise<EditorialLook> {
+  async updateStoryContent(
+    id: string,
+    storyHtml: string
+  ): Promise<EditorialLook> {
     this.validateHtmlContent(storyHtml);
     return this.updateEditorialLook(id, { storyHtml });
   }
 
   async clearStoryContent(id: string): Promise<EditorialLook> {
-    return this.updateEditorialLook(id, { storyHtml: undefined });
+    return this.updateEditorialLook(id, { storyHtml: null });
   }
 
-  async getLooksWithContent(options?: EditorialLookQueryOptions): Promise<EditorialLook[]> {
+  async getLooksWithContent(
+    options?: EditorialLookQueryOptions
+  ): Promise<EditorialLook[]> {
     // Get all looks and filter in memory since hasContent is not available in query options
     const allLooks = await this.editorialLookRepository.findAll(options);
-    return allLooks.filter(look => look.hasStory());
+    return allLooks.filter((look) => look.hasStory());
   }
 
-  async getLooksWithoutContent(options?: EditorialLookQueryOptions): Promise<EditorialLook[]> {
+  async getLooksWithoutContent(
+    options?: EditorialLookQueryOptions
+  ): Promise<EditorialLook[]> {
     // Get all looks and filter in memory since hasContent is not available in query options
     const allLooks = await this.editorialLookRepository.findAll(options);
-    return allLooks.filter(look => !look.hasStory());
+    return allLooks.filter((look) => !look.hasStory());
   }
 
   // Analytics and statistics
@@ -384,7 +467,7 @@ export class EditorialLookManagementService {
       draftLooks,
       looksWithHeroImage,
       looksWithProducts,
-      allLooks
+      allLooks,
     ] = await Promise.all([
       this.editorialLookRepository.count(),
       this.editorialLookRepository.count({ published: true }),
@@ -392,10 +475,10 @@ export class EditorialLookManagementService {
       this.editorialLookRepository.count({ draft: true }),
       this.editorialLookRepository.count({ hasHeroImage: true }),
       this.editorialLookRepository.count({ hasProducts: true }),
-      this.editorialLookRepository.findAll() // Get all looks to count those with content
+      this.editorialLookRepository.findAll(), // Get all looks to count those with content
     ]);
 
-    const looksWithContent = allLooks.filter(look => look.hasStory()).length;
+    const looksWithContent = allLooks.filter((look) => look.hasStory()).length;
 
     return {
       totalLooks,
@@ -408,7 +491,9 @@ export class EditorialLookManagementService {
     };
   }
 
-  async getPopularProducts(limit: number = 10): Promise<Array<{ productId: string; appearanceCount: number }>> {
+  async getPopularProducts(
+    limit: number = 10
+  ): Promise<Array<{ productId: string; appearanceCount: number }>> {
     const allLooks = await this.getAllEditorialLooks();
     const productCounts = new Map<string, number>();
 
@@ -427,7 +512,9 @@ export class EditorialLookManagementService {
   }
 
   // Bulk operations
-  async createMultipleEditorialLooks(looksData: CreateEditorialLookData[]): Promise<EditorialLook[]> {
+  async createMultipleEditorialLooks(
+    looksData: CreateEditorialLookData[]
+  ): Promise<EditorialLook[]> {
     const createdLooks: EditorialLook[] = [];
     const errors: string[] = [];
 
@@ -436,18 +523,25 @@ export class EditorialLookManagementService {
         const look = await this.createEditorialLook(data);
         createdLooks.push(look);
       } catch (error) {
-        errors.push(`Failed to create editorial look "${data.title}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+        errors.push(
+          `Failed to create editorial look "${data.title}": ${error instanceof Error ? error.message : "Unknown error"}`
+        );
       }
     }
 
     if (errors.length > 0 && createdLooks.length === 0) {
-      throw new Error(`Failed to create any editorial looks: ${errors.join(', ')}`);
+      throw new Error(
+        `Failed to create any editorial looks: ${errors.join(", ")}`
+      );
     }
 
     return createdLooks;
   }
 
-  async deleteMultipleEditorialLooks(ids: string[]): Promise<{ deleted: string[]; failed: Array<{ id: string; error: string }> }> {
+  async deleteMultipleEditorialLooks(ids: string[]): Promise<{
+    deleted: string[];
+    failed: Array<{ id: string; error: string }>;
+  }> {
     const deleted: string[] = [];
     const failed: Array<{ id: string; error: string }> = [];
 
@@ -458,7 +552,7 @@ export class EditorialLookManagementService {
       } catch (error) {
         failed.push({
           id,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
     }
@@ -466,7 +560,10 @@ export class EditorialLookManagementService {
     return { deleted, failed };
   }
 
-  async publishMultipleLooks(ids: string[]): Promise<{ published: string[]; failed: Array<{ id: string; error: string }> }> {
+  async publishMultipleLooks(ids: string[]): Promise<{
+    published: string[];
+    failed: Array<{ id: string; error: string }>;
+  }> {
     const published: string[] = [];
     const failed: Array<{ id: string; error: string }> = [];
 
@@ -477,7 +574,7 @@ export class EditorialLookManagementService {
       } catch (error) {
         failed.push({
           id,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
     }
@@ -486,16 +583,18 @@ export class EditorialLookManagementService {
   }
 
   // Validation methods
-  async validateLookForPublication(id: string): Promise<{ isValid: boolean; errors: string[] }> {
+  async validateLookForPublication(
+    id: string
+  ): Promise<{ isValid: boolean; errors: string[] }> {
     const look = await this.getEditorialLookById(id);
     const errors: string[] = [];
 
     if (!look.getTitle().trim()) {
-      errors.push('Title is required');
+      errors.push("Title is required");
     }
 
     if (!look.hasHeroImage()) {
-      errors.push('Hero image is required');
+      errors.push("Hero image is required");
     }
 
     return {
@@ -505,18 +604,23 @@ export class EditorialLookManagementService {
   }
 
   // Utility methods
-  async getEditorialLookCount(options?: EditorialLookCountOptions): Promise<number> {
+  async getEditorialLookCount(
+    options?: EditorialLookCountOptions
+  ): Promise<number> {
     return await this.editorialLookRepository.count(options);
   }
 
-  async duplicateEditorialLook(id: string, newTitle: string): Promise<EditorialLook> {
+  async duplicateEditorialLook(
+    id: string,
+    newTitle: string
+  ): Promise<EditorialLook> {
     const originalLook = await this.getEditorialLookById(id);
 
     const duplicateData: CreateEditorialLookData = {
       title: newTitle,
       storyHtml: originalLook.getStoryHtml() || undefined,
       heroAssetId: originalLook.getHeroAssetId()?.getValue(),
-      productIds: originalLook.getProductIds().map(id => id.getValue()),
+      productIds: originalLook.getProductIds().map((id) => id.getValue()),
     };
 
     return this.createEditorialLook(duplicateData);
@@ -525,24 +629,29 @@ export class EditorialLookManagementService {
   // Private validation methods
   private validateTitle(title: string): void {
     if (!title || title.trim().length === 0) {
-      throw new Error('Editorial look title cannot be empty');
+      throw new Error("Editorial look title cannot be empty");
     }
 
     if (title.trim().length > 200) {
-      throw new Error('Editorial look title cannot be longer than 200 characters');
+      throw new Error(
+        "Editorial look title cannot be longer than 200 characters"
+      );
     }
 
     // Check for potentially dangerous characters that could indicate injection attempts
     const dangerousChars = /<script|javascript:|data:|vbscript:/i;
     if (dangerousChars.test(title)) {
-      throw new Error('Editorial look title contains potentially unsafe content');
+      throw new Error(
+        "Editorial look title contains potentially unsafe content"
+      );
     }
   }
 
-
   private validateHtmlContent(htmlContent: string): void {
     if (htmlContent.length > 100000) {
-      throw new Error('Editorial look content cannot exceed 100,000 characters');
+      throw new Error(
+        "Editorial look content cannot exceed 100,000 characters"
+      );
     }
 
     // Check for potentially malicious content
@@ -556,19 +665,31 @@ export class EditorialLookManagementService {
       /<form[^>]*>/i,
       /<input[^>]*>/i,
       /<link[^>]*>/i,
-      /<meta[^>]*>/i
+      /<meta[^>]*>/i,
     ];
 
     for (const pattern of dangerousPatterns) {
       if (pattern.test(htmlContent)) {
-        throw new Error('HTML content contains potentially unsafe elements');
+        throw new Error("HTML content contains potentially unsafe elements");
       }
     }
 
     // Improved HTML validation - check for balanced tags
     const selfClosingTags = new Set([
-      'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
-      'link', 'meta', 'param', 'source', 'track', 'wbr'
+      "area",
+      "base",
+      "br",
+      "col",
+      "embed",
+      "hr",
+      "img",
+      "input",
+      "link",
+      "meta",
+      "param",
+      "source",
+      "track",
+      "wbr",
     ]);
 
     const tagPattern = /<(\/?[a-zA-Z][a-zA-Z0-9]*)[^>]*>/g;
@@ -577,7 +698,7 @@ export class EditorialLookManagementService {
 
     while ((match = tagPattern.exec(htmlContent)) !== null) {
       const tagWithSlash = match[1];
-      const isClosingTag = tagWithSlash.startsWith('/');
+      const isClosingTag = tagWithSlash.startsWith("/");
       const tagName = isClosingTag ? tagWithSlash.substring(1) : tagWithSlash;
 
       // Skip self-closing tags
@@ -591,12 +712,14 @@ export class EditorialLookManagementService {
           throw new Error(`Unexpected closing tag: </${tagName}>`);
         }
         if (lastOpenTag.toLowerCase() !== tagName.toLowerCase()) {
-          throw new Error(`Mismatched HTML tags: expected </${lastOpenTag}> but found </${tagName}>`);
+          throw new Error(
+            `Mismatched HTML tags: expected </${lastOpenTag}> but found </${tagName}>`
+          );
         }
       } else {
         // Check if it's a self-closing tag with />
         const fullMatch = match[0];
-        if (fullMatch.endsWith('/>')) {
+        if (fullMatch.endsWith("/>")) {
           continue;
         }
         openTags.push(tagName);
@@ -604,7 +727,7 @@ export class EditorialLookManagementService {
     }
 
     if (openTags.length > 0) {
-      throw new Error(`Unclosed HTML tags: ${openTags.join(', ')}`);
+      throw new Error(`Unclosed HTML tags: ${openTags.join(", ")}`);
     }
   }
 }

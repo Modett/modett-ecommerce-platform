@@ -300,7 +300,9 @@ export function createServiceContainer(): ServiceContainer {
   const prisma = new PrismaClient({
     log:
       process.env.NODE_ENV === "development"
-        ? ["query", "info", "warn", "error"]
+        ? process.env.PRISMA_LOG_QUERIES === "true"
+          ? ["query", "info", "warn", "error"]
+          : ["info", "warn", "error"]
         : ["warn", "error"],
   });
 
@@ -318,9 +320,8 @@ export function createServiceContainer(): ServiceContainer {
   const sizeGuideRepository = new SizeGuideRepository(prisma);
   const editorialLookRepository = new EditorialLookRepository(prisma);
 
-  // Initialize Cart repositories
+  // Initialize Cart repositories (reservationRepository moved after stockManagementService is created)
   const cartRepository = new CartRepositoryImpl(prisma);
-  const reservationRepository = new ReservationRepositoryImpl(prisma);
 
   // Initialize Order Management repositories
   const orderRepository = new OrderRepositoryImpl(prisma);
@@ -339,10 +340,16 @@ export function createServiceContainer(): ServiceContainer {
   const locationRepository = new LocationRepositoryImpl(prisma);
   const supplierRepository = new SupplierRepositoryImpl(prisma);
   const purchaseOrderRepository = new PurchaseOrderRepositoryImpl(prisma);
-  const purchaseOrderItemRepository = new PurchaseOrderItemRepositoryImpl(prisma);
+  const purchaseOrderItemRepository = new PurchaseOrderItemRepositoryImpl(
+    prisma
+  );
   const stockAlertRepository = new StockAlertRepositoryImpl(prisma);
-  const pickupReservationRepository = new PickupReservationRepositoryImpl(prisma);
-  const inventoryTransactionRepository = new InventoryTransactionRepositoryImpl(prisma);
+  const pickupReservationRepository = new PickupReservationRepositoryImpl(
+    prisma
+  );
+  const inventoryTransactionRepository = new InventoryTransactionRepositoryImpl(
+    prisma
+  );
 
   // Initialize Fulfillment repositories
   const shipmentRepository = new ShipmentRepositoryImpl(prisma);
@@ -353,13 +360,17 @@ export function createServiceContainer(): ServiceContainer {
   const paymentTransactionRepository = new PaymentTransactionRepository(prisma);
   const bnplTransactionRepository = new BnplTransactionRepository(prisma);
   const giftCardRepository = new GiftCardRepository(prisma);
-  const giftCardTransactionRepository = new GiftCardTransactionRepository(prisma);
+  const giftCardTransactionRepository = new GiftCardTransactionRepository(
+    prisma
+  );
   const promotionRepository = new PromotionRepository(prisma);
   const promotionUsageRepository = new PromotionUsageRepository(prisma);
   const loyaltyProgramRepository = new LoyaltyProgramRepository(prisma);
   const loyaltyAccountRepository = new LoyaltyAccountRepository(prisma);
   const loyaltyTransactionRepository = new LoyaltyTransactionRepository(prisma);
-  const paymentWebhookEventRepository = new PaymentWebhookEventRepository(prisma);
+  const paymentWebhookEventRepository = new PaymentWebhookEventRepository(
+    prisma
+  );
 
   // Initialize core services
   const passwordHasher = new PasswordHasherService();
@@ -426,6 +437,18 @@ export function createServiceContainer(): ServiceContainer {
     productRepository
   );
 
+  // Initialize Inventory Management services first (needed by dependencies)
+  const stockManagementService = new StockManagementService(
+    stockRepository,
+    inventoryTransactionRepository
+  );
+
+  // Initialize Cart repositories that depend on inventory service
+  const reservationRepository = new ReservationRepositoryImpl(
+    prisma,
+    stockManagementService
+  );
+
   // Initialize Cart services
   const cartManagementService = new CartManagementService(
     cartRepository,
@@ -445,6 +468,7 @@ export function createServiceContainer(): ServiceContainer {
   const backorderManagementService = new BackorderManagementService(
     backorderRepository
   );
+
   const orderManagementService = new OrderManagementService(
     orderRepository,
     orderAddressRepository,
@@ -453,14 +477,11 @@ export function createServiceContainer(): ServiceContainer {
     orderStatusHistoryRepository,
     variantManagementService,
     productManagementService,
+    stockManagementService,
     orderEventService
   );
 
-  // Initialize Inventory Management services
-  const stockManagementService = new StockManagementService(
-    stockRepository,
-    inventoryTransactionRepository
-  );
+  // Continue with other Inventory Management services
   const locationManagementService = new LocationManagementService(
     locationRepository
   );
@@ -486,9 +507,7 @@ export function createServiceContainer(): ServiceContainer {
     shipmentRepository,
     shipmentItemRepository
   );
-  const shipmentItemService = new ShipmentItemService(
-    shipmentItemRepository
-  );
+  const shipmentItemService = new ShipmentItemService(shipmentItemRepository);
 
   // Initialize Payment & Loyalty services
   const paymentService = new PaymentService(
@@ -536,16 +555,32 @@ export function createServiceContainer(): ServiceContainer {
   const customerFeedbackRepository = new CustomerFeedbackRepositoryImpl(prisma);
 
   // Initialize Customer Care services
-  const supportTicketService = new SupportTicketService(supportTicketRepository);
-  const ticketMessageService = new TicketMessageService(ticketMessageRepository);
+  const supportTicketService = new SupportTicketService(
+    supportTicketRepository
+  );
+  const ticketMessageService = new TicketMessageService(
+    ticketMessageRepository
+  );
   const supportAgentService = new SupportAgentService(supportAgentRepository);
   const chatSessionService = new ChatSessionService(chatSessionRepository);
   const chatMessageService = new ChatMessageService(chatMessageRepository);
-  const returnRequestService = new ReturnRequestService(returnRequestRepository);
-  const returnItemService = new ReturnItemService(returnItemRepository);
+  const returnRequestService = new ReturnRequestService(
+    returnRequestRepository
+  );
+  const returnItemService = new ReturnItemService(
+    returnItemRepository,
+    returnRequestRepository,
+    orderManagementService
+  );
   const repairService = new RepairService(repairRepository);
-  const goodwillRecordService = new GoodwillRecordService(goodwillRecordRepository);
-  const customerFeedbackService = new CustomerFeedbackService(customerFeedbackRepository);
+  const goodwillRecordService = new GoodwillRecordService(
+    goodwillRecordRepository
+  );
+  const customerFeedbackService = new CustomerFeedbackService(
+    customerFeedbackRepository,
+    supportTicketService,
+    orderManagementService
+  );
 
   // Initialize Engagement repositories
   const wishlistRepository = new WishlistRepositoryImpl(prisma);
@@ -554,18 +589,25 @@ export function createServiceContainer(): ServiceContainer {
   const notificationRepository = new NotificationRepositoryImpl(prisma);
   const appointmentRepository = new AppointmentRepositoryImpl(prisma);
   const productReviewRepository = new ProductReviewRepositoryImpl(prisma);
-  const newsletterSubscriptionRepository = new NewsletterSubscriptionRepositoryImpl(prisma);
+  const newsletterSubscriptionRepository =
+    new NewsletterSubscriptionRepositoryImpl(prisma);
 
   // Initialize Engagement services
   const wishlistManagementService = new WishlistManagementService(
     wishlistRepository,
     wishlistItemRepository
   );
-  const reminderManagementService = new ReminderManagementService(reminderRepository);
+  const reminderManagementService = new ReminderManagementService(
+    reminderRepository
+  );
   const notificationService = new NotificationService(notificationRepository);
   const appointmentService = new AppointmentService(appointmentRepository);
-  const productReviewService = new ProductReviewService(productReviewRepository);
-  const newsletterService = new NewsletterService(newsletterSubscriptionRepository);
+  const productReviewService = new ProductReviewService(
+    productReviewRepository
+  );
+  const newsletterService = new NewsletterService(
+    newsletterSubscriptionRepository
+  );
 
   return {
     // Infrastructure
