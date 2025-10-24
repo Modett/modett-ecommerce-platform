@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { Button } from "./button"
 
 interface BrandPhilosophyProps {
   title?: string
@@ -10,45 +9,36 @@ interface BrandPhilosophyProps {
 }
 
 export function BrandPhilosophy({
-  title = "A philosophy of buying fewer, better fabrics",
+  title = "A philosophy of buying fewer, better pieces.",
   description = "We craft investment-quality garments from the finest natural fabrics, designed to endure for years, not seasons.",
   imageSrc,
-  ctaText = "LEARN MORE ›",
+  ctaText = "LEARN MORE",
   ctaHref = "/about",
 }: BrandPhilosophyProps) {
   return (
-    <section className="py-16 md:py-20 bg-[#f5f3ef]">
+    <section className="bg-[#ede9e3] py-20 md:py-24">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-center">
-          {/* Image */}
-          <div className="order-2 lg:order-1">
-            <div className="aspect-[4/3] md:aspect-[3/2] overflow-hidden rounded-lg">
-              <img
-                src={imageSrc}
-                alt="Brand philosophy"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
+        {/* Full Width Image */}
+        <div className="w-full mb-12 md:mb-16">
+          <img
+            src={imageSrc}
+            alt="Brand philosophy"
+            className="w-full h-[350px] md:h-[450px] object-cover"
+          />
+        </div>
 
-          {/* Content */}
-          <div className="order-1 lg:order-2 space-y-6">
-            <div>
-              <p className="text-xs tracking-widest uppercase text-gray-500 mb-3">
-                SLOW FASHION
-              </p>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">
-                {title}
-              </h2>
-              <p className="text-gray-600 text-lg leading-relaxed">
-                {description}
-              </p>
-            </div>
+        {/* Content */}
+        <div className="text-center">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <p className="text-[#4a4440] text-base md:text-lg leading-relaxed px-4">
+              {title} {description}
+            </p>
 
-            <Link href={ctaHref}>
-              <Button variant="outline" size="lg">
+            <Link href={ctaHref} className="inline-flex items-center group">
+              <span className="text-sm tracking-[0.2em] uppercase text-[#8B6B55] hover:text-[#6d5542] transition-colors">
                 {ctaText}
-              </Button>
+              </span>
+              <span className="ml-2 text-[#8B6B55] group-hover:text-[#6d5542] transition-colors">›</span>
             </Link>
           </div>
         </div>

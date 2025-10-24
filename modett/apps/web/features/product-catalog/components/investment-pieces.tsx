@@ -1,23 +1,23 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { ProductCard } from "./product-card"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import ProductCard from "./product-card";
 
 interface Product {
-  id: string
-  name: string
-  price: number
-  image: string
-  handle: string
-  rating?: number
-  totalReviews?: number
-  sizes?: string[]
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  handle: string;
+  rating?: number;
+  totalReviews?: number;
+  sizes?: string[];
 }
 
 interface InvestmentPiecesProps {
-  title?: string
-  subtitle?: string
-  products: Product[]
-  viewAllHref?: string
+  title?: string;
+  subtitle?: string;
+  products: Product[];
+  viewAllHref?: string;
 }
 
 export function InvestmentPieces({
@@ -27,27 +27,48 @@ export function InvestmentPieces({
   viewAllHref = "/catalog",
 }: InvestmentPiecesProps) {
   return (
-    <section className="py-16 md:py-20 lg:py-24 bg-[#f5f3ef]">
+    <section className="py-24 md:py-32 lg:py-24 bg-[#f5f3ef]">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
-          <div>
-            <p className="text-xs tracking-widest uppercase text-gray-500 mb-2">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12">
+          <div className="max-w-2xl">
+            <p className="text-sm tracking-widest uppercase text-[#7c6652] mb-6">
               BEST SELLING
             </p>
-            <h2 className="text-3xl md:text-4xl font-serif mb-2">{title}</h2>
-            <p className="text-gray-600 max-w-xl">{subtitle}</p>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif mb-4">
+              {title}
+            </h2>
+            <div className="block md:hidden mb-6">
+              <Link href={viewAllHref}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-2 border-[#2c353c] text-[#2c353c] bg-transparent px-10 py-4 uppercase tracking-[0.2em] text-lg font-medium rounded-none shadow-none hover:bg-gray-100 w-full"
+                >
+                  VIEW ALL
+                </Button>
+              </Link>
+            </div>
+            <p className="text-gray-600 text-lg w-full whitespace-normal">
+              {subtitle}
+            </p>
           </div>
 
-          <Link href={viewAllHref} className="mt-6 md:mt-0">
-            <Button variant="outline" size="lg">
-              VIEW ALL
-            </Button>
-          </Link>
+          <div className="hidden md:flex md:justify-end w-full md:w-auto mt-0">
+            <Link href={viewAllHref} className="self-center">
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-2 border-[#2c353c] text-[#2c353c] bg-transparent px-10 py-4 uppercase tracking-[0.2em] text-lg font-medium rounded-none shadow-none hover:bg-gray-100"
+              >
+                VIEW ALL
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 md:gap-x-10 gap-y-8">
           {products.map((product) => (
             <ProductCard
               key={product.id}
@@ -63,11 +84,11 @@ export function InvestmentPieces({
           ))}
         </div>
 
-        {/* View All Link - Mobile */}
-        <div className="mt-12 text-center lg:hidden">
+        {/* View All Link */}
+        <div className="mt-12 text-left">
           <Link
             href={viewAllHref}
-            className="inline-flex items-center text-sm tracking-wider uppercase text-gray-700 hover:text-primary transition-colors"
+            className="inline-flex items-center text-sm tracking-[0.2em] uppercase text-[#8B6B55] hover:text-primary transition-colors"
           >
             SHOP ALL INVESTMENT PIECES
             <span className="ml-2">›</span>
@@ -75,5 +96,5 @@ export function InvestmentPieces({
         </div>
       </div>
     </section>
-  )
+  );
 }
