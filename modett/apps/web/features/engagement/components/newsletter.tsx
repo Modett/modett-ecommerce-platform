@@ -1,103 +1,195 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Mail } from "lucide-react"
+import * as React from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface NewsletterProps {
-  title?: string
-  description?: string
-  onSubmit?: (email: string) => void | Promise<void>
+  title?: string;
+  description?: string;
+  onSubmit?: (email: string) => void | Promise<void>;
 }
 
 export function Newsletter({
   title = "Join the Modern Muse community",
-  description = "Get the latest fashion trends and exclusive offers delivered to your inbox.",
+  description = "Get the latest fashion trends and exclusive offers",
   onSubmit,
 }: NewsletterProps) {
-  const [email, setEmail] = React.useState("")
-  const [isLoading, setIsLoading] = React.useState(false)
-  const [message, setMessage] = React.useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [email, setEmail] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [message, setMessage] = React.useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!email) {
-      setMessage({ type: "error", text: "Please enter your email address" })
-      return
+      setMessage({ type: "error", text: "Please enter your email address" });
+      return;
     }
 
-    setIsLoading(true)
-    setMessage(null)
+    setIsLoading(true);
+    setMessage(null);
 
     try {
       if (onSubmit) {
-        await onSubmit(email)
+        await onSubmit(email);
       }
-      setMessage({ type: "success", text: "Thank you for subscribing!" })
-      setEmail("")
+      setMessage({ type: "success", text: "Thank you for subscribing!" });
+      setEmail("");
     } catch (error) {
-      setMessage({ type: "error", text: "Something went wrong. Please try again." })
+      setMessage({
+        type: "error",
+        text: "Something went wrong. Please try again.",
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <section className="bg-[#4a5568] text-white py-16 md:py-20">
-      <div className="container mx-auto px-4">
-        <div className="max-w-2xl mx-auto text-center">
-          {/* Icon */}
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 rounded-full mb-6">
-            <Mail className="h-8 w-8" />
-          </div>
-
-          {/* Title */}
-          <h2 className="text-3xl md:text-4xl font-serif mb-4">{title}</h2>
-
-          {/* Description */}
-          <p className="text-gray-300 mb-8 md:mb-10">{description}</p>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-                className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus-visible:ring-white"
-              />
-              <Button
-                type="submit"
-                disabled={isLoading}
-                size="lg"
-                className="bg-white text-gray-900 hover:bg-gray-100 min-w-[140px]"
+    <section className="bg-[#3E5460] text-white py-12 md:py-14">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8">
+        {/* Mobile Layout - Centered and Stacked */}
+        <div className="block md:hidden text-center">
+          <h2 className="text-2xl font-serif mb-4">{title}</h2>
+          <p className="text-white/80 text-sm mb-8 max-w-md mx-auto">
+            {description}
+          </p>
+          <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Enter e-mail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+              className="w-full bg-transparent border border-white/60 text-white placeholder:text-white/60 focus:outline-none focus:ring-0 px-4 h-12 text-sm rounded-none"
+              autoComplete="email"
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-2 bg-white text-[#3E5460] uppercase font-medium tracking-wider px-6 h-12 border-none rounded-none text-sm hover:bg-gray-100 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                {isLoading ? "Subscribing..." : "SUBSCRIBE"}
-              </Button>
-            </div>
-
+                <rect
+                  x="3"
+                  y="5"
+                  width="18"
+                  height="14"
+                  rx="2"
+                  stroke="#3E5460"
+                  strokeWidth="1.5"
+                  fill="none"
+                />
+                <path
+                  d="M3 7l9 6 9-6"
+                  stroke="#3E5460"
+                  strokeWidth="1.5"
+                  fill="none"
+                />
+              </svg>
+              SUBSCRIBE
+            </button>
             {/* Message */}
             {message && (
               <p
-                className={`text-sm ${
+                className={`text-xs mt-2 ${
                   message.type === "success" ? "text-green-400" : "text-red-400"
                 }`}
               >
                 {message.text}
               </p>
             )}
+            <p className="text-[11px] text-white/60 mt-4 leading-relaxed">
+              By subscribing, you agree to our privacy policy and terms of
+              service
+            </p>
           </form>
+        </div>
 
-          {/* Privacy Note */}
-          <p className="text-xs text-gray-400 mt-6">
-            By subscribing, you agree to our Privacy Policy and consent to receive updates.
-          </p>
+        {/* Desktop Layout - Side by Side */}
+        <div className="hidden md:flex md:items-start md:justify-between gap-8">
+          {/* Left: Title & Description */}
+          <div className="flex-1 min-w-[260px]">
+            <h2 className="text-2xl font-semibold mb-1">{title}</h2>
+            <p className="text-white/80 text-sm">{description}</p>
+          </div>
+          {/* Right: Form */}
+          <div className="flex-1 flex flex-col items-end w-full">
+            <form
+              onSubmit={handleSubmit}
+              className="w-full max-w-md flex flex-row items-stretch border border-white/60 bg-transparent rounded-none overflow-hidden"
+            >
+              <input
+                type="email"
+                placeholder="Enter e-mail"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+                className="flex-1 bg-transparent border-none text-white placeholder:text-white/60 focus:outline-none focus:ring-0 px-4 h-11 text-sm"
+                autoComplete="email"
+              />
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="flex items-center justify-center gap-2 bg-white text-[#3E5460] uppercase font-medium tracking-wider px-6 h-11 border-none rounded-none text-sm hover:bg-gray-100 transition-colors border-l border-white/60"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  className="mr-1"
+                >
+                  <rect
+                    x="3"
+                    y="5"
+                    width="18"
+                    height="14"
+                    rx="2"
+                    stroke="#3E5460"
+                    strokeWidth="1.5"
+                    fill="none"
+                  />
+                  <path
+                    d="M3 7l9 6 9-6"
+                    stroke="#3E5460"
+                    strokeWidth="1.5"
+                    fill="none"
+                  />
+                </svg>
+                SUBSCRIBE
+              </button>
+            </form>
+            {/* Message */}
+            {message && (
+              <p
+                className={`text-xs mt-2 ${
+                  message.type === "success" ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {message.text}
+              </p>
+            )}
+            <p className="text-[11px] text-white/50 mt-2 leading-relaxed w-full max-w-md text-right">
+              By subscribing, you agree to our privacy policy and terms of
+              service
+            </p>
+          </div>
         </div>
       </div>
     </section>
-  )
+  );
 }
