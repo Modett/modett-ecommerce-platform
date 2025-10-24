@@ -1,53 +1,46 @@
-import Link from "next/link"
-import { Button } from "./button"
-
 interface CollectionBannerProps {
-  title: string
-  subtitle?: string
-  imageSrc: string
-  href: string
-  ctaText?: string
+  title: string;
+  subtitle?: string;
+  imageSrc?: string;
+  secondaryTitle?: string;
+  secondarySubtitle?: string;
 }
 
 export function CollectionBanner({
   title,
   subtitle,
+  secondaryTitle,
+  secondarySubtitle,
   imageSrc,
-  href,
-  ctaText = "EXPLORE",
 }: CollectionBannerProps) {
   return (
-    <section className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden">
+    <section className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] flex flex-col justify-center items-center overflow-hidden">
       {/* Background Image */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${imageSrc})` }}
-      >
-        <div className="absolute inset-0 bg-black/30" />
-      </div>
-
-      {/* Content */}
-      <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
+        className="absolute inset-0 w-full h-full bg-cover bg-center"
+        style={{ backgroundImage: imageSrc ? `url(${imageSrc})` : undefined }}
+      />
+      <div className="relative w-full flex flex-col items-center justify-center text-center px-4 mt-16 md:mt-24 lg:mt-32">
         {subtitle && (
-          <p className="text-sm md:text-base tracking-widest uppercase text-white/80 mb-3">
+          <p className="text-[13px] md:text-base tracking-[0.25em] uppercase text-[#c4a572] mb-2 font-medium">
             {subtitle}
           </p>
         )}
-
-        <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-white mb-6 md:mb-8">
+        <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[#f5f3ef] mb-2">
           {title}
         </h2>
-
-        <Link href={href}>
-          <Button
-            variant="outline"
-            size="lg"
-            className="bg-transparent backdrop-blur-sm text-white border-white hover:bg-white hover:text-primary"
-          >
-            {ctaText}
-          </Button>
-        </Link>
+        <div className="w-full max-w-4xl h-[1.5px] bg-[#c4a572]/40 my-6"></div>
+        {secondarySubtitle && (
+          <p className="text-[13px] md:text-base tracking-[0.25em] uppercase text-[#c4a572] mb-2 font-medium">
+            {secondarySubtitle}
+          </p>
+        )}
+        {secondaryTitle && (
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[#f5f3ef]">
+            {secondaryTitle}
+          </h2>
+        )}
       </div>
     </section>
-  )
+  );
 }
