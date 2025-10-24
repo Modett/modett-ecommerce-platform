@@ -1,11 +1,236 @@
+"use client"
+
+import * as React from "react"
 import Link from "next/link"
-import { Facebook, Instagram, Twitter, Youtube, Mail } from "lucide-react"
+import { Facebook, Instagram, Twitter, Youtube, Linkedin } from "lucide-react"
 
 export function Footer() {
+  const [openSections, setOpenSections] = React.useState<{
+    [key: string]: boolean
+  }>({
+    customerCare: true,
+    philosophy: false,
+    generalInfo: false,
+  })
+
+  const toggleSection = (section: string) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }))
+  }
+
   return (
-    <footer className="bg-[#f5f3ef] border-t border-gray-200">
-      <div className="container mx-auto px-4 py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+    <footer className="bg-[#ede9e3] border-t border-gray-300">
+      <div className="container mx-auto px-4 py-8 lg:py-16">
+        {/* Mobile Accordion Layout */}
+        <div className="lg:hidden space-y-0 divide-y divide-gray-300">
+          {/* Customer Care */}
+          <div className="py-4">
+            <button
+              onClick={() => toggleSection("customerCare")}
+              className="flex items-center justify-between w-full text-left"
+            >
+              <h3 className="text-base font-normal text-gray-600">
+                Customer Care
+              </h3>
+              <span className="text-2xl text-gray-600 font-light">
+                {openSections.customerCare ? "−" : "+"}
+              </span>
+            </button>
+            {openSections.customerCare && (
+              <ul className="mt-4 space-y-3">
+                <li>
+                  <Link
+                    href="/orders"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    Orders and Returns
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/size-guide"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    Size Guide
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/shipment"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    Shipment
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/contact"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    Contact Us
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/wishlist"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    Wishlist
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/faq"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    FAQ
+                  </Link>
+                </li>
+              </ul>
+            )}
+          </div>
+
+          {/* Philosophy */}
+          <div className="py-4">
+            <button
+              onClick={() => toggleSection("philosophy")}
+              className="flex items-center justify-between w-full text-left"
+            >
+              <h3 className="text-base font-normal text-gray-600">Philosophy</h3>
+              <span className="text-2xl text-gray-600 font-light">
+                {openSections.philosophy ? "−" : "+"}
+              </span>
+            </button>
+            {openSections.philosophy && (
+              <ul className="mt-4 space-y-3">
+                <li>
+                  <Link
+                    href="/about"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/sustainability"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    Sustainability
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/craftmanship"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    Our Craftmanship
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/journal"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    The Journal
+                  </Link>
+                </li>
+              </ul>
+            )}
+          </div>
+
+          {/* General Information */}
+          <div className="py-4">
+            <button
+              onClick={() => toggleSection("generalInfo")}
+              className="flex items-center justify-between w-full text-left"
+            >
+              <h3 className="text-base font-normal text-gray-600">
+                General Information
+              </h3>
+              <span className="text-2xl text-gray-600 font-light">
+                {openSections.generalInfo ? "−" : "+"}
+              </span>
+            </button>
+            {openSections.generalInfo && (
+              <ul className="mt-4 space-y-3">
+                <li>
+                  <Link
+                    href="/legal"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    Legal Area
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/terms"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/privacy"
+                    className="text-sm text-gray-600 hover:text-accent transition-colors"
+                  >
+                    Cookie Policy
+                  </Link>
+                </li>
+              </ul>
+            )}
+          </div>
+
+          {/* Follow Us - Always Visible on Mobile */}
+          <div className="py-4 flex items-center justify-between">
+            <h3 className="text-base font-normal text-gray-600">
+              Follow us on
+            </h3>
+            <div className="flex gap-4">
+              <Link
+                href="#"
+                aria-label="Facebook"
+                className="text-gray-700 hover:text-accent transition-colors"
+              >
+                <Facebook className="h-5 w-5" />
+              </Link>
+              <Link
+                href="#"
+                aria-label="Instagram"
+                className="text-gray-700 hover:text-accent transition-colors"
+              >
+                <Instagram className="h-5 w-5" />
+              </Link>
+              <Link
+                href="#"
+                aria-label="Twitter"
+                className="text-gray-700 hover:text-accent transition-colors"
+              >
+                <Twitter className="h-5 w-5" />
+              </Link>
+              <Link
+                href="#"
+                aria-label="LinkedIn"
+                className="text-gray-700 hover:text-accent transition-colors"
+              >
+                <Linkedin className="h-5 w-5" />
+              </Link>
+              <Link
+                href="#"
+                aria-label="YouTube"
+                className="text-gray-700 hover:text-accent transition-colors"
+              >
+                <Youtube className="h-5 w-5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Grid Layout */}
+        <div className="hidden lg:grid grid-cols-4 gap-12">
           {/* Customer Care */}
           <div>
             <h3 className="text-sm font-semibold tracking-wide uppercase mb-4">
@@ -14,10 +239,10 @@ export function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link
-                  href="/shipping"
+                  href="/orders"
                   className="text-sm text-gray-600 hover:text-accent transition-colors"
                 >
-                  Shipping and Returns
+                  Orders and Returns
                 </Link>
               </li>
               <li>
@@ -30,10 +255,10 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/care"
+                  href="/shipment"
                   className="text-sm text-gray-600 hover:text-accent transition-colors"
                 >
-                  Care Instructions
+                  Shipment
                 </Link>
               </li>
               <li>
@@ -42,6 +267,14 @@ export function Footer() {
                   className="text-sm text-gray-600 hover:text-accent transition-colors"
                 >
                   Contact Us
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/wishlist"
+                  className="text-sm text-gray-600 hover:text-accent transition-colors"
+                >
+                  Wishlist
                 </Link>
               </li>
               <li>
@@ -96,10 +329,10 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Legal Information */}
+          {/* General Information */}
           <div>
             <h3 className="text-sm font-semibold tracking-wide uppercase mb-4">
-              Legal Information
+              General Information
             </h3>
             <ul className="space-y-3">
               <li>
@@ -135,20 +368,40 @@ export function Footer() {
               Follow us
             </h3>
             <div className="flex gap-4 mb-6">
-              <Link href="#" aria-label="Facebook" className="hover:text-accent transition-colors">
+              <Link
+                href="#"
+                aria-label="Facebook"
+                className="hover:text-accent transition-colors"
+              >
                 <Facebook className="h-5 w-5" />
               </Link>
-              <Link href="#" aria-label="Instagram" className="hover:text-accent transition-colors">
+              <Link
+                href="#"
+                aria-label="Instagram"
+                className="hover:text-accent transition-colors"
+              >
                 <Instagram className="h-5 w-5" />
               </Link>
-              <Link href="#" aria-label="Twitter" className="hover:text-accent transition-colors">
+              <Link
+                href="#"
+                aria-label="Twitter"
+                className="hover:text-accent transition-colors"
+              >
                 <Twitter className="h-5 w-5" />
               </Link>
-              <Link href="#" aria-label="YouTube" className="hover:text-accent transition-colors">
-                <Youtube className="h-5 w-5" />
+              <Link
+                href="#"
+                aria-label="LinkedIn"
+                className="hover:text-accent transition-colors"
+              >
+                <Linkedin className="h-5 w-5" />
               </Link>
-              <Link href="#" aria-label="Email" className="hover:text-accent transition-colors">
-                <Mail className="h-5 w-5" />
+              <Link
+                href="#"
+                aria-label="YouTube"
+                className="hover:text-accent transition-colors"
+              >
+                <Youtube className="h-5 w-5" />
               </Link>
             </div>
           </div>
@@ -161,7 +414,8 @@ export function Footer() {
               <span className="text-xl font-serif tracking-wider">MODETT</span>
             </div>
             <p className="text-xs text-gray-600">
-              © {new Date().getFullYear()} Modett. All rights reserved. | Privacy Policy | Cookie Settings
+              © {new Date().getFullYear()} Modett. All rights reserved. |
+              Privacy Policy | Cookie Settings
             </p>
           </div>
         </div>
