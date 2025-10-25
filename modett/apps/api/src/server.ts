@@ -92,7 +92,7 @@ export async function createServer(): Promise<FastifyInstance> {
           url:
             process.env.NODE_ENV === "production"
               ? "https://api.modett.com"
-              : "http://localhost:3000",
+              : "http://localhost:3001",
           description:
             process.env.NODE_ENV === "production"
               ? "Production server"
