@@ -15,10 +15,12 @@ interface ProductCardProps {
   rating?: number;
   totalReviews?: number;
   sizes?: string[];
+  sizeToVariantId?: Record<string, string>;
+  defaultVariantId?: string;
   handle: string;
   onAddToCart?: (productId: string, size: string) => void;
-  onToggleWishlist?: (productId: string) => void;
-  isInWishlist?: boolean;
+  onToggleWishlist?: (variantId: string) => void;
+  isInWishlist?: (variantId: string) => boolean;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -28,17 +30,30 @@ const ProductCard: React.FC<ProductCardProps> = ({
   currency = "Rs",
   image,
   sizes,
+  sizeToVariantId,
+  defaultVariantId,
   onAddToCart,
   onToggleWishlist,
   isInWishlist,
 }) => {
   const [selectedSize, setSelectedSize] = React.useState<string>("");
   const [isHovered, setIsHovered] = React.useState(false);
+  const activeVariantId =
+    (selectedSize && sizeToVariantId?.[selectedSize]) ||
+    defaultVariantId ||
+    (sizeToVariantId && Object.values(sizeToVariantId)[0])
 
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onToggleWishlist) {
-      onToggleWishlist(id);
+      if (!activeVariantId) {
+        console.warn(
+          "Wishlist toggle aborted: no variantId available for product",
+          id,
+        );
+        return;
+      }
+      onToggleWishlist(activeVariantId);
     }
   };
 
@@ -78,7 +93,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <Heart
             className={cn(
               "h-6 w-6 stroke-[1.5]",
-              isInWishlist
+              activeVariantId && isInWishlist?.(activeVariantId)
                 ? "fill-red-500 text-red-500"
                 : "text-white fill-none"
             )}

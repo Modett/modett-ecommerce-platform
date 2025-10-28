@@ -81,9 +81,15 @@ export async function registerEngagementRoutes(
         security: [{ bearerAuth: [] }],
         body: {
           type: "object",
-          required: ["userId", "name"],
           properties: {
-            userId: { type: "string", description: "User ID" },
+            userId: {
+              type: "string",
+              description: "User ID (for authenticated users)",
+            },
+            guestToken: {
+              type: "string",
+              description: "Guest token (for guest users)",
+            },
             name: { type: "string", description: "Wishlist name" },
             description: {
               type: "string",
@@ -92,6 +98,10 @@ export async function registerEngagementRoutes(
             isPublic: {
               type: "boolean",
               description: "Whether the wishlist is public",
+            },
+            isDefault: {
+              type: "boolean",
+              description: "Whether this is the default wishlist",
             },
           },
         },
@@ -106,9 +116,11 @@ export async function registerEngagementRoutes(
                 properties: {
                   wishlistId: { type: "string" },
                   userId: { type: "string" },
+                  guestToken: { type: "string" },
                   name: { type: "string" },
                   description: { type: "string" },
                   isPublic: { type: "boolean" },
+                  isDefault: { type: "boolean" },
                   createdAt: { type: "string", format: "date-time" },
                 },
               },
@@ -388,12 +400,29 @@ export async function registerEngagementRoutes(
       schema: {
         description: "Remove an item from a wishlist",
         tags: ["Engagement - Wishlists"],
+        headers: {
+          type: "object",
+          properties: {
+            authorization: {
+              type: "string",
+              description: "Bearer token for authenticated users",
+            },
+            "x-guest-token": {
+              type: "string",
+              description: "Guest token for guest wishlists",
+            },
+          },
+          additionalProperties: true,
+        },
         params: {
           type: "object",
           required: ["wishlistId", "wishlistItemId"],
           properties: {
             wishlistId: { type: "string", description: "Wishlist ID" },
-            wishlistItemId: { type: "string", description: "Wishlist item ID" },
+            wishlistItemId: {
+              type: "string",
+              description: "Variant ID within the wishlist",
+            },
           },
         },
         response: {

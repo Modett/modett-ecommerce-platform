@@ -6,6 +6,7 @@ export { MediaAssetRepository } from './media-asset.repository.impl';
 export { ProductTagRepository } from './product-tag.repository.impl';
 export { SizeGuideRepository } from './size-guide.repository.impl';
 export { EditorialLookRepository } from './editorial-look.repository.impl';
+export { ProductMediaRepository } from './product-media.repository.impl';
 
 // Export repository interfaces from domain layer
 export type { IProductRepository } from '../../../domain/repositories/product.repository';
@@ -15,3 +16,4 @@ export type { IMediaAssetRepository } from '../../../domain/repositories/media-a
 export type { IProductTagRepository } from '../../../domain/repositories/product-tag.repository';
 export type { ISizeGuideRepository } from '../../../domain/repositories/size-guide.repository';
 export type { IEditorialLookRepository } from '../../../domain/repositories/editorial-look.repository';
+export type { IProductMediaRepository } from '../../../domain/repositories/product-media.repository';

@@ -20,6 +20,7 @@ import {
   ProductTagRepository,
   SizeGuideRepository,
   EditorialLookRepository,
+  ProductMediaRepository,
 } from "../../../modules/product-catalog/infra/persistence/repositories";
 import {
   ProductManagementService,
@@ -31,6 +32,7 @@ import {
   ProductTagManagementService,
   SizeGuideManagementService,
   EditorialLookManagementService,
+  ProductMediaManagementService,
 } from "../../../modules/product-catalog/application/services";
 
 // Cart imports
@@ -166,6 +168,7 @@ export interface ServiceContainer {
   productTagRepository: ProductTagRepository;
   sizeGuideRepository: SizeGuideRepository;
   editorialLookRepository: EditorialLookRepository;
+  productMediaRepository: ProductMediaRepository;
 
   // Cart Repositories
   cartRepository: CartRepositoryImpl;
@@ -208,6 +211,7 @@ export interface ServiceContainer {
   productTagManagementService: ProductTagManagementService;
   sizeGuideManagementService: SizeGuideManagementService;
   editorialLookManagementService: EditorialLookManagementService;
+  productMediaManagementService: ProductMediaManagementService;
 
   // Cart Services
   cartManagementService: CartManagementService;
@@ -319,6 +323,7 @@ export function createServiceContainer(): ServiceContainer {
   const productTagRepository = new ProductTagRepository(prisma);
   const sizeGuideRepository = new SizeGuideRepository(prisma);
   const editorialLookRepository = new EditorialLookRepository(prisma);
+  const productMediaRepository = new ProductMediaRepository(prisma);
 
   // Initialize Cart repositories (reservationRepository moved after stockManagementService is created)
   const cartRepository = new CartRepositoryImpl(prisma);
@@ -433,6 +438,11 @@ export function createServiceContainer(): ServiceContainer {
   );
   const editorialLookManagementService = new EditorialLookManagementService(
     editorialLookRepository,
+    mediaAssetRepository,
+    productRepository
+  );
+  const productMediaManagementService = new ProductMediaManagementService(
+    productMediaRepository,
     mediaAssetRepository,
     productRepository
   );
@@ -627,6 +637,7 @@ export function createServiceContainer(): ServiceContainer {
     productTagRepository,
     sizeGuideRepository,
     editorialLookRepository,
+    productMediaRepository,
 
     // Cart Repositories
     cartRepository,
@@ -682,6 +693,7 @@ export function createServiceContainer(): ServiceContainer {
     productTagManagementService,
     sizeGuideManagementService,
     editorialLookManagementService,
+    productMediaManagementService,
 
     // Cart Services
     cartManagementService,

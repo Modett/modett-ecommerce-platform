@@ -213,14 +213,33 @@ export class WishlistManagementService {
   // Wishlist Item operations
   async addToWishlist(
     wishlistId: string,
-    variantId: string
+    variantId: string,
+    context?: { userId?: string; guestToken?: string }
   ): Promise<WishlistItem> {
-    const wishlistExists = await this.wishlistRepository.exists(
+    const wishlist = await this.wishlistRepository.findById(
       WishlistId.fromString(wishlistId)
     );
 
-    if (!wishlistExists) {
+    if (!wishlist) {
       throw new Error(`Wishlist with ID ${wishlistId} not found`);
+    }
+
+    // Verify ownership
+    if (context) {
+      const wishlistUserId = wishlist.getUserId();
+      const wishlistGuestToken = wishlist.getGuestToken();
+
+      if (wishlistUserId && context.userId !== wishlistUserId) {
+        throw new Error(`Unauthorized: Wishlist belongs to a different user`);
+      }
+
+      if (wishlistGuestToken && context.guestToken !== wishlistGuestToken) {
+        throw new Error(`Unauthorized: Wishlist belongs to a different guest`);
+      }
+
+      if (!wishlistUserId && !wishlistGuestToken) {
+        throw new Error(`Invalid wishlist: No owner information`);
+      }
     }
 
     const item = WishlistItem.create({
@@ -242,7 +261,7 @@ export class WishlistManagementService {
     );
 
     if (!exists) {
-      throw new Error(`Item not found in wishlist`);
+      return;
     }
 
     await this.wishlistItemRepository.delete(wishlistId, variantId);

@@ -1,175 +1,271 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { Menu, Search, User, Heart, ShoppingBag, X, Globe, Phone, Mail } from "lucide-react"
+import * as React from "react";
+import Link from "next/link";
+import { Menu, Search, User, Heart, ShoppingBag, X, Globe, Phone, Mail } from "lucide-react";
 
-const BACKGROUND_COLOR = "bg-[#f5f3ef]"
-const ACCENT_TEXT = "text-[#8c6f5a]"
-const ACCENT_TEXT_HOVER = "hover:text-[#5d4639]"
-const NAV_TEXT = "text-[#445160]"
-const NAV_TEXT_HOVER = "hover:text-[#2f3946]"
+// ============================================================================
+// Theme Constants
+// ============================================================================
 
-export function Header() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
+const THEME = {
+  background: "bg-[#f5f3ef]",
+  accent: {
+    text: "text-[#8c6f5a]",
+    hover: "hover:text-[#5d4639]",
+  },
+  nav: {
+    text: "text-[#445160]",
+    hover: "hover:text-[#2f3946]",
+  },
+  logo: "text-[#2f4050]",
+  border: "border-[#d9d2c4]",
+} as const;
+
+// ============================================================================
+// Navigation Data
+// ============================================================================
+
+const MAIN_NAV_LINKS = [
+  { label: "SUMMER 2025", href: "/catalog" },
+  { label: "COLLECTIONS", href: "/catalog" },
+  { label: "BRAND PHILOSOPHY", href: "/about" },
+  { label: "CONTACT", href: "/contact" },
+] as const;
+
+const UTILITY_LINKS = [
+  { label: "Sri Lanka", href: "#", icon: Globe },
+  { label: "Contact Us", href: "/contact", icon: Phone },
+  { label: "Newsletter", href: "#newsletter", icon: Mail },
+] as const;
+
+// ============================================================================
+// Sub-Components
+// ============================================================================
+
+/**
+ * Logo component
+ */
+const Logo = ({ className = "" }: { className?: string }) => (
+  <Link href="/" className={`flex items-center ${className}`}>
+    <span className={`font-serif ${THEME.logo}`}>MODETT</span>
+  </Link>
+);
+
+/**
+ * Icon button component
+ */
+const IconButton = ({
+  icon: Icon,
+  label,
+  href,
+  onClick,
+  className = "",
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  href?: string;
+  onClick?: () => void;
+  className?: string;
+}) => {
+  const buttonClass = `transition-colors ${THEME.accent.text} ${THEME.accent.hover} ${className}`;
+
+  if (href) {
+    return (
+      <Link href={href} aria-label={label} className={buttonClass}>
+        <Icon className="h-4 w-4" />
+      </Link>
+    );
+  }
 
   return (
-    <header className={`sticky top-0 z-50 w-full ${BACKGROUND_COLOR}`}>
-      {/* Utility Bar - Desktop Only */}
-      <div className={`hidden lg:block ${BACKGROUND_COLOR}`}>
-        <div className="container mx-auto px-6">
-          <div className="flex items-center justify-between py-2.5 text-xs">
-            <div className={`flex items-center gap-6 ${ACCENT_TEXT}`}>
-              <Link href="#" className={`flex items-center gap-1.5 transition-colors ${ACCENT_TEXT_HOVER}`}>
-                <Globe className="h-3.5 w-3.5" />
-                <span>Sri Lanka</span>
-              </Link>
-              <Link href="/contact" className={`flex items-center gap-1.5 transition-colors ${ACCENT_TEXT_HOVER}`}>
-                <Phone className="h-3.5 w-3.5" />
-                <span>Contact Us</span>
-              </Link>
-              <Link href="#newsletter" className={`flex items-center gap-1.5 transition-colors ${ACCENT_TEXT_HOVER}`}>
-                <Mail className="h-3.5 w-3.5" />
-                <span>Newsletter</span>
-              </Link>
-            </div>
+    <button aria-label={label} className={buttonClass} onClick={onClick}>
+      <Icon className="h-4 w-4" />
+    </button>
+  );
+};
 
-            <div className={`flex items-center gap-5 ${ACCENT_TEXT}`}>
-              <button aria-label="Search" className={`transition-colors ${ACCENT_TEXT_HOVER}`}>
-                <Search className="h-4 w-4" />
-              </button>
-              <Link href="/wishlist" aria-label="Wishlist" className={`transition-colors ${ACCENT_TEXT_HOVER}`}>
-                <Heart className="h-4 w-4" />
-              </Link>
-              <Link href="/account" aria-label="Account" className={`transition-colors ${ACCENT_TEXT_HOVER}`}>
-                <User className="h-4 w-4" />
-              </Link>
-              <Link href="/cart" aria-label="Cart" className={`transition-colors ${ACCENT_TEXT_HOVER}`}>
-                <ShoppingBag className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
+/**
+ * Utility bar for desktop - shows location, contact, newsletter, and action icons
+ */
+const UtilityBar = () => (
+  <div className={`hidden lg:block ${THEME.background}`}>
+    <div className="container mx-auto px-6">
+      <div className="flex items-center justify-between py-2.5 text-xs">
+        {/* Left Side: Utility Links */}
+        <div className={`flex items-center gap-6 ${THEME.accent.text}`}>
+          {UTILITY_LINKS.map(({ label, href, icon: Icon }) => (
+            <Link
+              key={label}
+              href={href}
+              className={`flex items-center gap-1.5 transition-colors ${THEME.accent.hover}`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              <span>{label}</span>
+            </Link>
+          ))}
+        </div>
+
+        {/* Right Side: Action Icons */}
+        <div className={`flex items-center gap-5 ${THEME.accent.text}`}>
+          <IconButton icon={Search} label="Search" />
+          <IconButton icon={Heart} label="Wishlist" href="/wishlist" />
+          <IconButton icon={User} label="Account" href="/account" />
+          <IconButton icon={ShoppingBag} label="Cart" href="/cart" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+/**
+ * Desktop navigation
+ */
+const DesktopNav = () => (
+  <div className="hidden lg:flex flex-col items-center py-6">
+    {/* Logo */}
+    <Logo className="mb-5 text-2xl tracking-[0.3em]" />
+
+    {/* Navigation Links */}
+    <nav className="flex items-center gap-10">
+      {MAIN_NAV_LINKS.map(({ label, href }) => (
+        <Link
+          key={label}
+          href={href}
+          className={`text-xs font-medium tracking-[0.15em] uppercase transition-colors ${THEME.nav.text} ${THEME.nav.hover}`}
+        >
+          {label}
+        </Link>
+      ))}
+    </nav>
+  </div>
+);
+
+/**
+ * Mobile header bar
+ */
+const MobileHeaderBar = ({
+  isMobileMenuOpen,
+  toggleMobileMenu,
+}: {
+  isMobileMenuOpen: boolean;
+  toggleMobileMenu: () => void;
+}) => (
+  <div className={`lg:hidden flex items-center justify-between py-4 ${THEME.accent.text}`}>
+    {/* Menu Toggle Button */}
+    <button
+      className={`p-2 -ml-2 transition-colors ${THEME.accent.hover}`}
+      onClick={toggleMobileMenu}
+      aria-label="Toggle menu"
+      aria-expanded={isMobileMenuOpen}
+    >
+      {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+    </button>
+
+    {/* Logo */}
+    <Logo className="text-xl tracking-[0.2em]" />
+
+    {/* Action Icons */}
+    <div className="flex items-center gap-3">
+      <IconButton icon={Search} label="Search" className="h-5 w-5" />
+      <IconButton icon={ShoppingBag} label="Cart" href="/cart" className="h-5 w-5" />
+    </div>
+  </div>
+);
+
+/**
+ * Mobile menu dropdown
+ */
+const MobileMenu = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className={`lg:hidden border-t ${THEME.border} ${THEME.background}`}>
+      <nav className="container mx-auto px-6 py-6 flex flex-col gap-4">
+        {/* Main Navigation Links */}
+        {MAIN_NAV_LINKS.map(({ label, href }) => (
+          <Link
+            key={label}
+            href={href}
+            className={`text-sm font-medium tracking-wider py-2 uppercase transition-colors ${THEME.nav.text} ${THEME.nav.hover}`}
+            onClick={onClose}
+          >
+            {label}
+          </Link>
+        ))}
+
+        {/* Utility Links (Mobile) */}
+        <div className={`border-t ${THEME.border} mt-4 pt-4 flex flex-col gap-3 text-sm ${THEME.accent.text}`}>
+          {UTILITY_LINKS.map(({ label, href, icon: Icon }) => (
+            <Link
+              key={label}
+              href={href}
+              className={`py-2 flex items-center gap-2 transition-colors ${THEME.accent.hover}`}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </Link>
+          ))}
+        </div>
+      </nav>
+    </div>
+  );
+};
+
+// ============================================================================
+// Main Header Component
+// ============================================================================
+
+export function Header() {
+  // ============================================================================
+  // State Management
+  // ============================================================================
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+  // ============================================================================
+  // Event Handlers
+  // ============================================================================
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen((prev) => !prev);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  // ============================================================================
+  // Render
+  // ============================================================================
+
+  return (
+    <header className={`sticky top-0 z-50 w-full ${THEME.background}`}>
+      {/* Desktop Utility Bar (hidden on mobile) */}
+      <UtilityBar />
+
+      {/* Main Header Content */}
+      <div className={THEME.background}>
+        <div className="container mx-auto px-6">
+          {/* Mobile Header (visible on mobile only) */}
+          <MobileHeaderBar
+            isMobileMenuOpen={isMobileMenuOpen}
+            toggleMobileMenu={toggleMobileMenu}
+          />
+
+          {/* Desktop Header (hidden on mobile) */}
+          <DesktopNav />
         </div>
       </div>
 
-      {/* Main Header */}
-      <div className={`${BACKGROUND_COLOR}`}>
-        <div className="container mx-auto px-6">
-          {/* Mobile Header */}
-          <div className={`lg:hidden flex items-center justify-between py-4 ${ACCENT_TEXT}`}>
-            <button
-              className={`p-2 -ml-2 transition-colors ${ACCENT_TEXT_HOVER}`}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
-
-            <Link href="/" className="flex items-center">
-              <span className="text-xl font-serif tracking-[0.2em] text-[#2f4050]">MODETT</span>
-            </Link>
-
-            <div className={`flex items-center gap-3`}>
-              <button aria-label="Search" className={`transition-colors ${ACCENT_TEXT_HOVER} ${ACCENT_TEXT}`}>
-                <Search className="h-5 w-5" />
-              </button>
-              <Link href="/cart" aria-label="Cart" className={`transition-colors ${ACCENT_TEXT} ${ACCENT_TEXT_HOVER}`}>
-                <ShoppingBag className="h-5 w-5" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Desktop Header */}
-          <div className="hidden lg:flex flex-col items-center py-6">
-            {/* Logo */}
-            <Link href="/" className="flex items-center mb-5 text-[#2f4050]">
-              <span className="text-2xl font-serif tracking-[0.3em]">MODETT</span>
-            </Link>
-
-            {/* Navigation */}
-            <nav className="flex items-center gap-10">
-              <Link
-                href="/catalog"
-                className={`text-xs font-medium tracking-[0.15em] uppercase transition-colors ${NAV_TEXT} ${NAV_TEXT_HOVER}`}
-              >
-                SUMMER 2025
-              </Link>
-              <Link
-                href="/catalog"
-                className={`text-xs font-medium tracking-[0.15em] uppercase transition-colors ${NAV_TEXT} ${NAV_TEXT_HOVER}`}
-              >
-                COLLECTIONS
-              </Link>
-              <Link
-                href="/about"
-                className={`text-xs font-medium tracking-[0.15em] uppercase transition-colors ${NAV_TEXT} ${NAV_TEXT_HOVER}`}
-              >
-                BRAND PHILOSOPHY
-              </Link>
-              <Link
-                href="/contact"
-                className={`text-xs font-medium tracking-[0.15em] uppercase transition-colors ${NAV_TEXT} ${NAV_TEXT_HOVER}`}
-              >
-                CONTACT
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className={`lg:hidden border-t border-[#d9d2c4] ${BACKGROUND_COLOR}`}>
-          <nav className="container mx-auto px-6 py-6 flex flex-col gap-4">
-            <Link
-              href="/catalog"
-              className={`text-sm font-medium tracking-wider py-2 uppercase transition-colors ${NAV_TEXT} ${NAV_TEXT_HOVER}`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              SUMMER 2025
-            </Link>
-            <Link
-              href="/catalog"
-              className={`text-sm font-medium tracking-wider py-2 uppercase transition-colors ${NAV_TEXT} ${NAV_TEXT_HOVER}`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              COLLECTIONS
-            </Link>
-            <Link
-              href="/about"
-              className={`text-sm font-medium tracking-wider py-2 uppercase transition-colors ${NAV_TEXT} ${NAV_TEXT_HOVER}`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              BRAND PHILOSOPHY
-            </Link>
-            <Link
-              href="/contact"
-              className={`text-sm font-medium tracking-wider py-2 uppercase transition-colors ${NAV_TEXT} ${NAV_TEXT_HOVER}`}
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              CONTACT
-            </Link>
-            <div className={`border-t border-[#d9d2c4] mt-4 pt-4 flex flex-col gap-3 text-sm ${ACCENT_TEXT}`}>
-              <Link href="#" className={`py-2 flex items-center gap-2 transition-colors ${ACCENT_TEXT_HOVER}`}>
-                <Globe className="h-4 w-4" />
-                Sri Lanka
-              </Link>
-              <Link href="/contact" className={`py-2 flex items-center gap-2 transition-colors ${ACCENT_TEXT_HOVER}`}>
-                <Phone className="h-4 w-4" />
-                Contact Us
-              </Link>
-              <Link href="#newsletter" className={`py-2 flex items-center gap-2 transition-colors ${ACCENT_TEXT_HOVER}`}>
-                <Mail className="h-4 w-4" />
-                Newsletter
-              </Link>
-            </div>
-          </nav>
-        </div>
-      )}
+      {/* Mobile Menu Dropdown */}
+      <MobileMenu isOpen={isMobileMenuOpen} onClose={closeMobileMenu} />
     </header>
-  )
+  );
 }
