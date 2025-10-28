@@ -8,6 +8,7 @@ import {
   ProductTagController,
   SizeGuideController,
   EditorialLookController,
+  ProductMediaController,
 } from "./controllers";
 import {
   ProductManagementService,
@@ -18,6 +19,7 @@ import {
   ProductTagManagementService,
   SizeGuideManagementService,
   EditorialLookManagementService,
+  ProductMediaManagementService,
 } from "../../application/services";
 import {
   authenticateUser,
@@ -59,6 +61,7 @@ export async function registerProductCatalogRoutes(
     productTagService: ProductTagManagementService;
     sizeGuideService: SizeGuideManagementService;
     editorialLookService: EditorialLookManagementService;
+    productMediaService: ProductMediaManagementService;
   }
 ) {
   // Initialize controllers
@@ -78,6 +81,9 @@ export async function registerProductCatalogRoutes(
   );
   const editorialLookController = new EditorialLookController(
     services.editorialLookService
+  );
+  const productMediaController = new ProductMediaController(
+    services.productMediaService
   );
 
   // =============================================================================
@@ -1125,6 +1131,299 @@ export async function registerProductCatalogRoutes(
       },
     },
     mediaController.deleteMediaAsset.bind(mediaController) as any
+  );
+
+  // =============================================================================
+  // PRODUCT MEDIA ASSOCIATION ROUTES
+  // =============================================================================
+
+  // Get all media for a product
+  fastify.get(
+    "/products/:productId/media",
+    {
+      schema: {
+        description: "Get all media assets associated with a product",
+        tags: ["Product Media"],
+        summary: "Get Product Media",
+        params: {
+          type: "object",
+          properties: {
+            productId: { type: "string", format: "uuid" },
+          },
+          required: ["productId"],
+        },
+        querystring: {
+          type: "object",
+          properties: {
+            includeAssetDetails: {
+              type: "boolean",
+              default: true,
+              description: "Include full asset details"
+            },
+            sortBy: {
+              type: "string",
+              enum: ["position", "createdAt"],
+              default: "position",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Product media retrieved successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: { type: "array" },
+            },
+          },
+          404: {
+            description: "Product not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    productMediaController.getProductMedia.bind(productMediaController)
+  );
+
+  // Add media to a product
+  fastify.post(
+    "/products/:productId/media",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Add/attach a media asset to a product",
+        tags: ["Product Media"],
+        summary: "Add Media to Product",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            productId: { type: "string", format: "uuid" },
+          },
+          required: ["productId"],
+        },
+        body: {
+          type: "object",
+          required: ["assetId"],
+          properties: {
+            assetId: {
+              type: "string",
+              format: "uuid",
+              description: "Media asset ID to attach"
+            },
+            position: {
+              type: "integer",
+              minimum: 1,
+              description: "Display position"
+            },
+            isCover: {
+              type: "boolean",
+              description: "Set as cover/primary image"
+            },
+          },
+        },
+        response: {
+          201: {
+            description: "Media added to product successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  productMediaId: { type: "string" },
+                },
+              },
+              message: { type: "string" },
+            },
+          },
+          404: {
+            description: "Product or media asset not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+          409: {
+            description: "Media already associated with product",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productMediaController.addMediaToProduct.bind(productMediaController) as any
+  );
+
+  // Remove media from a product
+  fastify.delete(
+    "/products/:productId/media/:assetId",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Remove a media asset from a product",
+        tags: ["Product Media"],
+        summary: "Remove Product Media",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            productId: { type: "string", format: "uuid" },
+            assetId: { type: "string", format: "uuid" },
+          },
+          required: ["productId", "assetId"],
+        },
+        response: {
+          200: {
+            description: "Media removed successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string" },
+            },
+          },
+          404: {
+            description: "Association not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productMediaController.removeMediaFromProduct.bind(productMediaController) as any
+  );
+
+  // Set product cover image
+  fastify.post(
+    "/products/:productId/media/cover",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Set a media asset as the product cover/primary image",
+        tags: ["Product Media"],
+        summary: "Set Product Cover Image",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            productId: { type: "string", format: "uuid" },
+          },
+          required: ["productId"],
+        },
+        body: {
+          type: "object",
+          required: ["assetId"],
+          properties: {
+            assetId: {
+              type: "string",
+              format: "uuid",
+              description: "Media asset ID to set as cover"
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Cover image set successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string" },
+            },
+          },
+          404: {
+            description: "Product or media not found or not associated",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productMediaController.setProductCoverImage.bind(productMediaController) as any
+  );
+
+  // Reorder product media
+  fastify.post(
+    "/products/:productId/media/reorder",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Reorder media assets for a product",
+        tags: ["Product Media"],
+        summary: "Reorder Product Media",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            productId: { type: "string", format: "uuid" },
+          },
+          required: ["productId"],
+        },
+        body: {
+          type: "object",
+          required: ["reorderData"],
+          properties: {
+            reorderData: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  assetId: { type: "string", format: "uuid" },
+                  position: { type: "integer", minimum: 1 },
+                },
+                required: ["assetId", "position"],
+              },
+              minItems: 1,
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Media reordered successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string" },
+            },
+          },
+          400: {
+            description: "Invalid reorder data",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+          404: {
+            description: "Product or media not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+          ...authErrorResponses,
+        },
+      },
+    },
+    productMediaController.reorderProductMedia.bind(productMediaController) as any
   );
 
   // =============================================================================

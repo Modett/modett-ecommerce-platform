@@ -21,22 +21,27 @@ export const API_ENDPOINTS = {
   variantById: (id: string) => `/v1/catalog/variants/${id}`,
 
   // Cart
-  cart: '/v1/cart',
-  cartById: (id: string) => `/v1/cart/${id}`,
-  userCart: (userId: string) => `/v1/cart/user/${userId}`,
-  guestCart: (token: string) => `/v1/cart/guest/${token}`,
-  cartItems: (cartId: string) => `/v1/cart/${cartId}/items`,
-  cartItem: (cartId: string, itemId: string) => `/v1/cart/${cartId}/items/${itemId}`,
+  generateGuestToken: '/v1/cart/generate-guest-token',
+  cartById: (id: string) => `/v1/cart/carts/${id}`,
+  userCart: (userId: string) => `/v1/cart/users/${userId}/cart`,
+  createUserCart: (userId: string) => `/v1/cart/users/${userId}/cart`,
+  guestCart: (token: string) => `/v1/cart/guests/${token}/cart`,
+  createGuestCart: (token: string) => `/v1/cart/guests/${token}/cart`,
+  addCartItem: '/v1/cart/cart/items',
+  updateCartItem: (cartId: string, variantId: string) => `/v1/cart/carts/${cartId}/items/${variantId}`,
+  removeCartItem: (cartId: string, variantId: string) => `/v1/cart/carts/${cartId}/items/${variantId}`,
+  clearUserCart: (userId: string) => `/v1/cart/users/${userId}/cart`,
+  clearGuestCart: (token: string) => `/v1/cart/guests/${token}/cart`,
 
   // Wishlist
-  wishlists: '/v1/wishlists',
-  wishlistById: (id: string) => `/v1/wishlists/${id}`,
-  userWishlists: (userId: string) => `/v1/wishlists/user/${userId}`,
-  wishlistItems: (wishlistId: string) => `/v1/wishlists/${wishlistId}/items`,
+  wishlists: '/v1/engagement/wishlists',
+  wishlistById: (id: string) => `/v1/engagement/wishlists/${id}`,
+  userWishlists: (userId: string) => `/v1/engagement/users/${userId}/wishlists`,
+  wishlistItems: (wishlistId: string) => `/v1/engagement/wishlists/${wishlistId}/items`,
 
   // Media Assets
-  mediaAssets: '/v1/catalog/media-assets',
-  mediaAssetById: (id: string) => `/v1/catalog/media-assets/${id}`,
+  mediaAssets: '/v1/catalog/media',
+  mediaAssetById: (id: string) => `/v1/catalog/media/${id}`,
 
   // Auth
   auth: {

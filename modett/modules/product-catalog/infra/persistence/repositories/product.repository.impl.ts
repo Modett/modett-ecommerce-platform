@@ -116,6 +116,18 @@ export class ProductRepository implements IProductRepository {
       take: limit,
       skip: offset,
       orderBy: { [sortBy]: sortOrder },
+      include: {
+        media: {
+          include: {
+            asset: true,
+          },
+        },
+        categories: {
+          include: {
+            category: true,
+          },
+        },
+      },
     });
 
     return products.map((productData) =>

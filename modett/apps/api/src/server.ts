@@ -899,6 +899,7 @@ export async function createServer(): Promise<FastifyInstance> {
       productTagService: serviceContainer.productTagManagementService,
       sizeGuideService: serviceContainer.sizeGuideManagementService,
       editorialLookService: serviceContainer.editorialLookManagementService,
+      productMediaService: serviceContainer.productMediaManagementService,
     };
 
     // Register product catalog routes with services

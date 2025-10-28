@@ -3,78 +3,166 @@ import { InvestmentPieces } from "@/features/product-catalog/components/investme
 import { CollectionBanner } from "@/components/ui/collection-banner";
 import { BrandPhilosophy } from "@/components/ui/brand-philosophy";
 import { Newsletter } from "@/features/engagement/components/newsletter";
+import { config } from "@/lib/config";
+import type { Product } from "@/types";
+import { mediaService } from "@/services/media.service";
 
-// Mock products data - Replace with actual API call
-const featuredProducts = [
-  {
-    id: "1",
-    name: "Crispy silk shirt",
-    price: 366.0,
-    image:
-      "https://images.unsplash.com/photo-1564557287817-3785e38ec1f5?w=800&h=1000&fit=crop",
-    handle: "crispy-silk-shirt",
-    rating: 4,
-    totalReviews: 128,
-    sizes: ["34", "36", "38", "40", "42", "44", "46", "48", "50"],
-  },
-  {
-    id: "2",
-    name: "Linen wide-leg pants",
-    price: 428.0,
-    image:
-      "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=800&h=1000&fit=crop",
-    handle: "linen-wide-leg-pants",
-    rating: 5,
-    totalReviews: 89,
-    sizes: ["34", "36", "38", "40", "42", "44", "46", "48", "50"],
-  },
-  {
-    id: "3",
-    name: "Tailored blazer",
-    price: 892.0,
-    image:
-      "https://images.unsplash.com/photo-1591369822096-ffd140ec948f?w=800&h=1000&fit=crop",
-    handle: "tailored-blazer",
-    rating: 5,
-    totalReviews: 215,
-    sizes: ["34", "36", "38", "40", "42", "44", "46", "48", "50"],
-  },
-  {
-    id: "4",
-    name: "Organic cotton dress",
-    price: 512.0,
-    image:
-      "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=800&h=1000&fit=crop",
-    handle: "organic-cotton-dress",
-    rating: 4,
-    totalReviews: 156,
-    sizes: ["34", "36", "38", "40", "42", "44", "46", "48", "50"],
-  },
-  {
-    id: "5",
-    name: "Cashmere sweater",
-    price: 685.0,
-    image:
-      "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800&h=1000&fit=crop",
-    handle: "cashmere-sweater",
-    rating: 5,
-    totalReviews: 342,
-    sizes: ["34", "36", "38", "40", "42", "44", "46", "48", "50"],
-  },
-  {
-    id: "6",
-    name: "Silk midi skirt",
-    price: 445.0,
-    image:
-      "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=800&h=1000&fit=crop",
-    handle: "silk-midi-skirt",
-    rating: 4,
-    totalReviews: 98,
-    sizes: ["34", "36", "38", "40", "42", "44", "46", "48", "50"],
-  },
-];
+// Fetch products from the Investment Pieces category
+async function getInvestmentPieces() {
+  try {
+    // Fetch media assets to get product images
+    const imageMap = await mediaService.getProductImageMap();
 
-export default function HomePage() {
+    // First, get the Investment Pieces category
+    const categoriesRes = await fetch(`${config.apiUrl}/v1/catalog/categories`, {
+      cache: 'no-store', // Always get fresh data
+    });
+
+    if (!categoriesRes.ok) {
+      throw new Error('Failed to fetch categories');
+    }
+
+    const categoriesData = await categoriesRes.json();
+    const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData.data || [];
+    const investmentCategory = categories.find(
+      (cat: any) => cat.slug === 'investment-pieces'
+    );
+
+    if (!investmentCategory) {
+      console.error('Investment Pieces category not found');
+      return [];
+    }
+
+    // Get products in the Investment Pieces category
+    const productsRes = await fetch(
+      `${config.apiUrl}/v1/catalog/products?limit=6&status=published`,
+      {
+        cache: 'no-store',
+      }
+    );
+
+    if (!productsRes.ok) {
+      throw new Error('Failed to fetch products');
+    }
+
+    const data = await productsRes.json();
+
+    // Handle different API response structures
+    let productsArray: Product[] = [];
+    if (Array.isArray(data)) {
+      productsArray = data;
+    } else if (data?.data?.products && Array.isArray(data.data.products)) {
+      productsArray = data.data.products;
+    } else if (data && Array.isArray(data.data)) {
+      productsArray = data.data;
+    } else if (data && Array.isArray(data.products)) {
+      productsArray = data.products;
+    } else {
+      console.error('Unexpected API response structure:', data);
+      return [];
+    }
+
+    // Fetch variants for each product
+    const productsWithVariants = await Promise.all(
+      productsArray.map(async (product: any) => {
+        try {
+          const variantsRes = await fetch(
+            `${config.apiUrl}/v1/catalog/products/${product.productId}/variants`,
+            { cache: 'no-store' }
+          );
+
+          if (variantsRes.ok) {
+            const variantsData = await variantsRes.json();
+            // API returns { success, data: [...variants] }
+            return {
+              ...product,
+              variants: variantsData?.data || [],
+            };
+          }
+        } catch (error) {
+          console.error(`Failed to fetch variants for product ${product.productId}:`, error);
+        }
+        return product;
+      })
+    );
+
+    // Transform products to match the component's expected format
+    return productsWithVariants.map((product: any) => {
+      // Get the first available image
+      const coverMedia = product.media?.find((m: any) => m.isCover);
+      let imageUrl = coverMedia?.asset?.storageKey || '';
+
+      // If no media from product, try to get from the dynamic image map
+      if (!imageUrl && imageMap) {
+        imageUrl = imageMap[product.slug] || '';
+      }
+
+      // Ultimate fallback image
+      if (!imageUrl) {
+        imageUrl = 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&h=1200&fit=crop';
+      }
+
+      // Get available sizes from variants
+      const sizes = product.variants
+        ? [...new Set(product.variants.map((v: any) => v.size).filter(Boolean))]
+        : ['XS', 'S', 'M', 'L']; // Fallback sizes
+
+      // Get the first variant's price (API returns price as {value: number})
+      const firstVariant = product.variants?.[0];
+      const price = firstVariant?.price?.value || firstVariant?.price || 285; // Fallback price
+
+      // Create a map of size to variantId for easy lookup
+      const sizeToVariantId: Record<string, string> = {};
+      if (product.variants) {
+        product.variants.forEach((v: any) => {
+          const variantId = v.id?.value || v.id || v.variantId;
+          if (variantId && v.size) {
+            if (!sizeToVariantId[v.size]) {
+              sizeToVariantId[v.size] = variantId;
+            }
+          }
+        });
+      }
+
+      const variantCandidates = Object.values(sizeToVariantId);
+      if (
+        variantCandidates.length === 0 &&
+        product.variants &&
+        product.variants.length > 0
+      ) {
+        const fallbackVariant =
+          product.variants[0].id?.value ||
+          product.variants[0].id ||
+          product.variants[0].variantId;
+        if (fallbackVariant) {
+          variantCandidates.push(fallbackVariant);
+        }
+      }
+
+      const defaultVariantId = variantCandidates[0];
+
+      return {
+        id: product.productId || product.id, // Use productId from API
+        name: product.title,
+        price: Number(price),
+        image: imageUrl,
+        handle: product.slug,
+        rating: undefined, // We don't have reviews yet
+        totalReviews: undefined,
+        sizes: sizes as string[],
+        sizeToVariantId,
+        defaultVariantId,
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching investment pieces:', error);
+    return [];
+  }
+}
+
+export default async function HomePage() {
+  const featuredProducts = await getInvestmentPieces();
+
   return (
     <>
       {/* Hero Section */}

@@ -29,6 +29,8 @@ export class CommandResult<T = any> {
 export interface AddToWishlistCommand extends ICommand {
   wishlistId: string;
   variantId: string;
+  userId?: string;
+  guestToken?: string;
 }
 
 export interface WishlistItemResult {
@@ -63,7 +65,11 @@ export class AddToWishlistHandler
 
       const item = await this.wishlistService.addToWishlist(
         command.wishlistId,
-        command.variantId
+        command.variantId,
+        {
+          userId: command.userId,
+          guestToken: command.guestToken,
+        }
       );
 
       const result: WishlistItemResult = {

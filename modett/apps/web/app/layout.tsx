@@ -4,6 +4,7 @@ import '@/styles/globals.css'
 import '@/styles/tokens.css'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
+import { CartProvider, WishlistProvider } from '@/contexts'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -28,9 +29,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body>
-        <Header />
-        <main>{children}</main>
-        <Footer />
+        <CartProvider>
+          <WishlistProvider>
+            <Header />
+            <main>{children}</main>
+            <Footer />
+          </WishlistProvider>
+        </CartProvider>
       </body>
     </html>
   )

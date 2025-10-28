@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import ProductCard from "./product-card";
+import { useCart, useWishlist } from "@/contexts";
+import { useState } from "react";
 
 interface Product {
   id: string;
@@ -11,6 +15,8 @@ interface Product {
   rating?: number;
   totalReviews?: number;
   sizes?: string[];
+  sizeToVariantId?: Record<string, string>;
+  defaultVariantId?: string;
 }
 
 interface InvestmentPiecesProps {
@@ -26,6 +32,52 @@ export function InvestmentPieces({
   products,
   viewAllHref = "/catalog",
 }: InvestmentPiecesProps) {
+  const { addItem } = useCart();
+  const { toggleItem, isInWishlist } = useWishlist();
+  const [notification, setNotification] = useState<string | null>(null);
+
+  const handleAddToCart = async (productId: string, size: string) => {
+    // Find the product to get its variant mapping
+    const product = products.find((p) => p.id === productId);
+    if (!product) {
+      setNotification("Product not found");
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+
+    // Get the variant ID for the selected size
+    const variantId = product.sizeToVariantId?.[size];
+    if (!variantId) {
+      setNotification(`Size ${size} is not available`);
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
+
+    // Add item to cart
+    const result = await addItem({
+      variantId,
+      qty: 1,
+    });
+
+    // Show notification based on result
+    if (result?.success) {
+      setNotification("Added to cart!");
+    } else {
+      setNotification(result?.message || "Unable to add to cart");
+    }
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const handleToggleWishlist = async (variantId: string) => {
+    try {
+      const { added } = await toggleItem(variantId);
+      setNotification(added ? "Added to wishlist!" : "Removed from wishlist");
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error("Failed to toggle wishlist:", error);
+    }
+  };
+
   return (
     <section className="py-24 md:py-32 lg:py-24 bg-[#f5f3ef]">
       <div className="container mx-auto px-4">
@@ -67,6 +119,13 @@ export function InvestmentPieces({
           </div>
         </div>
 
+        {/* Notification */}
+        {notification && (
+          <div className="fixed top-20 right-4 bg-[#2c353c] text-white px-6 py-3 rounded-md shadow-lg z-50 animate-in fade-in slide-in-from-right-5">
+            {notification}
+          </div>
+        )}
+
         {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 md:gap-x-10 gap-y-8">
           {products.map((product) => (
@@ -80,6 +139,13 @@ export function InvestmentPieces({
               rating={product.rating}
               totalReviews={product.totalReviews}
               sizes={product.sizes}
+              sizeToVariantId={product.sizeToVariantId}
+              defaultVariantId={product.defaultVariantId}
+              onAddToCart={handleAddToCart}
+              onToggleWishlist={handleToggleWishlist}
+              isInWishlist={(variantId) =>
+                variantId ? isInWishlist(variantId) : false
+              }
             />
           ))}
         </div>

@@ -62,15 +62,11 @@ export class WishlistController {
     this.updateWishlistHandler = new UpdateWishlistHandler(wishlistService);
     this.deleteWishlistHandler = new DeleteWishlistHandler(wishlistService);
     this.getWishlistHandler = new GetWishlistHandler(wishlistService);
-    this.getUserWishlistsHandler = new GetUserWishlistsHandler(
-      wishlistService
-    );
+    this.getUserWishlistsHandler = new GetUserWishlistsHandler(wishlistService);
     this.getPublicWishlistsHandler = new GetPublicWishlistsHandler(
       wishlistService
     );
-    this.getWishlistItemsHandler = new GetWishlistItemsHandler(
-      wishlistService
-    );
+    this.getWishlistItemsHandler = new GetWishlistItemsHandler(wishlistService);
   }
 
   async createWishlist(
@@ -81,9 +77,14 @@ export class WishlistController {
       const { userId, guestToken, name, isDefault, isPublic, description } =
         request.body;
 
+      // Use authenticated userId if available, otherwise use guest token
+      const authenticatedUserId = request.user?.userId || userId;
+      const guestAuthToken =
+        guestToken || (request.headers["x-guest-token"] as string);
+
       const command: CreateWishlistCommand = {
-        userId: request.user?.userId || userId,
-        guestToken: guestToken || (request.headers["x-guest-token"] as string),
+        userId: authenticatedUserId,
+        guestToken: authenticatedUserId ? undefined : guestAuthToken,
         name,
         isDefault,
         isPublic,
@@ -313,6 +314,8 @@ export class WishlistController {
       const command: AddToWishlistCommand = {
         wishlistId,
         variantId,
+        userId: request.user?.userId,
+        guestToken: request.headers["x-guest-token"] as string,
       };
 
       const result = await this.addToWishlistHandler.handle(command);
@@ -353,6 +356,46 @@ export class WishlistController {
         wishlistId,
         variantId: wishlistItemId,
       };
+
+      // Authorization: ensure the requester owns the wishlist either via userId or guest token
+      const guestTokenHeader = request.headers["x-guest-token"];
+      if (!request.user && !guestTokenHeader) {
+        return reply.code(401).send({
+          success: false,
+          error: "Authentication required",
+          message:
+            "Provide either Authorization header (for users) or X-Guest-Token header (for guest wishlists)",
+        });
+      }
+
+      const wishlist = await this.wishlistService.getWishlist(wishlistId);
+      if (!wishlist) {
+        return reply.code(404).send({
+          success: false,
+          error: "Wishlist not found",
+        });
+      }
+
+      if (wishlist.getGuestToken()) {
+        if (
+          !guestTokenHeader ||
+          guestTokenHeader !== wishlist.getGuestToken()
+        ) {
+          return reply.code(403).send({
+            success: false,
+            error: "Forbidden",
+            message: "Guest token does not match wishlist owner",
+          });
+        }
+      } else if (wishlist.getUserId()) {
+        if (!request.user || request.user.userId !== wishlist.getUserId()) {
+          return reply.code(403).send({
+            success: false,
+            error: "Forbidden",
+            message: "Wishlist does not belong to the authenticated user",
+          });
+        }
+      }
 
       const result = await this.removeFromWishlistHandler.handle(command);
 
