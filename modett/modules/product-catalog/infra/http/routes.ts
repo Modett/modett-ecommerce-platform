@@ -1173,7 +1173,29 @@ export async function registerProductCatalogRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
-              data: { type: "array" },
+              data: {
+                type: "object",
+                properties: {
+                  productId: { type: "string" },
+                  totalMedia: { type: "number" },
+                  hasCoverImage: { type: "boolean" },
+                  coverImageAssetId: { type: "string" },
+                  mediaAssets: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        assetId: { type: "string" },
+                        position: { type: "number" },
+                        isCover: { type: "boolean" },
+                        storageKey: { type: "string" },
+                        mimeType: { type: "string" },
+                        altText: { type: "string" },
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
           404: {

@@ -482,7 +482,9 @@ export function createServiceContainer(): ServiceContainer {
   const checkoutOrderService = new CheckoutOrderService(
     prisma,
     checkoutRepository,
-    cartRepository
+    cartRepository,
+    reservationRepository,
+    stockManagementService
   );
 
   // Initialize Order Management services

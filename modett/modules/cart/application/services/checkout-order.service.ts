@@ -1,7 +1,10 @@
 import { PrismaClient, CheckoutStatusEnum } from "@prisma/client";
 import { CheckoutRepository } from "../../domain/repositories/checkout.repository";
 import { CartRepository } from "../../domain/repositories/cart.repository";
+import { ReservationRepository } from "../../domain/repositories/reservation.repository";
+import { StockManagementService } from "../../../inventory-management/application/services/stock-management.service";
 import { CheckoutId } from "../../domain/value-objects/checkout-id.vo";
+import { CartId } from "../../domain/value-objects/cart-id.vo";
 
 export interface CompleteCheckoutWithOrderDto {
   checkoutId: string;
@@ -47,7 +50,9 @@ export class CheckoutOrderService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly checkoutRepository: CheckoutRepository,
-    private readonly cartRepository: CartRepository
+    private readonly cartRepository: CartRepository,
+    private readonly reservationRepository: ReservationRepository,
+    private readonly stockManagementService: StockManagementService
   ) {}
 
   async completeCheckoutWithOrder(
@@ -129,6 +134,23 @@ export class CheckoutOrderService {
         total,
       };
 
+      const existingOrder = await tx.order.findFirst({
+        where: { checkoutId: dto.checkoutId },
+      });
+
+      if (existingOrder) {
+        return {
+          orderId: existingOrder.id,
+          orderNo: existingOrder.orderNo,
+          checkoutId: dto.checkoutId,
+          paymentIntentId: dto.paymentIntentId,
+          totalAmount: checkout.getTotalAmount(),
+          currency: checkout.getCurrency().toString(),
+          status: existingOrder.status,
+          createdAt: existingOrder.createdAt,
+        };
+      }
+
       const order = await tx.order.create({
         data: {
           orderNo,
@@ -160,6 +182,23 @@ export class CheckoutOrderService {
         });
         orderItems.push(orderItem);
       }
+
+      const defaultLocationId =
+        process.env.DEFAULT_STOCK_LOCATION || "main-warehouse";
+
+      for (const item of cartSnapshot.items || []) {
+        await this.stockManagementService.fulfillReservation(
+          item.variantId,
+          defaultLocationId,
+          item.quantity
+        );
+      }
+
+      await this.reservationRepository.deleteByCartId(checkout.getCartId());
+
+      await tx.cartItem.deleteMany({
+        where: { cartId: checkout.getCartId().toString() },
+      });
 
       await tx.orderAddress.create({
         data: {
