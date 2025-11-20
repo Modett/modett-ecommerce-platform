@@ -23,8 +23,8 @@ const start = async () => {
   const host = process.env.HOST || "localhost";
 
   await server.listen({ port, host });
-  logger.info(`🚀 Server running at http://${host}:${port}`);
-  logger.info(`📚 Swagger docs at http://${host}:${port}/docs`);
+  logger.info(`Server running at http://${host}:${port}`);
+  logger.info(`Swagger docs at http://${host}:${port}/docs`);
 };
 
 start().catch((error) => {

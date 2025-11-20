@@ -581,7 +581,7 @@ export async function createServer(): Promise<FastifyInstance> {
         {
           name: "System",
           description:
-            "⚙️ System health, monitoring, and information endpoints",
+            "System health, monitoring, and information endpoints",
         },
       ],
       // Note: Don't set global security here, let individual routes define their own security

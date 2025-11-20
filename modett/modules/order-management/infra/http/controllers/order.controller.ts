@@ -53,6 +53,19 @@ export class OrderController {
       const result = await this.getOrderHandler.handle(query);
 
       if (result.success && result.data) {
+        const requesterId = (request as any).user?.userId;
+        if (
+          result.data.userId &&
+          requesterId &&
+          result.data.userId !== requesterId
+        ) {
+          return reply.code(403).send({
+            success: false,
+            error: "Forbidden",
+            message: "You are not allowed to view this order",
+          });
+        }
+
         return reply.code(200).send({
           success: true,
           data: result.data,
@@ -97,6 +110,19 @@ export class OrderController {
       const result = await this.getOrderHandler.handle(query);
 
       if (result.success && result.data) {
+        const requesterId = (request as any).user?.userId;
+        if (
+          result.data.userId &&
+          requesterId &&
+          result.data.userId !== requesterId
+        ) {
+          return reply.code(403).send({
+            success: false,
+            error: "Forbidden",
+            message: "You are not allowed to view this order",
+          });
+        }
+
         return reply.code(200).send({
           success: true,
           data: result.data,

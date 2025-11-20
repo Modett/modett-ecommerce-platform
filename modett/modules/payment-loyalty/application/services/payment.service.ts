@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import crypto from "crypto";
 import { IPaymentIntentRepository } from "../../domain/repositories/payment-intent.repository.js";
 import { IPaymentTransactionRepository } from "../../domain/repositories/payment-transaction.repository.js";
 import { PaymentIntent } from "../../domain/entities/payment-intent.entity.js";

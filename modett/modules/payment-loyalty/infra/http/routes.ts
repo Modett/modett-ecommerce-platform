@@ -21,7 +21,10 @@ import {
   LoyaltyService,
   LoyaltyTransactionService,
 } from "../../application/services";
-import { optionalAuth } from "../../../user-management/infra/http/middleware/auth.middleware";
+import {
+  optionalAuth,
+  authenticateUser,
+} from "../../../user-management/infra/http/middleware/auth.middleware";
 
 // Standard error responses for Swagger
 const errorResponses = {
@@ -113,7 +116,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/payment-intents",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description:
           "Create a new payment intent for processing a payment. Links to an order and can use various payment providers (Stripe, Ayesha, Koko, Mintpay, etc.).",
@@ -175,7 +178,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/payment-intents/process",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description: "Process a payment intent - authorize and capture funds",
         tags: ["Payment Intents"],
@@ -217,7 +220,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/payment-intents/refund",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description: "Refund a captured payment (full or partial)",
         tags: ["Payment Intents"],
@@ -261,7 +264,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/payment-intents/void",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description: "Void an authorized (not yet captured) payment",
         tags: ["Payment Intents"],
@@ -303,7 +306,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.get(
     "/payment-intents",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description: "Get payment intent by intentId or orderId",
         tags: ["Payment Intents"],
@@ -349,7 +352,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.get(
     "/payment-intents/:intentId/transactions",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description:
           "List all payment transactions (auth, capture, refund, void) for a payment intent",
@@ -395,7 +398,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/bnpl",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description:
           "Create a Buy Now Pay Later (BNPL) transaction with providers like Koko, Mintpay, etc.",
@@ -442,7 +445,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/bnpl/:bnplId/:action",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description:
           "Process a BNPL transaction (approve, reject, activate, complete, cancel)",
@@ -486,7 +489,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.get(
     "/bnpl",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description:
           "List BNPL transactions with optional filters (bnplId, intentId, orderId)",
@@ -540,7 +543,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/gift-cards",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description:
           "Create a new gift card with initial balance and optional expiration",
@@ -597,7 +600,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/gift-cards/:giftCardId/redeem",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description: "Redeem a gift card towards an order",
         tags: ["Gift Cards"],
@@ -724,7 +727,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/promotions",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description:
           "Create a new promotion with discount rules, validity period, and usage limits",
@@ -857,7 +860,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/promotions/:promoId/usage",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description: "Record that a promotion was used in an order",
         tags: ["Promotion Usage"],
@@ -1057,7 +1060,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/loyalty/programs",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description:
           "Create a new loyalty program with tier configuration and redemption rules",
@@ -1106,7 +1109,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/loyalty/points/award",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description:
           "Award loyalty points to a customer for a purchase or action",
@@ -1164,7 +1167,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/loyalty/points/redeem",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description: "Redeem loyalty points for a discount or reward",
         tags: ["Loyalty Transactions"],
@@ -1218,7 +1221,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.get(
     "/loyalty/account",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description:
           "Get loyalty account details for a customer including balance and tier",
@@ -1288,7 +1291,7 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.get(
     "/loyalty/transactions",
     {
-      preHandler: optionalAuth,
+      preHandler: authenticateUser,
       schema: {
         description:
           "List loyalty transaction history filtered by account or order",
