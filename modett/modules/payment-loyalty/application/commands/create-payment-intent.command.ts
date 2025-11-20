@@ -37,6 +37,7 @@ export interface CreatePaymentIntentCommand extends ICommand {
   currency?: string;
   idempotencyKey?: string;
   clientSecret?: string;
+  userId?: string;
 }
 
 export class CreatePaymentIntentHandler
@@ -76,6 +77,7 @@ export class CreatePaymentIntentHandler
         currency: command.currency,
         idempotencyKey: command.idempotencyKey,
         clientSecret: command.clientSecret,
+        userId: command.userId,
       };
 
       const paymentIntent = await this.paymentService.createPaymentIntent(dto);

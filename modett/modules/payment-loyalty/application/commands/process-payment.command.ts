@@ -12,6 +12,7 @@ import {
 export interface ProcessPaymentCommand extends ICommand {
   intentId: string;
   pspReference?: string;
+  userId?: string;
 }
 
 export class ProcessPaymentHandler
@@ -35,13 +36,15 @@ export class ProcessPaymentHandler
       const dto: ProcessPaymentDto = {
         intentId: command.intentId,
         pspReference: command.pspReference,
+        userId: command.userId,
       };
 
       // Authorize and capture the payment
       const authorized = await this.paymentService.authorizePayment(dto);
       const captured = await this.paymentService.capturePayment(
         authorized.intentId,
-        dto.pspReference
+        dto.pspReference,
+        command.userId
       );
 
       return CommandResult.success<PaymentIntentDto>(captured);

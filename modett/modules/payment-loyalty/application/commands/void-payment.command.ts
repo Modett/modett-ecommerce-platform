@@ -12,6 +12,7 @@ import {
 export interface VoidPaymentCommand extends ICommand {
   intentId: string;
   pspReference?: string;
+  userId?: string;
 }
 
 export class VoidPaymentHandler
@@ -33,6 +34,7 @@ export class VoidPaymentHandler
       const dto: VoidPaymentDto = {
         intentId: command.intentId,
         pspReference: command.pspReference,
+        userId: command.userId,
       };
 
       const result = await this.paymentService.voidPayment(dto);
@@ -50,4 +52,3 @@ export class VoidPaymentHandler
     }
   }
 }
-

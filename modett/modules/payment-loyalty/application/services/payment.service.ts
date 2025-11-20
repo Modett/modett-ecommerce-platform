@@ -14,22 +14,26 @@ export interface CreatePaymentIntentDto {
   currency?: string;
   idempotencyKey?: string;
   clientSecret?: string;
+  userId?: string;
 }
 
 export interface ProcessPaymentDto {
   intentId: string;
   pspReference?: string;
+  userId?: string;
 }
 
 export interface RefundPaymentDto {
   intentId: string;
   amount?: number; // Partial refund amount (if not provided, full refund)
   reason?: string;
+  userId?: string;
 }
 
 export interface VoidPaymentDto {
   intentId: string;
   pspReference?: string;
+  userId?: string;
 }
 
 export interface PaymentIntentDto {
@@ -59,14 +63,34 @@ export interface PaymentTransactionDto {
 
 export class PaymentService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly paymentIntentRepo: IPaymentIntentRepository,
-    private readonly paymentTxnRepo: IPaymentTransactionRepository
+  private readonly prisma: PrismaClient,
+  private readonly paymentIntentRepo: IPaymentIntentRepository,
+  private readonly paymentTxnRepo: IPaymentTransactionRepository
   ) {}
+
+  private async assertOrderOwnership(
+    orderId: string,
+    userId?: string
+  ): Promise<void> {
+    const order = await (this.prisma as any).order.findUnique({
+      where: { id: orderId },
+      select: { userId: true },
+    });
+
+    if (!order) {
+      throw new Error("Order not found for payment intent");
+    }
+
+    if (userId && order.userId && order.userId !== userId) {
+      throw new Error("Forbidden: you do not own this order");
+    }
+  }
 
   async createPaymentIntent(
     dto: CreatePaymentIntentDto
   ): Promise<PaymentIntentDto> {
+    await this.assertOrderOwnership(dto.orderId, dto.userId);
+
     const intent = PaymentIntent.create({
       orderId: dto.orderId,
       provider: dto.provider,
@@ -86,6 +110,8 @@ export class PaymentService {
     if (!intent) {
       throw new Error(`Payment intent ${dto.intentId} not found`);
     }
+
+    await this.assertOrderOwnership(intent.orderId, dto.userId);
 
     // Authorize the payment
     intent.authorize();
@@ -111,12 +137,15 @@ export class PaymentService {
 
   async capturePayment(
     intentId: string,
-    pspReference?: string
+    pspReference?: string,
+    userId?: string
   ): Promise<PaymentIntentDto> {
     const intent = await this.paymentIntentRepo.findById(intentId);
     if (!intent) {
       throw new Error(`Payment intent ${intentId} not found`);
     }
+
+    await this.assertOrderOwnership(intent.orderId, userId);
 
     // Capture the payment
     intent.capture();
@@ -145,6 +174,8 @@ export class PaymentService {
     if (!intent) {
       throw new Error(`Payment intent ${dto.intentId} not found`);
     }
+
+    await this.assertOrderOwnership(intent.orderId, dto.userId);
 
     if (!intent.isCaptured()) {
       throw new Error(
@@ -198,6 +229,8 @@ export class PaymentService {
     if (!intent) {
       throw new Error(`Payment intent ${dto.intentId} not found`);
     }
+
+    await this.assertOrderOwnership(intent.orderId, dto.userId);
 
     if (intent.isCaptured()) {
       throw new Error("Cannot void a captured payment; use refund instead");
@@ -255,21 +288,37 @@ export class PaymentService {
     return this.toPaymentIntentDto(intent);
   }
 
-  async getPaymentIntent(intentId: string): Promise<PaymentIntentDto | null> {
+  async getPaymentIntent(
+    intentId: string,
+    userId?: string
+  ): Promise<PaymentIntentDto | null> {
     const intent = await this.paymentIntentRepo.findById(intentId);
-    return intent ? this.toPaymentIntentDto(intent) : null;
+    if (!intent) return null;
+    await this.assertOrderOwnership(intent.orderId, userId);
+    return this.toPaymentIntentDto(intent);
   }
 
   async getPaymentIntentByOrderId(
-    orderId: string
+    orderId: string,
+    userId?: string
   ): Promise<PaymentIntentDto | null> {
     const intents = await this.paymentIntentRepo.findByOrderId(orderId);
-    return intents.length > 0 ? this.toPaymentIntentDto(intents[0]) : null;
+    if (intents.length === 0) return null;
+    await this.assertOrderOwnership(orderId, userId);
+    return this.toPaymentIntentDto(intents[0]);
   }
 
   async getPaymentTransactions(
-    intentId: string
+    intentId: string,
+    userId?: string
   ): Promise<PaymentTransactionDto[]> {
+    const intent = await this.paymentIntentRepo.findById(intentId);
+    if (!intent) {
+      throw new Error(`Payment intent ${intentId} not found`);
+    }
+
+    await this.assertOrderOwnership(intent.orderId, userId);
+
     const transactions = await this.paymentTxnRepo.findByIntentId(intentId);
     return transactions.map((txn) => this.toPaymentTransactionDto(txn));
   }

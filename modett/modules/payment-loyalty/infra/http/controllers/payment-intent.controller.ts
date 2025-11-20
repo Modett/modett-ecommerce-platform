@@ -48,7 +48,12 @@ export class PaymentIntentController {
     request: FastifyRequest<{ Body: CreatePaymentIntentRequest }>,
     reply: FastifyReply
   ) {
-    const cmd: CreatePaymentIntentCommand = { ...request.body, timestamp: new Date() };
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply.code(401).send({ success: false, error: "Authentication required" });
+    }
+
+    const cmd: CreatePaymentIntentCommand = { ...request.body, userId, timestamp: new Date() };
     const result = await this.createHandler.handle(cmd);
     return reply.code(result.success ? 201 : 400).send(result);
   }
@@ -57,7 +62,12 @@ export class PaymentIntentController {
     request: FastifyRequest<{ Body: ProcessPaymentRequest }>,
     reply: FastifyReply
   ) {
-    const cmd: ProcessPaymentCommand = { ...request.body, timestamp: new Date() };
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply.code(401).send({ success: false, error: "Authentication required" });
+    }
+
+    const cmd: ProcessPaymentCommand = { ...request.body, userId, timestamp: new Date() };
     const result = await this.processHandler.handle(cmd);
     return reply.code(result.success ? 200 : 400).send(result);
   }
@@ -66,7 +76,12 @@ export class PaymentIntentController {
     request: FastifyRequest<{ Body: RefundPaymentRequest }>,
     reply: FastifyReply
   ) {
-    const cmd: RefundPaymentCommand = { ...request.body, timestamp: new Date() };
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply.code(401).send({ success: false, error: "Authentication required" });
+    }
+
+    const cmd: RefundPaymentCommand = { ...request.body, userId, timestamp: new Date() };
     const result = await this.refundHandler.handle(cmd);
     return reply.code(result.success ? 200 : 400).send(result);
   }
@@ -75,7 +90,12 @@ export class PaymentIntentController {
     request: FastifyRequest<{ Body: VoidPaymentRequest }>,
     reply: FastifyReply
   ) {
-    const cmd: VoidPaymentCommand = { ...request.body, timestamp: new Date() };
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply.code(401).send({ success: false, error: "Authentication required" });
+    }
+
+    const cmd: VoidPaymentCommand = { ...request.body, userId, timestamp: new Date() };
     const result = await this.voidHandler.handle(cmd);
     return reply.code(result.success ? 200 : 400).send(result);
   }
@@ -84,9 +104,15 @@ export class PaymentIntentController {
     request: FastifyRequest<{ Querystring: { intentId?: string; orderId?: string } }>,
     reply: FastifyReply
   ) {
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply.code(401).send({ success: false, error: "Authentication required" });
+    }
+
     const query: GetPaymentIntentQuery = {
       intentId: request.query.intentId,
       orderId: request.query.orderId,
+      userId,
       timestamp: new Date(),
     };
     const result = await this.getHandler.handle(query);
@@ -97,8 +123,14 @@ export class PaymentIntentController {
     request: FastifyRequest<{ Params: { intentId: string } }>,
     reply: FastifyReply
   ) {
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply.code(401).send({ success: false, error: "Authentication required" });
+    }
+
     const q: GetPaymentTransactionsQuery = {
       intentId: request.params.intentId,
+      userId,
       timestamp: new Date(),
     };
     const result = await this.txnsHandler.handle(q);

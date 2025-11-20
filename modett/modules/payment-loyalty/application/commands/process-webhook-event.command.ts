@@ -13,6 +13,7 @@ export interface ProcessWebhookEventCommand extends ICommand {
   provider: string;
   eventType: string;
   eventData: WebhookEventData;
+  signature?: string;
 }
 
 export class ProcessWebhookEventHandler
@@ -43,6 +44,7 @@ export class ProcessWebhookEventHandler
         provider: command.provider,
         eventType: command.eventType,
         eventData: command.eventData,
+        signature: command.signature,
       });
       return CommandResult.success<PaymentWebhookEventDto>(event);
     } catch (error) {

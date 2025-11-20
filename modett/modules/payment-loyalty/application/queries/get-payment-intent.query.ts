@@ -8,6 +8,7 @@ import { IQuery, IQueryHandler } from "./get-active-promotions.query";
 export interface GetPaymentIntentQuery extends IQuery {
   intentId?: string;
   orderId?: string;
+  userId?: string;
 }
 
 export class GetPaymentIntentHandler
@@ -29,10 +30,14 @@ export class GetPaymentIntentHandler
 
       let intent: PaymentIntentDto | null = null;
       if (query.intentId) {
-        intent = await this.paymentService.getPaymentIntent(query.intentId);
+        intent = await this.paymentService.getPaymentIntent(
+          query.intentId,
+          query.userId
+        );
       } else if (query.orderId) {
         intent = await this.paymentService.getPaymentIntentByOrderId(
-          query.orderId
+          query.orderId,
+          query.userId
         );
       }
 
