@@ -928,6 +928,8 @@ export async function createServer(): Promise<FastifyInstance> {
     const cartServices = {
       cartManagementService: serviceContainer.cartManagementService,
       reservationService: serviceContainer.reservationService,
+      checkoutService: serviceContainer.checkoutService,
+      checkoutOrderService: serviceContainer.checkoutOrderService,
     };
 
     // Register cart routes with services

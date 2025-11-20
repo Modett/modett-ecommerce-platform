@@ -1,0 +1,177 @@
+import { PrismaClient, CheckoutStatusEnum } from "@prisma/client";
+import { CheckoutRepository } from "../../../domain/repositories/checkout.repository";
+import { Checkout, CheckoutEntityData } from "../../../domain/entities/checkout.entity";
+import { CheckoutId } from "../../../domain/value-objects/checkout-id.vo";
+import { CartId } from "../../../domain/value-objects/cart-id.vo";
+import { UserId } from "../../../../user-management/domain/value-objects/user-id.vo";
+import { GuestToken } from "../../../domain/value-objects/guest-token.vo";
+
+export class CheckoutRepositoryImpl implements CheckoutRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async save(checkout: Checkout): Promise<void> {
+    const data = checkout.toData();
+    await this.prisma.checkout.create({
+      data: {
+        id: data.checkoutId,
+        userId: data.userId,
+        guestToken: data.guestToken,
+        cartId: data.cartId,
+        status: data.status as CheckoutStatusEnum,
+        totalAmount: data.totalAmount,
+        currency: data.currency,
+        expiresAt: data.expiresAt,
+        completedAt: data.completedAt,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+      },
+    });
+  }
+
+  async findById(checkoutId: CheckoutId): Promise<Checkout | null> {
+    const checkoutData = await this.prisma.checkout.findUnique({
+      where: { id: checkoutId.toString() },
+    });
+
+    if (!checkoutData) {
+      return null;
+    }
+
+    return this.mapPrismaToEntity(checkoutData);
+  }
+
+  async findByCartId(cartId: CartId): Promise<Checkout | null> {
+    const checkoutData = await this.prisma.checkout.findUnique({
+      where: { cartId: cartId.toString() },
+    });
+
+    if (!checkoutData) {
+      return null;
+    }
+
+    return this.mapPrismaToEntity(checkoutData);
+  }
+
+  async update(checkout: Checkout): Promise<void> {
+    const data = checkout.toData();
+    await this.prisma.checkout.update({
+      where: { id: data.checkoutId },
+      data: {
+        status: data.status as CheckoutStatusEnum,
+        completedAt: data.completedAt,
+        updatedAt: data.updatedAt,
+      },
+    });
+  }
+
+  async delete(checkoutId: CheckoutId): Promise<void> {
+    await this.prisma.checkout.delete({
+      where: { id: checkoutId.toString() },
+    });
+  }
+
+  async findByUserId(userId: UserId): Promise<Checkout[]> {
+    const checkouts = await this.prisma.checkout.findMany({
+      where: { userId: userId.toString() },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return checkouts.map((c) => this.mapPrismaToEntity(c));
+  }
+
+  async findByGuestToken(guestToken: GuestToken): Promise<Checkout[]> {
+    const checkouts = await this.prisma.checkout.findMany({
+      where: { guestToken: guestToken.toString() },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return checkouts.map((c) => this.mapPrismaToEntity(c));
+  }
+
+  async findPendingCheckouts(): Promise<Checkout[]> {
+    const checkouts = await this.prisma.checkout.findMany({
+      where: { status: CheckoutStatusEnum.pending },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return checkouts.map((c) => this.mapPrismaToEntity(c));
+  }
+
+  async findExpiredCheckouts(): Promise<Checkout[]> {
+    const now = new Date();
+    const checkouts = await this.prisma.checkout.findMany({
+      where: {
+        status: CheckoutStatusEnum.pending,
+        expiresAt: { lt: now },
+      },
+      orderBy: { expiresAt: "asc" },
+    });
+
+    return checkouts.map((c) => this.mapPrismaToEntity(c));
+  }
+
+  async markAsCompleted(checkoutId: CheckoutId, completedAt: Date): Promise<void> {
+    await this.prisma.checkout.update({
+      where: { id: checkoutId.toString() },
+      data: {
+        status: CheckoutStatusEnum.completed,
+        completedAt,
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  async markAsExpired(checkoutId: CheckoutId): Promise<void> {
+    await this.prisma.checkout.update({
+      where: { id: checkoutId.toString() },
+      data: {
+        status: CheckoutStatusEnum.expired,
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  async markAsCancelled(checkoutId: CheckoutId): Promise<void> {
+    await this.prisma.checkout.update({
+      where: { id: checkoutId.toString() },
+      data: {
+        status: CheckoutStatusEnum.cancelled,
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  async cleanupExpiredCheckouts(): Promise<number> {
+    const now = new Date();
+    const result = await this.prisma.checkout.updateMany({
+      where: {
+        status: CheckoutStatusEnum.pending,
+        expiresAt: { lt: now },
+      },
+      data: {
+        status: CheckoutStatusEnum.expired,
+        updatedAt: now,
+      },
+    });
+
+    return result.count;
+  }
+
+  private mapPrismaToEntity(prismaData: any): Checkout {
+    const entityData: CheckoutEntityData = {
+      checkoutId: prismaData.id,
+      cartId: prismaData.cartId,
+      userId: prismaData.userId,
+      guestToken: prismaData.guestToken,
+      status: prismaData.status,
+      totalAmount: parseFloat(prismaData.totalAmount.toString()),
+      currency: prismaData.currency,
+      expiresAt: prismaData.expiresAt,
+      completedAt: prismaData.completedAt,
+      createdAt: prismaData.createdAt,
+      updatedAt: prismaData.updatedAt,
+    };
+
+    return Checkout.fromData(entityData);
+  }
+}

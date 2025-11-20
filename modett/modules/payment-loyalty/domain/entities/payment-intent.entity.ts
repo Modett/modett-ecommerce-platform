@@ -4,7 +4,8 @@ import { Money } from "../value-objects/money.vo";
 import { Currency } from "../value-objects/currency.vo";
 
 export interface CreatePaymentIntentData {
-  orderId: string;
+  orderId?: string;
+  checkoutId?: string;
   provider: string;
   amount: number;
   currency: string;
@@ -15,7 +16,8 @@ export interface CreatePaymentIntentData {
 export class PaymentIntent {
   private constructor(
     private readonly _intentId: PaymentIntentId,
-    private readonly _orderId: string,
+    private _orderId: string | null,
+    private _checkoutId: string | null,
     private readonly _idempotencyKey: string | undefined,
     private readonly _provider: string,
     private _status: PaymentIntentStatus,
@@ -33,7 +35,8 @@ export class PaymentIntent {
 
     return new PaymentIntent(
       intentId,
-      data.orderId,
+      data.orderId ?? null,
+      data.checkoutId ?? null,
       data.idempotencyKey,
       data.provider,
       PaymentIntentStatus.requiresAction(),
@@ -46,7 +49,8 @@ export class PaymentIntent {
 
   static reconstitute(data: {
     intentId: PaymentIntentId;
-    orderId: string;
+    orderId?: string | null;
+    checkoutId?: string | null;
     idempotencyKey?: string;
     provider: string;
     status: PaymentIntentStatus;
@@ -57,7 +61,8 @@ export class PaymentIntent {
   }): PaymentIntent {
     return new PaymentIntent(
       data.intentId,
-      data.orderId,
+      data.orderId ?? null,
+      data.checkoutId ?? null,
       data.idempotencyKey,
       data.provider,
       data.status,
@@ -74,7 +79,18 @@ export class PaymentIntent {
   }
 
   get orderId(): string {
+    if (!this._orderId) {
+      throw new Error("Payment intent not linked to an order");
+    }
     return this._orderId;
+  }
+
+  get orderIdOrNull(): string | null {
+    return this._orderId;
+  }
+
+  get checkoutId(): string | null {
+    return this._checkoutId;
   }
 
   get idempotencyKey(): string | undefined {
@@ -103,6 +119,16 @@ export class PaymentIntent {
 
   get updatedAt(): Date {
     return this._updatedAt;
+  }
+
+  attachOrder(orderId: string): void {
+    this._orderId = orderId;
+    this._updatedAt = new Date();
+  }
+
+  attachCheckout(checkoutId: string): void {
+    this._checkoutId = checkoutId;
+    this._updatedAt = new Date();
   }
 
   // Business methods

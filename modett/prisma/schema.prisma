@@ -21,6 +21,7 @@ model User {
   createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt         DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   shoppingCarts     ShoppingCart[]
+  checkouts         Checkout[]
   chat_sessions     ChatSession[]
   customer_feedback CustomerFeedback[]
   goodwill_records  GoodwillRecord[]
@@ -313,6 +314,7 @@ model ShoppingCart {
   updatedAt            DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   items                CartItem[]
   reservations         Reservation[]
+  checkout             Checkout?
   user                 User?         @relation(fields: [userId], references: [id], onUpdate: NoAction)
 
   @@map("shopping_carts")
@@ -349,11 +351,36 @@ model Reservation {
   @@schema("cart")
 }
 
+model Checkout {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @map("checkout_id") @db.Uuid
+  userId          String?          @map("user_id") @db.Uuid
+  guestToken      String?          @map("guest_token")
+  cartId          String           @unique @map("cart_id") @db.Uuid
+  status          CheckoutStatusEnum @default(pending)
+  expiresAt       DateTime         @map("expires_at") @db.Timestamptz(6)
+  totalAmount     Decimal          @map("total_amount") @db.Decimal(12, 2)
+  currency        String
+  completedAt     DateTime?        @map("completed_at") @db.Timestamptz(6)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user            User?            @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  cart            ShoppingCart     @relation(fields: [cartId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  paymentIntent   PaymentIntent?   @relation("PaymentIntentCheckout")
+  orders          Order[]          @relation("CheckoutOrders")
+
+  @@index([userId], map: "idx_checkouts_user_id")
+  @@index([status], map: "idx_checkouts_status")
+  @@map("checkouts")
+  @@schema("cart")
+}
+
 model Order {
   id                     String                @id @default(dbgenerated("gen_random_uuid()")) @map("order_id") @db.Uuid
   orderNo                String                @unique @map("order_no")
   userId                 String?               @map("user_id") @db.Uuid
   guestToken             String?               @map("guest_token")
+  checkoutId             String?               @map("checkout_id") @db.Uuid
+  paymentIntentId        String?               @map("payment_intent_id") @db.Uuid
   totals                 Json                  @default("{}")
   status                 OrderStatusEnum       @default(created)
   source                 OrderSourceEnum       @default(web)
@@ -371,13 +398,15 @@ model Order {
   shipments              OrderShipment[]
   statusHistory          OrderStatusHistory[]
   user                   User?                 @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  checkout               Checkout?             @relation("CheckoutOrders", fields: [checkoutId], references: [id])
   bnpl_transactions      BnplTransaction[]
   gift_card_transactions GiftCardTransaction[]
   loyalty_transactions   LoyaltyTransaction[]
-  payment_intents        PaymentIntent[]
+  payment_intents        PaymentIntent[]       @relation("PaymentIntentOrder")
   promotion_usage        PromotionUsage[]
 
   @@index([userId], map: "idx_orders_user_id")
+  @@index([checkoutId], map: "idx_orders_checkout_id")
   @@map("orders")
   @@schema("order_management")
 }
@@ -629,7 +658,8 @@ model PickupReservation {
 
 model PaymentIntent {
   intentId         String                  @id @default(dbgenerated("gen_random_uuid()")) @map("intent_id") @db.Uuid
-  orderId          String                  @map("order_id") @db.Uuid
+  orderId          String?                 @map("order_id") @db.Uuid
+  checkoutId       String?                 @unique @map("checkout_id") @db.Uuid
   idempotencyKey   String?                 @unique @map("idempotency_key")
   provider         String
   status           PaymentIntentStatusEnum
@@ -639,8 +669,9 @@ model PaymentIntent {
   createdAt        DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime                @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   bnplTransactions BnplTransaction[]
-  orders           Order                   @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  order            Order?                  @relation("PaymentIntentOrder", fields: [orderId], references: [id])
   transactions     PaymentTransaction[]
+  checkout         Checkout?               @relation("PaymentIntentCheckout", fields: [checkoutId], references: [id])
 
   @@map("payment_intents")
   @@schema("payment_loyalty")
@@ -1059,6 +1090,16 @@ enum RegionEnum {
 
   @@map("region_enum")
   @@schema("product_catalog")
+}
+
+enum CheckoutStatusEnum {
+  pending
+  completed
+  expired
+  cancelled
+
+  @@map("checkout_status_enum")
+  @@schema("cart")
 }
 
 enum OrderStatusEnum {
