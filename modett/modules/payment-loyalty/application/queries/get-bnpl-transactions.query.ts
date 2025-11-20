@@ -9,6 +9,7 @@ export interface GetBnplTransactionsQuery extends IQuery {
   bnplId?: string;
   intentId?: string;
   orderId?: string;
+  userId?: string;
 }
 
 export class GetBnplTransactionsHandler
@@ -29,18 +30,23 @@ export class GetBnplTransactionsHandler
       }
 
       if (query.bnplId) {
-        const txn = await this.bnplService.getBnplTransaction(query.bnplId);
+        const txn = await this.bnplService.getBnplTransaction(
+          query.bnplId,
+          query.userId
+        );
         return CommandResult.success<BnplTransactionDto[]>(txn ? [txn] : []);
       }
       if (query.intentId) {
         const txn = await this.bnplService.getBnplTransactionByIntentId(
-          query.intentId
+          query.intentId,
+          query.userId
         );
         return CommandResult.success<BnplTransactionDto[]>(txn ? [txn] : []);
       }
       // orderId path
       const txns = await this.bnplService.getBnplTransactionsByOrderId(
-        query.orderId as string
+        query.orderId as string,
+        query.userId
       );
       return CommandResult.success<BnplTransactionDto[]>(txns);
     } catch (error) {

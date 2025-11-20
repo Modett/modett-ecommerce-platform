@@ -37,6 +37,8 @@ export interface CreateOrderData {
   }>;
   source?: string;
   currency: string;
+  paymentIntentId?: string;
+  locationId?: string;
 }
 
 export class OrderManagementService {
@@ -122,8 +124,8 @@ export class OrderManagementService {
           sku: variant.getSku().getValue(),
           name: product.getTitle(),
           variantName,
-          price: variant.getPrice().getValue(), // Use price from database for security
-          imageUrl: undefined, // TODO: Add product/variant image URL when media is implemented
+          price: variant.getPrice().getValue(),
+          imageUrl: undefined,
           weight: variant.getWeightG() || undefined,
           dimensions,
           attributes: {
@@ -142,6 +144,20 @@ export class OrderManagementService {
       })
     );
 
+    const defaultLocationId = data.locationId || "main-warehouse";
+    for (const item of orderItems) {
+      const stock = await this.stockManagementService.getStock(
+        item.variantId,
+        defaultLocationId
+      );
+      const available = stock?.getStockLevel().getAvailable() ?? 0;
+      if (available < item.quantity) {
+        throw new Error(
+          `Insufficient stock for variant ${item.variantId} at ${defaultLocationId}`
+        );
+      }
+    }
+
     // Create the order entity
     const order = Order.create({
       userId: data.userId,
@@ -154,10 +170,16 @@ export class OrderManagementService {
       discount: 0,
     });
 
-    // Save the order
     await this.orderRepository.save(order);
 
-    // Log order creation event
+    for (const item of orderItems) {
+      await this.stockManagementService.fulfillReservation(
+        item.variantId,
+        defaultLocationId,
+        item.quantity
+      );
+    }
+
     await this.orderEventService.logOrderCreated(
       order.getOrderId().getValue(),
       {
@@ -261,10 +283,8 @@ export class OrderManagementService {
     let orders: Order[];
     let totalCount: number;
 
-    // Build filter options
     const filters: OrderFilterOptions = {};
 
-    // userId should always be provided for security (users can only see their own orders)
     if (!userId) {
       throw new Error("User ID is required for listing orders");
     }
@@ -280,7 +300,6 @@ export class OrderManagementService {
       sortBy,
       sortOrder,
     };
-
     // Use filters if any are provided
     if (Object.keys(filters).length > 0) {
       orders = await this.orderRepository.findWithFilters(
@@ -312,10 +331,8 @@ export class OrderManagementService {
       return null;
     }
 
-    // Get old status for event logging
     const oldStatus = order.getStatus().getValue();
 
-    // Use specific methods based on status
     const statusValue = newStatus.toLowerCase();
     if (statusValue === "paid") {
       order.markAsPaid();
@@ -333,7 +350,6 @@ export class OrderManagementService {
 
     await this.orderRepository.update(order);
 
-    // Log status change event
     await this.orderEventService.logOrderStatusChanged(
       id,
       oldStatus,
@@ -386,13 +402,10 @@ export class OrderManagementService {
       return null;
     }
 
-    // Capture old status before change
     const oldStatus = order.getStatus().getValue();
 
-    // Update order status
     order.markAsPaid();
 
-    // Reserve stock for all order items when payment is confirmed
     const orderItems = order.getItems();
     const defaultLocationId = "main-warehouse"; // Default location for stock reservation
 
@@ -404,18 +417,14 @@ export class OrderManagementService {
           item.getQuantity()
         );
       } catch (error) {
-        // Log error but don't fail the entire payment process
-        // This allows orders to be marked as paid even if stock reservation fails
         console.error(
           `Failed to reserve stock for item ${item.getOrderItemId()}: ${error instanceof Error ? error.message : "Unknown error"}`
         );
       }
     }
 
-    // Save order
     await this.orderRepository.update(order);
 
-    // Automatically log status change to history
     await this.logOrderStatusChange({
       orderId: id,
       fromStatus: oldStatus,
@@ -439,13 +448,10 @@ export class OrderManagementService {
       return null;
     }
 
-    // Capture old status before change
     const oldStatus = order.getStatus().getValue();
 
-    // Update order status (this validates business rules like having shipments)
     order.markAsFulfilled();
 
-    // Fulfill inventory reservations for all order items
     const orderItems = order.getItems();
     const shipments = order.getShipments();
 

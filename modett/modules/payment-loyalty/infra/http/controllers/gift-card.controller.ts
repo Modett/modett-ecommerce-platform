@@ -43,6 +43,13 @@ export class GiftCardController {
     request: FastifyRequest<{ Body: CreateGiftCardRequest }>,
     reply: FastifyReply
   ) {
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply
+        .code(401)
+        .send({ success: false, error: "Authentication required" });
+    }
+
     const body = request.body;
     const cmd: CreateGiftCardCommand = {
       code: body.code,
@@ -62,12 +69,20 @@ export class GiftCardController {
     request: FastifyRequest<{ Params: { giftCardId: string }; Body: RedeemGiftCardRequest }>,
     reply: FastifyReply
   ) {
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply
+        .code(401)
+        .send({ success: false, error: "Authentication required" });
+    }
+
     const { giftCardId } = request.params;
     const body = request.body;
     const cmd: RedeemGiftCardCommand = {
       giftCardId,
       amount: body.amount,
       orderId: body.orderId,
+      userId,
       timestamp: new Date(),
     };
     const result = await this.redeemHandler.handle(cmd);

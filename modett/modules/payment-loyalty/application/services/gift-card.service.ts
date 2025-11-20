@@ -21,6 +21,7 @@ export interface RedeemGiftCardDto {
   giftCardId: string;
   amount: number;
   orderId: string;
+  userId?: string;
 }
 
 export interface GiftCardDto {
@@ -85,6 +86,19 @@ export class GiftCardService {
   }
 
   async redeemGiftCard(dto: RedeemGiftCardDto): Promise<GiftCardDto> {
+    if (dto.userId) {
+      const order = await (this.prisma as any).order.findUnique({
+        where: { id: dto.orderId },
+        select: { userId: true },
+      });
+      if (!order) {
+        throw new Error("Order not found for gift card redemption");
+      }
+      if (order.userId && order.userId !== dto.userId) {
+        throw new Error("Forbidden: order does not belong to this user");
+      }
+    }
+
     const giftCard = await this.giftCardRepo.findById(dto.giftCardId);
     if (!giftCard) {
       throw new Error(`Gift card ${dto.giftCardId} not found`);
