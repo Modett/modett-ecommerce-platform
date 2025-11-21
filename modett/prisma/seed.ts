@@ -55,7 +55,7 @@ async function main() {
     // 1. Beige Silk Shirt
     prisma.mediaAsset.create({
       data: {
-        storageKey: 'https://images.unsplash.com/photo-1596783074918-c84cb06531ca',
+        storageKey: '/images/products/product-1.jpg',
         mime: 'image/jpeg',
         width: 1200,
         height: 1600,
@@ -64,16 +64,16 @@ async function main() {
         focalX: 600,
         focalY: 800,
         renditions: {
-          thumbnail: 'https://images.unsplash.com/photo-1596783074918-c84cb06531ca?w=200&h=300&fit=crop',
-          medium: 'https://images.unsplash.com/photo-1596783074918-c84cb06531ca?w=600&h=800&fit=crop',
-          large: 'https://images.unsplash.com/photo-1596783074918-c84cb06531ca?w=1200&h=1600&fit=crop',
+          thumbnail: '/images/products/product-1.jpg?w=200&h=300&fit=crop',
+          medium: '/images/products/product-1.jpg?w=600&h=800&fit=crop',
+          large: '/images/products/product-1.jpg?w=1200&h=1600&fit=crop',
         },
       },
     }),
     // 2. Wide-Leg Trousers
     prisma.mediaAsset.create({
       data: {
-        storageKey: 'https://images.unsplash.com/photo-1594633313593-bab3825d0caf',
+        storageKey: '/images/products/product-2.jpg',
         mime: 'image/jpeg',
         width: 1200,
         height: 1600,
@@ -82,16 +82,16 @@ async function main() {
         focalX: 600,
         focalY: 900,
         renditions: {
-          thumbnail: 'https://images.unsplash.com/photo-1594633313593-bab3825d0caf?w=200&h=300&fit=crop',
-          medium: 'https://images.unsplash.com/photo-1594633313593-bab3825d0caf?w=600&h=800&fit=crop',
-          large: 'https://images.unsplash.com/photo-1594633313593-bab3825d0caf?w=1200&h=1600&fit=crop',
+          thumbnail: '/images/products/product-2.jpg?w=200&h=300&fit=crop',
+          medium: '/images/products/product-2.jpg?w=600&h=800&fit=crop',
+          large: '/images/products/product-2.jpg?w=1200&h=1600&fit=crop',
         },
       },
     }),
     // 3. Tailored Blazer
     prisma.mediaAsset.create({
       data: {
-        storageKey: 'https://images.unsplash.com/photo-1591369822096-ffd140ec948f',
+        storageKey: '/images/products/product-3.jpg',
         mime: 'image/jpeg',
         width: 1200,
         height: 1600,
@@ -100,16 +100,16 @@ async function main() {
         focalX: 600,
         focalY: 700,
         renditions: {
-          thumbnail: 'https://images.unsplash.com/photo-1591369822096-ffd140ec948f?w=200&h=300&fit=crop',
-          medium: 'https://images.unsplash.com/photo-1591369822096-ffd140ec948f?w=600&h=800&fit=crop',
-          large: 'https://images.unsplash.com/photo-1591369822096-ffd140ec948f?w=1200&h=1600&fit=crop',
+          thumbnail: '/images/products/product-3.jpg?w=200&h=300&fit=crop',
+          medium: '/images/products/product-3.jpg?w=600&h=800&fit=crop',
+          large: '/images/products/product-3.jpg?w=1200&h=1600&fit=crop',
         },
       },
     }),
     // 4. Linen Maxi Dress
     prisma.mediaAsset.create({
       data: {
-        storageKey: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8',
+        storageKey: '/images/products/product-4.jpg',
         mime: 'image/jpeg',
         width: 1200,
         height: 1600,
@@ -118,16 +118,16 @@ async function main() {
         focalX: 600,
         focalY: 800,
         renditions: {
-          thumbnail: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=200&h=300&fit=crop',
-          medium: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&h=800&fit=crop',
-          large: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1200&h=1600&fit=crop',
+          thumbnail: '/images/products/product-4.jpg?w=200&h=300&fit=crop',
+          medium: '/images/products/product-4.jpg?w=600&h=800&fit=crop',
+          large: '/images/products/product-4.jpg?w=1200&h=1600&fit=crop',
         },
       },
     }),
     // 5. Cashmere Sweater
     prisma.mediaAsset.create({
       data: {
-        storageKey: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105',
+        storageKey: '/images/products/product-5.jpg',
         mime: 'image/jpeg',
         width: 1200,
         height: 1600,
@@ -136,16 +136,16 @@ async function main() {
         focalX: 600,
         focalY: 750,
         renditions: {
-          thumbnail: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=200&h=300&fit=crop',
-          medium: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600&h=800&fit=crop',
-          large: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=1200&h=1600&fit=crop',
+          thumbnail: '/images/products/product-5.jpg?w=200&h=300&fit=crop',
+          medium: '/images/products/product-5.jpg?w=600&h=800&fit=crop',
+          large: '/images/products/product-5.jpg?w=1200&h=1600&fit=crop',
         },
       },
     }),
     // 6. Pleated Midi Skirt
     prisma.mediaAsset.create({
       data: {
-        storageKey: 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa',
+        storageKey: '/images/products/product-6.jpg',
         mime: 'image/jpeg',
         width: 1200,
         height: 1600,
@@ -154,16 +154,16 @@ async function main() {
         focalX: 600,
         focalY: 900,
         renditions: {
-          thumbnail: 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=200&h=300&fit=crop',
-          medium: 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=600&h=800&fit=crop',
-          large: 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=1200&h=1600&fit=crop',
+          thumbnail: '/images/products/product-6.jpg?w=200&h=300&fit=crop',
+          medium: '/images/products/product-6.jpg?w=600&h=800&fit=crop',
+          large: '/images/products/product-6.jpg?w=1200&h=1600&fit=crop',
         },
       },
     }),
     // 7. Silk Slip Dress
     prisma.mediaAsset.create({
       data: {
-        storageKey: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae',
+        storageKey: '/images/products/product-7.jpg',
         mime: 'image/jpeg',
         width: 1200,
         height: 1600,
@@ -172,16 +172,16 @@ async function main() {
         focalX: 600,
         focalY: 800,
         renditions: {
-          thumbnail: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=200&h=300&fit=crop',
-          medium: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600&h=800&fit=crop',
-          large: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=1200&h=1600&fit=crop',
+          thumbnail: '/images/products/product-7.jpg?w=200&h=300&fit=crop',
+          medium: '/images/products/product-7.jpg?w=600&h=800&fit=crop',
+          large: '/images/products/product-7.jpg?w=1200&h=1600&fit=crop',
         },
       },
     }),
     // 8. Wool Wide-Leg Trousers
     prisma.mediaAsset.create({
       data: {
-        storageKey: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1',
+        storageKey: '/images/products/product-8.jpg',
         mime: 'image/jpeg',
         width: 1200,
         height: 1600,
@@ -190,16 +190,16 @@ async function main() {
         focalX: 600,
         focalY: 850,
         renditions: {
-          thumbnail: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=200&h=300&fit=crop',
-          medium: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=600&h=800&fit=crop',
-          large: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=1200&h=1600&fit=crop',
+          thumbnail: '/images/products/product-8.jpg?w=200&h=300&fit=crop',
+          medium: '/images/products/product-8.jpg?w=600&h=800&fit=crop',
+          large: '/images/products/product-8.jpg?w=1200&h=1600&fit=crop',
         },
       },
     }),
     // 9. Cotton Poplin Shirt
     prisma.mediaAsset.create({
       data: {
-        storageKey: 'https://images.unsplash.com/photo-1618886614638-80e3c103d31a',
+        storageKey: '/images/products/product-9.jpg',
         mime: 'image/jpeg',
         width: 1200,
         height: 1600,
@@ -208,16 +208,16 @@ async function main() {
         focalX: 600,
         focalY: 750,
         renditions: {
-          thumbnail: 'https://images.unsplash.com/photo-1618886614638-80e3c103d31a?w=200&h=300&fit=crop',
-          medium: 'https://images.unsplash.com/photo-1618886614638-80e3c103d31a?w=600&h=800&fit=crop',
-          large: 'https://images.unsplash.com/photo-1618886614638-80e3c103d31a?w=1200&h=1600&fit=crop',
+          thumbnail: '/images/products/product-9.jpg?w=200&h=300&fit=crop',
+          medium: '/images/products/product-9.jpg?w=600&h=800&fit=crop',
+          large: '/images/products/product-9.jpg?w=1200&h=1600&fit=crop',
         },
       },
     }),
     // 10. Merino Wool Turtleneck
     prisma.mediaAsset.create({
       data: {
-        storageKey: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633',
+        storageKey: '/images/products/product-10.jpg',
         mime: 'image/jpeg',
         width: 1200,
         height: 1600,
@@ -226,9 +226,9 @@ async function main() {
         focalX: 600,
         focalY: 700,
         renditions: {
-          thumbnail: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=200&h=300&fit=crop',
-          medium: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=600&h=800&fit=crop',
-          large: 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=1200&h=1600&fit=crop',
+          thumbnail: '/images/products/product-10.jpg?w=200&h=300&fit=crop',
+          medium: '/images/products/product-10.jpg?w=600&h=800&fit=crop',
+          large: '/images/products/product-10.jpg?w=1200&h=1600&fit=crop',
         },
       },
     }),

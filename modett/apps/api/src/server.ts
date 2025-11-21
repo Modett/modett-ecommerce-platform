@@ -900,6 +900,7 @@ export async function createServer(): Promise<FastifyInstance> {
       sizeGuideService: serviceContainer.sizeGuideManagementService,
       editorialLookService: serviceContainer.editorialLookManagementService,
       productMediaService: serviceContainer.productMediaManagementService,
+      prisma: serviceContainer.prisma,
     };
 
     // Register product catalog routes with services

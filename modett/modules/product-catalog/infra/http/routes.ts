@@ -26,6 +26,7 @@ import {
   authenticateAdmin,
   optionalAuth,
 } from "../../../user-management/infra/http/middleware/auth.middleware";
+import { PrismaClient } from "@prisma/client";
 
 // Standard authentication error responses for Swagger
 const authErrorResponses = {
@@ -62,12 +63,14 @@ export async function registerProductCatalogRoutes(
     sizeGuideService: SizeGuideManagementService;
     editorialLookService: EditorialLookManagementService;
     productMediaService: ProductMediaManagementService;
+    prisma: PrismaClient;
   }
 ) {
   // Initialize controllers
   const productController = new ProductController(
     services.productService,
-    services.productSearchService
+    services.productSearchService,
+    services.prisma
   );
   const categoryController = new CategoryController(services.categoryService);
   const variantController = new VariantController(services.variantService);
@@ -156,6 +159,33 @@ export async function registerProductCatalogRoutes(
                         },
                         createdAt: { type: "string", format: "date-time" },
                         updatedAt: { type: "string", format: "date-time" },
+                        variants: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              id: { type: "string" },
+                              sku: { type: "string" },
+                              size: { type: "string", nullable: true },
+                              color: { type: "string", nullable: true },
+                              price: { type: "string" },
+                              compareAtPrice: { type: "string", nullable: true },
+                              inventory: { type: "integer" },
+                            },
+                          },
+                        },
+                        images: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              url: { type: "string" },
+                              alt: { type: "string", nullable: true },
+                              width: { type: "integer", nullable: true },
+                              height: { type: "integer", nullable: true },
+                            },
+                          },
+                        },
                       },
                     },
                   },
@@ -1158,7 +1188,7 @@ export async function registerProductCatalogRoutes(
             includeAssetDetails: {
               type: "boolean",
               default: true,
-              description: "Include full asset details"
+              description: "Include full asset details",
             },
             sortBy: {
               type: "string",
@@ -1236,16 +1266,16 @@ export async function registerProductCatalogRoutes(
             assetId: {
               type: "string",
               format: "uuid",
-              description: "Media asset ID to attach"
+              description: "Media asset ID to attach",
             },
             position: {
               type: "integer",
               minimum: 1,
-              description: "Display position"
+              description: "Display position",
             },
             isCover: {
               type: "boolean",
-              description: "Set as cover/primary image"
+              description: "Set as cover/primary image",
             },
           },
         },
@@ -1326,7 +1356,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    productMediaController.removeMediaFromProduct.bind(productMediaController) as any
+    productMediaController.removeMediaFromProduct.bind(
+      productMediaController
+    ) as any
   );
 
   // Set product cover image
@@ -1353,7 +1385,7 @@ export async function registerProductCatalogRoutes(
             assetId: {
               type: "string",
               format: "uuid",
-              description: "Media asset ID to set as cover"
+              description: "Media asset ID to set as cover",
             },
           },
         },
@@ -1378,7 +1410,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    productMediaController.setProductCoverImage.bind(productMediaController) as any
+    productMediaController.setProductCoverImage.bind(
+      productMediaController
+    ) as any
   );
 
   // Reorder product media
@@ -1445,7 +1479,9 @@ export async function registerProductCatalogRoutes(
         },
       },
     },
-    productMediaController.reorderProductMedia.bind(productMediaController) as any
+    productMediaController.reorderProductMedia.bind(
+      productMediaController
+    ) as any
   );
 
   // =============================================================================

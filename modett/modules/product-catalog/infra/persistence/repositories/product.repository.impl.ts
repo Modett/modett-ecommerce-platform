@@ -117,6 +117,7 @@ export class ProductRepository implements IProductRepository {
       skip: offset,
       orderBy: { [sortBy]: sortOrder },
       include: {
+        variants: true,
         media: {
           include: {
             asset: true,

@@ -15,7 +15,7 @@ export default function HomePage() {
         subtitle="EXPLORE THE CRAFT"
         buttonText="EXPLORE THE CRAFT"
         buttonHref="/collections"
-        imageSrc="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1920&h=1080&fit=crop"
+        imageSrc="/images/banner-1.jpg"
       />
 
       <CollectionBanner
@@ -23,7 +23,7 @@ export default function HomePage() {
         subtitle=""
         buttonText="DISCOVER NOW"
         buttonHref="/journal"
-        imageSrc="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1920&h=1080&fit=crop"
+        imageSrc="/images/banner-2.jpg"
       />
 
       <BrandPhilosophy />

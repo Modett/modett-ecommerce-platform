@@ -6,14 +6,15 @@ export function BrandPhilosophy() {
     <section className="py-16 md:py-24 bg-secondary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div className="relative aspect-[4/5] md:aspect-square">
-            <Image
-              src="https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?w=800&h=1000&fit=crop"
-              alt="Modett craftsmanship"
-              fill
-              className="object-cover"
-            />
-          </div>
+            <div className="relative aspect-[4/5] md:aspect-square">
+              <Image
+                src="/images/brand-philosophy.jpg"
+                alt="Modett craftsmanship"
+                fill
+                className="object-cover"
+                sizes="(min-width: 768px) 50vw, 100vw"
+              />
+            </div>
 
           <div className="space-y-6">
             <p className="text-sm uppercase tracking-wider text-muted-foreground">
