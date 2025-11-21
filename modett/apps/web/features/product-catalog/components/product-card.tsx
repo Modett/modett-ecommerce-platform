@@ -8,6 +8,36 @@ import { cartService } from "@/services/cart.service";
 import { wishlistService } from "@/services/wishlist.service";
 import { toast } from "sonner";
 
+// Color mapping for common color names to hex codes
+const COLOR_MAP: Record<string, string> = {
+  'terracotta clay': '#C78869',
+  'brushed gold': '#C1AB85',
+  'sage green': '#8FA89A',
+  'dusty blue': '#9EAFB0',
+  'red': '#DC2626',
+  'blue': '#2563EB',
+  'green': '#16A34A',
+  'yellow': '#CA8A04',
+  'purple': '#9333EA',
+  'pink': '#EC4899',
+  'black': '#000000',
+  'white': '#FFFFFF',
+  'gray': '#6B7280',
+  'brown': '#92400E',
+  'beige': '#D4C4A8',
+  'navy': '#1E3A8A',
+  'cream': '#F5F5DC',
+};
+
+const getColorHex = (colorName: string | undefined): string => {
+  if (!colorName) return '#CCCCCC'; // Default for undefined/empty
+  const normalizedName = colorName.toLowerCase().trim();
+  // Check if it's already a hex code
+  if (colorName.startsWith('#')) return colorName;
+  // Look up in color map
+  return COLOR_MAP[normalizedName] || '#CCCCCC'; // Default to light gray if not found
+};
+
 interface Variant {
   id: string;
   size?: string;
@@ -55,18 +85,15 @@ export function ProductCard({
     checkWishlistStatus();
   }, [defaultVariant?.id]);
 
-  // Get unique sizes from variants
   const availableSizes = Array.from(
     new Set(variants.map((v) => v.size).filter(Boolean))
   );
 
-  // Get unique colors from variants
   const availableColors = Array.from(
     new Set(variants.map((v) => v.color).filter(Boolean))
   );
 
   const handleSizeSelect = (size: string) => {
-    // Find variant with this size
     const variant = variants.find((v) => v.size === size);
     setSelectedVariant(variant || null);
   };
@@ -86,7 +113,6 @@ export function ProductCard({
 
       toast.success(`${title} added to cart!`);
 
-      // Optionally collapse the card after adding to cart
       setTimeout(() => setIsExpanded(false), 1000);
     } catch (error: any) {
       toast.error(error.message || "Failed to add to cart");
@@ -104,12 +130,10 @@ export function ProductCard({
     setIsTogglingWishlist(true);
     try {
       if (isWishlisted) {
-        // Remove from wishlist
         await wishlistService.removeFromWishlist(defaultVariant.id);
         setIsWishlisted(false);
         toast.success(`${title} removed from wishlist`);
       } else {
-        // Add to wishlist
         await wishlistService.addToWishlist(defaultVariant.id);
         setIsWishlisted(true);
         toast.success(`${title} added to wishlist!`);
@@ -122,9 +146,8 @@ export function ProductCard({
   };
 
   return (
-    <div className="group bg-white w-full max-w-[394px] h-[600px]">
-      {/* Product Image */}
-      <div className="relative w-full h-[520.81px] overflow-hidden bg-gray-50">
+    <div className="group bg-[#EFECE5] w-full max-w-[394px] h-[501.54px]">
+      <div className="relative w-full h-[422.35px] overflow-hidden bg-gray-50">
         <Image src={image} alt={title} fill className="object-cover" />
 
         <button
@@ -166,7 +189,7 @@ export function ProductCard({
               variant="default"
               onClick={handleAddToCart}
               disabled={!selectedVariant || isAddingToCart}
-              className="w-full bg-gray-900 hover:bg-gray-800 text-white text-xs tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-[368px] h-[48px] bg-[#232D35] hover:bg-[#232D35]/90 text-white text-xs tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isAddingToCart ? (
                 <span className="flex items-center gap-2">
@@ -181,40 +204,54 @@ export function ProductCard({
         )}
       </div>
 
-      {/* Product Info */}
-      <div className="relative h-[79.19px]">
-        <div className="flex items-start justify-between mb-1">
-          <div className="flex-1">
-            <h3 className="text-sm text-gray-800 mb-1">{title}</h3>
-            <p className="text-sm font-medium text-gray-900 mb-2">
+      <div className="relative h-[79.19px] py-1 flex flex-col justify-between">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 max-w-[232.11px] w-[164.51px] h-[54.31px]">
+            <h3
+              className="text-[18px] leading-[28px] font-normal text-[#232D35] tracking-[0%]"
+              style={{ fontFamily: "Raleway" }}
+            >
+              {title}
+            </h3>
+            <p
+              className="text-[14px] leading-[24px] font-normal text-[#232D35]"
+              style={{ fontFamily: "Raleway", letterSpacing: "1.03px" }}
+            >
               Rs {price.toFixed(2)}
             </p>
           </div>
 
-          {/* Expand/Collapse Button */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="w-[29.86px] h-[29.86px] flex items-center justify-center hover:bg-gray-100 rounded transition-colors flex-shrink-0"
           >
             {isExpanded ? (
-              <Minus className="w-[19.91px] h-[19.91px] text-[#232D35]" strokeWidth={2.49} />
+              <Minus
+                className="w-[19.91px] h-[19.91px] text-[#232D35]"
+                strokeWidth={2.49}
+              />
             ) : (
-              <Plus className="w-[19.91px] h-[19.91px] text-[#232D35]" />
+              <Plus
+                className="w-[19.91px] h-[19.91px] text-[#232D35]"
+                strokeWidth={2.49}
+              />
             )}
           </button>
         </div>
 
-        {/* Color Swatches - Show available colors */}
         {availableColors.length > 0 && (
-          <div className="flex gap-1.5">
+          <div className="flex gap-[9px] w-[117px] h-[12px]">
             {availableColors.slice(0, 4).map((color, index) => (
               <div
                 key={index}
-                className="px-2 py-0.5 text-xs border border-gray-300 rounded"
+                className="w-3 h-3 rounded-full border"
+                style={{
+                  backgroundColor: getColorHex(color),
+                  borderColor: '#765C4D',
+                  borderWidth: '1px'
+                }}
                 title={color}
-              >
-                {color}
-              </div>
+              />
             ))}
           </div>
         )}
