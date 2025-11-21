@@ -134,20 +134,21 @@ export function ProductCard({
           className="object-cover"
         />
 
-        {/* Wishlist Heart - Only show when expanded */}
-        {isExpanded && (
-          <button
-            onClick={handleWishlistToggle}
-            disabled={isTogglingWishlist}
-            className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-shadow z-10 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Heart
-              className={`h-4 w-4 transition-all ${
-                isWishlisted ? 'fill-black text-black' : 'text-gray-600'
-              } ${isTogglingWishlist ? 'animate-pulse' : ''}`}
-            />
-          </button>
-        )}
+        {/* Wishlist Heart - Always visible on hover, or always visible if wishlisted */}
+        <button
+          onClick={handleWishlistToggle}
+          disabled={isTogglingWishlist}
+          className={`absolute top-3 right-3 p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-all z-10 disabled:opacity-50 disabled:cursor-not-allowed ${
+            isWishlisted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          }`}
+          aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+        >
+          <Heart
+            className={`h-4 w-4 transition-all ${
+              isWishlisted ? 'fill-black text-black' : 'text-gray-600'
+            } ${isTogglingWishlist ? 'animate-pulse' : ''}`}
+          />
+        </button>
 
         {/* Size Selector and Add to Cart - Only show when expanded */}
         {isExpanded && (
