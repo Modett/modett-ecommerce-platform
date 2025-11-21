@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { Heart, Plus, Minus, ShoppingBag } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
-import { cartService } from '@/services/cart.service';
-import { wishlistService } from '@/services/wishlist.service';
-import { toast } from 'sonner';
+import Image from "next/image";
+import { Heart, Plus, Minus, ShoppingBag } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { cartService } from "@/services/cart.service";
+import { wishlistService } from "@/services/wishlist.service";
+import { toast } from "sonner";
 
 interface Variant {
   id: string;
@@ -38,19 +38,17 @@ export function ProductCard({
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
 
-  // Get the first variant as default for wishlist
   const defaultVariant = variants[0];
 
-  // Check if item is in wishlist on mount
   useEffect(() => {
     const checkWishlistStatus = async () => {
       if (defaultVariant) {
         try {
-          const inWishlist = await wishlistService.isInWishlist(defaultVariant.id);
+          const inWishlist = await wishlistService.isInWishlist(
+            defaultVariant.id
+          );
           setIsWishlisted(inWishlist);
-        } catch (error) {
-          // Silently fail - wishlist check is not critical
-        }
+        } catch (error) {}
       }
     };
 
@@ -75,7 +73,7 @@ export function ProductCard({
 
   const handleAddToCart = async () => {
     if (!selectedVariant) {
-      toast.error('Please select a size');
+      toast.error("Please select a size");
       return;
     }
 
@@ -91,7 +89,7 @@ export function ProductCard({
       // Optionally collapse the card after adding to cart
       setTimeout(() => setIsExpanded(false), 1000);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to add to cart');
+      toast.error(error.message || "Failed to add to cart");
     } finally {
       setIsAddingToCart(false);
     }
@@ -99,7 +97,7 @@ export function ProductCard({
 
   const handleWishlistToggle = async () => {
     if (!defaultVariant) {
-      toast.error('Product variant not available');
+      toast.error("Product variant not available");
       return;
     }
 
@@ -117,44 +115,37 @@ export function ProductCard({
         toast.success(`${title} added to wishlist!`);
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update wishlist');
+      toast.error(error.message || "Failed to update wishlist");
     } finally {
       setIsTogglingWishlist(false);
     }
   };
 
   return (
-    <div className="group bg-white">
+    <div className="group bg-white w-full max-w-[394px] h-[600px]">
       {/* Product Image */}
-      <div className="relative aspect-[3/4] mb-3 overflow-hidden bg-gray-50">
-        <Image
-          src={image}
-          alt={title}
-          fill
-          className="object-cover"
-        />
+      <div className="relative w-full h-[520.81px] overflow-hidden bg-gray-50">
+        <Image src={image} alt={title} fill className="object-cover" />
 
-        {/* Wishlist Heart - Always visible on hover, or always visible if wishlisted */}
         <button
           onClick={handleWishlistToggle}
           disabled={isTogglingWishlist}
           className={`absolute top-3 right-3 p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-all z-10 disabled:opacity-50 disabled:cursor-not-allowed ${
-            isWishlisted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+            isWishlisted ? "opacity-100" : "opacity-0 group-hover:opacity-100"
           }`}
-          aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           <Heart
             className={`h-4 w-4 transition-all ${
-              isWishlisted ? 'fill-black text-black' : 'text-gray-600'
-            } ${isTogglingWishlist ? 'animate-pulse' : ''}`}
+              isWishlisted ? "fill-black text-black" : "text-gray-600"
+            } ${isTogglingWishlist ? "animate-pulse" : ""}`}
           />
         </button>
 
-        {/* Size Selector and Add to Cart - Only show when expanded */}
         {isExpanded && (
           <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm p-4">
             <p className="text-xs text-center text-gray-600 mb-2">
-              {availableSizes.length > 0 ? 'Available sizes' : 'Select variant'}
+              {availableSizes.length > 0 ? "Available sizes" : "Select variant"}
             </p>
             <div className="grid grid-cols-5 gap-2 mb-3">
               {availableSizes.map((size) => (
@@ -163,8 +154,8 @@ export function ProductCard({
                   onClick={() => handleSizeSelect(size!)}
                   className={`py-1.5 text-xs font-medium border transition-colors ${
                     selectedVariant?.size === size
-                      ? 'bg-gray-800 text-white border-gray-800'
-                      : 'bg-white text-gray-700 border-gray-300 hover:border-gray-500'
+                      ? "bg-gray-800 text-white border-gray-800"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
                   }`}
                 >
                   {size}
@@ -183,7 +174,7 @@ export function ProductCard({
                   ADDING...
                 </span>
               ) : (
-                'ADD TO CART'
+                "ADD TO CART"
               )}
             </Button>
           </div>
@@ -191,22 +182,24 @@ export function ProductCard({
       </div>
 
       {/* Product Info */}
-      <div className="relative">
+      <div className="relative h-[79.19px]">
         <div className="flex items-start justify-between mb-1">
           <div className="flex-1">
             <h3 className="text-sm text-gray-800 mb-1">{title}</h3>
-            <p className="text-sm font-medium text-gray-900 mb-2">Rs {price.toFixed(2)}</p>
+            <p className="text-sm font-medium text-gray-900 mb-2">
+              Rs {price.toFixed(2)}
+            </p>
           </div>
 
           {/* Expand/Collapse Button */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1 hover:bg-gray-100 rounded transition-colors flex-shrink-0"
+            className="w-[29.86px] h-[29.86px] flex items-center justify-center hover:bg-gray-100 rounded transition-colors flex-shrink-0"
           >
             {isExpanded ? (
-              <Minus className="h-5 w-5 text-gray-800" />
+              <Minus className="w-[19.91px] h-[19.91px] text-[#232D35]" strokeWidth={2.49} />
             ) : (
-              <Plus className="h-5 w-5 text-gray-800" />
+              <Plus className="w-[19.91px] h-[19.91px] text-[#232D35]" />
             )}
           </button>
         </div>

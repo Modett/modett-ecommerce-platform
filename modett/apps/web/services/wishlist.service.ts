@@ -162,12 +162,13 @@ class WishlistService {
         !hasRetried &&
         this.shouldRetryOnError(responseData, errorMessages);
 
-      console.error("Failed to add to wishlist:", responseData || error);
-
       if (shouldRetry) {
+        console.log("🔄 Wishlist not found, retrying with fresh wishlist...");
         this.clearWishlist();
         return this.addToWishlistInternal(variantId, true);
       }
+
+      console.error("❌ Failed to add to wishlist:", errorMessages[0] || error.message);
 
       throw new Error(
         errorMessages[0] || "Failed to add to wishlist"

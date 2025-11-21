@@ -29,11 +29,16 @@ const errorResponseSchema = {
     errors: {
       type: "array",
       items: {
-        type: "object",
-        properties: {
-          field: { type: "string" },
-          message: { type: "string" },
-        },
+        anyOf: [
+          { type: "string" },
+          {
+            type: "object",
+            properties: {
+              field: { type: "string" },
+              message: { type: "string" },
+            },
+          },
+        ],
       },
     },
   },
