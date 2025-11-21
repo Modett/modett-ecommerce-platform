@@ -10,32 +10,32 @@ import { toast } from "sonner";
 
 // Color mapping for common color names to hex codes
 const COLOR_MAP: Record<string, string> = {
-  'terracotta clay': '#C78869',
-  'brushed gold': '#C1AB85',
-  'sage green': '#8FA89A',
-  'dusty blue': '#9EAFB0',
-  'red': '#DC2626',
-  'blue': '#2563EB',
-  'green': '#16A34A',
-  'yellow': '#CA8A04',
-  'purple': '#9333EA',
-  'pink': '#EC4899',
-  'black': '#000000',
-  'white': '#FFFFFF',
-  'gray': '#6B7280',
-  'brown': '#92400E',
-  'beige': '#D4C4A8',
-  'navy': '#1E3A8A',
-  'cream': '#F5F5DC',
+  "terracotta clay": "#C78869",
+  "brushed gold": "#C1AB85",
+  "sage green": "#8FA89A",
+  "dusty blue": "#9EAFB0",
+  red: "#DC2626",
+  blue: "#2563EB",
+  green: "#16A34A",
+  yellow: "#CA8A04",
+  purple: "#9333EA",
+  pink: "#EC4899",
+  black: "#000000",
+  white: "#FFFFFF",
+  gray: "#6B7280",
+  brown: "#92400E",
+  beige: "#D4C4A8",
+  navy: "#1E3A8A",
+  cream: "#F5F5DC",
 };
 
 const getColorHex = (colorName: string | undefined): string => {
-  if (!colorName) return '#CCCCCC'; // Default for undefined/empty
+  if (!colorName) return "#CCCCCC";
   const normalizedName = colorName.toLowerCase().trim();
-  // Check if it's already a hex code
-  if (colorName.startsWith('#')) return colorName;
-  // Look up in color map
-  return COLOR_MAP[normalizedName] || '#CCCCCC'; // Default to light gray if not found
+
+  if (colorName.startsWith("#")) return colorName;
+
+  return COLOR_MAP[normalizedName] || "#CCCCCC";
 };
 
 interface Variant {
@@ -146,31 +146,34 @@ export function ProductCard({
   };
 
   return (
-    <div className="group bg-[#EFECE5] w-full max-w-[394px] h-[501.54px]">
-      <div className="relative w-full h-[422.35px] overflow-hidden bg-gray-50">
+    <div className="group bg-[#EFECE5] w-full max-w-[394px] h-[600px] flex flex-col gap-[19.27px]">
+      <div className="relative w-full h-[501.54px] overflow-hidden bg-gray-50">
         <Image src={image} alt={title} fill className="object-cover" />
 
         <button
           onClick={handleWishlistToggle}
           disabled={isTogglingWishlist}
-          className={`absolute top-3 right-3 p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-all z-10 disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`absolute top-[18px] right-[14px] p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-all z-10 disabled:opacity-50 disabled:cursor-not-allowed ${
             isWishlisted ? "opacity-100" : "opacity-0 group-hover:opacity-100"
           }`}
           aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           <Heart
-            className={`h-4 w-4 transition-all ${
+            className={`h-5 w-5 transition-all ${
               isWishlisted ? "fill-black text-black" : "text-gray-600"
             } ${isTogglingWishlist ? "animate-pulse" : ""}`}
           />
         </button>
 
         {isExpanded && (
-          <div className="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm p-4">
-            <p className="text-xs text-center text-gray-600 mb-2">
+          <div className="absolute bottom-0 left-0 right-0 w-[394px] bg-[#F8F5F2]/75 pt-[16px] pr-[14px] pb-[16px] pl-[14px] flex flex-col gap-[6px] border-t-[0.5px] border-[#BBA496]">
+            <p
+              className="text-[12px] leading-[16px] font-normal text-center text-gray-600"
+              style={{ fontFamily: "Reddit Sans", letterSpacing: "0px" }}
+            >
               {availableSizes.length > 0 ? "Available sizes" : "Select variant"}
             </p>
-            <div className="grid grid-cols-5 gap-2 mb-3">
+            <div className="grid grid-cols-5 gap-2">
               {availableSizes.map((size) => (
                 <button
                   key={size}
@@ -185,11 +188,11 @@ export function ProductCard({
                 </button>
               ))}
             </div>
-            <Button
-              variant="default"
+            <button
               onClick={handleAddToCart}
               disabled={!selectedVariant || isAddingToCart}
-              className="w-[368px] h-[48px] bg-[#232D35] hover:bg-[#232D35]/90 text-white text-xs tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-[368px] h-[48px] bg-[#232D35] hover:bg-[#232D35]/90 text-[#E5E0D6] text-[16px] leading-[24px] font-medium tracking-[4px] uppercase disabled:opacity-50 disabled:cursor-not-allowed rounded-sm transition-colors"
+              style={{ fontFamily: "Raleway" }}
             >
               {isAddingToCart ? (
                 <span className="flex items-center gap-2">
@@ -199,7 +202,7 @@ export function ProductCard({
               ) : (
                 "ADD TO CART"
               )}
-            </Button>
+            </button>
           </div>
         )}
       </div>
@@ -247,8 +250,8 @@ export function ProductCard({
                 className="w-3 h-3 rounded-full border"
                 style={{
                   backgroundColor: getColorHex(color),
-                  borderColor: '#765C4D',
-                  borderWidth: '1px'
+                  borderColor: "#765C4D",
+                  borderWidth: "1px",
                 }}
                 title={color}
               />
