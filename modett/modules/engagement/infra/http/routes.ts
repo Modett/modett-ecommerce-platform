@@ -362,6 +362,7 @@ export async function registerEngagementRoutes(
             variantId: { type: "string", description: "Product variant ID" },
             priority: { type: "number", description: "Item priority (1-5)" },
             notes: { type: "string", description: "Optional notes" },
+            guestToken: { type: "string", description: "Guest token for guest wishlists" },
           },
         },
         response: {

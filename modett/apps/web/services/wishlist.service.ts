@@ -71,6 +71,8 @@ class WishlistService {
       // Store in localStorage
       if (typeof window !== "undefined") {
         localStorage.setItem(GUEST_TOKEN_KEY, token);
+        // Drop any cached wishlist that belonged to an older token
+        this.clearWishlist();
       }
 
       return token;
@@ -128,22 +130,47 @@ class WishlistService {
    * Add product to wishlist
    */
   async addToWishlist(variantId: string): Promise<WishlistItem> {
+    return this.addToWishlistInternal(variantId);
+  }
+
+  private async addToWishlistInternal(
+    variantId: string,
+    hasRetried = false
+  ): Promise<WishlistItem> {
     try {
       const wishlistId = await this.getWishlistId();
+      const guestToken = await this.getGuestToken();
 
       const { data } = await wishlistApiClient.post(
         `/engagement/wishlists/${wishlistId}/items`,
         {
           variantId,
           priority: 3,
+        },
+        {
+          headers: {
+            "X-Guest-Token": guestToken,
+          },
         }
       );
 
       return data.data;
     } catch (error: any) {
-      console.error("Failed to add to wishlist:", error);
+      const responseData = error?.response?.data;
+      const errorMessages = this.extractErrorMessages(responseData);
+      const shouldRetry =
+        !hasRetried &&
+        this.shouldRetryOnError(responseData, errorMessages);
+
+      console.error("Failed to add to wishlist:", responseData || error);
+
+      if (shouldRetry) {
+        this.clearWishlist();
+        return this.addToWishlistInternal(variantId, true);
+      }
+
       throw new Error(
-        error.response?.data?.error || "Failed to add to wishlist"
+        errorMessages[0] || "Failed to add to wishlist"
       );
     }
   }
@@ -209,6 +236,48 @@ class WishlistService {
       localStorage.removeItem(WISHLIST_ID_KEY);
     }
     this.wishlistId = null;
+  }
+
+  private shouldRetryOnError(
+    responseData: any,
+    errorMessages: string[]
+  ): boolean {
+    const message = errorMessages.join(" ").toLowerCase();
+    const fallbackError =
+      typeof responseData?.message === "string"
+        ? responseData.message.toLowerCase()
+        : "";
+
+    return (
+      /wishlist.*not found/.test(message) ||
+      /unauthorized/.test(message) ||
+      /wishlist.*not found/.test(fallbackError) ||
+      /unauthorized/.test(fallbackError)
+    );
+  }
+
+  private extractErrorMessages(responseData: any): string[] {
+    const errors: string[] = [];
+
+    if (typeof responseData?.error === "string") {
+      errors.push(responseData.error);
+    }
+
+    if (typeof responseData?.message === "string") {
+      errors.push(responseData.message);
+    }
+
+    if (Array.isArray(responseData?.errors)) {
+      for (const errorItem of responseData.errors) {
+        if (typeof errorItem === "string") {
+          errors.push(errorItem);
+        } else if (typeof errorItem?.message === "string") {
+          errors.push(errorItem.message);
+        }
+      }
+    }
+
+    return errors;
   }
 }
 
