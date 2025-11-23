@@ -12,18 +12,10 @@ export default function HomePage() {
 
       <CollectionBanner
         title="COLLECTIONS"
-        subtitle="EXPLORE THE CRAFT"
-        buttonText="EXPLORE THE CRAFT"
-        buttonHref="/collections"
-        imageSrc="/images/banner-1.jpg"
-      />
-
-      <CollectionBanner
-        title="THE JOURNAL"
-        subtitle=""
-        buttonText="DISCOVER NOW"
-        buttonHref="/journal"
-        imageSrc="/images/banner-2.jpg"
+        subtitle="SIGNATURE"
+        imageSrc="/collection-banner.jpg"
+        secondTitle="THE JOURNAL"
+        secondSubtitle="BEHIND THE CRAFT"
       />
 
       <BrandPhilosophy />

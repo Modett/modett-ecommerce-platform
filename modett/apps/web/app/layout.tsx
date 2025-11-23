@@ -9,7 +9,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="antialiased text-gray-900 bg-white" suppressHydrationWarning>
+      <body className="antialiased text-gray-900 bg-white overflow-x-hidden" suppressHydrationWarning>
         <QueryProvider>{children}</QueryProvider>
         <Toaster position="top-center" richColors />
       </body>

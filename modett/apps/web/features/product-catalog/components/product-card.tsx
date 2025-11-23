@@ -153,14 +153,14 @@ export function ProductCard({
         <button
           onClick={handleWishlistToggle}
           disabled={isTogglingWishlist}
-          className={`absolute top-[18px] right-[14px] p-2 bg-white rounded-full shadow-sm hover:shadow-md transition-all z-10 disabled:opacity-50 disabled:cursor-not-allowed ${
+          className={`absolute top-[18px] left-[360px] w-5 h-5 transition-all z-10 disabled:opacity-50 cursor-pointer flex items-center justify-center ${
             isWishlisted ? "opacity-100" : "opacity-0 group-hover:opacity-100"
           }`}
           aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
           <Heart
             className={`h-5 w-5 transition-all ${
-              isWishlisted ? "fill-black text-black" : "text-gray-600"
+              isWishlisted ? "fill-black text-black" : "text-[#232D35]"
             } ${isTogglingWishlist ? "animate-pulse" : ""}`}
           />
         </button>
@@ -191,7 +191,7 @@ export function ProductCard({
             <button
               onClick={handleAddToCart}
               disabled={!selectedVariant || isAddingToCart}
-              className="w-[368px] h-[48px] bg-[#232D35] hover:bg-[#232D35]/90 text-[#E5E0D6] text-[16px] leading-[24px] font-medium tracking-[4px] uppercase disabled:opacity-50 disabled:cursor-not-allowed rounded-sm transition-colors"
+              className="w-[368px] h-[48px] bg-[#232D35] hover:bg-[#232D35]/90 text-[#E5E0D6] text-[16px] leading-[24px] font-medium tracking-[4px] uppercase disabled:opacity-50 cursor-pointer rounded-sm transition-colors"
               style={{ fontFamily: "Raleway" }}
             >
               {isAddingToCart ? (
@@ -211,7 +211,7 @@ export function ProductCard({
         <div className="flex items-start justify-between">
           <div className="flex-1 max-w-[232.11px] w-[164.51px] h-[54.31px]">
             <h3
-              className="text-[18px] leading-[28px] font-normal text-[#232D35] tracking-[0%]"
+              className="text-[18px] leading-[24px] font-normal text-[#232D35] tracking-[0%]"
               style={{ fontFamily: "Raleway" }}
             >
               {title}

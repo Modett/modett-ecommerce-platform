@@ -21,8 +21,9 @@ export function InvestmentPieces() {
 
   return (
     <section className="py-20 bg-[#EFECE5]">
-      <div className="w-full max-w-[1440px] mx-auto px-8">
-        <div className="w-full max-w-[1280px] mx-auto flex flex-col gap-[80px]">
+      <div className="w-full max-w-[1440px] mx-auto px-[80px]">
+        {/* Container: Vertical flow, Fill 1280px, Hug height, 64px gap */}
+        <div className="w-full flex flex-col gap-[64px]">
           <div className="flex justify-between items-center h-[144px]">
             <div className="flex flex-col w-full max-w-3xl gap-4">
               <div className="flex flex-col w-full h-[104px] gap-4">
@@ -79,10 +80,20 @@ export function InvestmentPieces() {
             </div>
           )}
 
-          <div className="text-center">
-            <Button variant="link" className="text-sm uppercase tracking-wider">
-              SHOP ALL INVESTMENT PIECES
-            </Button>
+          <div className="flex justify-start">
+            <a
+              href="#"
+              className="flex items-center gap-[8px] h-[24px] hover:opacity-70 transition-opacity"
+              style={{ fontFamily: "Raleway" }}
+            >
+              <span
+                className="w-[340px] h-[24px] text-[16px] leading-[24px] font-medium uppercase text-[#765C4D] whitespace-nowrap"
+                style={{ letterSpacing: "4px" }}
+              >
+                SHOP ALL INVESTMENT PIECES
+              </span>
+              <span className="text-[16px] text-[#765C4D]">›</span>
+            </a>
           </div>
         </div>
       </div>
