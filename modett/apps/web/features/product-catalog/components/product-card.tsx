@@ -146,8 +146,8 @@ export function ProductCard({
   };
 
   return (
-    <div className="group bg-[#EFECE5] w-full max-w-[394px] h-[600px] flex flex-col gap-[19.27px]">
-      <div className="relative w-full h-[501.54px] overflow-hidden bg-gray-50">
+    <div className="group bg-[#EFECE5] w-full max-w-[350px] md:max-w-[394px] h-[592px] md:h-[600px] flex flex-col gap-[19.27px]">
+      <div className="relative w-full h-[493px] md:h-[501.54px] overflow-hidden bg-gray-50">
         <Image src={image} alt={title} fill className="object-cover" />
 
         <button

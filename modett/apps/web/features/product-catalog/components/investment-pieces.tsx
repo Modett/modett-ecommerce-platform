@@ -20,26 +20,37 @@ export function InvestmentPieces() {
   }
 
   return (
-    <section className="py-20 bg-[#EFECE5]">
-      <div className="w-full max-w-[1440px] mx-auto px-[80px]">
-        {/* Container: Vertical flow, Fill 1280px, Hug height, 64px gap */}
-        <div className="w-full flex flex-col gap-[64px]">
-          <div className="flex justify-between items-center h-[144px]">
-            <div className="flex flex-col w-full max-w-3xl gap-4">
-              <div className="flex flex-col w-full h-[104px] gap-4">
-                <div className="flex items-center w-[154px] h-6">
-                  <p className="text-sm uppercase tracking-wider text-muted-foreground">
-                    BEST SELLING
-                  </p>
-                </div>
-                <h2 className="font-serif text-[48px] leading-[60px] tracking-[0.03em] font-medium uppercase w-full h-[60px]">
-                  INVESTMENT PIECES
-                </h2>
-                <p className="text-[18px] leading-[28px] font-normal text-[#232D35] w-full h-[28px]">
-                  Born from subtle complexity. Crafted for the woman who values
-                  quiet confidence.
+    <section className="pt-[48px] pb-12 md:py-20 bg-[#EFECE5] overflow-x-hidden">
+      <div className="w-full max-w-[1440px] mx-auto px-[20px] md:px-[80px]">
+        {/* Container: Vertical flow, Fill width mobile / Fill 1280px desktop, Hug height, 36px gap */}
+        <div className="w-full flex flex-col gap-[36px] md:gap-[64px]">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 md:gap-0 md:h-[144px]">
+            <div className="flex flex-col w-full md:max-w-3xl gap-3 md:gap-4">
+              <div className="flex items-center w-fit h-fit">
+                <p className="text-sm uppercase tracking-wider text-muted-foreground leading-6">
+                  BEST SELLING
                 </p>
               </div>
+              <h2
+                className="font-serif text-[32px] md:text-[48px] leading-[120%] md:leading-[60px] tracking-[0] md:tracking-[0.03em] uppercase w-full md:w-auto"
+                style={{
+                  fontWeight: 600,
+                  color: "#232D35"
+                }}
+              >
+                Investment Pieces
+              </h2>
+              <p
+                className="text-[16px] md:text-[18px] leading-[20px] md:leading-[28px] tracking-[0.02em] w-full max-w-[330px] md:max-w-none"
+                style={{
+                  fontFamily: "Raleway, sans-serif",
+                  fontWeight: 500,
+                  color: "#232D35"
+                }}
+              >
+                Born from subtle complexity. Crafted for the woman who values
+                quiet confidence.
+              </p>
             </div>
             <Button
               variant="outline"
