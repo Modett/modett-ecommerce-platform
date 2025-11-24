@@ -144,14 +144,17 @@ const MobileNewsletterForm = ({
 }) => (
   <div className="block md:hidden text-center">
     {/* Form */}
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-[348px] mx-auto">
       {/* Email Input */}
       <NewsletterInput
         email={email}
         onChange={setEmail}
         disabled={isLoading}
-        className="w-full bg-transparent border border-white/60 text-white placeholder:text-white/60 focus:outline-none focus:ring-0 px-4 h-12 text-sm rounded-none"
+        className="w-full bg-transparent border border-white/60 text-white placeholder:text-white/60 focus:outline-none focus:ring-0 px-4 h-[54px] text-sm rounded-none"
       />
+
+      {/* Spacer */}
+      <div className="h-3" />
 
       {/* Submit Button */}
       <SubscribeButton
@@ -279,15 +282,39 @@ export function Newsletter({
   // ============================================================================
 
   return (
-    <section className="bg-[#3E5460] text-white py-12 md:py-14">
+    <section className="bg-[#3E5460] text-white py-[60px] md:py-14">
       <div className="max-w-7xl mx-auto px-6 sm:px-8">
         {/* Mobile Version: Centered Layout */}
-        <div className="block md:hidden text-center">
+        <div className="flex md:hidden text-center flex-col gap-[80px]">
           {/* Title & Description */}
-          <h2 className="text-2xl font-serif mb-4">{title}</h2>
-          <p className="text-white/80 text-sm mb-8 max-w-md mx-auto">
-            {description}
-          </p>
+          <div className="flex flex-col gap-[24px] w-[348px] mx-auto">
+            <h2
+              className="font-serif text-center"
+              style={{
+                fontFamily: "Playfair Display, serif",
+                fontSize: "24px",
+                fontWeight: 600,
+                lineHeight: "130%",
+                letterSpacing: "0%",
+                color: "#F8F5F2",
+              }}
+            >
+              {title}
+            </h2>
+            <p
+              className="text-center"
+              style={{
+                fontFamily: "Raleway, sans-serif",
+                fontSize: "18px",
+                fontWeight: 400,
+                lineHeight: "28px",
+                letterSpacing: "0%",
+                color: "#F8F5F2",
+              }}
+            >
+              {description}
+            </p>
+          </div>
 
           {/* Mobile Form */}
           <MobileNewsletterForm

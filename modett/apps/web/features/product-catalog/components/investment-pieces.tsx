@@ -20,11 +20,10 @@ export function InvestmentPieces() {
   }
 
   return (
-    <section className="pt-[48px] pb-12 md:py-20 bg-[#EFECE5] overflow-x-hidden">
-      <div className="w-full max-w-[1440px] mx-auto px-[20px] md:px-[80px]">
-        {/* Container: Vertical flow, Fill width mobile / Fill 1280px desktop, Hug height, 36px gap */}
-        <div className="w-full flex flex-col gap-[36px] md:gap-[64px]">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 md:gap-0 md:h-[144px]">
+    <section className="pt-[48px] pb-12 md:py-20 bg-[#EFECE5]">
+      <div className="w-full px-[20px] md:px-[80px]">
+        <div className="w-full max-w-[350px] md:max-w-[1280px] mx-auto flex flex-col gap-[36px] md:gap-[64px]">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 md:gap-0 md:h-[144px]">
             <div className="flex flex-col w-full md:max-w-3xl gap-3 md:gap-4">
               <div className="flex items-center w-fit h-fit">
                 <p className="text-sm uppercase tracking-wider text-muted-foreground leading-6">
@@ -94,11 +93,11 @@ export function InvestmentPieces() {
           <div className="flex justify-start">
             <a
               href="#"
-              className="flex items-center gap-[8px] h-[24px] hover:opacity-70 transition-opacity"
+              className="flex items-center gap-[4px] md:gap-[8px] h-[24px] hover:opacity-70 transition-opacity"
               style={{ fontFamily: "Raleway" }}
             >
               <span
-                className="w-[340px] h-[24px] text-[16px] leading-[24px] font-medium uppercase text-[#765C4D] whitespace-nowrap"
+                className="h-[24px] text-[16px] leading-[24px] font-medium uppercase text-[#765C4D] whitespace-nowrap"
                 style={{ letterSpacing: "4px" }}
               >
                 SHOP ALL INVESTMENT PIECES

@@ -25,18 +25,18 @@ export function CollectionBanner({
   secondButtonHref = "#",
 }: CollectionBannerProps) {
   return (
-    <section className="relative h-[506px] w-full">
+    <section className="relative h-[400px] md:h-[506px] w-full">
       <div className="absolute inset-0">
         <Image
           src={imageSrc}
           alt={title}
           fill
-          className="object-cover object-[4%_5.8%]"
+          className="object-cover object-center"
         />
         <div className="absolute inset-0 bg-[#232D35]/60" />
       </div>
 
-      <div className="relative h-full w-full max-w-[1440px] mx-auto px-6 md:px-8 lg:px-12 pb-[34px]">
+      <div className="relative h-full w-full max-w-[350px] md:max-w-[1440px] mx-auto px-0 md:px-8 lg:px-12 pb-[34px]">
         <div className="h-full flex flex-col items-center justify-end gap-4">
           {/* First Section - Frame 276 */}
           <div className="flex flex-col items-center justify-center text-center h-[132px] gap-4 w-full">

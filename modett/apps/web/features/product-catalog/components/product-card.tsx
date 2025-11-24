@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { Heart, Plus, Minus, ShoppingBag } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { cartService } from "@/services/cart.service";
 import { wishlistService } from "@/services/wishlist.service";
@@ -153,7 +152,7 @@ export function ProductCard({
         <button
           onClick={handleWishlistToggle}
           disabled={isTogglingWishlist}
-          className={`absolute top-[18px] left-[360px] w-5 h-5 transition-all z-10 disabled:opacity-50 cursor-pointer flex items-center justify-center ${
+          className={`absolute top-[18px] right-[18px] w-5 h-5 transition-all z-10 disabled:opacity-50 cursor-pointer flex items-center justify-center ${
             isWishlisted ? "opacity-100" : "opacity-0 group-hover:opacity-100"
           }`}
           aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
