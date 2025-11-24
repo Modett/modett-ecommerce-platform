@@ -170,6 +170,28 @@ export class CartManagementService {
     try {
       console.log("Creating guest cart with data:", dto);
 
+      // Check if a cart already exists for this guest token (active or not)
+      const existingCart = await this.cartRepository.findByGuestToken(
+        GuestToken.fromString(dto.guestToken)
+      );
+
+      if (existingCart) {
+        console.log(
+          "Existing cart found:",
+          existingCart.getCartId().getValue()
+        );
+
+        // Update reservation expiry and return existing cart
+        const newExpiryTime = new Date(
+          Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000
+        );
+        existingCart.updateReservationExpiry(newExpiryTime);
+        await this.cartRepository.update(existingCart);
+        console.log("Updated existing cart reservation to:", newExpiryTime);
+
+        return this.mapCartToDto(existingCart);
+      }
+
       // Create new guest cart
       const cartData: CreateShoppingCartData & { guestToken: string } = {
         guestToken: dto.guestToken,

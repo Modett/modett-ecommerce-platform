@@ -7,6 +7,7 @@ import { IQuery, IQueryHandler } from "./get-active-promotions.query";
 
 export interface GetPaymentTransactionsQuery extends IQuery {
   intentId: string;
+  userId?: string;
 }
 
 export class GetPaymentTransactionsHandler
@@ -30,7 +31,8 @@ export class GetPaymentTransactionsHandler
       }
 
       const txns = await this.paymentService.getPaymentTransactions(
-        query.intentId
+        query.intentId,
+        query.userId
       );
       return CommandResult.success<PaymentTransactionDto[]>(txns);
     } catch (error) {

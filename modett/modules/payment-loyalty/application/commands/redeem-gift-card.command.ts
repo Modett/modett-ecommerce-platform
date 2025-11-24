@@ -13,6 +13,7 @@ export interface RedeemGiftCardCommand extends ICommand {
   giftCardId: string;
   amount: number;
   orderId: string;
+  userId?: string;
 }
 
 export class RedeemGiftCardHandler
@@ -48,6 +49,7 @@ export class RedeemGiftCardHandler
         giftCardId: command.giftCardId,
         amount: command.amount,
         orderId: command.orderId,
+        userId: command.userId,
       };
 
       const giftCard = await this.giftCardService.redeemGiftCard(dto);

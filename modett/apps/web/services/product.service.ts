@@ -1,104 +1,117 @@
-import { api } from '../lib/fetcher';
-import { API_ENDPOINTS } from '../lib/config';
-import type {
-  Product,
-  ProductVariant,
-  Category,
-  PaginatedResponse,
-} from '../types';
+import { apiClient } from '@/lib/api-client';
 
-export interface GetProductsParams {
-  page?: number;
-  limit?: number;
-  categoryId?: string;
-  status?: 'draft' | 'published' | 'scheduled';
-  search?: string;
+export interface Product {
+  id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  price: number;
+  compareAtPrice?: number;
+  brand?: string;
+  category?: string;
+  images?: Array<{ url: string; alt?: string }>;
+  variants?: Array<{
+    id: string;
+    size?: string;
+    color?: string;
+    sku: string;
+    inventory: number;
+  }>;
 }
 
-export interface GetVariantsParams {
-  page?: number;
-  limit?: number;
-  productId?: string;
-  color?: string;
-  size?: string;
-  inStock?: boolean;
+export interface ProductsResponse {
+  products: Product[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
 }
 
 export const productService = {
-  /**
-   * Get all products with optional filtering
-   */
-  async getProducts(params?: GetProductsParams): Promise<PaginatedResponse<Product>> {
-    return api.get<PaginatedResponse<Product>>(API_ENDPOINTS.products, {
-      params: params as any,
-    });
+  async getProducts(params?: {
+    page?: number;
+    pageSize?: number;
+    category?: string;
+    search?: string;
+  }): Promise<ProductsResponse> {
+    const { data } = await apiClient.get('/products', { params });
+    // Backend wraps response in { success, data }
+    const responseData = data.data || data;
+
+    return {
+      products: responseData.products.map((p: any) => ({
+        id: p.productId,
+        title: p.title,
+        slug: p.slug,
+        description: p.shortDesc,
+        price: 0, // Will be updated when we add variants
+        compareAtPrice: undefined,
+        brand: p.brand,
+        images: [],
+      })),
+      totalCount: responseData.total || 0,
+      page: responseData.page || 1,
+      pageSize: responseData.limit || 20,
+    };
   },
 
-  /**
-   * Get product by ID
-   */
   async getProductById(id: string): Promise<Product> {
-    return api.get<Product>(API_ENDPOINTS.productById(id));
+    const { data } = await apiClient.get(`/products/${id}`);
+    const responseData = data.data || data;
+
+    return {
+      id: responseData.productId,
+      title: responseData.title,
+      slug: responseData.slug,
+      description: responseData.shortDesc,
+      price: 0,
+      brand: responseData.brand,
+      images: [],
+    };
   },
 
-  /**
-   * Get product by slug
-   */
   async getProductBySlug(slug: string): Promise<Product> {
-    return api.get<Product>(API_ENDPOINTS.productBySlug(slug));
+    const { data } = await apiClient.get(`/products/slug/${slug}`);
+    const responseData = data.data || data;
+
+    return {
+      id: responseData.productId,
+      title: responseData.title,
+      slug: responseData.slug,
+      description: responseData.shortDesc,
+      price: 0,
+      brand: responseData.brand,
+      images: [],
+    };
   },
 
-  /**
-   * Get product variants by product ID
-   */
-  async getProductVariants(productId: string): Promise<ProductVariant[]> {
-    return api.get<ProductVariant[]>(API_ENDPOINTS.productVariants(productId));
-  },
-
-  /**
-   * Get all variants with optional filtering
-   */
-  async getVariants(params?: GetVariantsParams): Promise<PaginatedResponse<ProductVariant>> {
-    return api.get<PaginatedResponse<ProductVariant>>(API_ENDPOINTS.variants, {
-      params: params as any,
+  async getFeaturedProducts(limit: number = 6): Promise<Product[]> {
+    const { data } = await apiClient.get('/products', {
+      params: { limit, page: 1 },
     });
-  },
 
-  /**
-   * Get variant by ID
-   */
-  async getVariantById(id: string): Promise<ProductVariant> {
-    return api.get<ProductVariant>(API_ENDPOINTS.variantById(id));
-  },
+    // Backend wraps response in { success, data: { products, total, page, limit } }
+    const responseData = data.data || data;
+    const products = responseData.products || [];
 
-  /**
-   * Get all categories
-   */
-  async getCategories(): Promise<Category[]> {
-    return api.get<Category[]>(API_ENDPOINTS.categories);
-  },
+    return products.map((p: any) => {
+      // Get the lowest price variant
+      const lowestPriceVariant = p.variants?.sort(
+        (a: any, b: any) => parseFloat(a.price) - parseFloat(b.price)
+      )[0];
 
-  /**
-   * Get category by ID
-   */
-  async getCategoryById(id: string): Promise<Category> {
-    return api.get<Category>(API_ENDPOINTS.categoryById(id));
-  },
-
-  /**
-   * Get category by slug
-   */
-  async getCategoryBySlug(slug: string): Promise<Category> {
-    return api.get<Category>(API_ENDPOINTS.categoryBySlug(slug));
-  },
-
-  /**
-   * Get products in a category
-   */
-  async getCategoryProducts(categoryId: string, params?: GetProductsParams): Promise<PaginatedResponse<Product>> {
-    return api.get<PaginatedResponse<Product>>(
-      API_ENDPOINTS.categoryProducts(categoryId),
-      { params: params as any }
-    );
+      return {
+        id: p.productId,
+        title: p.title,
+        slug: p.slug,
+        description: p.shortDesc,
+        price: lowestPriceVariant ? parseFloat(lowestPriceVariant.price) : 0,
+        compareAtPrice: lowestPriceVariant?.compareAtPrice
+          ? parseFloat(lowestPriceVariant.compareAtPrice)
+          : undefined,
+        brand: p.brand,
+        images: p.images || [],
+        variants: p.variants || [],
+      };
+    });
   },
 };

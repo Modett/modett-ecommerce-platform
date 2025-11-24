@@ -34,6 +34,9 @@ interface CreateWishlistRequest {
 
 interface AddToWishlistRequest {
   variantId: string;
+  guestToken?: string;
+  priority?: number;
+  notes?: string;
 }
 
 interface UpdateWishlistRequest {
@@ -309,13 +312,14 @@ export class WishlistController {
   ) {
     try {
       const { wishlistId } = request.params;
-      const { variantId } = request.body;
+      const { variantId, guestToken: guestTokenFromBody } = request.body;
 
       const command: AddToWishlistCommand = {
         wishlistId,
         variantId,
         userId: request.user?.userId,
-        guestToken: request.headers["x-guest-token"] as string,
+        guestToken:
+          (request.headers["x-guest-token"] as string) || guestTokenFromBody,
       };
 
       const result = await this.addToWishlistHandler.handle(command);
@@ -330,7 +334,7 @@ export class WishlistController {
         return reply.code(400).send({
           success: false,
           error: result.error || "Failed to add item to wishlist",
-          errors: result.errors,
+          errors: result.errors || [],
         });
       }
     } catch (error) {

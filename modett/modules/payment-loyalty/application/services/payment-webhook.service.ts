@@ -6,11 +6,13 @@ import {
   PaymentWebhookEvent,
   WebhookEventData,
 } from "../../domain/entities/payment-webhook-event.entity.js";
+import crypto from "crypto";
 
 export interface CreateWebhookEventDto {
   provider: string;
   eventType: string;
   eventData: WebhookEventData;
+  signature?: string;
 }
 
 export interface PaymentWebhookEventDto {
@@ -26,9 +28,54 @@ export class PaymentWebhookService {
     private readonly webhookEventRepo: IPaymentWebhookEventRepository
   ) {}
 
+  private verifySignature(
+    provider: string,
+    eventData: WebhookEventData,
+    signature?: string
+  ) {
+    const secretMap: Record<string, string | undefined> = {
+      stripe: process.env.STRIPE_WEBHOOK_SECRET,
+      paypal: process.env.PAYPAL_WEBHOOK_SECRET,
+      razorpay: process.env.RAZORPAY_WEBHOOK_SECRET,
+    };
+
+    const secret = secretMap[provider];
+    if (!secret) {
+      // No secret configured; nothing to verify
+      return;
+    }
+
+    if (!signature) {
+      throw new Error("Missing webhook signature");
+    }
+
+    const payload =
+      typeof eventData === "string"
+        ? eventData
+        : JSON.stringify(eventData ?? {});
+
+    const expected = crypto
+      .createHmac("sha256", secret)
+      .update(payload, "utf8")
+      .digest("hex");
+
+    const safeEqual =
+      signature.length === expected.length &&
+      crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expected)
+      );
+
+    if (!safeEqual) {
+      throw new Error("Invalid webhook signature");
+    }
+  }
+
   async recordWebhookEvent(
     dto: CreateWebhookEventDto
   ): Promise<PaymentWebhookEventDto> {
+    this.verifySignature(dto.provider, dto.eventData, dto.signature);
+
     const event = PaymentWebhookEvent.create({
       provider: dto.provider,
       eventType: dto.eventType,

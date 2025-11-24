@@ -14,6 +14,7 @@ export interface CreateBnplTransactionCommand extends ICommand {
   intentId: string;
   provider: string;
   plan: BnplPlan;
+  userId?: string;
 }
 
 export class CreateBnplTransactionHandler
@@ -53,6 +54,7 @@ export class CreateBnplTransactionHandler
         intentId: command.intentId,
         provider: command.provider,
         plan: command.plan,
+        userId: command.userId,
       };
 
       const txn = await this.bnplService.createBnplTransaction(dto);

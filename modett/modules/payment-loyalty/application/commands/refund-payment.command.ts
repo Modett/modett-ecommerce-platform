@@ -13,6 +13,7 @@ export interface RefundPaymentCommand extends ICommand {
   intentId: string;
   amount?: number;
   reason?: string;
+  userId?: string;
 }
 
 export class RefundPaymentHandler
@@ -44,6 +45,7 @@ export class RefundPaymentHandler
         intentId: command.intentId,
         amount: command.amount,
         reason: command.reason,
+        userId: command.userId,
       };
 
       const paymentIntent = await this.paymentService.refundPayment(dto);

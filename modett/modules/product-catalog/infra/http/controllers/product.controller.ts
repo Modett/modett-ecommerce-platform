@@ -15,6 +15,7 @@ import {
 } from "../../../application";
 import { ProductManagementService } from "../../../application/services/product-management.service";
 import { ProductSearchService } from "../../../application/services/product-search.service";
+import { PrismaClient } from "@prisma/client";
 
 interface CreateProductRequest {
   title: string;
@@ -53,7 +54,8 @@ export class ProductController {
 
   constructor(
     private readonly productManagementService: ProductManagementService,
-    private readonly productSearchService: ProductSearchService
+    private readonly productSearchService: ProductSearchService,
+    private readonly prisma: PrismaClient
   ) {
     // Initialize CQRS handlers
     this.createProductHandler = new CreateProductHandler(
@@ -137,10 +139,52 @@ export class ProductController {
       const result = await this.listProductsHandler.handle(query);
 
       if (result.success && result.data) {
+        // Enrich products with variants and media from Prisma
+        const productIds = result.data.products.map(p => p.productId);
+
+        const enrichedProducts = await this.prisma.product.findMany({
+          where: { id: { in: productIds } },
+          include: {
+            variants: {
+              orderBy: { price: 'asc' },
+              take: 10,
+            },
+            media: {
+              include: {
+                asset: true,
+              },
+              orderBy: { position: 'asc' },
+            },
+          },
+        });
+
+        // Map enriched data back to products
+        const productsWithDetails = result.data.products.map(product => {
+          const enriched = enrichedProducts.find(p => p.id === product.productId);
+          return {
+            ...product,
+            variants: enriched?.variants?.map(v => ({
+              id: v.id,
+              sku: v.sku,
+              size: v.size,
+              color: v.color,
+              price: v.price.toString(),
+              compareAtPrice: v.compareAtPrice?.toString(),
+              inventory: 0, // Would need to aggregate from inventory_stocks
+            })) || [],
+            images: enriched?.media?.map(m => ({
+              url: m.asset.storageKey,
+              alt: m.asset.altText,
+              width: m.asset.width,
+              height: m.asset.height,
+            })) || [],
+          };
+        });
+
         return reply.code(200).send({
           success: true,
           data: {
-            products: result.data.products,
+            products: productsWithDetails,
             total: result.data.totalCount,
             page: result.data.page,
             limit: result.data.limit,

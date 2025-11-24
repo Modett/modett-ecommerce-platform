@@ -1,226 +1,150 @@
-import { api } from '../lib/fetcher';
-import type { FetcherOptions } from '../lib/fetcher';
-import { API_ENDPOINTS } from '../lib/config';
-import type {
-  ShoppingCart,
-  CartItem,
-  AddToCartInput,
-  UpdateCartItemInput,
-  ApiResponse,
-} from '../types';
+import axios from "axios";
 
-// Helper to map backend cart response to frontend type
-function mapCartResponse(backendCart: any): ShoppingCart {
-  return {
-    id: backendCart.cartId || backendCart.id,
-    userId: backendCart.userId,
-    guestToken: backendCart.guestToken,
-    currency: backendCart.currency,
-    reservationExpiresAt: backendCart.reservationExpiresAt,
-    createdAt: backendCart.createdAt,
-    updatedAt: backendCart.updatedAt,
-    items: backendCart.items || [],
+const GUEST_TOKEN_KEY = "modett_guest_token";
+
+// Create a separate axios instance for cart API
+const cartApiClient = axios.create({
+  baseURL:
+    process.env.NEXT_PUBLIC_API_URL?.replace("/catalog", "/cart") ||
+    "http://localhost:3001/api/v1/cart",
+  timeout: 30000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+export interface AddToCartParams {
+  variantId: string;
+  quantity: number;
+  isGift?: boolean;
+  giftMessage?: string;
+}
+
+export interface CartItem {
+  cartItemId: string;
+  variantId: string;
+  quantity: number;
+  unitPrice: number;
+  isGift: boolean;
+  giftMessage?: string;
+}
+
+export interface Cart {
+  cartId: string;
+  userId?: string;
+  guestToken?: string;
+  currency: string;
+  items: CartItem[];
+  summary: {
+    itemCount: number;
+    subtotal: number;
+    discount: number;
+    total: number;
   };
 }
 
-type CartAuthOptions = {
-  token?: string;
-  guestToken?: string;
-};
+class CartService {
+  private guestToken: string | null = null;
 
-function getStoredGuestToken(): string | undefined {
-  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-    return undefined;
-  }
-  return localStorage.getItem('guestCartToken') || undefined;
-}
-
-function buildAuthOptions(auth?: CartAuthOptions): FetcherOptions | undefined {
-  const options: FetcherOptions = {};
-
-  if (auth?.token) {
-    options.token = auth.token;
+  constructor() {
+    // Initialize guest token from localStorage if in browser
+    if (typeof window !== "undefined") {
+      this.guestToken = localStorage.getItem(GUEST_TOKEN_KEY);
+    }
   }
 
-  const resolvedGuestToken = auth?.guestToken ?? getStoredGuestToken();
-  if (resolvedGuestToken) {
-    options.guestToken = resolvedGuestToken;
+  /**
+   * Generate a guest token for anonymous users
+   */
+  async generateGuestToken(): Promise<string> {
+    try {
+      const { data } = await cartApiClient.get("/generate-guest-token");
+      const token = data.data.guestToken;
+
+      // Store in localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem(GUEST_TOKEN_KEY, token);
+      }
+
+      this.guestToken = token;
+      return token;
+    } catch (error) {
+      console.error("Failed to generate guest token:", error);
+      throw error;
+    }
   }
 
-  return Object.keys(options).length > 0 ? options : undefined;
-}
+  /**
+   * Get the current guest token, generating one if needed
+   */
+  private async getGuestToken(): Promise<string> {
+    if (!this.guestToken) {
+      this.guestToken = await this.generateGuestToken();
+    }
+    return this.guestToken;
+  }
 
-export const cartService = {
+  /**
+   * Add an item to cart
+   */
+  async addToCart(params: AddToCartParams): Promise<Cart> {
+    try {
+      // Get or generate guest token
+      const token = await this.getGuestToken();
+
+      const { data } = await cartApiClient.post(
+        "/cart/items",
+        {
+          variantId: params.variantId,
+          quantity: params.quantity,
+          isGift: params.isGift || false,
+          giftMessage: params.giftMessage,
+        },
+        {
+          headers: {
+            "X-Guest-Token": token,
+          },
+        }
+      );
+
+      return data.data;
+    } catch (error: any) {
+      console.error("Failed to add item to cart:", error);
+      throw new Error(
+        error.response?.data?.error || "Failed to add item to cart"
+      );
+    }
+  }
+
   /**
    * Get cart by ID
    */
-  async getCartById(cartId: string, auth?: CartAuthOptions): Promise<ShoppingCart> {
-    const response = await api.get<ApiResponse<any>>(
-      API_ENDPOINTS.cartById(cartId),
-      buildAuthOptions(auth)
-    );
-    return mapCartResponse(response.data);
-  },
+  async getCart(cartId: string): Promise<Cart> {
+    try {
+      const token = await this.getGuestToken();
 
-  /**
-   * Get user's cart
-   */
-  async getUserCart(userId: string, token: string): Promise<ShoppingCart> {
-    const response = await api.get<ApiResponse<any>>(API_ENDPOINTS.userCart(userId), { token });
-    return mapCartResponse(response.data);
-  },
+      const { data } = await cartApiClient.get(`/carts/${cartId}`, {
+        headers: {
+          "X-Guest-Token": token,
+        },
+      });
 
-  /**
-   * Get guest cart
-   */
-  async getGuestCart(guestToken: string): Promise<ShoppingCart> {
-    const response = await api.get<ApiResponse<any>>(API_ENDPOINTS.guestCart(guestToken));
-    return mapCartResponse(response.data);
-  },
-
-  /**
-   * Create a new cart for user
-   */
-  async createUserCart(userId: string, token: string): Promise<ShoppingCart> {
-    const response = await api.post<ApiResponse<any>>(API_ENDPOINTS.createUserCart(userId), {}, { token });
-    return mapCartResponse(response.data);
-  },
-
-  /**
-   * Create a new cart for guest
-   */
-  async createGuestCart(guestToken: string): Promise<ShoppingCart> {
-    const response = await api.post<ApiResponse<any>>(API_ENDPOINTS.createGuestCart(guestToken), {});
-    return mapCartResponse(response.data);
-  },
-
-  /**
-   * Generate a guest token
-   */
-  async generateGuestToken(): Promise<{ guestToken: string }> {
-    const response = await api.get<ApiResponse<{ guestToken: string }>>(API_ENDPOINTS.generateGuestToken);
-    return response.data!;
-  },
-
-  /**
-   * Add item to cart
-   */
-  async addItem(
-    cartId: string,
-    item: AddToCartInput,
-    auth?: CartAuthOptions
-  ): Promise<CartItem> {
-    // The backend expects cartId, variantId, and quantity (not qty)
-    const payload = {
-      cartId,
-      variantId: item.variantId,
-      quantity: item.qty, // Transform qty to quantity
-      isGift: item.isGift,
-      giftMessage: item.giftMessage,
-    };
-    const response = await api.post<ApiResponse<CartItem>>(
-      API_ENDPOINTS.addCartItem,
-      payload,
-      buildAuthOptions(auth)
-    );
-    return response.data!;
-  },
-
-  /**
-   * Update cart item quantity
-   */
-  async updateItem(
-    cartId: string,
-    variantId: string,
-    updates: UpdateCartItemInput,
-    auth?: CartAuthOptions
-  ): Promise<CartItem> {
-    const response = await api.put<ApiResponse<CartItem>>(
-      API_ENDPOINTS.updateCartItem(cartId, variantId),
-      updates,
-      buildAuthOptions(auth)
-    );
-    return response.data!;
-  },
-
-  /**
-   * Remove item from cart
-   */
-  async removeItem(cartId: string, variantId: string, auth?: CartAuthOptions): Promise<void> {
-    await api.delete<ApiResponse<void>>(
-      API_ENDPOINTS.removeCartItem(cartId, variantId),
-      buildAuthOptions(auth)
-    );
-  },
-
-  /**
-   * Clear cart (remove all items)
-   */
-  async clearCart(cartId: string, auth?: CartAuthOptions): Promise<void> {
-    const cart = await this.getCartById(cartId, auth);
-    if (cart.items) {
-      await Promise.all(
-        cart.items.map((item) => this.removeItem(cartId, item.variantId, auth))
-      );
+      return data.data;
+    } catch (error: any) {
+      console.error("Failed to get cart:", error);
+      throw new Error(error.response?.data?.error || "Failed to get cart");
     }
-  },
+  }
 
   /**
-   * Delete cart
+   * Clear guest token (for logout or token expiry)
    */
-  async deleteCart(cartId: string, auth?: CartAuthOptions): Promise<void> {
-    await api.delete<ApiResponse<void>>(
-      API_ENDPOINTS.cartById(cartId),
-      buildAuthOptions(auth)
-    );
-  },
-
-  /**
-   * Get or create guest cart
-   * This is a convenience method for handling guest cart flow
-   */
-  async getOrCreateGuestCart(): Promise<ShoppingCart> {
-    // Try to get existing guest cart from localStorage
-    let guestToken = localStorage.getItem('guestCartToken');
-
-    if (guestToken) {
-      try {
-        return await this.getGuestCart(guestToken);
-      } catch (error) {
-        // If cart doesn't exist, create a new one
-        localStorage.removeItem('guestCartToken');
-        guestToken = null;
-      }
+  clearGuestToken(): void {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(GUEST_TOKEN_KEY);
     }
+    this.guestToken = null;
+  }
+}
 
-    // Generate a new guest token from the backend
-    if (!guestToken) {
-      const response = await this.generateGuestToken();
-      guestToken = response.guestToken;
-      localStorage.setItem('guestCartToken', guestToken);
-    }
-
-    // Create new guest cart
-    const cart = await this.createGuestCart(guestToken);
-    return cart;
-  },
-
-  /**
-   * Calculate cart total
-   */
-  calculateTotal(cart: ShoppingCart): number {
-    if (!cart.items || cart.items.length === 0) return 0;
-    return cart.items.reduce(
-      (total, item) => total + item.unitPriceSnapshot * item.qty,
-      0
-    );
-  },
-
-  /**
-   * Get cart item count
-   */
-  getItemCount(cart: ShoppingCart): number {
-    if (!cart.items || cart.items.length === 0) return 0;
-    return cart.items.reduce((count, item) => count + item.qty, 0);
-  },
-};
+export const cartService = new CartService();

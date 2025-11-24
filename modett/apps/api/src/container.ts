@@ -40,10 +40,13 @@ import {
   CartRepositoryImpl,
   ReservationRepositoryImpl,
 } from "../../../modules/cart/infra/persistence/repositories";
+import { CheckoutRepositoryImpl } from "../../../modules/cart/infra/persistence/repositories/checkout.repository.impl";
 import {
   CartManagementService,
   ReservationService,
 } from "../../../modules/cart/application/services";
+import { CheckoutService } from "../../../modules/cart/application/services/checkout.service";
+import { CheckoutOrderService } from "../../../modules/cart/application/services/checkout-order.service";
 
 // Order Management imports
 import { OrderRepositoryImpl } from "../../../modules/order-management/infra/persistence/repositories/order.repository.impl";
@@ -216,6 +219,8 @@ export interface ServiceContainer {
   // Cart Services
   cartManagementService: CartManagementService;
   reservationService: ReservationService;
+  checkoutService: CheckoutService;
+  checkoutOrderService: CheckoutOrderService;
 
   // Order Management Services
   orderManagementService: OrderManagementService;
@@ -469,6 +474,18 @@ export function createServiceContainer(): ServiceContainer {
     reservationRepository,
     cartRepository
   );
+  const checkoutRepository = new CheckoutRepositoryImpl(prisma);
+  const checkoutService = new CheckoutService(
+    checkoutRepository,
+    cartRepository
+  );
+  const checkoutOrderService = new CheckoutOrderService(
+    prisma,
+    checkoutRepository,
+    cartRepository,
+    reservationRepository,
+    stockManagementService
+  );
 
   // Initialize Order Management services
   const orderEventService = new OrderEventService(orderEventRepository);
@@ -698,6 +715,8 @@ export function createServiceContainer(): ServiceContainer {
     // Cart Services
     cartManagementService,
     reservationService,
+    checkoutService,
+    checkoutOrderService,
 
     // Order Management Services
     orderManagementService,

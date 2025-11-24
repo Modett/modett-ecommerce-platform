@@ -185,7 +185,7 @@ export async function registerOrderManagementRoutes(
   fastify.get(
     "/orders/number/:orderNumber",
     {
-      preHandler: optionalAuth, // Allow both authenticated users and guests with order details
+      preHandler: authenticateUser,
       schema: {
         description: "Get order by order number",
         tags: ["Orders"],
@@ -269,7 +269,7 @@ export async function registerOrderManagementRoutes(
   fastify.get(
     "/orders/:orderId",
     {
-      preHandler: optionalAuth, // Allow both authenticated users and guests with order details
+      preHandler: authenticateUser,
       schema: {
         description: "Get order by ID",
         tags: ["Orders"],

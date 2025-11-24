@@ -39,11 +39,17 @@ export class PaymentWebhookController {
   ) {
     const { provider } = request.params;
     const eventData = request.body as any;
+    const signature =
+      (request.headers["stripe-signature"] as string | undefined) ||
+      (request.headers["x-razorpay-signature"] as string | undefined) ||
+      (request.headers["x-paypal-signature"] as string | undefined) ||
+      (request.headers["x-webhook-signature"] as string | undefined);
 
     const cmd: ProcessWebhookEventCommand = {
       provider,
       eventType: eventData?.type || eventData?.event_type || "unknown",
       eventData: eventData as WebhookEventData,
+      signature,
       timestamp: new Date(),
     };
     const result = await this.processHandler.handle(cmd);

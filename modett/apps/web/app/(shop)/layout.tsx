@@ -1,5 +1,16 @@
-import { ReactNode } from 'react';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
 
-export default function ShopLayout({ children }: { children: ReactNode }) {
-  return <>{children}</>;
+export default function ShopLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <Header />
+      {children}
+      <Footer />
+    </>
+  );
 }

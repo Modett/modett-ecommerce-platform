@@ -581,7 +581,7 @@ export async function createServer(): Promise<FastifyInstance> {
         {
           name: "System",
           description:
-            "⚙️ System health, monitoring, and information endpoints",
+            "System health, monitoring, and information endpoints",
         },
       ],
       // Note: Don't set global security here, let individual routes define their own security
@@ -900,6 +900,7 @@ export async function createServer(): Promise<FastifyInstance> {
       sizeGuideService: serviceContainer.sizeGuideManagementService,
       editorialLookService: serviceContainer.editorialLookManagementService,
       productMediaService: serviceContainer.productMediaManagementService,
+      prisma: serviceContainer.prisma,
     };
 
     // Register product catalog routes with services
@@ -928,6 +929,8 @@ export async function createServer(): Promise<FastifyInstance> {
     const cartServices = {
       cartManagementService: serviceContainer.cartManagementService,
       reservationService: serviceContainer.reservationService,
+      checkoutService: serviceContainer.checkoutService,
+      checkoutOrderService: serviceContainer.checkoutOrderService,
     };
 
     // Register cart routes with services

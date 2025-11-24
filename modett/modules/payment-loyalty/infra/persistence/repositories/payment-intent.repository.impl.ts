@@ -132,6 +132,7 @@ export class PaymentIntentRepository implements IPaymentIntentRepository {
     return PaymentIntent.reconstitute({
       intentId: PaymentIntentId.fromString(record.intentId),
       orderId: record.orderId,
+      checkoutId: record.checkoutId,
       idempotencyKey: record.idempotencyKey,
       provider: record.provider,
       status: PaymentIntentStatus.fromString(record.status),
@@ -148,7 +149,8 @@ export class PaymentIntentRepository implements IPaymentIntentRepository {
   private dehydrate(paymentIntent: PaymentIntent): any {
     return {
       intentId: paymentIntent.intentId.getValue(),
-      orderId: paymentIntent.orderId,
+      orderId: paymentIntent.orderIdOrNull,
+      checkoutId: paymentIntent.checkoutId,
       idempotencyKey: paymentIntent.idempotencyKey,
       provider: paymentIntent.provider,
       status: paymentIntent.status.getValue(),

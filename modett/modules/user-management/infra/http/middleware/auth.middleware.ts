@@ -50,41 +50,49 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
     reply: FastifyReply
   ): Promise<void> {
     try {
-      // Debug logging - log all headers
-      console.log("[AUTH DEBUG] ========================================");
-      console.log("[AUTH DEBUG] Request URL:", request.url);
-      console.log("[AUTH DEBUG] Request Method:", request.method);
-      console.log("[AUTH DEBUG] All Headers:", JSON.stringify(request.headers, null, 2));
+      const verbose = process.env.AUTH_DEBUG === "true";
+      const debugLog = (...args: any[]) => {
+        if (verbose) console.log(...args);
+      };
+      if (verbose) {
+        console.log("[AUTH DEBUG] ========================================");
+        console.log("[AUTH DEBUG] Request URL:", request.url);
+        console.log("[AUTH DEBUG] Request Method:", request.method);
+        console.log("[AUTH DEBUG] All Headers:", JSON.stringify(request.headers, null, 2));
+      }
 
       // Extract token from Authorization header FIRST (priority), then check cookies
       let authHeader = request.headers.authorization;
 
-      console.log("[AUTH DEBUG] Authorization Header:", authHeader ? `Present (${authHeader.substring(0, 20)}...)` : "MISSING");
+      if (verbose) {
+        console.log("[AUTH DEBUG] Authorization Header:", authHeader ? `Present (${authHeader.substring(0, 20)}...)` : "MISSING");
+      }
 
       // Only check cookies if Authorization header is not present
       if (!authHeader && request.headers.cookie) {
-        console.log("[AUTH DEBUG] No Authorization header, checking cookies...");
+        debugLog("[AUTH DEBUG] No Authorization header, checking cookies...");
         const cookieMatch = request.headers.cookie.match(/(?:^|;\s*)token=([^;]+)/);
         if (cookieMatch) {
           const tokenFromCookie = cookieMatch[1];
-          console.log("[AUTH DEBUG] Token found in cookie:", tokenFromCookie.substring(0, 20) + "...");
+          debugLog("[AUTH DEBUG] Token found in cookie:", tokenFromCookie.substring(0, 20) + "...");
           // Format it as Bearer token for consistent processing
           authHeader = `Bearer ${tokenFromCookie}`;
         } else {
-          console.log("[AUTH DEBUG] No token found in cookies");
+          debugLog("[AUTH DEBUG] No token found in cookies");
         }
       } else if (authHeader) {
-        console.log("[AUTH DEBUG] Using Authorization header (ignoring any cookies)");
+        debugLog("[AUTH DEBUG] Using Authorization header (ignoring any cookies)");
       }
 
       if (!authHeader) {
-        console.log("[AUTH DEBUG] No authorization header or cookie token found!");
-        console.log("[AUTH DEBUG] Optional auth:", optional);
+        if (verbose) {
+          console.log("[AUTH DEBUG] No authorization header or cookie token found!");
+          console.log("[AUTH DEBUG] Optional auth:", optional);
+        }
         if (optional) {
-          console.log("[AUTH DEBUG] Continuing without authentication");
+          if (verbose) console.log("[AUTH DEBUG] Continuing without authentication");
           return; // Continue without authentication
         }
-        console.log("[AUTH DEBUG] Sending 401 response - MISSING_AUTH_HEADER");
         reply.status(401).send({
           success: false,
           error: "Authorization header or token cookie is required",
@@ -94,16 +102,17 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       }
 
       // Validate Bearer token format
-      console.log("[AUTH DEBUG] Validating Bearer token format...");
+      if (verbose) console.log("[AUTH DEBUG] Validating Bearer token format...");
       const tokenMatch = authHeader.match(/^Bearer\s+(.+)$/);
       if (!tokenMatch) {
-        console.log("[AUTH DEBUG] Invalid token format! Expected 'Bearer <token>'");
-        console.log("[AUTH DEBUG] Received format:", authHeader.substring(0, 50));
+        if (verbose) {
+          debugLog("[AUTH DEBUG] Invalid token format! Expected 'Bearer <token>'");
+          debugLog("[AUTH DEBUG] Received format:", authHeader.substring(0, 50));
+        }
         if (optional) {
-          console.log("[AUTH DEBUG] Continuing without authentication");
+          if (verbose) console.log("[AUTH DEBUG] Continuing without authentication");
           return; // Invalid format but optional, continue without auth
         }
-        console.log("[AUTH DEBUG] Sending 401 response - INVALID_AUTH_FORMAT");
         reply.status(401).send({
           success: false,
           error:
@@ -114,15 +123,16 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       }
 
       const token = tokenMatch[1];
-      console.log("[AUTH DEBUG] Token extracted successfully:", token.substring(0, 20) + "...");
+      debugLog("[AUTH DEBUG] Token extracted successfully:", token.substring(0, 20) + "...");
 
       // Check if token is blacklisted (logged out)
       const { TokenBlacklistService } = await import(
         "../security/token-blacklist"
       );
-      console.log(`[DEBUG] Checking token blacklist for token: ${token.substring(0, 10)}...`);
       const isBlacklisted = TokenBlacklistService.isTokenBlacklisted(token);
-      console.log(`[DEBUG] Token blacklisted: ${isBlacklisted}`);
+      if (verbose) {
+        console.log(`[DEBUG] Token blacklisted: ${isBlacklisted}`);
+      }
       if (isBlacklisted) {
         console.log(`[DEBUG] Token is blacklisted, ${optional ? 'continuing without auth' : 'rejecting request'}`);
         if (optional) {
@@ -137,31 +147,21 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       }
 
       // Verify and decode JWT token
-      console.log("[AUTH DEBUG] Verifying JWT token...");
-      console.log("[AUTH DEBUG] JWT_SECRET:", JWT_SECRET ? `SET (${JWT_SECRET.substring(0, 5)}...)` : "NOT SET");
-      console.log("[AUTH DEBUG] JWT_ALGORITHM:", JWT_ALGORITHM);
-      console.log("[AUTH DEBUG] Token to verify:", token.substring(0, 50) + "...");
-
-      // Try to decode without verification first to see the payload
-      try {
-        const decoded_unverified = jwt.decode(token, { complete: true });
-        console.log("[AUTH DEBUG] Token decoded (unverified):", JSON.stringify(decoded_unverified, null, 2));
-      } catch (e) {
-        console.log("[AUTH DEBUG] Could not decode token:", e);
-      }
+      debugLog("[AUTH DEBUG] Verifying JWT token...");
+      debugLog("[AUTH DEBUG] JWT_ALGORITHM:", JWT_ALGORITHM);
 
       let decoded: any;
       try {
         decoded = jwt.verify(token, JWT_SECRET, {
           algorithms: [JWT_ALGORITHM],
         });
-        console.log("[AUTH DEBUG] JWT verified successfully");
-        console.log("[AUTH DEBUG] Decoded payload:", JSON.stringify(decoded, null, 2));
+        debugLog("[AUTH DEBUG] JWT verified successfully");
+        debugLog("[AUTH DEBUG] Decoded payload:", JSON.stringify(decoded, null, 2));
       } catch (jwtError: any) {
-        console.log("[AUTH DEBUG] JWT verification failed!");
-        console.log("[AUTH DEBUG] Error name:", jwtError.name);
-        console.log("[AUTH DEBUG] Error message:", jwtError.message);
-        console.log("[AUTH DEBUG] Full error:", jwtError);
+        debugLog("[AUTH DEBUG] JWT verification failed!");
+        debugLog("[AUTH DEBUG] Error name:", jwtError.name);
+        debugLog("[AUTH DEBUG] Error message:", jwtError.message);
+        debugLog("[AUTH DEBUG] Full error:", jwtError);
         if (optional) {
           console.log("[AUTH DEBUG] Continuing without authentication");
           return; // Invalid token but optional, continue without auth
@@ -184,18 +184,17 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       }
 
       // Validate token payload structure
-      console.log("[AUTH DEBUG] Validating token payload structure...");
-      console.log("[AUTH DEBUG] Has userId?", !!decoded.userId);
-      console.log("[AUTH DEBUG] Has email?", !!decoded.email);
-      console.log("[AUTH DEBUG] Decoded keys:", Object.keys(decoded));
+      debugLog("[AUTH DEBUG] Validating token payload structure...");
+      debugLog("[AUTH DEBUG] Has userId?", !!decoded.userId);
+      debugLog("[AUTH DEBUG] Has email?", !!decoded.email);
+      debugLog("[AUTH DEBUG] Decoded keys:", Object.keys(decoded));
 
       if (!decoded.userId && !decoded.id) {
-        console.log("[AUTH DEBUG] Missing userId or id in token payload!");
+        debugLog("[AUTH DEBUG] Missing userId or id in token payload!");
         if (optional) {
           console.log("[AUTH DEBUG] Continuing without authentication");
           return; // Invalid payload but optional, continue without auth
         }
-        console.log("[AUTH DEBUG] Sending 401 response - INVALID_TOKEN_PAYLOAD");
         reply.status(401).send({
           success: false,
           error: "Invalid token payload - missing userId or id",
@@ -270,11 +269,11 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       // Add user to request object
       request.user = user;
 
-      console.log("[AUTH DEBUG] Authentication successful!");
-      console.log("[AUTH DEBUG] User ID:", user.userId);
-      console.log("[AUTH DEBUG] User Email:", user.email);
-      console.log("[AUTH DEBUG] User Status:", user.status);
-      console.log("[AUTH DEBUG] ========================================");
+      debugLog("[AUTH DEBUG] Authentication successful!");
+      debugLog("[AUTH DEBUG] User ID:", user.userId);
+      debugLog("[AUTH DEBUG] User Email:", user.email);
+      debugLog("[AUTH DEBUG] User Status:", user.status);
+      debugLog("[AUTH DEBUG] ========================================");
 
       // Continue to route handler
     } catch (error) {

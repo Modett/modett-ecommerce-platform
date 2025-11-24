@@ -216,13 +216,22 @@ export class WishlistManagementService {
     variantId: string,
     context?: { userId?: string; guestToken?: string }
   ): Promise<WishlistItem> {
+    console.log('Adding to wishlist:', { wishlistId, variantId, context });
+
     const wishlist = await this.wishlistRepository.findById(
       WishlistId.fromString(wishlistId)
     );
 
     if (!wishlist) {
+      console.error('Wishlist not found:', wishlistId);
       throw new Error(`Wishlist with ID ${wishlistId} not found`);
     }
+
+    console.log('Wishlist found:', {
+      wishlistId: wishlist.getWishlistId(),
+      userId: wishlist.getUserId(),
+      guestToken: wishlist.getGuestToken()?.substring(0, 8) + '...',
+    });
 
     // Verify ownership
     if (context) {
@@ -230,24 +239,49 @@ export class WishlistManagementService {
       const wishlistGuestToken = wishlist.getGuestToken();
 
       if (wishlistUserId && context.userId !== wishlistUserId) {
+        console.error('User ID mismatch:', { expected: wishlistUserId, got: context.userId });
         throw new Error(`Unauthorized: Wishlist belongs to a different user`);
       }
 
-      if (wishlistGuestToken && context.guestToken !== wishlistGuestToken) {
-        throw new Error(`Unauthorized: Wishlist belongs to a different guest`);
+      if (wishlistGuestToken) {
+        if (!context.guestToken) {
+          console.error('Missing guest token in context');
+          throw new Error(
+            `Unauthorized: X-Guest-Token header is required for guest wishlists`
+          );
+        }
+        if (context.guestToken !== wishlistGuestToken) {
+          console.error('Guest token mismatch:', {
+            expected: wishlistGuestToken.substring(0, 8) + '...',
+            got: context.guestToken.substring(0, 8) + '...',
+          });
+          throw new Error(
+            `Unauthorized: Guest token mismatch. Expected: ${wishlistGuestToken.substring(
+              0,
+              8
+            )}..., Got: ${context.guestToken.substring(0, 8)}...`
+          );
+        }
       }
 
       if (!wishlistUserId && !wishlistGuestToken) {
+        console.error('No owner information in wishlist');
         throw new Error(`Invalid wishlist: No owner information`);
       }
     }
 
+    console.log('Creating wishlist item...');
     const item = WishlistItem.create({
       wishlistId,
       variantId,
     });
 
+    console.log('Saving wishlist item...', {
+      wishlistId: item.getWishlistId(),
+      variantId: item.getVariantId(),
+    });
     await this.wishlistItemRepository.save(item);
+    console.log('Wishlist item saved successfully');
     return item;
   }
 

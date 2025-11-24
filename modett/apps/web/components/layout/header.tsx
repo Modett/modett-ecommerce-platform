@@ -1,271 +1,214 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
-import { Menu, Search, User, Heart, ShoppingBag, X, Globe, Phone, Mail } from "lucide-react";
-
-// ============================================================================
-// Theme Constants
-// ============================================================================
-
-const THEME = {
-  background: "bg-[#f5f3ef]",
-  accent: {
-    text: "text-[#8c6f5a]",
-    hover: "hover:text-[#5d4639]",
-  },
-  nav: {
-    text: "text-[#445160]",
-    hover: "hover:text-[#2f3946]",
-  },
-  logo: "text-[#2f4050]",
-  border: "border-[#d9d2c4]",
-} as const;
-
-// ============================================================================
-// Navigation Data
-// ============================================================================
-
-const MAIN_NAV_LINKS = [
-  { label: "SUMMER 2025", href: "/catalog" },
-  { label: "COLLECTIONS", href: "/catalog" },
-  { label: "BRAND PHILOSOPHY", href: "/about" },
-  { label: "CONTACT", href: "/contact" },
-] as const;
-
-const UTILITY_LINKS = [
-  { label: "Sri Lanka", href: "#", icon: Globe },
-  { label: "Contact Us", href: "/contact", icon: Phone },
-  { label: "Newsletter", href: "#newsletter", icon: Mail },
-] as const;
-
-// ============================================================================
-// Sub-Components
-// ============================================================================
-
-/**
- * Logo component
- */
-const Logo = ({ className = "" }: { className?: string }) => (
-  <Link href="/" className={`flex items-center ${className}`}>
-    <span className={`font-serif ${THEME.logo}`}>MODETT</span>
-  </Link>
-);
-
-/**
- * Icon button component
- */
-const IconButton = ({
-  icon: Icon,
-  label,
-  href,
-  onClick,
-  className = "",
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  href?: string;
-  onClick?: () => void;
-  className?: string;
-}) => {
-  const buttonClass = `transition-colors ${THEME.accent.text} ${THEME.accent.hover} ${className}`;
-
-  if (href) {
-    return (
-      <Link href={href} aria-label={label} className={buttonClass}>
-        <Icon className="h-4 w-4" />
-      </Link>
-    );
-  }
-
-  return (
-    <button aria-label={label} className={buttonClass} onClick={onClick}>
-      <Icon className="h-4 w-4" />
-    </button>
-  );
-};
-
-/**
- * Utility bar for desktop - shows location, contact, newsletter, and action icons
- */
-const UtilityBar = () => (
-  <div className={`hidden lg:block ${THEME.background}`}>
-    <div className="container mx-auto px-6">
-      <div className="flex items-center justify-between py-2.5 text-xs">
-        {/* Left Side: Utility Links */}
-        <div className={`flex items-center gap-6 ${THEME.accent.text}`}>
-          {UTILITY_LINKS.map(({ label, href, icon: Icon }) => (
-            <Link
-              key={label}
-              href={href}
-              className={`flex items-center gap-1.5 transition-colors ${THEME.accent.hover}`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              <span>{label}</span>
-            </Link>
-          ))}
-        </div>
-
-        {/* Right Side: Action Icons */}
-        <div className={`flex items-center gap-5 ${THEME.accent.text}`}>
-          <IconButton icon={Search} label="Search" />
-          <IconButton icon={Heart} label="Wishlist" href="/wishlist" />
-          <IconButton icon={User} label="Account" href="/account" />
-          <IconButton icon={ShoppingBag} label="Cart" href="/cart" />
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-/**
- * Desktop navigation
- */
-const DesktopNav = () => (
-  <div className="hidden lg:flex flex-col items-center py-6">
-    {/* Logo */}
-    <Logo className="mb-5 text-2xl tracking-[0.3em]" />
-
-    {/* Navigation Links */}
-    <nav className="flex items-center gap-10">
-      {MAIN_NAV_LINKS.map(({ label, href }) => (
-        <Link
-          key={label}
-          href={href}
-          className={`text-xs font-medium tracking-[0.15em] uppercase transition-colors ${THEME.nav.text} ${THEME.nav.hover}`}
-        >
-          {label}
-        </Link>
-      ))}
-    </nav>
-  </div>
-);
-
-/**
- * Mobile header bar
- */
-const MobileHeaderBar = ({
-  isMobileMenuOpen,
-  toggleMobileMenu,
-}: {
-  isMobileMenuOpen: boolean;
-  toggleMobileMenu: () => void;
-}) => (
-  <div className={`lg:hidden flex items-center justify-between py-4 ${THEME.accent.text}`}>
-    {/* Menu Toggle Button */}
-    <button
-      className={`p-2 -ml-2 transition-colors ${THEME.accent.hover}`}
-      onClick={toggleMobileMenu}
-      aria-label="Toggle menu"
-      aria-expanded={isMobileMenuOpen}
-    >
-      {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-    </button>
-
-    {/* Logo */}
-    <Logo className="text-xl tracking-[0.2em]" />
-
-    {/* Action Icons */}
-    <div className="flex items-center gap-3">
-      <IconButton icon={Search} label="Search" className="h-5 w-5" />
-      <IconButton icon={ShoppingBag} label="Cart" href="/cart" className="h-5 w-5" />
-    </div>
-  </div>
-);
-
-/**
- * Mobile menu dropdown
- */
-const MobileMenu = ({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className={`lg:hidden border-t ${THEME.border} ${THEME.background}`}>
-      <nav className="container mx-auto px-6 py-6 flex flex-col gap-4">
-        {/* Main Navigation Links */}
-        {MAIN_NAV_LINKS.map(({ label, href }) => (
-          <Link
-            key={label}
-            href={href}
-            className={`text-sm font-medium tracking-wider py-2 uppercase transition-colors ${THEME.nav.text} ${THEME.nav.hover}`}
-            onClick={onClose}
-          >
-            {label}
-          </Link>
-        ))}
-
-        {/* Utility Links (Mobile) */}
-        <div className={`border-t ${THEME.border} mt-4 pt-4 flex flex-col gap-3 text-sm ${THEME.accent.text}`}>
-          {UTILITY_LINKS.map(({ label, href, icon: Icon }) => (
-            <Link
-              key={label}
-              href={href}
-              className={`py-2 flex items-center gap-2 transition-colors ${THEME.accent.hover}`}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </Link>
-          ))}
-        </div>
-      </nav>
-    </div>
-  );
-};
-
-// ============================================================================
-// Main Header Component
-// ============================================================================
+import Image from "next/image";
+import {
+  Search,
+  User,
+  Heart,
+  ShoppingBag,
+  Menu,
+  Globe,
+  Mail,
+  Headphones,
+} from "lucide-react";
+import { useState } from "react";
 
 export function Header() {
-  // ============================================================================
-  // State Management
-  // ============================================================================
-
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-
-  // ============================================================================
-  // Event Handlers
-  // ============================================================================
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen((prev) => !prev);
-  };
-
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
-
-  // ============================================================================
-  // Render
-  // ============================================================================
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className={`sticky top-0 z-50 w-full ${THEME.background}`}>
-      {/* Desktop Utility Bar (hidden on mobile) */}
-      <UtilityBar />
+    <header className="w-full bg-[#EFECE5] sticky top-0 z-50 overflow-x-hidden">
+      <div className="hidden md:block w-full">
+        <div className="w-full max-w-[1440px] mx-auto pt-[8px] pb-[16px] px-[64px]">
+          <div className="flex flex-col gap-[24px]">
+            <div className="flex items-center justify-between h-[20px] text-[11px] text-gray-700">
+              <div className="flex items-center gap-6">
+                <Link
+                  href="#"
+                  className="flex items-center gap-2 hover:text-gray-900 transition-colors"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  <span>Sri Lanka</span>
+                </Link>
+                <Link
+                  href="/contact"
+                  className="flex items-center gap-2 hover:text-gray-900 transition-colors"
+                >
+                  <Headphones className="h-3.5 w-3.5" />
+                  <span>Contact Us</span>
+                </Link>
+                <Link
+                  href="#newsletter"
+                  className="flex items-center gap-2 hover:text-gray-900 transition-colors"
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  <span>Newsletter</span>
+                </Link>
+              </div>
 
-      {/* Main Header Content */}
-      <div className={THEME.background}>
-        <div className="container mx-auto px-6">
-          {/* Mobile Header (visible on mobile only) */}
-          <MobileHeaderBar
-            isMobileMenuOpen={isMobileMenuOpen}
-            toggleMobileMenu={toggleMobileMenu}
-          />
+              {/* Right Icons */}
+              <div className="flex items-center gap-5">
+                <button className="hover:text-gray-900 transition-colors">
+                  <Search className="h-[18px] w-[18px]" />
+                </button>
+                <Link
+                  href="/account/wishlist"
+                  className="hover:text-gray-900 transition-colors"
+                >
+                  <Heart className="h-[18px] w-[18px]" />
+                </Link>
+                <Link
+                  href="/account"
+                  className="hover:text-gray-900 transition-colors"
+                >
+                  <User className="h-[18px] w-[18px]" />
+                </Link>
+                <Link
+                  href="/cart"
+                  className="hover:text-gray-900 transition-colors"
+                >
+                  <ShoppingBag className="h-[18px] w-[18px]" />
+                </Link>
+              </div>
+            </div>
 
-          {/* Desktop Header (hidden on mobile) */}
-          <DesktopNav />
+            {/* Logo & Navigation */}
+            <div className="flex flex-col items-center gap-4">
+              <Link href="/" className="group">
+                <Image
+                  src="/logo.png"
+                  alt="Modett"
+                  width={240}
+                  height={64}
+                  className="group-hover:opacity-90 transition-opacity"
+                />
+              </Link>
+
+              <nav className="flex items-center gap-12 text-[11px] tracking-[0.15em] font-medium text-gray-700">
+                <Link
+                  href="/collections/summer-2025"
+                  className="hover:text-gray-900 transition-colors"
+                >
+                  SUMMER 2025
+                </Link>
+                <Link
+                  href="/collections"
+                  className="hover:text-gray-900 transition-colors"
+                >
+                  COLLECTIONS
+                </Link>
+                <Link
+                  href="/about"
+                  className="hover:text-gray-900 transition-colors"
+                >
+                  BRAND PHILOSOPHY
+                </Link>
+                <Link
+                  href="/contact"
+                  className="hover:text-gray-900 transition-colors"
+                >
+                  CONTACT
+                </Link>
+              </nav>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
-      <MobileMenu isOpen={isMobileMenuOpen} onClose={closeMobileMenu} />
+      {/* Mobile Header: 390px width, 82px height, bottom border 1px */}
+      <div className="md:hidden border-b border-[#E5E0D6]">
+        <div className="flex flex-col h-[82px]">
+          {/* Top Row: Sri Lanka, Contact Us, Newsletter - 18px margins on both sides */}
+          <div className="flex items-center justify-between mx-[18px] pt-[7px] text-[12px] font-medium text-[#7A6A5C]">
+            <Link
+              href="#"
+              className="flex items-center gap-2 hover:opacity-70"
+            >
+              <Globe className="h-4 w-4" />
+              <span>Sri Lanka</span>
+            </Link>
+            <Link
+              href="/contact"
+              className="flex items-center gap-2 hover:opacity-70"
+            >
+              <Headphones className="h-4 w-4" />
+              <span>Contact Us</span>
+            </Link>
+            <Link
+              href="#newsletter"
+              className="flex items-center gap-2 hover:opacity-70"
+            >
+              <Mail className="h-4 w-4" />
+              <span>Newsletter</span>
+            </Link>
+          </div>
+
+          {/* Bottom Row: Menu | Logo | Search, Cart */}
+          <div className="flex items-center justify-between flex-1 px-4">
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="w-[20px] h-[20px] flex items-center justify-center">
+              <Menu className="w-[20px] h-[20px] text-[#4A4034]" />
+            </button>
+
+            <Link href="/" className="absolute left-1/2 -translate-x-1/2">
+              <Image src="/footer-logo.png" alt="Modett - Elegance, Amplified" width={157} height={42} />
+            </Link>
+
+            <div className="flex items-center gap-4 w-[112px] h-[20px] justify-end">
+              <button className="hover:opacity-70 w-[20px] h-[20px] flex items-center justify-center">
+                <Search className="w-[20px] h-[20px] text-[#765C4D]" />
+              </button>
+              <Link href="/cart" className="hover:opacity-70 w-[20px] h-[20px] flex items-center justify-center">
+                <ShoppingBag className="w-[20px] h-[20px] text-[#765C4D]" />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="border-t border-[#DDD9D0] bg-[#EFECE5]">
+            <nav className="flex flex-col py-4 px-4">
+              <Link
+                href="/collections/summer-2025"
+                className="py-3 text-sm tracking-wider hover:text-gray-600"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                SUMMER 2025
+              </Link>
+              <Link
+                href="/collections"
+                className="py-3 text-sm tracking-wider hover:text-gray-600"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                COLLECTIONS
+              </Link>
+              <Link
+                href="/about"
+                className="py-3 text-sm tracking-wider hover:text-gray-600"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                BRAND PHILOSOPHY
+              </Link>
+              <Link
+                href="/contact"
+                className="py-3 text-sm tracking-wider hover:text-gray-600"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                CONTACT
+              </Link>
+              <div className="flex items-center gap-6 pt-4 mt-4 border-t border-[#DDD9D0]">
+                <button>
+                  <Search className="h-5 w-5" />
+                </button>
+                <Link href="/account">
+                  <User className="h-5 w-5" />
+                </Link>
+              </div>
+            </nav>
+          </div>
+        )}
+      </div>
     </header>
   );
 }

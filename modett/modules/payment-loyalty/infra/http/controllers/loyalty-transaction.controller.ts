@@ -39,14 +39,25 @@ export class LoyaltyTransactionController {
     this.listHandler = new GetLoyaltyTransactionsHandler(loyaltyTxnService);
   }
 
-  /**
-   * POST /loyalty/transactions/award
-   * Award loyalty points to a user
-   */
   async award(
     request: FastifyRequest<{ Body: AwardPointsRequest }>,
     reply: FastifyReply
   ) {
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply
+        .code(401)
+        .send({ success: false, error: "Authentication required" });
+    }
+    if (request.body.userId !== userId) {
+      return reply
+        .code(403)
+        .send({
+          success: false,
+          error: "You cannot modify another user's loyalty",
+        });
+    }
+
     const cmd: AwardLoyaltyPointsCommand = {
       ...request.body,
       timestamp: new Date(),
@@ -55,14 +66,22 @@ export class LoyaltyTransactionController {
     return reply.code(result.success ? 201 : 400).send(result);
   }
 
-  /**
-   * POST /loyalty/transactions/redeem
-   * Redeem loyalty points from a user
-   */
   async redeem(
     request: FastifyRequest<{ Body: RedeemPointsRequest }>,
     reply: FastifyReply
   ) {
+    const userId = (request as any).user?.userId;
+    if (!userId) {
+      return reply
+        .code(401)
+        .send({ success: false, error: "Authentication required" });
+    }
+    if (request.body.userId !== userId) {
+      return reply
+        .code(403)
+        .send({ success: false, error: "You cannot redeem for another user" });
+    }
+
     const cmd: RedeemLoyaltyPointsCommand = {
       ...request.body,
       timestamp: new Date(),

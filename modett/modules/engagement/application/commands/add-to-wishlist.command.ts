@@ -80,14 +80,16 @@ export class AddToWishlistHandler
       return CommandResult.success<WishlistItemResult>(result);
     } catch (error) {
       if (error instanceof Error) {
+        // Return the actual error message as the main error
         return CommandResult.failure<WishlistItemResult>(
-          "Failed to add item to wishlist",
+          error.message,
           [error.message]
         );
       }
 
       return CommandResult.failure<WishlistItemResult>(
-        "An unexpected error occurred while adding item to wishlist"
+        "An unexpected error occurred while adding item to wishlist",
+        ["Unknown error occurred"]
       );
     }
   }

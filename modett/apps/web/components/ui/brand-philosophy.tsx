@@ -1,48 +1,95 @@
-import Link from "next/link"
+﻿import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
-interface BrandPhilosophyProps {
-  title?: string
-  description?: string
-  imageSrc: string
-  ctaText?: string
-  ctaHref?: string
-}
-
-export function BrandPhilosophy({
-  title = "A philosophy of buying fewer, better pieces.",
-  description = "We craft investment-quality garments from the finest natural fabrics, designed to endure for years, not seasons.",
-  imageSrc,
-  ctaText = "LEARN MORE",
-  ctaHref = "/about",
-}: BrandPhilosophyProps) {
+export function BrandPhilosophy() {
   return (
-    <section className="bg-[#ede9e3] py-20 md:py-24">
-      <div className="container mx-auto px-4">
-        {/* Full Width Image */}
-        <div className="w-full mb-12 md:mb-16">
-          <img
-            src={imageSrc}
-            alt="Brand philosophy"
-            className="w-full h-[350px] md:h-[450px] object-cover"
-          />
-        </div>
+    <section className="w-full bg-[#EFECE5] overflow-x-hidden">
+      <div className="w-full px-[20px] md:px-[80px] pt-[60px] md:pt-[80px] pb-[48px] md:pb-[80px]">
+        <div className="w-[350px] md:w-full md:max-w-[1280px] mx-auto flex flex-col items-center gap-[80px] md:gap-[64px]">
+          <div className="w-full h-[400px] md:h-[480px] flex md:grid md:grid-cols-[200px_1fr_200px]">
+            {/* Left section - Papers/Documents - Mobile: 75px, Desktop: 200px */}
+            <div className="relative w-[75px] md:w-full h-[400px] md:h-[480px] overflow-hidden">
+              <Image
+                src="/stamp.png"
+                alt="Modett stamp"
+                fill
+                className="object-cover"
+                style={{ objectPosition: "95% 60%" }}
+                sizes="(max-width: 768px) 75px, 200px"
+                priority
+              />
+            </div>
+            {/* Studio - Main image for mobile & desktop */}
+            <div className="relative w-[200px] md:w-full h-[400px] md:h-[480px] overflow-hidden">
+              <Image
+                src="/studio.png"
+                alt="Modett fashion design studio"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 200px, 880px"
+                priority
+              />
+            </div>
+            {/* Tag - Mobile: 75px, Desktop: 200px */}
+            <div className="relative w-[75px] md:w-full h-[400px] md:h-[480px] overflow-hidden">
+              <Image
+                src="/tag.png"
+                alt="Modett tag"
+                fill
+                className="object-cover"
+                style={{ objectPosition: "25% 90%" }}
+                sizes="(max-width: 768px) 75px, 200px"
+                priority
+              />
+            </div>
+          </div>
 
-        {/* Content */}
-        <div className="text-center">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <p className="text-[#4a4440] text-base md:text-lg leading-relaxed px-4">
-              {title} {description}
+          {/* Text Content - Mobile: 350px width, Desktop: 1280px width */}
+          <div className="flex flex-col items-center text-center w-full gap-[32px]">
+            <p
+              className="text-[16px] md:text-[18px] font-medium leading-[20px] md:leading-[28px] max-w-[330px] md:max-w-[686px]"
+              style={{
+                fontFamily: "Raleway, sans-serif",
+                color: "#2D2D2D",
+                letterSpacing: "2%",
+              }}
+            >
+              A philosophy of buying fewer, better pieces. We craft
+              investment-quality garments from the finest natural fabrics, designed to endure for
+              years, not seasons.
             </p>
-
-            <Link href={ctaHref} className="inline-flex items-center group">
-              <span className="text-sm tracking-[0.2em] uppercase text-[#8B6B55] hover:text-[#6d5542] transition-colors">
-                {ctaText}
-              </span>
-              <span className="ml-2 text-[#8B6B55] group-hover:text-[#6d5542] transition-colors">›</span>
-            </Link>
+            <Button
+              variant="link"
+              className="p-0 h-auto text-[16px] font-medium uppercase tracking-[4px] leading-[24px]"
+              style={{
+                fontFamily: "Raleway, sans-serif",
+                color: "#765C4D",
+              }}
+              asChild
+            >
+              <a href="/about" className="inline-flex items-center gap-[8px]">
+                LEARN MORE
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="flex-shrink-0"
+                >
+                  <path
+                    d="M9 18L15 12L9 6"
+                    stroke="#765C4D"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </a>
+            </Button>
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }

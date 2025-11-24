@@ -13,6 +13,7 @@ type BnplAction = "approve" | "reject" | "activate" | "complete" | "cancel";
 export interface ProcessBnplPaymentCommand extends ICommand {
   bnplId: string;
   action: BnplAction;
+  userId?: string;
 }
 
 export class ProcessBnplPaymentHandler
@@ -52,19 +53,34 @@ export class ProcessBnplPaymentHandler
       let result: BnplTransactionDto;
       switch (command.action) {
         case "approve":
-          result = await this.bnplService.approveBnplTransaction(command.bnplId);
+          result = await this.bnplService.approveBnplTransaction(
+            command.bnplId,
+            command.userId
+          );
           break;
         case "reject":
-          result = await this.bnplService.rejectBnplTransaction(command.bnplId);
+          result = await this.bnplService.rejectBnplTransaction(
+            command.bnplId,
+            command.userId
+          );
           break;
         case "activate":
-          result = await this.bnplService.activateBnplTransaction(command.bnplId);
+          result = await this.bnplService.activateBnplTransaction(
+            command.bnplId,
+            command.userId
+          );
           break;
         case "complete":
-          result = await this.bnplService.completeBnplTransaction(command.bnplId);
+          result = await this.bnplService.completeBnplTransaction(
+            command.bnplId,
+            command.userId
+          );
           break;
         case "cancel":
-          result = await this.bnplService.cancelBnplTransaction(command.bnplId);
+          result = await this.bnplService.cancelBnplTransaction(
+            command.bnplId,
+            command.userId
+          );
           break;
         default:
           return CommandResult.failure<BnplTransactionDto>(
