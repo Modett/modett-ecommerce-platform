@@ -148,12 +148,20 @@ export class ProductController {
             variants: {
               orderBy: { price: 'asc' },
               take: 10,
+              include: {
+                inventoryStocks: true,
+              },
             },
             media: {
               include: {
                 asset: true,
               },
               orderBy: { position: 'asc' },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
             },
           },
         });
@@ -163,20 +171,33 @@ export class ProductController {
           const enriched = enrichedProducts.find(p => p.id === product.productId);
           return {
             ...product,
-            variants: enriched?.variants?.map(v => ({
-              id: v.id,
-              sku: v.sku,
-              size: v.size,
-              color: v.color,
-              price: v.price.toString(),
-              compareAtPrice: v.compareAtPrice?.toString(),
-              inventory: 0, // Would need to aggregate from inventory_stocks
-            })) || [],
+            variants: enriched?.variants?.map(v => {
+              // Calculate total inventory across all locations
+              const totalInventory = v.inventoryStocks?.reduce((sum, stock) => {
+                return sum + (stock.onHand - stock.reserved);
+              }, 0) || 0;
+
+              return {
+                id: v.id,
+                sku: v.sku,
+                size: v.size,
+                color: v.color,
+                price: v.price.toString(),
+                compareAtPrice: v.compareAtPrice?.toString(),
+                inventory: totalInventory,
+              };
+            }) || [],
             images: enriched?.media?.map(m => ({
               url: m.asset.storageKey,
               alt: m.asset.altText,
               width: m.asset.width,
               height: m.asset.height,
+            })) || [],
+            categories: enriched?.categories?.map(pc => ({
+              id: pc.category.id,
+              name: pc.category.name,
+              slug: pc.category.slug,
+              position: pc.category.position,
             })) || [],
           };
         });

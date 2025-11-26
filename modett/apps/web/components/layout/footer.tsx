@@ -27,7 +27,7 @@ export function Footer() {
       <div className="w-full bg-[#3E5460]">
         <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[80px] py-[48px] md:py-[64px]">
           {/* Container: Fill 1280px, Hug 84px, 80px gap */}
-          <div className="w-full max-w-[1280px] flex flex-col md:flex-row justify-between items-start md:items-start gap-6 md:gap-[80px]" id="newsletter">
+          <div className="w-full max-w-[1280px] flex flex-col md:flex-col lg:flex-row justify-between items-start md:items-start gap-6 lg:gap-[80px]" id="newsletter">
             {/* Left - Content: Vertical flow, Fill 560px, Fixed 54px height */}
             <div className="flex flex-col justify-start w-full md:w-[560px] h-auto md:h-[84px] max-w-[560px]">
               <h3
@@ -46,7 +46,7 @@ export function Footer() {
             </div>
 
             {/* Right - Actions: Vertical flow, Fixed 459px, Hug 84px, 12px gap */}
-            <div className="flex flex-col gap-[12px] w-full md:w-[459px]">
+            <div className="flex flex-col gap-[12px] w-full md:w-full lg:w-[459px]">
               <div className="flex flex-col sm:flex-row">
                 <Input
                   type="email"
@@ -73,13 +73,13 @@ export function Footer() {
       <div className="w-full bg-[#E5E0D6] border-t border-[#BBA496]">
         <div className="w-full md:max-w-[1440px] mx-auto px-0 md:px-[80px] pt-[20px] md:pt-[64px] pb-[40px] md:pb-[60px]">
           <div className="flex flex-col gap-[40px] md:gap-[80px]">
-            {/* Links: Mobile vertical, Desktop horizontal */}
-            <div className="flex flex-col md:flex-row md:justify-between gap-0 md:gap-8 w-full md:max-w-[1280px] md:mx-auto">
+            {/* Links: Mobile vertical, Tablet 2x2 grid, Desktop horizontal */}
+            <div className="flex flex-col md:grid md:grid-cols-2 lg:flex lg:flex-row lg:justify-between gap-0 md:gap-x-8 md:gap-y-6 lg:gap-8 w-full md:max-w-[1280px] md:mx-auto">
               {/* Customer Care */}
               <div className="border-b border-[#BBA496] md:border-none pb-0 md:pb-0">
                 <button
                   onClick={() => toggleSection('customerCare')}
-                  className="flex justify-between items-center w-full max-w-[390px] md:max-w-none mx-auto h-[70px] px-[20px] md:px-0 md:h-auto md:cursor-default"
+                  className="flex justify-between items-center w-full max-w-[390px] md:max-w-none mx-auto h-[70px] px-[20px] md:px-0 md:h-auto md:cursor-default md:pointer-events-none"
                 >
                   <h4
                     className="text-[18px] leading-[28px] font-normal"
@@ -105,7 +105,7 @@ export function Footer() {
               <div className="border-b border-[#BBA496] md:border-none pb-0 md:pb-0">
                 <button
                   onClick={() => toggleSection('philosophy')}
-                  className="flex justify-between items-center w-full max-w-[390px] md:max-w-none mx-auto h-[70px] px-[20px] md:px-0 md:h-auto md:cursor-default"
+                  className="flex justify-between items-center w-full max-w-[390px] md:max-w-none mx-auto h-[70px] px-[20px] md:px-0 md:h-auto md:cursor-default md:pointer-events-none"
                 >
                   <h4
                     className="text-[18px] leading-[28px] font-normal"
@@ -128,7 +128,7 @@ export function Footer() {
               <div className="border-b border-[#BBA496] md:border-none pb-0 md:pb-0">
                 <button
                   onClick={() => toggleSection('generalInfo')}
-                  className="flex justify-between items-center w-full max-w-[390px] md:max-w-none mx-auto h-[70px] px-[20px] md:px-0 md:h-auto md:cursor-default"
+                  className="flex justify-between items-center w-full max-w-[390px] md:max-w-none mx-auto h-[70px] px-[20px] md:px-0 md:h-auto md:cursor-default md:pointer-events-none"
                 >
                   <h4
                     className="text-[18px] leading-[28px] font-normal"
@@ -147,17 +147,17 @@ export function Footer() {
                 </ul>
               </div>
 
-              {/* Follow us on - Non-collapsible, centered on mobile */}
+              {/* Follow us on - Non-collapsible, centered on mobile, left-aligned on tablet+ */}
               <div className="border-b border-[#BBA496] md:border-none pb-0 md:pb-0">
-                <div className="flex flex-col items-center md:items-start max-w-[390px] md:max-w-none mx-auto py-[20px] md:py-0 px-[20px] md:px-0">
+                <div className="flex flex-col items-center md:items-start max-w-[390px] md:max-w-none mx-auto md:mx-0 py-[20px] md:py-0 px-[20px] md:px-0">
                   <h4
                     className="text-[18px] leading-[28px] font-normal text-center md:text-left mb-[16px] md:mb-4"
                     style={{ fontFamily: "Raleway, sans-serif", color: "#232D35", letterSpacing: "0%" }}
                   >
                     Follow us on
                   </h4>
-                  {/* Social icons: 288px × 32px on mobile */}
-                  <div className="flex items-center gap-[24px] w-[288px] md:w-auto h-[32px] md:h-auto justify-center md:justify-start">
+                  {/* Social icons: Full width on mobile centered, left-aligned on tablet+ */}
+                  <div className="flex items-center gap-[24px] w-full md:w-auto h-[32px] md:h-auto justify-center md:justify-start">
                     <a href="#" className="hover:opacity-70">
                       <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M24 2.66669H20C18.2319 2.66669 16.5362 3.36907 15.286 4.61931C14.0358 5.86955 13.3334 7.56524 13.3334 9.33335V13.3334H9.33337V18.6667H13.3334V29.3334H18.6667V18.6667H22.6667L24 13.3334H18.6667V9.33335C18.6667 8.97973 18.8072 8.64059 19.0572 8.39054C19.3073 8.14049 19.6464 8.00002 20 8.00002H24V2.66669Z" fill="#232D35"/>
@@ -206,8 +206,8 @@ export function Footer() {
                 />
               </div>
 
-              {/* Copyright: Mobile 320px fixed, Desktop horizontal with links */}
-              <div className="flex flex-row items-center justify-center w-[320px] md:w-full h-auto p-[10px] gap-[10px] md:gap-[24px] border-t border-[#232D35]">
+              {/* Copyright: Mobile 320px fixed, Tablet/Desktop full width with links */}
+              <div className="flex flex-col md:flex-row items-center justify-center w-[320px] md:w-full h-auto p-[10px] gap-[10px] md:gap-[24px] border-t border-[#232D35]">
                 <span
                   className="text-[10px] leading-[16px] font-semibold text-center whitespace-nowrap"
                   style={{
@@ -218,7 +218,7 @@ export function Footer() {
                 >
                   © 2025 Modett Fashion. All rights reserved.
                 </span>
-                <div className="hidden md:flex flex-row items-center gap-[24px]">
+                <div className="hidden md:flex flex-col md:flex-row items-center gap-[8px] md:gap-[24px]">
                   <Link
                     href="/privacy-policy"
                     className="text-[10px] leading-[16px] font-semibold hover:opacity-70"

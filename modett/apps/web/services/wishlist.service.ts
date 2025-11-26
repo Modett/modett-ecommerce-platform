@@ -129,8 +129,15 @@ class WishlistService {
   /**
    * Add product to wishlist
    */
-  async addToWishlist(variantId: string): Promise<WishlistItem> {
-    return this.addToWishlistInternal(variantId);
+  async addToWishlist(variantId: string, productId?: string): Promise<WishlistItem> {
+    const result = await this.addToWishlistInternal(variantId);
+    // Dispatch custom event to notify all components
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent('wishlistUpdated', {
+        detail: { variantId, productId, action: 'add' }
+      }));
+    }
+    return result;
   }
 
   private async addToWishlistInternal(
@@ -179,7 +186,7 @@ class WishlistService {
   /**
    * Remove product from wishlist
    */
-  async removeFromWishlist(variantId: string): Promise<void> {
+  async removeFromWishlist(variantId: string, productId?: string): Promise<void> {
     try {
       const wishlistId = await this.getWishlistId();
       const guestToken = await this.getGuestToken();
@@ -190,6 +197,13 @@ class WishlistService {
           headers: { "X-Guest-Token": guestToken },
         }
       );
+
+      // Dispatch custom event to notify all components
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent('wishlistUpdated', {
+          detail: { variantId, productId, action: 'remove' }
+        }));
+      }
     } catch (error: any) {
       console.error("Failed to remove from wishlist:", error);
       throw new Error(
@@ -224,6 +238,18 @@ class WishlistService {
     try {
       const items = await this.getWishlistItems();
       return items.some((item) => item.variantId === variantId);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Check if any variant of a product is in the wishlist (product-level check)
+   */
+  async isProductInWishlist(variantIds: string[]): Promise<boolean> {
+    try {
+      const items = await this.getWishlistItems();
+      return items.some((item) => variantIds.includes(item.variantId));
     } catch (error) {
       return false;
     }
