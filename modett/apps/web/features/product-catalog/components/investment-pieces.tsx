@@ -62,7 +62,7 @@ export function InvestmentPieces() {
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[48px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[64px]">
               {[...Array(6)].map((_, i) => (
                 <div
                   key={i}
@@ -71,11 +71,13 @@ export function InvestmentPieces() {
               ))}
             </div>
           ) : products && products.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[48px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[64px]">
               {products.map((product) => (
                 <ProductCard
                   key={product.id}
                   id={product.id}
+                  productId={product.productId}
+                  slug={product.slug}
                   title={product.title}
                   price={product.price}
                   compareAtPrice={product.compareAtPrice}

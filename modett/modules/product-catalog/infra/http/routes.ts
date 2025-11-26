@@ -186,6 +186,18 @@ export async function registerProductCatalogRoutes(
                             },
                           },
                         },
+                        categories: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              id: { type: "string" },
+                              name: { type: "string" },
+                              slug: { type: "string" },
+                              position: { type: "integer", nullable: true },
+                            },
+                          },
+                        },
                       },
                     },
                   },

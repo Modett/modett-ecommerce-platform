@@ -1,41 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Heart, Plus, Minus, ShoppingBag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cartService } from "@/services/cart.service";
 import { wishlistService } from "@/services/wishlist.service";
 import { toast } from "sonner";
-
-// Color mapping for common color names to hex codes
-const COLOR_MAP: Record<string, string> = {
-  "terracotta clay": "#C78869",
-  "brushed gold": "#C1AB85",
-  "sage green": "#8FA89A",
-  "dusty blue": "#9EAFB0",
-  red: "#DC2626",
-  blue: "#2563EB",
-  green: "#16A34A",
-  yellow: "#CA8A04",
-  purple: "#9333EA",
-  pink: "#EC4899",
-  black: "#000000",
-  white: "#FFFFFF",
-  gray: "#6B7280",
-  brown: "#92400E",
-  beige: "#D4C4A8",
-  navy: "#1E3A8A",
-  cream: "#F5F5DC",
-};
-
-const getColorHex = (colorName: string | undefined): string => {
-  if (!colorName) return "#CCCCCC";
-  const normalizedName = colorName.toLowerCase().trim();
-
-  if (colorName.startsWith("#")) return colorName;
-
-  return COLOR_MAP[normalizedName] || "#CCCCCC";
-};
+import { getColorHex } from "@/lib/colors";
 
 interface Variant {
   id: string;
@@ -47,19 +19,25 @@ interface Variant {
 
 interface ProductCardProps {
   id: string;
+  productId: string;
+  slug: string;
   title: string;
   price: number;
   compareAtPrice?: number;
   image: string;
   variants: Variant[];
   rating?: number;
+  variant?: "home" | "collection";
 }
 
 export function ProductCard({
+  productId,
+  slug,
   title,
   price,
   image,
   variants,
+  variant = "home",
 }: ProductCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
@@ -71,22 +49,48 @@ export function ProductCard({
 
   useEffect(() => {
     const checkWishlistStatus = async () => {
-      if (defaultVariant) {
+      if (variants.length > 0) {
         try {
-          const inWishlist = await wishlistService.isInWishlist(
-            defaultVariant.id
-          );
+          // Check if ANY variant of this product is wishlisted (product-level)
+          const variantIds = variants.map(v => v.id);
+          const inWishlist = await wishlistService.isProductInWishlist(variantIds);
           setIsWishlisted(inWishlist);
         } catch (error) {}
       }
     };
 
     checkWishlistStatus();
-  }, [defaultVariant?.id]);
+
+    // Listen for wishlist updates from other components (product-level)
+    const handleWishlistUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { productId: eventProductId, action } = customEvent.detail;
+
+      // Match on productId for product-level wishlisting
+      if (eventProductId && eventProductId === productId) {
+        setIsWishlisted(action === 'add');
+      }
+    };
+
+    window.addEventListener('wishlistUpdated', handleWishlistUpdate);
+
+    return () => {
+      window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
+    };
+  }, [productId, variants]);
 
   const availableSizes = Array.from(
     new Set(variants.map((v) => v.size).filter(Boolean))
-  );
+  ).sort((a, b) => {
+    const numA = parseInt(a!);
+    const numB = parseInt(b!);
+    // If both are valid numbers, sort numerically
+    if (!isNaN(numA) && !isNaN(numB)) {
+      return numA - numB;
+    }
+    // Otherwise, sort alphabetically
+    return a!.localeCompare(b!);
+  });
 
   const availableColors = Array.from(
     new Set(variants.map((v) => v.color).filter(Boolean))
@@ -129,11 +133,11 @@ export function ProductCard({
     setIsTogglingWishlist(true);
     try {
       if (isWishlisted) {
-        await wishlistService.removeFromWishlist(defaultVariant.id);
+        await wishlistService.removeFromWishlist(defaultVariant.id, productId);
         setIsWishlisted(false);
         toast.success(`${title} removed from wishlist`);
       } else {
-        await wishlistService.addToWishlist(defaultVariant.id);
+        await wishlistService.addToWishlist(defaultVariant.id, productId);
         setIsWishlisted(true);
         toast.success(`${title} added to wishlist!`);
       }
@@ -145,9 +149,17 @@ export function ProductCard({
   };
 
   return (
-    <div className="group bg-[#EFECE5] w-full max-w-[350px] md:max-w-[394px] h-[592px] md:h-[600px] flex flex-col gap-[19.27px]">
-      <div className="relative w-full h-[493px] md:h-[501.54px] overflow-hidden bg-gray-50">
-        <Image src={image} alt={title} fill className="object-cover" />
+    <div className={`group bg-[#EFECE5] flex flex-col ${
+      variant === "collection"
+        ? "w-full h-[516px] gap-[16px]"
+        : "w-full max-w-[350px] md:max-w-[394px] h-[520px] gap-[19.27px]"
+    }`}>
+      <div className={`relative w-full overflow-hidden bg-gray-50 ${
+        variant === "collection" ? "h-[400px]" : "h-[420px]"
+      }`}>
+        <Link href={`/product/${slug}`} className="block w-full h-full">
+          <Image src={image} alt={title} fill className="object-cover" />
+        </Link>
 
         <button
           onClick={handleWishlistToggle}
@@ -159,20 +171,24 @@ export function ProductCard({
         >
           <Heart
             className={`h-5 w-5 transition-all ${
-              isWishlisted ? "fill-black text-black" : "text-[#232D35]"
+              isWishlisted ? "fill-black text-black" : "text-white"
             } ${isTogglingWishlist ? "animate-pulse" : ""}`}
           />
         </button>
 
         {isExpanded && (
-          <div className="absolute bottom-0 left-0 right-0 w-[394px] bg-[#F8F5F2]/75 pt-[16px] pr-[14px] pb-[16px] pl-[14px] flex flex-col gap-[6px] border-t-[0.5px] border-[#BBA496]">
+          <div className={`absolute bottom-0 left-0 right-0 bg-[#F8F5F2]/75 pt-[16px] pr-[14px] pb-[16px] pl-[14px] flex flex-col gap-[6px] border-t-[0.5px] border-[#BBA496] ${
+            variant === "collection" ? "w-full" : "w-[394px]"
+          }`}>
             <p
               className="text-[12px] leading-[16px] font-normal text-center text-gray-600"
               style={{ fontFamily: "Reddit Sans", letterSpacing: "0px" }}
             >
               {availableSizes.length > 0 ? "Available sizes" : "Select variant"}
             </p>
-            <div className="grid grid-cols-5 gap-2">
+            <div className={`grid gap-2 ${
+              variant === "collection" ? "grid-cols-4" : "grid-cols-5"
+            }`}>
               {availableSizes.map((size) => (
                 <button
                   key={size}
@@ -190,7 +206,9 @@ export function ProductCard({
             <button
               onClick={handleAddToCart}
               disabled={!selectedVariant || isAddingToCart}
-              className="w-[368px] h-[48px] bg-[#232D35] hover:bg-[#232D35]/90 text-[#E5E0D6] text-[16px] leading-[24px] font-medium tracking-[4px] uppercase disabled:opacity-50 cursor-pointer rounded-sm transition-colors"
+              className={`h-[48px] bg-[#232D35] hover:bg-[#232D35]/90 text-[#E5E0D6] text-[16px] leading-[24px] font-medium tracking-[4px] uppercase disabled:opacity-50 cursor-pointer rounded-sm transition-colors ${
+                variant === "collection" ? "w-full" : "w-[368px]"
+              }`}
               style={{ fontFamily: "Raleway" }}
             >
               {isAddingToCart ? (
@@ -209,12 +227,14 @@ export function ProductCard({
       <div className="relative h-[79.19px] py-1 flex flex-col justify-between">
         <div className="flex items-start justify-between">
           <div className="flex-1 max-w-[232.11px] w-[164.51px] h-[54.31px]">
-            <h3
-              className="text-[18px] leading-[24px] font-normal text-[#232D35] tracking-[0%]"
-              style={{ fontFamily: "Raleway" }}
-            >
-              {title}
-            </h3>
+            <Link href={`/product/${slug}`}>
+              <h3
+                className="text-[18px] leading-[24px] font-normal text-[#232D35] tracking-[0%] hover:underline cursor-pointer"
+                style={{ fontFamily: "Raleway" }}
+              >
+                {title}
+              </h3>
+            </Link>
             <p
               className="text-[14px] leading-[24px] font-normal text-[#232D35]"
               style={{ fontFamily: "Raleway", letterSpacing: "1.03px" }}
