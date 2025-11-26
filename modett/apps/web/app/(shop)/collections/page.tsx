@@ -147,7 +147,7 @@ export default function CollectionsPage() {
 
   return (
     <main className="min-h-screen bg-[#EFECE5]">
-      <div className="w-full max-w-[1440px] mx-auto h-[24px] px-[80px] flex items-center">
+      <div className="w-full max-w-[1440px] mx-auto h-[24px] px-4 md:px-[80px] flex items-center">
         <nav
           className="text-[12px] text-[#765C4D] uppercase tracking-[2px]"
           style={{ fontFamily: "Raleway" }}
@@ -162,14 +162,14 @@ export default function CollectionsPage() {
 
       <div className="w-full max-w-[768px] mx-auto h-[42px] flex flex-col items-center justify-center gap-[16px] bg-[#EFECE5]">
         <h1
-          className="w-[150px] h-[42px] text-[24px] text-[#765C4D] font-semibold leading-[130%] tracking-[0%]"
+          className="w-full max-w-[150px] h-[42px] text-[24px] text-[#765C4D] font-semibold leading-[130%] tracking-[0%]"
           style={{ fontFamily: "Playfair Display, serif" }}
         >
           Collection
         </h1>
       </div>
 
-      <div className="w-full max-w-[1440px] mx-auto pt-[16px] px-[80px] pb-[32px] flex flex-col gap-[80px] bg-[#EFECE5]">
+      <div className="w-full max-w-[1440px] mx-auto pt-[16px] px-4 md:px-[80px] pb-[32px] flex flex-col gap-[80px] bg-[#EFECE5]">
         <div className="w-full max-w-[1280px] mx-auto flex flex-col gap-[18px]">
           <div className="w-full h-[41px] flex items-center justify-between border-b border-[#E5E0D6]">
             <button
@@ -217,7 +217,7 @@ export default function CollectionsPage() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-[180px] h-[33px] text-[14px] font-medium text-[#6B7B8A] bg-[#EFECE5] border-none outline-none cursor-pointer uppercase pr-2"
+                  className="w-full max-w-[180px] h-[33px] text-[14px] font-medium text-[#6B7B8A] bg-[#EFECE5] border-none outline-none cursor-pointer uppercase pr-2"
                   style={{
                     fontFamily: "Reddit Sans, sans-serif",
                     letterSpacing: "3px",
@@ -377,7 +377,7 @@ export default function CollectionsPage() {
                 <button
                   key={size}
                   onClick={() => toggleSize(size)}
-                  className="w-[120px] h-[32px] pt-[4px] pr-[9px] pb-[4px] pl-[10px] flex items-center gap-[21px] bg-[#3E5460] hover:bg-[#2c3b44] transition-colors"
+                  className="w-full max-w-[120px] h-[32px] pt-[4px] pr-[9px] pb-[4px] pl-[10px] flex items-center gap-[21px] bg-[#3E5460] hover:bg-[#2c3b44] transition-colors"
                   style={{ fontFamily: "Raleway" }}
                 >
                   <span className="text-[12px] font-medium text-white uppercase tracking-[1px] whitespace-nowrap">
@@ -391,7 +391,7 @@ export default function CollectionsPage() {
 
           <div className="w-full max-w-[1280px] mx-auto flex gap-[18px]">
             {showFilters && (
-              <aside className="w-[250px] flex-shrink-0" key={filterKey}>
+              <aside className="w-full max-w-[250px] flex-shrink-0" key={filterKey}>
                 <div className="flex items-center justify-between mb-4">
                   <span
                     className="text-[12px] text-[#765C4D] uppercase tracking-[2px]"
@@ -401,7 +401,7 @@ export default function CollectionsPage() {
                   </span>
                   <button
                     onClick={handleClearFilters}
-                    className="w-[89px] h-[24px] pt-[4px] pr-[9px] pb-[4px] pl-[10px] text-[12px] text-[#765C4D] flex items-center justify-center hover:bg-[#E5E0D6] transition-colors rounded"
+                    className="w-full max-w-[89px] h-[24px] pt-[4px] pr-[9px] pb-[4px] pl-[10px] text-[12px] text-[#765C4D] flex items-center justify-center hover:bg-[#E5E0D6] transition-colors rounded whitespace-nowrap"
                     style={{ fontFamily: "Raleway" }}
                   >
                     Clear Filters
@@ -575,10 +575,12 @@ export default function CollectionsPage() {
             )}
 
             <div
-              className="flex-1"
+              className={`flex-1 grid ${
+                gridView === "3"
+                  ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                  : "grid-cols-1 md:grid-cols-2"
+              }`}
               style={{
-                display: "grid",
-                gridTemplateColumns: gridView === "3" ? "repeat(3, 1fr)" : "repeat(2, 1fr)",
                 gap: showFilters ? "20px" : "48px",
               }}
             >
@@ -629,10 +631,10 @@ export default function CollectionsPage() {
               {hasMore && (
                 <button
                   onClick={handleLoadMore}
-                  className="w-[200px] h-[48px] px-6 py-3 bg-[#3E5460] hover:bg-[#2c3b44] transition-colors"
+                  className="w-full max-w-[200px] h-[48px] px-6 py-3 bg-[#3E5460] hover:bg-[#2c3b44] transition-colors"
                 >
                   <span
-                    className="text-[14px] font-medium leading-[24px] tracking-[3px] uppercase text-white"
+                    className="text-[14px] font-medium leading-[24px] tracking-[3px] uppercase text-white whitespace-nowrap"
                     style={{ fontFamily: "Reddit Sans, sans-serif" }}
                   >
                     VIEW {pageSize} MORE

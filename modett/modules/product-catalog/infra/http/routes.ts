@@ -319,6 +319,45 @@ export async function registerProductCatalogRoutes(
                   seoDescription: { type: "string", nullable: true },
                   createdAt: { type: "string", format: "date-time" },
                   updatedAt: { type: "string", format: "date-time" },
+                  images: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        url: { type: "string" },
+                        alt: { type: "string" },
+                        width: { type: "number" },
+                        height: { type: "number" },
+                      },
+                    },
+                  },
+                  variants: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        sku: { type: "string" },
+                        size: { type: "string", nullable: true },
+                        color: { type: "string", nullable: true },
+                        price: { type: "string" },
+                        compareAtPrice: { type: "string", nullable: true },
+                        inventory: { type: "number" },
+                      },
+                    },
+                  },
+                  categories: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        name: { type: "string" },
+                        slug: { type: "string" },
+                        position: { type: "number" },
+                      },
+                    },
+                  },
                 },
               },
             },

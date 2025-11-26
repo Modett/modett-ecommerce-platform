@@ -128,15 +128,24 @@ export const productService = {
     const { data } = await apiClient.get(`/products/slug/${slug}`);
     const responseData = data.data || data;
 
+    const lowestPriceVariant = responseData.variants?.sort(
+      (a: any, b: any) => parseFloat(a.price) - parseFloat(b.price)
+    )[0];
+
     return {
       id: responseData.productId,
       productId: responseData.productId,
       title: responseData.title,
       slug: responseData.slug,
       description: responseData.shortDesc,
-      price: 0,
+      price: lowestPriceVariant ? parseFloat(lowestPriceVariant.price) : 0,
+      compareAtPrice: lowestPriceVariant?.compareAtPrice
+        ? parseFloat(lowestPriceVariant.compareAtPrice)
+        : undefined,
       brand: responseData.brand,
-      images: [],
+      images: responseData.images || [],
+      variants: responseData.variants || [],
+      categories: responseData.categories || [],
     };
   },
 
