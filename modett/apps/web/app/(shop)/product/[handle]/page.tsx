@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { productService } from "@/services/product.service";
 import { ProductImages } from "@/features/product-catalog/components/product-images";
@@ -52,8 +53,8 @@ export default function ProductPage({ params }: ProductPageProps) {
       />
 
       <section className="w-full">
-        <div className="w-full max-w-[1440px] mx-auto pl-[80px] pr-[80px] pt-[64px] pb-[48px]">
-          <div className="flex gap-[80px]">
+        <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[80px] pt-[64px] pb-[48px]">
+          <div className="flex flex-col lg:flex-row gap-[80px]">
             <ProductImages images={product.images || []} />
 
             <ProductInfo product={product} />
@@ -64,6 +65,22 @@ export default function ProductPage({ params }: ProductPageProps) {
       <WearItWith productId={product.id} />
 
       <YouMayAlsoLike productId={product.id} />
+
+      {/* View More Button Section */}
+      <section className="w-full bg-[#EFECE5]">
+        <div className="w-full max-w-[1280px] h-[122px] mx-auto flex flex-col items-center justify-center gap-[24px] pt-[32px]">
+          <Link href="/collections">
+            <button className="w-full max-w-[200px] h-[48px] px-6 py-3 bg-[#3E5460] hover:bg-[#2c3b44] transition-colors">
+              <span
+                className="text-[14px] font-medium leading-[24px] tracking-[3px] uppercase text-white whitespace-nowrap"
+                style={{ fontFamily: "Reddit Sans, sans-serif" }}
+              >
+                VIEW MORE
+              </span>
+            </button>
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

@@ -19,8 +19,8 @@ export function YouMayAlsoLike({ productId }: YouMayAlsoLikeProps) {
   }
 
   return (
-    <section className="w-full bg-[#EFECE5] py-[32px]">
-      <div className="w-full max-w-[1440px] mx-auto px-[80px]">
+    <section className="w-full bg-[#EFECE5] pt-[32px] pb-[32px]">
+      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[80px]">
         <div className="flex flex-col gap-[32px]">
           {/* Section Title */}
           <h2
@@ -31,7 +31,7 @@ export function YouMayAlsoLike({ productId }: YouMayAlsoLikeProps) {
           </h2>
 
           {/* Product Grid - 3 columns */}
-          <div className="grid grid-cols-3 gap-[32px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[32px]">
             {products.map((product) => (
               <ProductCard
                 key={product.id}

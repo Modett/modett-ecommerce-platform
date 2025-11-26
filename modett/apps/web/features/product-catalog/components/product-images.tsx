@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Heart } from "lucide-react";
 
 interface ProductImage {
   url: string;
@@ -17,46 +16,40 @@ export function ProductImages({ images }: ProductImagesProps) {
   const [selectedImage, setSelectedImage] = useState(0);
 
   // If no images, show placeholder
-  const displayImages = images.length > 0 ? images : [{ url: "/placeholder-product.jpg", alt: "Product" }];
+  const displayImages =
+    images.length > 0
+      ? images
+      : [
+          {
+            url: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='1600'%3E%3Crect width='1200' height='1600' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='48' fill='%23999'%3ENo Image%3C/text%3E%3C/svg%3E",
+            alt: "Product",
+          },
+        ];
 
   return (
-    <div className="flex flex-col gap-[16px] w-[904px]">
-      {/* Main Image */}
-      <div className="relative w-full aspect-[444/565] bg-gray-100 overflow-hidden">
-        <Image
-          src={displayImages[selectedImage]?.url || "/placeholder-product.jpg"}
-          alt={displayImages[selectedImage]?.alt || "Product image"}
-          fill
-          className="object-cover"
-          priority
-        />
-        {/* Wishlist Button */}
-        <button className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors">
-          <Heart className="w-5 h-5 text-[#232D35]" />
-        </button>
+    <div className="w-full max-w-[904px]">
+      {/* All Images Grid - 2 columns, all same size */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
+        {displayImages.slice(0, 6).map((image, index) => (
+          <div
+            key={index}
+            onClick={() => setSelectedImage(index)}
+            className={`relative w-full aspect-[444/565] bg-gray-100 overflow-hidden transition-all cursor-pointer ${
+              selectedImage === index
+                ? "ring-2 ring-[#232D35]"
+                : "hover:opacity-80"
+            }`}
+          >
+            <Image
+              src={image.url}
+              alt={image.alt || `Product image ${index + 1}`}
+              fill
+              className="object-cover"
+              priority={index === 0}
+            />
+          </div>
+        ))}
       </div>
-
-      {/* Thumbnail Grid - 2 columns */}
-      {displayImages.length > 1 && (
-        <div className="grid grid-cols-2 gap-[16px]">
-          {displayImages.slice(1, 6).map((image, index) => (
-            <button
-              key={index + 1}
-              onClick={() => setSelectedImage(index + 1)}
-              className={`relative w-full aspect-[444/565] bg-gray-100 overflow-hidden transition-opacity ${
-                selectedImage === index + 1 ? "ring-2 ring-[#232D35]" : "hover:opacity-80"
-              }`}
-            >
-              <Image
-                src={image.url}
-                alt={image.alt || `Product image ${index + 2}`}
-                fill
-                className="object-cover"
-              />
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

@@ -320,6 +320,13 @@ export class ProductController {
         });
 
         // Map enriched data to response
+        const mappedImages = enrichedProduct?.media?.map(m => ({
+          url: m.asset.storageKey,
+          alt: m.asset.altText,
+          width: m.asset.width,
+          height: m.asset.height,
+        })) || [];
+
         const productWithDetails = {
           ...result.data,
           variants: enrichedProduct?.variants?.map(v => {
@@ -338,12 +345,7 @@ export class ProductController {
               inventory: totalInventory,
             };
           }) || [],
-          images: enrichedProduct?.media?.map(m => ({
-            url: m.asset.storageKey,
-            alt: m.asset.altText,
-            width: m.asset.width,
-            height: m.asset.height,
-          })) || [],
+          images: mappedImages,
           categories: enrichedProduct?.categories?.map(pc => ({
             id: pc.category.id,
             name: pc.category.name,
