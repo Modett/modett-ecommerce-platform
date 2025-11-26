@@ -295,9 +295,66 @@ export class ProductController {
       const result = await this.getProductHandler.handle(query);
 
       if (result.success && result.data) {
+        // Enrich product with variants and media from Prisma
+        const enrichedProduct = await this.prisma.product.findUnique({
+          where: { id: result.data.productId },
+          include: {
+            variants: {
+              orderBy: { price: 'asc' },
+              include: {
+                inventoryStocks: true,
+              },
+            },
+            media: {
+              include: {
+                asset: true,
+              },
+              orderBy: { position: 'asc' },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        });
+
+        // Map enriched data to response
+        const productWithDetails = {
+          ...result.data,
+          variants: enrichedProduct?.variants?.map(v => {
+            // Calculate total inventory across all locations
+            const totalInventory = v.inventoryStocks?.reduce((sum, stock) => {
+              return sum + (stock.onHand - stock.reserved);
+            }, 0) || 0;
+
+            return {
+              id: v.id,
+              sku: v.sku,
+              size: v.size,
+              color: v.color,
+              price: v.price.toString(),
+              compareAtPrice: v.compareAtPrice?.toString(),
+              inventory: totalInventory,
+            };
+          }) || [],
+          images: enrichedProduct?.media?.map(m => ({
+            url: m.asset.storageKey,
+            alt: m.asset.altText,
+            width: m.asset.width,
+            height: m.asset.height,
+          })) || [],
+          categories: enrichedProduct?.categories?.map(pc => ({
+            id: pc.category.id,
+            name: pc.category.name,
+            slug: pc.category.slug,
+            position: pc.category.position,
+          })) || [],
+        };
+
         return reply.code(200).send({
           success: true,
-          data: result.data,
+          data: productWithDetails,
         });
       } else {
         return reply.code(404).send({
