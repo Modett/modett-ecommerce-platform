@@ -24,7 +24,7 @@ export function OrderSummary({
   };
 
   return (
-    <div className="w-full max-w-[400px] bg-[#F5F3EE] p-[32px]">
+    <div className="w-[300px] h-[716px] bg-[#F5F3EE] p-[32px]">
       {/* Subtotal */}
       <div className="mb-[24px]">
         <div className="flex items-center justify-between mb-[8px]">

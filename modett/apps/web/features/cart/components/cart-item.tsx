@@ -56,12 +56,12 @@ export function CartItem({
   const totalPrice = price * quantity;
 
   return (
-    <div className="w-full border-b border-[#E5E0D6] py-[24px]">
-      <div className="grid grid-cols-12 gap-[16px] items-center">
+    <div className="w-full border-b border-[#E8F5F2] py-[16px] bg-[#E5E0D6]">
+      <div className="grid grid-cols-12 gap-[16px] px-[16px] items-center">
         {/* Product Image (Col span 5) */}
         <div className="col-span-5">
           <Link href={`/product/${slug}`} className="block w-fit">
-            <div className="relative w-[120px] h-[150px] bg-gray-100 overflow-hidden">
+            <div className="relative w-[150px] h-[191px] bg-gray-100 overflow-hidden">
               <Image
                 src={image}
                 alt={title}
@@ -72,8 +72,8 @@ export function CartItem({
           </Link>
         </div>
 
-        {/* Description (Col span 3) */}
-        <div className="col-span-3 flex flex-col gap-[8px]">
+        {/* Description (Col span 2) */}
+        <div className="col-span-2 flex flex-col gap-[8px]">
           <div className="flex flex-col gap-[4px]">
             <span className="text-[10px] leading-[14px] font-medium tracking-[1px] text-[#6B7B8A] uppercase">
               SKU: {productId.substring(0, 12)}...
@@ -111,6 +111,9 @@ export function CartItem({
             Product details
           </button>
         </div>
+
+        {/* Empty spacer (Col span 1) */}
+        <div className="col-span-1"></div>
 
         {/* Quantity (Col span 2) */}
         <div className="col-span-2">

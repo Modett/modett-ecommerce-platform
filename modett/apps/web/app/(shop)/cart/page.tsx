@@ -42,18 +42,30 @@ export default function CartPage() {
   });
 
   const handleQuantityChange = async (
-    cartItemId: string,
+    variantId: string,
     newQuantity: number
   ) => {
-    // TODO: Implement quantity update API call
-    console.log("Update quantity:", cartItemId, newQuantity);
-    await refetch();
+    if (!cartId) return;
+
+    try {
+      await cartService.updateQuantity(cartId, variantId, newQuantity);
+      await refetch();
+    } catch (error) {
+      console.error("Failed to update quantity:", error);
+      // Optionally show error toast to user
+    }
   };
 
-  const handleRemoveItem = async (cartItemId: string) => {
-    // TODO: Implement remove item API call
-    console.log("Remove item:", cartItemId);
-    await refetch();
+  const handleRemoveItem = async (variantId: string) => {
+    if (!cartId) return;
+
+    try {
+      await cartService.removeItem(cartId, variantId);
+      await refetch();
+    } catch (error) {
+      console.error("Failed to remove item:", error);
+      // Optionally show error toast to user
+    }
   };
 
   if (isLoading) {
@@ -99,50 +111,54 @@ export default function CartPage() {
       ) : (
         <>
           {/* Cart Section */}
-          <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[80px] py-[64px]">
-            <h1
-              className="text-[32px] leading-[40px] font-medium mb-[48px]"
-              style={{
-                fontFamily: "Playfair Display, serif",
-                color: "#232D35",
-              }}
-            >
-              Shopping Cart
-            </h1>
+          <div className="w-full max-w-[1440px] mx-auto px-[80px] py-[64px]">
+            {/* Cart Label */}
+            <div className="h-[24px] mb-[48px]">
+              <span
+                className="text-[16px] leading-[24px] font-medium uppercase tracking-[4px]"
+                style={{
+                  fontFamily: "Raleway, sans-serif",
+                  color: "#765C4D",
+                }}
+              >
+                CART
+              </span>
+            </div>
 
             <div className="flex flex-col lg:flex-row gap-[80px]">
               {/* Cart Items Table */}
-              <div className="flex-1">
+              <div className="w-full lg:w-[904px]">
                 {/* Table Header */}
-                <div className="grid grid-cols-12 gap-[16px] pb-[16px] border-b border-[#D4C4A8] mb-[8px]">
+                <div className="grid grid-cols-12 gap-[16px] h-[56px] px-[16px] items-center border-b border-[#E5E0D6] bg-[#E5E0D6]">
                   <div className="col-span-5">
                     <span
-                      className="text-[12px] leading-[18px] font-medium uppercase tracking-[2px]"
+                      className="text-[14px] leading-[24px] font-normal tracking-[1.03px]"
                       style={{
                         fontFamily: "Raleway, sans-serif",
-                        color: "#6B7B8A",
+                        color: "#765C4D",
                       }}
                     >
                       Product
                     </span>
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <span
-                      className="text-[12px] leading-[18px] font-medium uppercase tracking-[2px]"
+                      className="text-[14px] leading-[24px] font-normal tracking-[1.03px]"
                       style={{
                         fontFamily: "Raleway, sans-serif",
-                        color: "#6B7B8A",
+                        color: "#765C4D",
                       }}
                     >
                       Description
                     </span>
                   </div>
+                  <div className="col-span-1"></div>
                   <div className="col-span-2">
                     <span
-                      className="text-[12px] leading-[18px] font-medium uppercase tracking-[2px]"
+                      className="text-[14px] leading-[24px] font-normal tracking-[1.03px]"
                       style={{
                         fontFamily: "Raleway, sans-serif",
-                        color: "#6B7B8A",
+                        color: "#765C4D",
                       }}
                     >
                       Quantity
@@ -150,10 +166,10 @@ export default function CartPage() {
                   </div>
                   <div className="col-span-2 text-right">
                     <span
-                      className="text-[12px] leading-[18px] font-medium uppercase tracking-[2px]"
+                      className="text-[14px] leading-[24px] font-normal tracking-[1.03px]"
                       style={{
                         fontFamily: "Raleway, sans-serif",
-                        color: "#6B7B8A",
+                        color: "#765C4D",
                       }}
                     >
                       Price
@@ -162,23 +178,29 @@ export default function CartPage() {
                 </div>
 
                 {/* Cart Items */}
-                <div className="flex flex-col">
-                  {cart.items.map((item, index) => (
+                <div className="flex flex-col gap-[24px] pt-[24px]">
+                  {cart.items.map((item, index) => {
+                    const slug = item.product?.slug || "";
+                    return (
                     <CartItem
                       key={item.id || item.cartItemId || `cart-item-${index}`}
-                      cartItemId={item.id || item.cartItemId || item.variantId}
+                      cartItemId={item.variantId}
                       productId={item.product?.productId || item.variantId}
-                      slug={item.product?.slug || ""}
+                      slug={slug}
                       title={item.product?.title || "Product"}
                       price={item.unitPrice}
-                      image={item.product?.images?.[0]?.url || "/placeholder-product.jpg"}
+                      image={
+                        item.product?.images?.[0]?.url ||
+                        "/placeholder-product.jpg"
+                      }
                       color={item.variant?.color || undefined}
                       size={item.variant?.size || undefined}
                       quantity={item.quantity}
                       onQuantityChange={handleQuantityChange}
                       onRemove={handleRemoveItem}
                     />
-                  ))}
+                  );
+                })}
                 </div>
               </div>
 

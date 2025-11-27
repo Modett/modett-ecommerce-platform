@@ -75,9 +75,6 @@ class CartService {
     }
   }
 
-  /**
-   * Generate a guest token for anonymous users
-   */
   async generateGuestToken(): Promise<string> {
     try {
       const { data } = await cartApiClient.get("/generate-guest-token");
@@ -96,9 +93,6 @@ class CartService {
     }
   }
 
-  /**
-   * Get the current guest token, generating one if needed
-   */
   private async getGuestToken(): Promise<string> {
     if (!this.guestToken) {
       this.guestToken = await this.generateGuestToken();
@@ -106,12 +100,8 @@ class CartService {
     return this.guestToken;
   }
 
-  /**
-   * Add an item to cart
-   */
   async addToCart(params: AddToCartParams): Promise<Cart> {
     try {
-      // Get or generate guest token
       const token = await this.getGuestToken();
 
       const { data } = await cartApiClient.post(
@@ -142,9 +132,6 @@ class CartService {
     }
   }
 
-  /**
-   * Get cart by ID
-   */
   async getCart(cartId: string): Promise<Cart> {
     try {
       const token = await this.getGuestToken();
@@ -166,6 +153,55 @@ class CartService {
     }
   }
 
+  async updateQuantity(
+    cartId: string,
+    variantId: string,
+    quantity: number
+  ): Promise<Cart> {
+    try {
+      const token = await this.getGuestToken();
+
+      const { data } = await cartApiClient.put(
+        `/carts/${cartId}/items/${variantId}`,
+        { quantity },
+        {
+          headers: {
+            "X-Guest-Token": token,
+          },
+        }
+      );
+
+      return data.data;
+    } catch (error: any) {
+      console.error("Failed to update cart item:", error);
+      throw new Error(
+        error.response?.data?.error || "Failed to update cart item"
+      );
+    }
+  }
+
+  async removeItem(cartId: string, variantId: string): Promise<Cart> {
+    try {
+      const token = await this.getGuestToken();
+
+      const { data } = await cartApiClient.delete(
+        `/carts/${cartId}/items/${variantId}`,
+        {
+          headers: {
+            "X-Guest-Token": token,
+          },
+        }
+      );
+
+      return data.data;
+    } catch (error: any) {
+      console.error("Failed to remove cart item:", error);
+      throw new Error(
+        error.response?.data?.error || "Failed to remove cart item"
+      );
+    }
+  }
+
   private persistCartId(cartId: string) {
     this.cartId = cartId;
     if (typeof window !== "undefined") {
@@ -173,9 +209,6 @@ class CartService {
     }
   }
 
-  /**
-   * Clear guest token (for logout or token expiry)
-   */
   clearGuestToken(): void {
     if (typeof window !== "undefined") {
       localStorage.removeItem(GUEST_TOKEN_KEY);
