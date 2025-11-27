@@ -12,38 +12,39 @@ import { ProductCard } from "@/features/product-catalog/components/product-card"
 export default function CartPage() {
   const [cartId, setCartId] = useState<string | null>(null);
 
-  // Get cart ID from localStorage
+  // Get cart ID from localStorage or generate
   useEffect(() => {
     const storedCartId = localStorage.getItem("modett_cart_id");
-    console.log("Stored cart ID:", storedCartId);
     if (storedCartId) {
       setCartId(storedCartId);
     }
   }, []);
 
-  const { data: cart, isLoading, error, refetch } = useQuery({
+  const {
+    data: cart,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["cart", cartId],
     queryFn: async () => {
-      if (!cartId) {
-        console.log("No cart ID available");
-        return null;
-      }
-      console.log("Fetching cart with ID:", cartId);
-      const result = await cartService.getCart(cartId);
-      console.log("Cart data:", result);
-      return result;
+      if (!cartId) return null;
+      const cartData = await cartService.getCart(cartId);
+      console.log("Cart API Response:", cartData);
+      console.log("First item product data:", cartData?.items?.[0]?.product);
+      return cartData;
     },
     enabled: !!cartId,
   });
-
-  console.log("Cart state:", { cartId, cart, isLoading, error, isEmpty: !cart || !cart.items || cart.items.length === 0 });
 
   const { data: recommendedProducts } = useQuery({
     queryKey: ["cart-recommendations"],
     queryFn: () => productService.getFeaturedProducts(6),
   });
 
-  const handleQuantityChange = async (cartItemId: string, newQuantity: number) => {
+  const handleQuantityChange = async (
+    cartItemId: string,
+    newQuantity: number
+  ) => {
     // TODO: Implement quantity update API call
     console.log("Update quantity:", cartItemId, newQuantity);
     await refetch();
@@ -73,7 +74,10 @@ export default function CartPage() {
           <div className="text-center">
             <h1
               className="text-[32px] leading-[40px] font-medium mb-[24px]"
-              style={{ fontFamily: "Playfair Display, serif", color: "#232D35" }}
+              style={{
+                fontFamily: "Playfair Display, serif",
+                color: "#232D35",
+              }}
             >
               Your cart is empty
             </h1>
@@ -98,7 +102,10 @@ export default function CartPage() {
           <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[80px] py-[64px]">
             <h1
               className="text-[32px] leading-[40px] font-medium mb-[48px]"
-              style={{ fontFamily: "Playfair Display, serif", color: "#232D35" }}
+              style={{
+                fontFamily: "Playfair Display, serif",
+                color: "#232D35",
+              }}
             >
               Shopping Cart
             </h1>
@@ -111,7 +118,10 @@ export default function CartPage() {
                   <div className="col-span-5">
                     <span
                       className="text-[12px] leading-[18px] font-medium uppercase tracking-[2px]"
-                      style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+                      style={{
+                        fontFamily: "Raleway, sans-serif",
+                        color: "#6B7B8A",
+                      }}
                     >
                       Product
                     </span>
@@ -119,7 +129,10 @@ export default function CartPage() {
                   <div className="col-span-3">
                     <span
                       className="text-[12px] leading-[18px] font-medium uppercase tracking-[2px]"
-                      style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+                      style={{
+                        fontFamily: "Raleway, sans-serif",
+                        color: "#6B7B8A",
+                      }}
                     >
                       Description
                     </span>
@@ -127,7 +140,10 @@ export default function CartPage() {
                   <div className="col-span-2">
                     <span
                       className="text-[12px] leading-[18px] font-medium uppercase tracking-[2px]"
-                      style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+                      style={{
+                        fontFamily: "Raleway, sans-serif",
+                        color: "#6B7B8A",
+                      }}
                     >
                       Quantity
                     </span>
@@ -135,7 +151,10 @@ export default function CartPage() {
                   <div className="col-span-2 text-right">
                     <span
                       className="text-[12px] leading-[18px] font-medium uppercase tracking-[2px]"
-                      style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+                      style={{
+                        fontFamily: "Raleway, sans-serif",
+                        color: "#6B7B8A",
+                      }}
                     >
                       Price
                     </span>
@@ -144,17 +163,17 @@ export default function CartPage() {
 
                 {/* Cart Items */}
                 <div className="flex flex-col">
-                  {cart.items.map((item) => (
+                  {cart.items.map((item, index) => (
                     <CartItem
-                      key={item.cartItemId}
-                      cartItemId={item.cartItemId}
-                      productId={item.variantId}
-                      slug="product-slug" // TODO: Get from API
-                      title="Crispy silk shirt" // TODO: Get from API
+                      key={item.id || item.cartItemId || `cart-item-${index}`}
+                      cartItemId={item.id || item.cartItemId || item.variantId}
+                      productId={item.product?.productId || item.variantId}
+                      slug={item.product?.slug || ""}
+                      title={item.product?.title || "Product"}
                       price={item.unitPrice}
-                      image="/placeholder-product.jpg" // TODO: Get from API
-                      color="WHITE" // TODO: Get from API
-                      size="S" // TODO: Get from API
+                      image={item.product?.images?.[0]?.url || "/placeholder-product.jpg"}
+                      color={item.variant?.color || undefined}
+                      size={item.variant?.size || undefined}
                       quantity={item.quantity}
                       onQuantityChange={handleQuantityChange}
                       onRemove={handleRemoveItem}
@@ -180,7 +199,10 @@ export default function CartPage() {
               <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[80px]">
                 <h2
                   className="text-[24px] leading-[32px] font-normal mb-[48px]"
-                  style={{ fontFamily: "Playfair Display, serif", color: "#232D35" }}
+                  style={{
+                    fontFamily: "Playfair Display, serif",
+                    color: "#232D35",
+                  }}
                 >
                   You may also be interested in
                 </h2>
@@ -195,7 +217,9 @@ export default function CartPage() {
                       title={product.title}
                       price={product.price}
                       compareAtPrice={product.compareAtPrice}
-                      image={product.images?.[0]?.url || "/placeholder-product.jpg"}
+                      image={
+                        product.images?.[0]?.url || "/placeholder-product.jpg"
+                      }
                       variants={product.variants || []}
                     />
                   ))}

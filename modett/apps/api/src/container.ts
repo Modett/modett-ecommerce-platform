@@ -468,7 +468,10 @@ export function createServiceContainer(): ServiceContainer {
   const cartManagementService = new CartManagementService(
     cartRepository,
     reservationRepository,
-    productVariantRepository
+    productVariantRepository,
+    productRepository,
+    productMediaRepository,
+    mediaAssetRepository
   );
   const reservationService = new ReservationService(
     reservationRepository,

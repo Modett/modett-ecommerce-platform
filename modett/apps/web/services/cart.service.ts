@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const GUEST_TOKEN_KEY = "modett_guest_token";
+const CART_ID_KEY = "modett_cart_id";
 
 // Create a separate axios instance for cart API
 const cartApiClient = axios.create({
@@ -21,12 +22,31 @@ export interface AddToCartParams {
 }
 
 export interface CartItem {
-  cartItemId: string;
+  id: string;
+  cartItemId?: string; // Deprecated, use id
   variantId: string;
   quantity: number;
   unitPrice: number;
+  subtotal: number;
+  discountAmount: number;
+  totalPrice: number;
   isGift: boolean;
   giftMessage?: string;
+  hasPromosApplied: boolean;
+  hasFreeShipping: boolean;
+  // Product details from enriched API response
+  product?: {
+    productId: string;
+    title: string;
+    slug: string;
+    images: Array<{ url: string; alt?: string }>;
+  };
+  // Variant details from enriched API response
+  variant?: {
+    size: string | null;
+    color: string | null;
+    sku: string;
+  };
 }
 
 export interface Cart {
@@ -45,11 +65,13 @@ export interface Cart {
 
 class CartService {
   private guestToken: string | null = null;
+  private cartId: string | null = null;
 
   constructor() {
     // Initialize guest token from localStorage if in browser
     if (typeof window !== "undefined") {
       this.guestToken = localStorage.getItem(GUEST_TOKEN_KEY);
+      this.cartId = localStorage.getItem(CART_ID_KEY);
     }
   }
 
@@ -107,6 +129,10 @@ class CartService {
         }
       );
 
+      if (data?.data?.cartId) {
+        this.persistCartId(data.data.cartId);
+      }
+
       return data.data;
     } catch (error: any) {
       console.error("Failed to add item to cart:", error);
@@ -129,10 +155,21 @@ class CartService {
         },
       });
 
+      if (data?.data?.cartId) {
+        this.persistCartId(data.data.cartId);
+      }
+
       return data.data;
     } catch (error: any) {
       console.error("Failed to get cart:", error);
       throw new Error(error.response?.data?.error || "Failed to get cart");
+    }
+  }
+
+  private persistCartId(cartId: string) {
+    this.cartId = cartId;
+    if (typeof window !== "undefined") {
+      localStorage.setItem(CART_ID_KEY, cartId);
     }
   }
 
