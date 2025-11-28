@@ -13,6 +13,7 @@ import {
   Grid3X3,
   LayoutGrid,
 } from "lucide-react";
+import { TEXT_STYLES, COMMON_CLASSES, COLORS, FONTS, RESPONSIVE } from "@/features/cart/constants/styles";
 
 export default function CollectionsPage() {
   const [showFilters, setShowFilters] = useState(true);
@@ -146,32 +147,32 @@ export default function CollectionsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#EFECE5]">
-      <div className="w-full max-w-[1440px] mx-auto h-[24px] px-4 md:px-[80px] flex items-center">
+    <main className={`min-h-screen ${COMMON_CLASSES.pageBg}`}>
+      <div className={`w-full max-w-[1440px] mx-auto h-[24px] ${RESPONSIVE.padding.page} flex items-center`}>
         <nav
-          className="text-[12px] text-[#765C4D] uppercase tracking-[2px]"
-          style={{ fontFamily: "Raleway" }}
+          className="text-[12px] uppercase tracking-[2px]"
+          style={TEXT_STYLES.accent}
         >
-          <Link href="/" className="hover:text-[#232D35] transition-colors">
+          <Link href="/" className="hover:opacity-80 transition-colors">
             HOME
           </Link>
           <span className="mx-2">/</span>
-          <span className="text-[#232D35]">COLLECTION</span>
+          <span style={{ color: COLORS.graphite }}>COLLECTION</span>
         </nav>
       </div>
 
-      <div className="w-full max-w-[768px] mx-auto h-[42px] flex flex-col items-center justify-center gap-[16px] bg-[#EFECE5]">
+      <div className={`w-full max-w-[768px] mx-auto h-[42px] flex flex-col items-center justify-center gap-[16px] ${COMMON_CLASSES.pageBg}`}>
         <h1
-          className="w-full max-w-[150px] h-[42px] text-[24px] text-[#765C4D] font-semibold leading-[130%] tracking-[0%]"
-          style={{ fontFamily: "Playfair Display, serif" }}
+          className="w-full max-w-[150px] h-[42px] text-[24px] font-semibold leading-[130%] tracking-[0%]"
+          style={TEXT_STYLES.accent}
         >
           Collection
         </h1>
       </div>
 
-      <div className="w-full max-w-[1440px] mx-auto pt-[16px] px-4 md:px-[80px] pb-[32px] flex flex-col gap-[80px] bg-[#EFECE5]">
+      <div className={`w-full max-w-[1440px] mx-auto pt-[16px] ${RESPONSIVE.padding.page} pb-[32px] flex flex-col gap-[80px] ${COMMON_CLASSES.pageBg}`}>
         <div className="w-full max-w-[1280px] mx-auto flex flex-col gap-[18px]">
-          <div className="w-full h-[41px] flex items-center justify-between border-b border-[#E5E0D6]">
+          <div className="w-full h-[41px] flex items-center justify-between border-b" style={{ borderColor: COLORS.alabaster }}>
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex flex-col items-start"
@@ -179,25 +180,20 @@ export default function CollectionsPage() {
               {/* First row: HIDE + chevron */}
               <div className="flex items-center gap-[16px]">
                 <span
-                  className="text-[14px] font-medium uppercase leading-[24px] text-[#6B7B8A]"
-                  style={{
-                    fontFamily: "Reddit Sans, sans-serif",
-                    letterSpacing: "3px",
-                  }}
+                  className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px]"
+                  style={TEXT_STYLES.secondary}
                 >
                   {showFilters ? "HIDE" : "SHOW"}
                 </span>
                 <ChevronLeft
-                  className={`w-4 h-4 text-[#6B7B8A] transition-transform ${showFilters ? "" : "rotate-180"}`}
+                  className="w-4 h-4 transition-transform"
+                  style={{ color: COLORS.slateGray, transform: showFilters ? "" : "rotate(180deg)" }}
                 />
               </div>
               {/* Second row: FILTERS */}
               <span
-                className="text-[14px] font-medium uppercase leading-[24px] text-[#6B7B8A]"
-                style={{
-                  fontFamily: "Reddit Sans, sans-serif",
-                  letterSpacing: "3px",
-                }}
+                className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px]"
+                style={TEXT_STYLES.secondary}
               >
                 FILTERS
               </span>
@@ -206,30 +202,24 @@ export default function CollectionsPage() {
             <div className="flex items-center gap-[19px] h-[33px]">
               <div className="flex items-center gap-2 h-[33px]">
                 <span
-                  className="text-[14px] font-medium uppercase leading-[24px] text-[#6B7B8A] whitespace-nowrap"
-                  style={{
-                    fontFamily: "Reddit Sans, sans-serif",
-                    letterSpacing: "3px",
-                  }}
+                  className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px] whitespace-nowrap"
+                  style={TEXT_STYLES.secondary}
                 >
                   SORT BY:
                 </span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full max-w-[180px] h-[33px] text-[14px] font-medium text-[#6B7B8A] bg-[#EFECE5] border-none outline-none cursor-pointer uppercase pr-2"
-                  style={{
-                    fontFamily: "Reddit Sans, sans-serif",
-                    letterSpacing: "3px",
-                  }}
+                  className={`w-full max-w-[180px] h-[33px] text-[14px] font-medium ${COMMON_CLASSES.pageBg} border-none outline-none cursor-pointer uppercase pr-2 tracking-[3px]`}
+                  style={{ ...TEXT_STYLES.secondary }}
                 >
                   <option
                     value="newest"
                     style={{
-                      backgroundColor: "#EFECE5",
-                      color: "#232D35",
+                      backgroundColor: COLORS.linen,
+                      color: COLORS.graphite,
                       padding: "8px 12px",
-                      fontFamily: "Reddit Sans, sans-serif",
+                      fontFamily: FONTS.reddit,
                       letterSpacing: "3px",
                       fontSize: "14px",
                       fontWeight: "500"
@@ -240,10 +230,10 @@ export default function CollectionsPage() {
                   <option
                     value="newest"
                     style={{
-                      backgroundColor: "#EFECE5",
-                      color: "#232D35",
+                      backgroundColor: COLORS.linen,
+                      color: COLORS.graphite,
                       padding: "8px 12px",
-                      fontFamily: "Reddit Sans, sans-serif",
+                      fontFamily: FONTS.reddit,
                       letterSpacing: "3px",
                       fontSize: "14px",
                       fontWeight: "500"
@@ -254,10 +244,10 @@ export default function CollectionsPage() {
                   <option
                     value="price_asc"
                     style={{
-                      backgroundColor: "#EFECE5",
-                      color: "#232D35",
+                      backgroundColor: COLORS.linen,
+                      color: COLORS.graphite,
                       padding: "8px 12px",
-                      fontFamily: "Reddit Sans, sans-serif",
+                      fontFamily: FONTS.reddit,
                       letterSpacing: "3px",
                       fontSize: "14px",
                       fontWeight: "500"
@@ -268,10 +258,10 @@ export default function CollectionsPage() {
                   <option
                     value="price_desc"
                     style={{
-                      backgroundColor: "#EFECE5",
-                      color: "#232D35",
+                      backgroundColor: COLORS.linen,
+                      color: COLORS.graphite,
                       padding: "8px 12px",
-                      fontFamily: "Reddit Sans, sans-serif",
+                      fontFamily: FONTS.reddit,
                       letterSpacing: "3px",
                       fontSize: "14px",
                       fontWeight: "500"
@@ -284,23 +274,24 @@ export default function CollectionsPage() {
 
               <div className="flex items-center gap-1">
                 <span
-                  className="text-[14px] font-medium text-[#3E5460] uppercase tracking-[3px] flex items-center"
+                  className="text-[14px] font-medium uppercase tracking-[3px] flex items-center"
                   style={{
-                    fontFamily: "Reddit Sans, sans-serif",
+                    fontFamily: FONTS.reddit,
                     lineHeight: "14px",
+                    color: COLORS.tealBlue,
                   }}
                 >
                   GRID
                 </span>
                 <button
                   onClick={() => setGridView("3")}
-                  className={`${gridView === "3" ? "text-[#232D35]" : "text-[#3E5460]"}`}
+                  style={{ color: gridView === "3" ? COLORS.graphite : COLORS.tealBlue }}
                 >
                   <Grid3X3 className="w-[20px] h-[20px]" />
                 </button>
                 <button
                   onClick={() => setGridView("2")}
-                  className={`${gridView === "2" ? "text-[#232D35]" : "text-[#3E5460]"}`}
+                  style={{ color: gridView === "2" ? COLORS.graphite : COLORS.tealBlue }}
                 >
                   <LayoutGrid className="w-[20px] h-[20px]" />
                 </button>
@@ -313,7 +304,7 @@ export default function CollectionsPage() {
             selectedColors.length > 0 ||
             selectedCategories.length > 0 ||
             selectedCollections.length > 0) && (
-            <div className="w-full max-w-[1280px] mx-auto min-h-[56px] flex items-center gap-[18px] border-b border-[#E5E0D6] pb-[18px] flex-wrap">
+            <div className="w-full max-w-[1280px] mx-auto min-h-[56px] flex items-center gap-[18px] border-b pb-[18px] flex-wrap" style={{ borderColor: COLORS.alabaster }}>
               {selectedCategories.map((categoryId) => {
                 const category = productTypeCategories.find(
                   (c) => c.id === categoryId
@@ -322,8 +313,10 @@ export default function CollectionsPage() {
                   <button
                     key={categoryId}
                     onClick={() => toggleCategory(categoryId)}
-                    className="h-[32px] px-[10px] py-[4px] flex items-center gap-[21px] bg-[#3E5460] hover:bg-[#2c3b44] transition-colors"
-                    style={{ fontFamily: "Raleway" }}
+                    className="h-[32px] px-[10px] py-[4px] flex items-center gap-[21px] transition-colors"
+                    style={{ backgroundColor: COLORS.tealBlue, fontFamily: FONTS.raleway }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.buttonHover}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.tealBlue}
                   >
                     <span className="text-[12px] font-medium text-white uppercase tracking-[1px] whitespace-nowrap">
                       {category.name}
@@ -340,8 +333,10 @@ export default function CollectionsPage() {
                   <button
                     key={collectionId}
                     onClick={() => toggleCollection(collectionId)}
-                    className="h-[32px] px-[10px] py-[4px] flex items-center gap-[21px] bg-[#3E5460] hover:bg-[#2c3b44] transition-colors"
-                    style={{ fontFamily: "Raleway" }}
+                    className="h-[32px] px-[10px] py-[4px] flex items-center gap-[21px] transition-colors"
+                    style={{ backgroundColor: COLORS.tealBlue, fontFamily: FONTS.raleway }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.buttonHover}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.tealBlue}
                   >
                     <span className="text-[12px] font-medium text-white uppercase tracking-[1px] whitespace-nowrap">
                       {collection.name}
@@ -354,15 +349,17 @@ export default function CollectionsPage() {
                 <button
                   key={color}
                   onClick={() => toggleColor(color)}
-                  className="h-[32px] px-[10px] py-[4px] flex items-center gap-[21px] bg-[#3E5460] hover:bg-[#2c3b44] transition-colors"
-                  style={{ fontFamily: "Raleway" }}
+                  className="h-[32px] px-[10px] py-[4px] flex items-center gap-[21px] transition-colors"
+                  style={{ backgroundColor: COLORS.tealBlue, fontFamily: FONTS.raleway }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.buttonHover}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.tealBlue}
                 >
                   <div className="flex items-center gap-2">
                     <div
                       className="w-3 h-3 rounded-full border"
                       style={{
                         backgroundColor: getColorHex(color),
-                        borderColor: "#FFFFFF",
+                        borderColor: COLORS.white,
                         borderWidth: "1px",
                       }}
                     />
@@ -377,8 +374,10 @@ export default function CollectionsPage() {
                 <button
                   key={size}
                   onClick={() => toggleSize(size)}
-                  className="w-full max-w-[120px] h-[32px] pt-[4px] pr-[9px] pb-[4px] pl-[10px] flex items-center gap-[21px] bg-[#3E5460] hover:bg-[#2c3b44] transition-colors"
-                  style={{ fontFamily: "Raleway" }}
+                  className="w-full max-w-[120px] h-[32px] pt-[4px] pr-[9px] pb-[4px] pl-[10px] flex items-center gap-[21px] transition-colors"
+                  style={{ backgroundColor: COLORS.tealBlue, fontFamily: FONTS.raleway }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.buttonHover}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.tealBlue}
                 >
                   <span className="text-[12px] font-medium text-white uppercase tracking-[1px] whitespace-nowrap">
                     SIZE:{size}
@@ -394,35 +393,35 @@ export default function CollectionsPage() {
               <aside className="w-full max-w-[250px] flex-shrink-0" key={filterKey}>
                 <div className="flex items-center justify-between mb-4">
                   <span
-                    className="text-[12px] text-[#765C4D] uppercase tracking-[2px]"
-                    style={{ fontFamily: "Raleway" }}
+                    className="text-[12px] uppercase tracking-[2px]"
+                    style={TEXT_STYLES.accent}
                   >
                     FILTER BY
                   </span>
                   <button
                     onClick={handleClearFilters}
-                    className="w-full max-w-[89px] h-[24px] pt-[4px] pr-[9px] pb-[4px] pl-[10px] text-[12px] text-[#765C4D] flex items-center justify-center hover:bg-[#E5E0D6] transition-colors rounded whitespace-nowrap"
-                    style={{ fontFamily: "Raleway" }}
+                    className={`w-full max-w-[89px] h-[24px] pt-[4px] pr-[9px] pb-[4px] pl-[10px] text-[12px] flex items-center justify-center hover:${COMMON_CLASSES.cartItemBg} transition-colors rounded whitespace-nowrap`}
+                    style={TEXT_STYLES.accent}
                   >
                     Clear Filters
                   </button>
                 </div>
 
-                <div className="border-t border-[#D4C4A8] py-3">
+                <div className={`border-t ${COMMON_CLASSES.borderPrimary} py-3`}>
                   <button
                     onClick={() => setCategoriesOpen(!categoriesOpen)}
                     className="flex items-center justify-between w-full"
                   >
                     <span
-                      className="text-[12px] text-[#765C4D] uppercase tracking-[2px]"
-                      style={{ fontFamily: "Raleway" }}
+                      className="text-[12px] uppercase tracking-[2px]"
+                      style={TEXT_STYLES.accent}
                     >
                       CATEGORIES
                     </span>
                     {categoriesOpen ? (
-                      <ChevronUp className="w-4 h-4 text-[#765C4D]" />
+                      <ChevronUp className="w-4 h-4" style={{ color: COLORS.richUmber }} />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-[#765C4D]" />
+                      <ChevronDown className="w-4 h-4" style={{ color: COLORS.richUmber }} />
                     )}
                   </button>
                   {categoriesOpen && (
@@ -430,14 +429,15 @@ export default function CollectionsPage() {
                       {productTypeCategories?.map((category: any) => (
                         <label
                           key={category.id}
-                          className="flex items-center gap-2 text-[12px] text-[#765C4D] cursor-pointer"
-                          style={{ fontFamily: "Raleway" }}
+                          className="flex items-center gap-2 text-[12px] cursor-pointer"
+                          style={TEXT_STYLES.accent}
                         >
                           <input
                             type="checkbox"
                             checked={selectedCategories.includes(category.id)}
                             onChange={() => toggleCategory(category.id)}
-                            className="w-4 h-4 accent-[#3E5460]"
+                            className="w-4 h-4"
+                            style={{ accentColor: COLORS.tealBlue }}
                           />
                           {category.name}
                         </label>
@@ -446,21 +446,21 @@ export default function CollectionsPage() {
                   )}
                 </div>
 
-                <div className="border-t border-[#D4C4A8] py-3">
+                <div className={`border-t ${COMMON_CLASSES.borderPrimary} py-3`}>
                   <button
                     onClick={() => setColourOpen(!colourOpen)}
                     className="flex items-center justify-between w-full"
                   >
                     <span
-                      className="text-[12px] text-[#765C4D] uppercase tracking-[2px]"
-                      style={{ fontFamily: "Raleway" }}
+                      className="text-[12px] uppercase tracking-[2px]"
+                      style={TEXT_STYLES.accent}
                     >
                       COLOUR
                     </span>
                     {colourOpen ? (
-                      <ChevronUp className="w-4 h-4 text-[#765C4D]" />
+                      <ChevronUp className="w-4 h-4" style={{ color: COLORS.richUmber }} />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-[#765C4D]" />
+                      <ChevronDown className="w-4 h-4" style={{ color: COLORS.richUmber }} />
                     )}
                   </button>
                   {colourOpen && (
@@ -469,20 +469,21 @@ export default function CollectionsPage() {
                         (item: { id: string; count: number }) => (
                           <label
                             key={item.id}
-                            className="flex items-center gap-2 text-[12px] text-[#765C4D] cursor-pointer"
-                            style={{ fontFamily: "Raleway" }}
+                            className="flex items-center gap-2 text-[12px] cursor-pointer"
+                            style={TEXT_STYLES.accent}
                           >
                             <input
                               type="checkbox"
                               checked={selectedColors.includes(item.id)}
                               onChange={() => toggleColor(item.id)}
-                              className="w-4 h-4 accent-[#3E5460]"
+                              className="w-4 h-4"
+                              style={{ accentColor: COLORS.tealBlue }}
                             />
                             <div
                               className="w-3 h-3 rounded-full border flex-shrink-0"
                               style={{
                                 backgroundColor: getColorHex(item.id),
-                                borderColor: "#765C4D",
+                                borderColor: COLORS.richUmber,
                                 borderWidth: "1px",
                               }}
                             />
@@ -496,21 +497,21 @@ export default function CollectionsPage() {
                   )}
                 </div>
 
-                <div className="border-t border-[#D4C4A8] py-3">
+                <div className={`border-t ${COMMON_CLASSES.borderPrimary} py-3`}>
                   <button
                     onClick={() => setCollectionOpen(!collectionOpen)}
                     className="flex items-center justify-between w-full"
                   >
                     <span
-                      className="text-[12px] text-[#765C4D] uppercase tracking-[2px]"
-                      style={{ fontFamily: "Raleway" }}
+                      className="text-[12px] uppercase tracking-[2px]"
+                      style={TEXT_STYLES.accent}
                     >
                       COLLECTION
                     </span>
                     {collectionOpen ? (
-                      <ChevronUp className="w-4 h-4 text-[#765C4D]" />
+                      <ChevronUp className="w-4 h-4" style={{ color: COLORS.richUmber }} />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-[#765C4D]" />
+                      <ChevronDown className="w-4 h-4" style={{ color: COLORS.richUmber }} />
                     )}
                   </button>
                   {collectionOpen && (
@@ -518,14 +519,15 @@ export default function CollectionsPage() {
                       {collectionCategories?.map((category: any) => (
                         <label
                           key={category.id}
-                          className="flex items-center gap-2 text-[12px] text-[#765C4D] cursor-pointer"
-                          style={{ fontFamily: "Raleway" }}
+                          className="flex items-center gap-2 text-[12px] cursor-pointer"
+                          style={TEXT_STYLES.accent}
                         >
                           <input
                             type="checkbox"
                             checked={selectedCollections.includes(category.id)}
                             onChange={() => toggleCollection(category.id)}
-                            className="w-4 h-4 accent-[#3E5460]"
+                            className="w-4 h-4"
+                            style={{ accentColor: COLORS.tealBlue }}
                           />
                           {category.name}
                         </label>
@@ -534,21 +536,21 @@ export default function CollectionsPage() {
                   )}
                 </div>
 
-                <div className="border-t border-[#D4C4A8] py-3">
+                <div className={`border-t ${COMMON_CLASSES.borderPrimary} py-3`}>
                   <button
                     onClick={() => setSizeOpen(!sizeOpen)}
                     className="flex items-center justify-between w-full mb-3"
                   >
                     <span
-                      className="text-[12px] text-[#765C4D] uppercase tracking-[2px]"
-                      style={{ fontFamily: "Raleway" }}
+                      className="text-[12px] uppercase tracking-[2px]"
+                      style={TEXT_STYLES.accent}
                     >
                       SIZE
                     </span>
                     {sizeOpen ? (
-                      <ChevronUp className="w-4 h-4 text-[#765C4D]" />
+                      <ChevronUp className="w-4 h-4" style={{ color: COLORS.richUmber }} />
                     ) : (
-                      <ChevronDown className="w-4 h-4 text-[#765C4D]" />
+                      <ChevronDown className="w-4 h-4" style={{ color: COLORS.richUmber }} />
                     )}
                   </button>
                   {sizeOpen && (
@@ -556,14 +558,15 @@ export default function CollectionsPage() {
                       {sizeCounts.map((item: { id: string; count: number }) => (
                         <label
                           key={item.id}
-                          className="flex items-center gap-2 text-[12px] text-[#765C4D] cursor-pointer"
-                          style={{ fontFamily: "Raleway" }}
+                          className="flex items-center gap-2 text-[12px] cursor-pointer"
+                          style={TEXT_STYLES.accent}
                         >
                           <input
                             type="checkbox"
                             checked={selectedSizes.includes(item.id)}
                             onChange={() => toggleSize(item.id)}
-                            className="w-4 h-4 accent-[#3E5460]"
+                            className="w-4 h-4"
+                            style={{ accentColor: COLORS.tealBlue }}
                           />
                           {item.id} ({item.count})
                         </label>
@@ -623,19 +626,19 @@ export default function CollectionsPage() {
           {!isLoading && productsData && productsData.products.length > 0 && (
             <div className="w-full max-w-[1280px] h-[143px] mx-auto flex flex-col items-center justify-center gap-[24px] pt-[32px]">
               <p
-                className="text-[14px] font-medium leading-[24px] tracking-[3px] uppercase text-[#6B7B8A]"
-                style={{ fontFamily: "Reddit Sans, sans-serif" }}
+                className="text-[14px] font-medium leading-[24px] tracking-[3px] uppercase"
+                style={{ ...TEXT_STYLES.secondary }}
               >
                 {startItem}-{endItem} of {totalItems} items
               </p>
               {hasMore && (
                 <button
                   onClick={handleLoadMore}
-                  className="w-full max-w-[200px] h-[48px] px-6 py-3 bg-[#3E5460] hover:bg-[#2c3b44] transition-colors"
+                  className={`w-full max-w-[200px] h-[48px] px-6 py-3 ${COMMON_CLASSES.primaryButton}`}
                 >
                   <span
                     className="text-[14px] font-medium leading-[24px] tracking-[3px] uppercase text-white whitespace-nowrap"
-                    style={{ fontFamily: "Reddit Sans, sans-serif" }}
+                    style={{ fontFamily: FONTS.reddit }}
                   >
                     VIEW {pageSize} MORE
                   </span>

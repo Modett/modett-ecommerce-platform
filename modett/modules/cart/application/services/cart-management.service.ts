@@ -17,6 +17,11 @@ import { Quantity } from "../../domain/value-objects/quantity.vo";
 import { PromoData } from "../../domain/value-objects/applied-promos.vo";
 import { IProductVariantRepository } from "../../../product-catalog/domain/repositories/product-variant.repository";
 import { VariantId as ProductVariantId } from "../../../product-catalog/domain/value-objects/variant-id.vo";
+import { IProductRepository } from "../../../product-catalog/domain/repositories/product.repository";
+import { IProductMediaRepository } from "../../../product-catalog/domain/repositories/product-media.repository";
+import { IMediaAssetRepository } from "../../../product-catalog/domain/repositories/media-asset.repository";
+import { ProductId } from "../../../product-catalog/domain/value-objects/product-id.vo";
+import { MediaAssetId } from "../../../product-catalog/domain/entities/media-asset.entity";
 
 // DTOs for service operations
 export interface CreateCartDto {
@@ -89,6 +94,19 @@ export interface CartItemDto {
   giftMessage?: string;
   hasPromosApplied: boolean;
   hasFreeShipping: boolean;
+  // Product details
+  product?: {
+    productId: string;
+    title: string;
+    slug: string;
+    images: Array<{ url: string; alt?: string }>;
+  };
+  // Variant details
+  variant?: {
+    size: string | null;
+    color: string | null;
+    sku: string;
+  };
 }
 
 export interface CartDto {
@@ -107,7 +125,10 @@ export class CartManagementService {
   constructor(
     private readonly cartRepository: CartRepository,
     private readonly reservationRepository: ReservationRepository,
-    private readonly productVariantRepository: IProductVariantRepository
+    private readonly productVariantRepository: IProductVariantRepository,
+    private readonly productRepository: IProductRepository,
+    private readonly productMediaRepository: IProductMediaRepository,
+    private readonly mediaAssetRepository: IMediaAssetRepository
   ) {}
 
   // Cart creation
@@ -138,7 +159,7 @@ export class CartManagementService {
           console.log("Updated existing cart reservation to:", newExpiryTime);
         }
 
-        return this.mapCartToDto(existingCart);
+        return await this.mapCartToDto(existingCart);
       }
 
       // Create new cart
@@ -157,7 +178,7 @@ export class CartManagementService {
       await this.cartRepository.save(cart);
       console.log("Cart saved to database");
 
-      return this.mapCartToDto(cart);
+      return await this.mapCartToDto(cart);
     } catch (error) {
       console.error("Error creating user cart:", error);
       throw error;
@@ -189,7 +210,7 @@ export class CartManagementService {
         await this.cartRepository.update(existingCart);
         console.log("Updated existing cart reservation to:", newExpiryTime);
 
-        return this.mapCartToDto(existingCart);
+        return await this.mapCartToDto(existingCart);
       }
 
       // Create new guest cart
@@ -208,7 +229,7 @@ export class CartManagementService {
       await this.cartRepository.save(cart);
       console.log("Guest cart saved to database");
 
-      return this.mapCartToDto(cart);
+      return await this.mapCartToDto(cart);
     } catch (error) {
       console.error("Error creating guest cart:", error);
       throw error;
@@ -233,7 +254,7 @@ export class CartManagementService {
       throw new Error("Unauthorized access to cart");
     }
 
-    return this.mapCartToDto(cart);
+    return await this.mapCartToDto(cart);
   }
 
   async getActiveCartByUser(userId: string): Promise<CartDto | null> {
@@ -241,7 +262,7 @@ export class CartManagementService {
       UserId.fromString(userId)
     );
 
-    return cart ? this.mapCartToDto(cart) : null;
+    return cart ? await this.mapCartToDto(cart) : null;
   }
 
   async getActiveCartByGuestToken(guestToken: string): Promise<CartDto | null> {
@@ -249,7 +270,7 @@ export class CartManagementService {
       GuestToken.fromString(guestToken)
     );
 
-    return cart ? this.mapCartToDto(cart) : null;
+    return cart ? await this.mapCartToDto(cart) : null;
   }
 
   // Item management
@@ -364,7 +385,7 @@ export class CartManagementService {
     cart.addItem(itemData);
     await this.cartRepository.update(cart);
 
-    return this.mapCartToDto(cart);
+    return await this.mapCartToDto(cart);
   }
 
   async updateCartItem(dto: UpdateCartItemDto): Promise<CartDto> {
@@ -405,7 +426,7 @@ export class CartManagementService {
     cart.updateItemQuantity(dto.variantId, dto.quantity);
     await this.cartRepository.update(cart);
 
-    return this.mapCartToDto(cart);
+    return await this.mapCartToDto(cart);
   }
 
   async removeFromCart(dto: RemoveFromCartDto): Promise<CartDto> {
@@ -437,7 +458,7 @@ export class CartManagementService {
     cart.removeItem(dto.variantId);
     await this.cartRepository.update(cart);
 
-    return this.mapCartToDto(cart);
+    return await this.mapCartToDto(cart);
   }
 
   async clearCart(
@@ -464,7 +485,7 @@ export class CartManagementService {
     cart.clearItems();
     await this.cartRepository.update(cart);
 
-    return this.mapCartToDto(cart);
+    return await this.mapCartToDto(cart);
   }
 
   // Cart transfer and merging
@@ -506,7 +527,7 @@ export class CartManagementService {
         await this.reservationRepository.deleteByCartId(guestCart.getCartId());
         await this.cartRepository.delete(guestCart.getCartId());
 
-        return this.mapCartToDto(userCart);
+        return await this.mapCartToDto(userCart);
       }
     }
 
@@ -514,7 +535,7 @@ export class CartManagementService {
     const transferredCart = guestCart.transferToUser(dto.userId);
     await this.cartRepository.update(transferredCart);
 
-    return this.mapCartToDto(transferredCart);
+    return await this.mapCartToDto(transferredCart);
   }
 
   // Utility methods
@@ -534,15 +555,20 @@ export class CartManagementService {
     return false;
   }
 
-  private mapCartToDto(cart: ShoppingCart): CartDto {
+  private async mapCartToDto(cart: ShoppingCart): Promise<CartDto> {
     const summary = cart.getSummary();
+
+    // Map all cart items with product details
+    const items = await Promise.all(
+      cart.getItems().map((item) => this.mapCartItemToDto(item))
+    );
 
     return {
       cartId: cart.getCartId().getValue(),
       userId: cart.getUserId()?.getValue(),
       guestToken: cart.getGuestToken()?.getValue(),
       currency: cart.getCurrency().getValue(),
-      items: cart.getItems().map((item) => this.mapCartItemToDto(item)),
+      items,
       summary: summary as CartSummaryDto,
       reservationExpiresAt: cart.getReservationExpiresAt() || undefined,
       createdAt: cart.getCreatedAt(),
@@ -550,10 +576,60 @@ export class CartManagementService {
     };
   }
 
-  private mapCartItemToDto(item: CartItem): CartItemDto {
+  private async mapCartItemToDto(item: CartItem): Promise<CartItemDto> {
+    const variantId = item.getVariantId().getValue();
+
+    // Fetch variant details
+    const variant = await this.productVariantRepository.findById(
+      ProductVariantId.fromString(variantId)
+    );
+
+    let productDetails = undefined;
+    let variantDetails = undefined;
+
+    if (variant) {
+      // Get variant details
+      variantDetails = {
+        size: variant.getSize(),
+        color: variant.getColor(),
+        sku: variant.getSku().getValue(),
+      };
+
+      // Fetch product details
+      const productId = variant.getProductId();
+      const product = await this.productRepository.findById(productId);
+
+      if (product) {
+        // Fetch product images
+        const productMediaList = await this.productMediaRepository.findByProductId(
+          productId,
+          { sortBy: 'position', sortOrder: 'asc' }
+        );
+
+        const images = await Promise.all(
+          productMediaList.map(async (media) => {
+            // Convert value-objects MediaAssetId to entity MediaAssetId
+            const assetId = MediaAssetId.fromString(media.getAssetId().getValue());
+            const asset = await this.mediaAssetRepository.findById(assetId);
+            return {
+              url: asset?.getStorageKey() || '',
+              alt: asset?.getAltText() || undefined,
+            };
+          })
+        );
+
+        productDetails = {
+          productId: product.getId().getValue(),
+          title: product.getTitle(),
+          slug: product.getSlug().getValue(),
+          images,
+        };
+      }
+    }
+
     return {
       id: item.getId(),
-      variantId: item.getVariantId().getValue(),
+      variantId,
       quantity: item.getQuantity().getValue(),
       unitPrice: item.getUnitPrice(),
       subtotal: item.getSubtotal(),
@@ -564,6 +640,8 @@ export class CartManagementService {
       giftMessage: item.getGiftMessage(),
       hasPromosApplied: item.hasPromosApplied(),
       hasFreeShipping: item.hasFreeShipping(),
+      product: productDetails,
+      variant: variantDetails,
     };
   }
 

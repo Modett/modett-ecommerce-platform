@@ -131,12 +131,47 @@ export async function registerCartRoutes(
                     items: {
                       type: "object",
                       properties: {
+                        id: { type: "string", format: "uuid" },
                         cartItemId: { type: "string", format: "uuid" },
                         variantId: { type: "string", format: "uuid" },
                         quantity: { type: "integer", example: 2 },
                         unitPrice: { type: "number", example: 29.99 },
+                        subtotal: { type: "number", example: 59.98 },
+                        discountAmount: { type: "number", example: 0 },
+                        totalPrice: { type: "number", example: 59.98 },
+                        appliedPromos: { type: "array", items: { type: "object" } },
                         isGift: { type: "boolean", example: false },
                         giftMessage: { type: "string", nullable: true },
+                        hasPromosApplied: { type: "boolean", example: false },
+                        hasFreeShipping: { type: "boolean", example: false },
+                        product: {
+                          type: "object",
+                          nullable: true,
+                          properties: {
+                            productId: { type: "string", format: "uuid" },
+                            title: { type: "string", example: "V-Neck Knit Vest" },
+                            slug: { type: "string", example: "v-neck-knit-vest" },
+                            images: {
+                              type: "array",
+                              items: {
+                                type: "object",
+                                properties: {
+                                  url: { type: "string" },
+                                  alt: { type: "string", nullable: true },
+                                },
+                              },
+                            },
+                          },
+                        },
+                        variant: {
+                          type: "object",
+                          nullable: true,
+                          properties: {
+                            size: { type: "string", nullable: true },
+                            color: { type: "string", nullable: true },
+                            sku: { type: "string" },
+                          },
+                        },
                       },
                     },
                   },

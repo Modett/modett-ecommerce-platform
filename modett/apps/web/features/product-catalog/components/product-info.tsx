@@ -7,6 +7,7 @@ import { getColorHex } from "@/lib/colors";
 import { cartService } from "@/services/cart.service";
 import { wishlistService } from "@/services/wishlist.service";
 import { toast } from "sonner";
+import { TEXT_STYLES, PRODUCT_CLASSES } from "@/features/cart/constants/styles";
 
 interface Variant {
   id: string;
@@ -141,32 +142,32 @@ export function ProductInfo({ product }: ProductInfoProps) {
   );
 
   return (
-    <div className="flex flex-col gap-[10px] w-full max-w-[300px] pr-[1px] pt-[10px] sticky top-0">
+    <div className="flex flex-col gap-[8px] md:gap-[9px] lg:gap-[10px] w-full max-w-[280px] md:max-w-[290px] lg:max-w-[300px] pr-[1px] pt-[8px] md:pt-[9px] lg:pt-[10px] sticky top-0">
       {/* Product Title */}
-      <div className="flex flex-col gap-[9px] w-full max-w-[330px]">
+      <div className="flex flex-col gap-[7px] md:gap-[8px] lg:gap-[9px] w-full max-w-[300px] md:max-w-[315px] lg:max-w-[330px]">
         <h1
-          className="text-[18px] leading-[28px] font-normal"
-          style={{ fontFamily: "Raleway, sans-serif", color: "#232D35", letterSpacing: "0%" }}
+          className="text-[16px] md:text-[17px] lg:text-[18px] leading-[26px] md:leading-[27px] lg:leading-[28px] font-normal"
+          style={TEXT_STYLES.bodyGraphite}
         >
           {product.title}
         </h1>
       </div>
 
       {/* Color Selection */}
-      <div className="flex flex-col gap-[12px] w-full max-w-[299px] h-[81px] px-[15px] py-[10px] border-t border-b border-[#E5E0D6]">
+      <div className="flex flex-col gap-[10px] md:gap-[11px] lg:gap-[12px] w-full max-w-[280px] md:max-w-[289px] lg:max-w-[299px] h-[75px] md:h-[78px] lg:h-[81px] px-[13px] md:px-[14px] lg:px-[15px] py-[9px] md:py-[9.5px] lg:py-[10px] border-t border-b border-[#E5E0D6]">
         <p
-          className="text-[14px] leading-[20px] font-medium uppercase tracking-[2px]"
-          style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+          className="text-[13px] md:text-[13.5px] lg:text-[14px] leading-[19px] md:leading-[19.5px] lg:leading-[20px] font-medium uppercase tracking-[1.8px] md:tracking-[1.9px] lg:tracking-[2px]"
+          style={TEXT_STYLES.bodyGraphite}
         >
           COLOUR: {selectedColor || colors[0] || ""}
         </p>
         {colors.length > 0 && (
-          <div className="flex items-center w-[120px] h-[20px]" style={{ gap: "13.33px" }}>
+          <div className="flex items-center w-[110px] md:w-[115px] lg:w-[120px] h-[18px] md:h-[19px] lg:h-[20px]" style={{ gap: "13.33px" }}>
             {colors.map((color) => (
               <button
                 key={color}
                 onClick={() => setSelectedColor(color!)}
-                className={`w-5 h-5 rounded-full transition-all ${
+                className={`w-[18px] md:w-[19px] lg:w-5 h-[18px] md:h-[19px] lg:h-5 rounded-full transition-all ${
                   selectedColor === color ||
                   (!selectedColor && color === colors[0])
                     ? "border-[2px] border-[#232D35]"
@@ -181,32 +182,32 @@ export function ProductInfo({ product }: ProductInfoProps) {
       </div>
 
       {/* Size Selection */}
-      <div className="flex flex-col gap-[12px] w-full max-w-[299px] px-[15px] pt-[10px]">
-        <div className="flex items-center justify-between w-full max-w-[269px] h-[40px]">
+      <div className="flex flex-col gap-[10px] md:gap-[11px] lg:gap-[12px] w-full max-w-[280px] md:max-w-[289px] lg:max-w-[299px] px-[13px] md:px-[14px] lg:px-[15px] pt-[9px] md:pt-[9.5px] lg:pt-[10px]">
+        <div className="flex items-center justify-between w-full max-w-[252px] md:max-w-[260px] lg:max-w-[269px] h-[38px] md:h-[39px] lg:h-[40px]">
           <p
-            className="text-[14px] leading-[20px] font-medium uppercase tracking-[2px]"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+            className="text-[13px] md:text-[13.5px] lg:text-[14px] leading-[19px] md:leading-[19.5px] lg:leading-[20px] font-medium uppercase tracking-[1.8px] md:tracking-[1.9px] lg:tracking-[2px]"
+            style={TEXT_STYLES.bodyGraphite}
           >
             Size: {selectedSize || ""}
           </p>
           <button
-            className="text-[14px] leading-[20px] font-medium h-[40px]"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+            className="text-[13px] md:text-[13.5px] lg:text-[14px] leading-[19px] md:leading-[19.5px] lg:leading-[20px] font-medium uppercase tracking-[1.8px] md:tracking-[1.9px] lg:tracking-[2px]"
+            style={TEXT_STYLES.bodyGraphite}
           >
             Fit Chart
           </button>
         </div>
-        <div className="grid grid-cols-5 gap-[8px] w-full max-w-[269px] h-[80px]">
+        <div className="grid grid-cols-5 gap-[7px] md:gap-[7.5px] lg:gap-[8px] w-full max-w-[252px] md:max-w-[260px] lg:max-w-[269px] h-[74px] md:h-[77px] lg:h-[80px]">
           {sizes.map((size) => (
             <button
               key={size}
               onClick={() => setSelectedSize(size!)}
-              className={`h-[48px] border transition-all ${
+              className={`h-[44px] md:h-[46px] lg:h-[48px] border transition-all ${
                 selectedSize === size
                   ? "bg-[#232D35] text-white border-[#232D35]"
                   : "bg-white text-[#232D35] border-[#D4C4A8] hover:border-[#232D35]"
               }`}
-              style={{ fontFamily: "Raleway, sans-serif" }}
+              style={TEXT_STYLES.bodyGraphite}
             >
               {size}
             </button>
@@ -215,12 +216,12 @@ export function ProductInfo({ product }: ProductInfoProps) {
       </div>
 
       {/* Add to Cart & Wishlist */}
-      <div className="flex w-full max-w-[300px] pt-[16px] gap-[1px]">
+      <div className="flex w-full max-w-[280px] md:max-w-[290px] lg:max-w-[300px] pt-[14px] md:pt-[15px] lg:pt-[16px] gap-[1px]">
         <Button
           onClick={handleAddToCart}
           disabled={isAddingToCart}
-          className="flex-1 max-w-[254px] h-[50px] bg-[#232D35] text-white hover:bg-[#232D35]/90 rounded-none text-[16px] font-medium uppercase tracking-[4px] border border-[#232D35] pt-[15.5px] pr-[31px] pb-[16.5px] pl-[31px] disabled:opacity-50"
-          style={{ fontFamily: "Raleway, sans-serif" }}
+          className={`flex-1 max-w-[237px] md:max-w-[245px] lg:max-w-[254px] h-[46px] md:h-[48px] lg:h-[50px] ${PRODUCT_CLASSES.addToCartButton} text-[15px] md:text-[15.5px] lg:text-[16px] border border-[#232D35] pt-[14px] md:pt-[14.5px] lg:pt-[15.5px] pr-[28px] md:pr-[29px] lg:pr-[31px] pb-[15px] md:pb-[15.5px] lg:pb-[16.5px] pl-[28px] md:pl-[29px] lg:pl-[31px] disabled:opacity-50`}
+          style={TEXT_STYLES.button}
         >
           {isAddingToCart ? "ADDING..." : "ADD TO CART"}
         </Button>
@@ -228,36 +229,36 @@ export function ProductInfo({ product }: ProductInfoProps) {
           onClick={handleWishlist}
           disabled={isTogglingWishlist}
           variant="outline"
-          className="h-[50px] w-[46px] flex-shrink-0 bg-[#232D35] border-[#232D35] text-white hover:bg-white hover:text-[#232D35] transition-all rounded-none p-0 pl-[1px] disabled:opacity-50"
+          className="h-[46px] md:h-[48px] lg:h-[50px] w-[42px] md:w-[44px] lg:w-[46px] flex-shrink-0 bg-[#232D35] border-[#232D35] text-white hover:bg-white hover:text-[#232D35] transition-all rounded-none p-0 pl-[1px] disabled:opacity-50"
         >
           <Heart
-            className={`w-5 h-5 transition-all ${isWishlisted ? "fill-white" : ""} ${isTogglingWishlist ? "animate-pulse" : ""}`}
+            className={`w-[18px] md:w-[19px] lg:w-5 h-[18px] md:h-[19px] lg:h-5 transition-all ${isWishlisted ? "fill-white" : ""} ${isTogglingWishlist ? "animate-pulse" : ""}`}
             strokeWidth={2}
           />
         </Button>
       </div>
 
       {/* Product Description */}
-      <div className="flex flex-col w-full max-w-[300px] h-[373px] pt-[40px] gap-[8px]">
+      <div className="flex flex-col w-full max-w-[280px] md:max-w-[290px] lg:max-w-[300px] h-[350px] md:h-[361px] lg:h-[373px] pt-[36px] md:pt-[38px] lg:pt-[40px] gap-[7px] md:gap-[7.5px] lg:gap-[8px]">
         <button
           onClick={() => setIsDescriptionOpen(!isDescriptionOpen)}
-          className="flex items-center justify-between py-[20px]"
+          className="flex items-center justify-between py-[18px] md:py-[19px] lg:py-[20px]"
         >
           <span
-            className="text-[16px] leading-[24px] font-medium uppercase tracking-[2px]"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+            className="text-[15px] md:text-[15.5px] lg:text-[16px] leading-[23px] md:leading-[23.5px] lg:leading-[24px] font-medium uppercase tracking-[1.8px] md:tracking-[1.9px] lg:tracking-[2px]"
+            style={TEXT_STYLES.bodyGraphite}
           >
             DESCRIPTION
           </span>
           <ChevronDown
-            className={`w-5 h-5 transition-transform ${isDescriptionOpen ? "rotate-180" : ""}`}
+            className={`w-[18px] md:w-[19px] lg:w-5 h-[18px] md:h-[19px] lg:h-5 transition-transform ${isDescriptionOpen ? "rotate-180" : ""}`}
           />
         </button>
         {isDescriptionOpen && (
-          <div className="pb-[20px]">
+          <div className="pb-[18px] md:pb-[19px] lg:pb-[20px]">
             <p
-              className="text-[14px] leading-[22px] font-normal"
-              style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+              className="text-[13px] md:text-[13.5px] lg:text-[14px] leading-[20px] md:leading-[21px] lg:leading-[22px] font-normal"
+              style={TEXT_STYLES.bodyGraphite}
             >
               {product.description ||
                 "Crafted from 100% pure, natural silk with a refined drape. This classic shirt embodies quiet luxury with short sleeves for everyday luxury. Its advanced cut structure includes front-button details and a versatile composition. Designed to move effortlessly from day to night while maintaining a timeless elegance that defies of trend-compliance. Its a modern, contemporary elegance, making it a timeless cornerstone for the modern wardrobe."}
@@ -267,28 +268,28 @@ export function ProductInfo({ product }: ProductInfoProps) {
       </div>
 
       {/* Collapsible Sections Container */}
-      <div className="w-full max-w-[300px] h-[210px] overflow-hidden">
+      <div className="w-full max-w-[280px] md:max-w-[290px] lg:max-w-[300px] h-[195px] md:h-[202px] lg:h-[210px] overflow-hidden">
         {/* Design */}
         <div className="flex flex-col border-t border-[#D4C4A8]">
         <button
           onClick={() => setIsDesignOpen(!isDesignOpen)}
-          className="flex items-center justify-between py-[20px]"
+          className="flex items-center justify-between py-[18px] md:py-[19px] lg:py-[20px]"
         >
           <span
-            className="text-[16px] leading-[24px] font-medium uppercase tracking-[2px]"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+            className="text-[15px] md:text-[15.5px] lg:text-[16px] leading-[23px] md:leading-[23.5px] lg:leading-[24px] font-medium uppercase tracking-[1.8px] md:tracking-[1.9px] lg:tracking-[2px]"
+            style={TEXT_STYLES.bodyGraphite}
           >
             DESIGN
           </span>
           <ChevronDown
-            className={`w-5 h-5 transition-transform ${isDesignOpen ? "rotate-180" : ""}`}
+            className={`w-[18px] md:w-[19px] lg:w-5 h-[18px] md:h-[19px] lg:h-5 transition-transform ${isDesignOpen ? "rotate-180" : ""}`}
           />
         </button>
         {isDesignOpen && (
-          <div className="pb-[20px]">
+          <div className="pb-[18px] md:pb-[19px] lg:pb-[20px]">
             <p
-              className="text-[14px] leading-[22px] font-normal"
-              style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+              className="text-[13px] md:text-[13.5px] lg:text-[14px] leading-[20px] md:leading-[21px] lg:leading-[22px] font-normal"
+              style={TEXT_STYLES.bodyGraphite}
             >
               Classic shirt design with modern silhouette and refined details.
             </p>
@@ -300,23 +301,23 @@ export function ProductInfo({ product }: ProductInfoProps) {
       <div className="flex flex-col border-t border-[#D4C4A8]">
         <button
           onClick={() => setIsFabricOpen(!isFabricOpen)}
-          className="flex items-center justify-between py-[20px]"
+          className="flex items-center justify-between py-[18px] md:py-[19px] lg:py-[20px]"
         >
           <span
-            className="text-[16px] leading-[24px] font-medium uppercase tracking-[2px]"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+            className="text-[15px] md:text-[15.5px] lg:text-[16px] leading-[23px] md:leading-[23.5px] lg:leading-[24px] font-medium uppercase tracking-[1.8px] md:tracking-[1.9px] lg:tracking-[2px]"
+            style={TEXT_STYLES.bodyGraphite}
           >
             FABRIC
           </span>
           <ChevronDown
-            className={`w-5 h-5 transition-transform ${isFabricOpen ? "rotate-180" : ""}`}
+            className={`w-[18px] md:w-[19px] lg:w-5 h-[18px] md:h-[19px] lg:h-5 transition-transform ${isFabricOpen ? "rotate-180" : ""}`}
           />
         </button>
         {isFabricOpen && (
-          <div className="pb-[20px]">
+          <div className="pb-[18px] md:pb-[19px] lg:pb-[20px]">
             <p
-              className="text-[14px] leading-[22px] font-normal"
-              style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+              className="text-[13px] md:text-[13.5px] lg:text-[14px] leading-[20px] md:leading-[21px] lg:leading-[22px] font-normal"
+              style={TEXT_STYLES.bodyGraphite}
             >
               100% pure silk with natural breathability and luxurious feel.
             </p>
@@ -328,23 +329,23 @@ export function ProductInfo({ product }: ProductInfoProps) {
       <div className="flex flex-col border-t border-b border-[#D4C4A8]">
         <button
           onClick={() => setIsSustainabilityOpen(!isSustainabilityOpen)}
-          className="flex items-center justify-between py-[20px]"
+          className="flex items-center justify-between py-[18px] md:py-[19px] lg:py-[20px]"
         >
           <span
-            className="text-[16px] leading-[24px] font-medium uppercase tracking-[2px]"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+            className="text-[15px] md:text-[15.5px] lg:text-[16px] leading-[23px] md:leading-[23.5px] lg:leading-[24px] font-medium uppercase tracking-[1.8px] md:tracking-[1.9px] lg:tracking-[2px]"
+            style={TEXT_STYLES.bodyGraphite}
           >
             SUSTAINABILITY
           </span>
           <ChevronDown
-            className={`w-5 h-5 transition-transform ${isSustainabilityOpen ? "rotate-180" : ""}`}
+            className={`w-[18px] md:w-[19px] lg:w-5 h-[18px] md:h-[19px] lg:h-5 transition-transform ${isSustainabilityOpen ? "rotate-180" : ""}`}
           />
         </button>
         {isSustainabilityOpen && (
-          <div className="pb-[20px]">
+          <div className="pb-[18px] md:pb-[19px] lg:pb-[20px]">
             <p
-              className="text-[14px] leading-[22px] font-normal"
-              style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+              className="text-[13px] md:text-[13.5px] lg:text-[14px] leading-[20px] md:leading-[21px] lg:leading-[22px] font-normal"
+              style={TEXT_STYLES.bodyGraphite}
             >
               Ethically sourced materials and sustainable production practices.
             </p>
