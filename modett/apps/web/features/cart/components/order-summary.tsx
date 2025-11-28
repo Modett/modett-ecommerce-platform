@@ -24,13 +24,13 @@ export function OrderSummary({
   };
 
   return (
-    <div className="w-[300px] h-[716px] bg-[#F5F3EE] p-[32px]">
+    <div className="w-full lg:w-[300px] lg:h-[716px] bg-[#EFECE5] px-[24px] pb-[24px]">
       {/* Subtotal */}
-      <div className="mb-[24px]">
-        <div className="flex items-center justify-between mb-[8px]">
+      <div className="h-[56px] flex items-start pt-[14px] pb-[8px] border-b border-[#D4C4A8]">
+        <div className="flex items-center justify-between w-full">
           <span
-            className="text-[14px] leading-[20px] font-normal"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+            className="text-[17.7px] leading-[28px] font-normal"
+            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
           >
             Subtotal
           </span>
@@ -44,33 +44,35 @@ export function OrderSummary({
       </div>
 
       {/* Shipping */}
-      <div className="mb-[24px]">
-        <div className="flex items-center justify-between mb-[8px]">
-          <span
-            className="text-[14px] leading-[20px] font-normal"
+      <div className="mt-[10px] mb-[10px]">
+        <div className="flex flex-col gap-[6px] pb-[4px]">
+          <div className="flex items-center justify-between">
+            <span
+              className="text-[14px] leading-[20px] font-normal"
+              style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+            >
+              Shipping Times and Costs
+            </span>
+            <span
+              className="text-[14px] leading-[20px] font-medium"
+              style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+            >
+              free
+            </span>
+          </div>
+          <p
+            className="text-[12px] leading-[18px] font-normal"
             style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
           >
-            Shipping Times and Costs
-          </span>
-          <span
-            className="text-[14px] leading-[20px] font-medium"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
-          >
-            free
-          </span>
+            2 to 3 working days after receipt of order confirmation
+          </p>
         </div>
-        <p
-          className="text-[12px] leading-[18px] font-normal"
-          style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
-        >
-          2 to 3 working days after receipt of order confirmation
-        </p>
       </div>
 
       {/* Discount Code */}
-      <div className="mb-[32px]">
+      <div className="pt-[8px] mb-[32px]">
         <label
-          className="text-[14px] leading-[20px] font-medium block mb-[12px]"
+          className="text-[14px] leading-[20px] font-medium block pb-[4px] mb-[8px]"
           style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
         >
           Discount Code
@@ -81,7 +83,7 @@ export function OrderSummary({
             value={discountCode}
             onChange={(e) => setDiscountCode(e.target.value)}
             placeholder="Enter your Discount code here"
-            className="flex-1 h-[40px] px-[12px] border border-[#D4C4A8] bg-white text-[14px] placeholder:text-[#A0A0A0]"
+            className="flex-1 h-[40px] px-[12px] border border-[#D4C4A8] bg-[#EFECE5] text-[14px] placeholder:text-[#A0A0A0]"
             style={{ fontFamily: "Raleway, sans-serif" }}
           />
           <Button
@@ -96,12 +98,13 @@ export function OrderSummary({
           className="text-[11px] leading-[16px] font-normal mt-[8px]"
           style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
         >
-          This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.
+          This site is protected by reCAPTCHA and the Google Privacy Policy and
+          Terms of Service apply.
         </p>
       </div>
 
       {/* Total */}
-      <div className="flex items-center justify-between pt-[24px] border-t border-[#D4C4A8] mb-[24px]">
+      <div className="flex items-center justify-between pt-[24px] border-t border-[#D4C4A8] mb-[16px]">
         <span
           className="text-[16px] leading-[24px] font-medium"
           style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
@@ -135,22 +138,22 @@ export function OrderSummary({
         </p>
         <div className="flex items-center gap-[8px] flex-wrap">
           {/* Payment icons placeholder - replace with actual icons */}
-          <div className="w-[40px] h-[26px] bg-white border border-gray-300 rounded flex items-center justify-center text-[8px]">
+          <div className="w-[40px] h-[26px] bg-[#EFECE5] border border-gray-300 rounded flex items-center justify-center text-[8px]">
             AMEX
           </div>
-          <div className="w-[40px] h-[26px] bg-white border border-gray-300 rounded flex items-center justify-center text-[8px]">
+          <div className="w-[40px] h-[26px] bg-[#EFECE5] border border-gray-300 rounded flex items-center justify-center text-[8px]">
             VISA
           </div>
-          <div className="w-[40px] h-[26px] bg-white border border-gray-300 rounded flex items-center justify-center text-[8px]">
+          <div className="w-[40px] h-[26px] bg-[#EFECE5] border border-gray-300 rounded flex items-center justify-center text-[8px]">
             MC
           </div>
-          <div className="w-[40px] h-[26px] bg-white border border-gray-300 rounded flex items-center justify-center text-[8px]">
+          <div className="w-[40px] h-[26px] bg-[#EFECE5] border border-gray-300 rounded flex items-center justify-center text-[8px]">
             DISC
           </div>
-          <div className="w-[40px] h-[26px] bg-white border border-gray-300 rounded flex items-center justify-center text-[8px]">
+          <div className="w-[40px] h-[26px] bg-[#EFECE5] border border-gray-300 rounded flex items-center justify-center text-[8px]">
             JCB
           </div>
-          <div className="w-[40px] h-[26px] bg-white border border-gray-300 rounded flex items-center justify-center text-[8px]">
+          <div className="w-[40px] h-[26px] bg-[#EFECE5] border border-gray-300 rounded flex items-center justify-center text-[8px]">
             PP
           </div>
         </div>
@@ -174,7 +177,8 @@ export function OrderSummary({
           className="text-[12px] leading-[18px] font-normal"
           style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
         >
-          We guarantee 30 days to return or exchange, starting from the delivery date of the order. For fragrance returns, we invite you to consult the{" "}
+          We guarantee 30 days to return or exchange, starting from the delivery
+          date of the order. For fragrance returns, we invite you to consult the{" "}
           <a href="/frequently-asked-questions" className="underline">
             Frequently Asked Questions
           </a>{" "}

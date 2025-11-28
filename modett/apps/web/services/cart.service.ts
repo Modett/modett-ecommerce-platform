@@ -3,7 +3,6 @@ import axios from "axios";
 const GUEST_TOKEN_KEY = "modett_guest_token";
 const CART_ID_KEY = "modett_cart_id";
 
-// Create a separate axios instance for cart API
 const cartApiClient = axios.create({
   baseURL:
     process.env.NEXT_PUBLIC_API_URL?.replace("/catalog", "/cart") ||
@@ -23,7 +22,7 @@ export interface AddToCartParams {
 
 export interface CartItem {
   id: string;
-  cartItemId?: string; // Deprecated, use id
+  cartItemId?: string;
   variantId: string;
   quantity: number;
   unitPrice: number;
@@ -34,14 +33,14 @@ export interface CartItem {
   giftMessage?: string;
   hasPromosApplied: boolean;
   hasFreeShipping: boolean;
-  // Product details from enriched API response
+
   product?: {
     productId: string;
     title: string;
     slug: string;
     images: Array<{ url: string; alt?: string }>;
   };
-  // Variant details from enriched API response
+
   variant?: {
     size: string | null;
     color: string | null;

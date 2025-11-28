@@ -52,7 +52,6 @@ export default function CartPage() {
       await refetch();
     } catch (error) {
       console.error("Failed to update quantity:", error);
-      // Optionally show error toast to user
     }
   };
 
@@ -64,7 +63,6 @@ export default function CartPage() {
       await refetch();
     } catch (error) {
       console.error("Failed to remove item:", error);
-      // Optionally show error toast to user
     }
   };
 
@@ -81,7 +79,6 @@ export default function CartPage() {
   return (
     <main className="w-full bg-[#EFECE5]">
       {isEmpty ? (
-        /* Empty Cart State */
         <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[80px] py-[80px]">
           <div className="text-center">
             <h1
@@ -110,7 +107,6 @@ export default function CartPage() {
         </div>
       ) : (
         <>
-          {/* Cart Section */}
           <div className="w-full max-w-[1440px] mx-auto px-[80px] py-[64px]">
             {/* Cart Label */}
             <div className="h-[24px] mb-[48px]">
@@ -125,12 +121,10 @@ export default function CartPage() {
               </span>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-[80px]">
-              {/* Cart Items Table */}
-              <div className="w-full lg:w-[904px]">
-                {/* Table Header */}
-                <div className="grid grid-cols-12 gap-[16px] h-[56px] px-[16px] items-center border-b border-[#E5E0D6] bg-[#E5E0D6]">
-                  <div className="col-span-5">
+            <div className="flex flex-col lg:flex-row gap-[40px] lg:items-start">
+              <div className="w-full lg:w-[884px]">
+                <div className="flex h-[56px] px-[16px] items-center gap-[24px] border-b border-[#E5E0D6] bg-[#E5E0D6]">
+                  <div className="w-[149.61px] h-[21px]">
                     <span
                       className="text-[14px] leading-[24px] font-normal tracking-[1.03px]"
                       style={{
@@ -141,7 +135,7 @@ export default function CartPage() {
                       Product
                     </span>
                   </div>
-                  <div className="col-span-2">
+                  <div className="w-[342.02px] h-[24px] pl-[20px]">
                     <span
                       className="text-[14px] leading-[24px] font-normal tracking-[1.03px]"
                       style={{
@@ -152,10 +146,9 @@ export default function CartPage() {
                       Description
                     </span>
                   </div>
-                  <div className="col-span-1"></div>
-                  <div className="col-span-2">
+                  <div className="w-[70px] h-[21px] pr-[14.8px]">
                     <span
-                      className="text-[14px] leading-[24px] font-normal tracking-[1.03px]"
+                      className="text-[14px] leading-[24px] font-normal tracking-[1.03px] inline-block -ml-[30px]"
                       style={{
                         fontFamily: "Raleway, sans-serif",
                         color: "#765C4D",
@@ -164,7 +157,7 @@ export default function CartPage() {
                       Quantity
                     </span>
                   </div>
-                  <div className="col-span-2 text-right">
+                  <div className="w-[112px] h-[24px] text-right">
                     <span
                       className="text-[14px] leading-[24px] font-normal tracking-[1.03px]"
                       style={{
@@ -182,25 +175,25 @@ export default function CartPage() {
                   {cart.items.map((item, index) => {
                     const slug = item.product?.slug || "";
                     return (
-                    <CartItem
-                      key={item.id || item.cartItemId || `cart-item-${index}`}
-                      cartItemId={item.variantId}
-                      productId={item.product?.productId || item.variantId}
-                      slug={slug}
-                      title={item.product?.title || "Product"}
-                      price={item.unitPrice}
-                      image={
-                        item.product?.images?.[0]?.url ||
-                        "/placeholder-product.jpg"
-                      }
-                      color={item.variant?.color || undefined}
-                      size={item.variant?.size || undefined}
-                      quantity={item.quantity}
-                      onQuantityChange={handleQuantityChange}
-                      onRemove={handleRemoveItem}
-                    />
-                  );
-                })}
+                      <CartItem
+                        key={item.id || item.cartItemId || `cart-item-${index}`}
+                        cartItemId={item.variantId}
+                        productId={item.product?.productId || item.variantId}
+                        slug={slug}
+                        title={item.product?.title || "Product"}
+                        price={item.unitPrice}
+                        image={
+                          item.product?.images?.[0]?.url ||
+                          "/placeholder-product.jpg"
+                        }
+                        color={item.variant?.color || undefined}
+                        size={item.variant?.size || undefined}
+                        quantity={item.quantity}
+                        onQuantityChange={handleQuantityChange}
+                        onRemove={handleRemoveItem}
+                      />
+                    );
+                  })}
                 </div>
               </div>
 

@@ -57,107 +57,117 @@ export function CartItem({
 
   return (
     <div className="w-full border-b border-[#E8F5F2] py-[16px] bg-[#E5E0D6]">
-      <div className="grid grid-cols-12 gap-[16px] px-[16px] items-center">
-        {/* Product Image (Col span 5) */}
-        <div className="col-span-5">
+      <div className="flex px-[16px] items-center gap-[24px]">
+        <div className="w-[149.61px]">
           <Link href={`/product/${slug}`} className="block w-fit">
-            <div className="relative w-[150px] h-[191px] bg-gray-100 overflow-hidden">
-              <Image
-                src={image}
-                alt={title}
-                fill
-                className="object-cover"
-              />
+            <div className="relative w-[149.61px] h-[190.88px] bg-gray-100 overflow-hidden">
+              <Image src={image} alt={title} fill className="object-cover" />
             </div>
           </Link>
         </div>
 
-        {/* Description (Col span 2) */}
-        <div className="col-span-2 flex flex-col gap-[8px]">
+        <div className="w-[342.02px] flex flex-col gap-[29px] h-[190.88px] pl-[20px]">
           <div className="flex flex-col gap-[4px]">
-            <span className="text-[10px] leading-[14px] font-medium tracking-[1px] text-[#6B7B8A] uppercase">
+            <span
+              className="text-[10px] leading-[24px] font-normal tracking-[2px] uppercase"
+              style={{
+                fontFamily: "Reddit Sans, sans-serif",
+                color: "#BBA496",
+              }}
+            >
               SKU: {productId.substring(0, 12)}...
             </span>
             <Link href={`/product/${slug}`}>
               <h3
                 className="text-[18px] leading-[26px] font-normal hover:underline"
-                style={{ fontFamily: "Playfair Display, serif", color: "#232D35" }}
+                style={{
+                  fontFamily: "Playfair Display, serif",
+                  color: "#232D35",
+                }}
               >
                 {title}
               </h3>
             </Link>
           </div>
 
-          <div className="flex flex-col gap-[4px] mt-[8px]">
+          <div className="flex flex-col gap-[4px]">
             {color && (
               <p
-                className="text-[12px] leading-[18px] font-medium uppercase tracking-[1px]"
-                style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+                className="text-[14px] leading-[24px] font-normal uppercase tracking-[1.03px] w-[362px] h-[24px]"
+                style={{ fontFamily: "Raleway, sans-serif", color: "#3E5460" }}
               >
-                COLOUR: <span className="text-[#232D35]">{color}</span>
+                COLOUR: <span className="text-[#3E5460]">{color}</span>
               </p>
             )}
             {size && (
               <p
-                className="text-[14px] leading-[20px] font-normal"
-                style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+                className="text-[14px] leading-[24px] font-normal tracking-[1.03px] w-[362px] h-[24px]"
+                style={{ fontFamily: "Raleway, sans-serif", color: "#3E5460" }}
               >
                 Size: {size}
               </p>
             )}
           </div>
-          
-          <button className="text-[12px] underline text-[#6B7B8A] hover:text-[#232D35] w-fit mt-[8px]">
+
+          <button
+            className="text-[12px] leading-[16px] w-[83px] h-[16px] text-center"
+            style={{ fontFamily: "Reddit Sans, sans-serif", color: "#3E5460" }}
+          >
             Product details
           </button>
         </div>
 
-        {/* Empty spacer (Col span 1) */}
-        <div className="col-span-1"></div>
-
-        {/* Quantity (Col span 2) */}
-        <div className="col-span-2">
-          <div className="flex items-center border border-[#D4C4A8] w-fit bg-[#F3F0EB]">
+        {/* Quantity */}
+        <div className="w-[70px] pr-[14.8px]">
+          <div
+            className="flex items-center border border-[#BBA496] min-h-[44px] w-fit bg-[#E5E0D6] -ml-[30px]"
+            style={{ backgroundColor: "#E5E0D6" }}
+          >
             <button
               onClick={() => handleQuantityChange(quantity - 1)}
-              disabled={isUpdating || quantity <= 1}
-              className="w-[32px] h-[32px] flex items-center justify-center hover:bg-[#E5E0D6] disabled:opacity-50 disabled:cursor-not-allowed text-[#232D35]"
-              style={{ fontFamily: "Raleway, sans-serif" }}
+              disabled={quantity <= 1}
+              className="w-auto h-[44px] px-[5px] pt-[1px] pb-[1px] flex items-center justify-center bg-[#E5E0D6] hover:bg-[#D4C4A8] disabled:opacity-50 disabled:cursor-not-allowed text-[#232D35]"
+              style={{
+                fontFamily: "Raleway, sans-serif",
+                backgroundColor: "#E5E0D6",
+              }}
             >
               −
             </button>
             <span
-              className="w-[40px] h-[32px] flex items-center justify-center text-[14px] font-medium text-[#232D35]"
-              style={{ fontFamily: "Raleway, sans-serif" }}
+              className="w-auto h-[44px] px-[5px] pt-[1px] pb-[1px] flex items-center justify-center text-[14px] font-medium"
+              style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
             >
               {quantity}
             </span>
             <button
               onClick={() => handleQuantityChange(quantity + 1)}
-              disabled={isUpdating}
-              className="w-[32px] h-[32px] flex items-center justify-center hover:bg-[#E5E0D6] disabled:opacity-50 disabled:cursor-not-allowed text-[#232D35]"
-              style={{ fontFamily: "Raleway, sans-serif" }}
+              className="w-auto h-[44px] px-[5px] pt-[1px] pb-[1px] flex items-center justify-center bg-[#E5E0D6] hover:bg-[#D4C4A8] text-[#232D35]"
+              style={{
+                fontFamily: "Raleway, sans-serif",
+                backgroundColor: "#E5E0D6",
+              }}
             >
               +
             </button>
           </div>
         </div>
 
-        {/* Price (Col span 2) */}
-        <div className="col-span-2 flex items-center justify-end gap-[16px]">
+        {/* Price */}
+        <div className="w-[112px] flex items-center justify-end gap-[16px]">
           <p
-            className="text-[16px] leading-[24px] font-medium"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+            className="text-[14px] leading-[24px] font-normal tracking-[1.03px] w-[86px] h-[24px] whitespace-nowrap"
+            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
           >
             Rs {totalPrice.toFixed(2)}
           </p>
           <button
             onClick={handleRemove}
             disabled={isUpdating}
-            className="text-[#6B7B8A] hover:text-[#232D35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="text-[#765C4D] hover:text-[#232D35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Remove item"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-[13.3px] h-[13.3px]" strokeWidth={1} />
           </button>
         </div>
       </div>

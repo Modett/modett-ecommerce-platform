@@ -98,4 +98,17 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Fix for Tailwind Preflight overriding button backgrounds */
+  button.bg-\[#EFECE5\] {
+    background-color: #EFECE5 !important;
+  }
+
+  button.bg-\[#E5E0D6\] {
+    background-color: #E5E0D6 !important;
+  }
+
+  button.bg-\[#D4C4A8\] {
+    background-color: #D4C4A8 !important;
+  }
 }
