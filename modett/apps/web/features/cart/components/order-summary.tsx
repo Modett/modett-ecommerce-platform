@@ -48,8 +48,8 @@ export function OrderSummary({
         <div className="flex flex-col gap-[6px] pb-[4px]">
           <div className="flex items-center justify-between">
             <span
-              className="text-[14px] leading-[20px] font-normal"
-              style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+              className="text-[12px] leading-[18px] font-normal"
+              style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
             >
               Shipping Times and Costs
             </span>
@@ -61,8 +61,8 @@ export function OrderSummary({
             </span>
           </div>
           <p
-            className="text-[12px] leading-[18px] font-normal"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+            className="text-[10px] leading-[16px] font-normal"
+            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
           >
             2 to 3 working days after receipt of order confirmation
           </p>
@@ -70,25 +70,25 @@ export function OrderSummary({
       </div>
 
       {/* Discount Code */}
-      <div className="pt-[8px] mb-[32px]">
+      <div className="w-full h-auto pt-[8px] mb-[32px]">
         <label
-          className="text-[14px] leading-[20px] font-medium block pb-[4px] mb-[8px]"
+          className="w-full h-auto text-[14px] leading-[24px] font-medium block pb-[4px] mb-[8px] tracking-[1.03px]"
           style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
         >
           Discount Code
         </label>
-        <div className="flex gap-[8px]">
+        <div className="flex">
           <input
             type="text"
             value={discountCode}
             onChange={(e) => setDiscountCode(e.target.value)}
             placeholder="Enter your Discount code here"
-            className="flex-1 h-[40px] px-[12px] border border-[#D4C4A8] bg-[#EFECE5] text-[14px] placeholder:text-[#A0A0A0]"
+            className="w-[175px] h-[40px] pl-[12px] pr-[16px] border border-[#D4C4A8] bg-[#EFECE5] text-[12px] leading-[18px] placeholder:text-[#3E5460]"
             style={{ fontFamily: "Raleway, sans-serif" }}
           />
           <Button
             onClick={handleApplyDiscount}
-            className="w-[80px] h-[40px] bg-transparent border border-[#D4C4A8] text-[#232D35] hover:bg-[#E5E0D6] rounded-none text-[14px] font-medium uppercase tracking-[2px]"
+            className="w-[80px] h-[40px] bg-transparent border border-[#D4C4A8] text-[#232D35] hover:bg-[#E5E0D6] rounded-none text-[14px] font-medium uppercase tracking-[2px] shadow-none"
             style={{ fontFamily: "Raleway, sans-serif" }}
           >
             APPLY
@@ -96,7 +96,7 @@ export function OrderSummary({
         </div>
         <p
           className="text-[11px] leading-[16px] font-normal mt-[8px]"
-          style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+          style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
         >
           This site is protected by reCAPTCHA and the Google Privacy Policy and
           Terms of Service apply.
@@ -129,7 +129,7 @@ export function OrderSummary({
       </Button>
 
       {/* Payment Options */}
-      <div className="mb-[24px]">
+      <div className="w-full h-auto border-b border-[#D4C4A8] pb-[17px] mb-[24px]">
         <p
           className="text-[12px] leading-[18px] font-medium uppercase mb-[12px]"
           style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
@@ -193,8 +193,8 @@ export function OrderSummary({
           className="w-full flex items-center justify-between"
         >
           <span
-            className="text-[14px] leading-[20px] font-medium uppercase tracking-[2px]"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+            className="text-[16px] leading-[20px] font-medium uppercase tracking-[2px]"
+            style={{ fontFamily: "Raleway, sans-serif", color: "#3E5460" }}
           >
             MAY WE HELP YOU?
           </span>
