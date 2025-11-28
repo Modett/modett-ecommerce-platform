@@ -106,13 +106,20 @@ export function OrderSummary({
 
       {/* Total */}
       <div className={`flex items-center justify-between pt-[24px] border-t ${COMMON_CLASSES.borderPrimary} mb-[16px]`}>
-        <span
-          className="text-[16px] leading-[24px] font-medium"
-          style={TEXT_STYLES.bodySlate}
-        >
-          total
-          <span className="text-[12px]"> (Taxes inc.)</span>
-        </span>
+        <div className="flex items-center gap-1">
+          <span
+            className="w-[42.45px] h-[28px] flex items-center font-normal"
+            style={{
+              ...TEXT_STYLES.bodyGraphite,
+              fontSize: '16px',
+              lineHeight: '140%',
+              letterSpacing: '0%',
+            }}
+          >
+            total
+          </span>
+          <span className="text-[12px] leading-[24px] font-normal" style={TEXT_STYLES.bodySlate}>(Taxes inc.)</span>
+        </div>
         <span
           className="text-[18px] leading-[28px] font-bold"
           style={TEXT_STYLES.bodyGraphite}
