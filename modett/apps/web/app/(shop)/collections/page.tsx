@@ -13,6 +13,7 @@ import {
   Grid3X3,
   LayoutGrid,
 } from "lucide-react";
+import { TEXT_STYLES, COMMON_CLASSES, COLORS, FONTS, RESPONSIVE } from "@/features/cart/constants/styles";
 
 export default function CollectionsPage() {
   const [showFilters, setShowFilters] = useState(true);
@@ -146,30 +147,30 @@ export default function CollectionsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#EFECE5]">
-      <div className="w-full max-w-[1440px] mx-auto h-[24px] px-4 md:px-[80px] flex items-center">
+    <main className={`min-h-screen ${COMMON_CLASSES.pageBg}`}>
+      <div className={`w-full max-w-[1440px] mx-auto h-[24px] ${RESPONSIVE.padding.page} flex items-center`}>
         <nav
-          className="text-[12px] text-[#765C4D] uppercase tracking-[2px]"
-          style={{ fontFamily: "Raleway" }}
+          className="text-[12px] uppercase tracking-[2px]"
+          style={TEXT_STYLES.accent}
         >
-          <Link href="/" className="hover:text-[#232D35] transition-colors">
+          <Link href="/" className="hover:opacity-80 transition-colors">
             HOME
           </Link>
           <span className="mx-2">/</span>
-          <span className="text-[#232D35]">COLLECTION</span>
+          <span style={{ color: COLORS.graphite }}>COLLECTION</span>
         </nav>
       </div>
 
-      <div className="w-full max-w-[768px] mx-auto h-[42px] flex flex-col items-center justify-center gap-[16px] bg-[#EFECE5]">
+      <div className={`w-full max-w-[768px] mx-auto h-[42px] flex flex-col items-center justify-center gap-[16px] ${COMMON_CLASSES.pageBg}`}>
         <h1
-          className="w-full max-w-[150px] h-[42px] text-[24px] text-[#765C4D] font-semibold leading-[130%] tracking-[0%]"
-          style={{ fontFamily: "Playfair Display, serif" }}
+          className="w-full max-w-[150px] h-[42px] text-[24px] font-semibold leading-[130%] tracking-[0%]"
+          style={TEXT_STYLES.accent}
         >
           Collection
         </h1>
       </div>
 
-      <div className="w-full max-w-[1440px] mx-auto pt-[16px] px-4 md:px-[80px] pb-[32px] flex flex-col gap-[80px] bg-[#EFECE5]">
+      <div className={`w-full max-w-[1440px] mx-auto pt-[16px] ${RESPONSIVE.padding.page} pb-[32px] flex flex-col gap-[80px] ${COMMON_CLASSES.pageBg}`}>
         <div className="w-full max-w-[1280px] mx-auto flex flex-col gap-[18px]">
           <div className="w-full h-[41px] flex items-center justify-between border-b border-[#E5E0D6]">
             <button

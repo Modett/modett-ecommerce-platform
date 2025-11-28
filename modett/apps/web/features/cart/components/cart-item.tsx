@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Trash2 } from "lucide-react";
+import { TEXT_STYLES, COMMON_CLASSES, SPACING, COLORS, RESPONSIVE } from "@/features/cart/constants/styles";
 
 interface CartItemProps {
   cartItemId: string;
@@ -56,53 +57,47 @@ export function CartItem({
   const totalPrice = price * quantity;
 
   return (
-    <div className="w-full border-b border-[#E8F5F2] py-[16px] bg-[#E5E0D6]">
-      <div className="flex px-[16px] items-center gap-[24px]">
-        <div className="w-[149.61px]">
+    <div className={`w-full ${COMMON_CLASSES.borderLight} py-3 md:py-4 lg:py-[16px] ${COMMON_CLASSES.cartItemBg}`}>
+      <div className={`flex px-3 md:px-4 lg:px-[16px] items-center ${RESPONSIVE.gap.item}`}>
+        <div className="w-[120px] md:w-[135px] lg:w-[149.61px]">
           <Link href={`/product/${slug}`} className="block w-fit">
-            <div className="relative w-[149.61px] h-[190.88px] bg-gray-100 overflow-hidden">
+            <div className="relative w-[120px] md:w-[135px] lg:w-[149.61px] h-[153px] md:h-[172px] lg:h-[190.88px] bg-gray-100 overflow-hidden">
               <Image src={image} alt={title} fill className="object-cover" />
             </div>
           </Link>
         </div>
 
-        <div className="w-[342.02px] flex flex-col gap-[29px] h-[190.88px] pl-[20px]">
-          <div className="flex flex-col gap-[4px]">
+        <div className="flex-1 md:w-[280px] lg:w-[342.02px] flex flex-col gap-5 md:gap-6 lg:gap-[29px] h-[153px] md:h-[172px] lg:h-[190.88px] pl-3 md:pl-4 lg:pl-[20px]">
+          <div className={`flex flex-col ${SPACING.tinyGap}`}>
             <span
-              className="text-[10px] leading-[24px] font-normal tracking-[2px] uppercase"
-              style={{
-                fontFamily: "Reddit Sans, sans-serif",
-                color: "#BBA496",
-              }}
+              className="text-[9px] md:text-[9.5px] lg:text-[10px] leading-[20px] md:leading-[22px] lg:leading-[24px] font-normal tracking-[1.5px] md:tracking-[1.7px] lg:tracking-[2px] uppercase"
+              style={TEXT_STYLES.sku}
             >
               SKU: {productId.substring(0, 12)}...
             </span>
             <Link href={`/product/${slug}`}>
               <h3
-                className="text-[18px] leading-[26px] font-normal hover:underline"
-                style={{
-                  fontFamily: "Playfair Display, serif",
-                  color: "#232D35",
-                }}
+                className="text-[16px] md:text-[17px] lg:text-[18px] leading-[22px] md:leading-[24px] lg:leading-[26px] font-normal hover:underline"
+                style={TEXT_STYLES.productTitle}
               >
                 {title}
               </h3>
             </Link>
           </div>
 
-          <div className="flex flex-col gap-[4px]">
+          <div className={`flex flex-col ${SPACING.tinyGap}`}>
             {color && (
               <p
-                className="text-[14px] leading-[24px] font-normal uppercase tracking-[1.03px] w-[362px] h-[24px]"
-                style={{ fontFamily: "Raleway, sans-serif", color: "#3E5460" }}
+                className="text-[12px] md:text-[13px] lg:text-[14px] leading-[20px] md:leading-[22px] lg:leading-[24px] font-normal tracking-[0.8px] md:tracking-[0.9px] lg:tracking-[1.03px] uppercase"
+                style={TEXT_STYLES.bodyTeal}
               >
-                COLOUR: <span className="text-[#3E5460]">{color}</span>
+                COLOUR: <span style={{ color: COLORS.tealBlue }}>{color}</span>
               </p>
             )}
             {size && (
               <p
-                className="text-[14px] leading-[24px] font-normal tracking-[1.03px] w-[362px] h-[24px]"
-                style={{ fontFamily: "Raleway, sans-serif", color: "#3E5460" }}
+                className="text-[12px] md:text-[13px] lg:text-[14px] leading-[20px] md:leading-[22px] lg:leading-[24px] font-normal tracking-[0.8px] md:tracking-[0.9px] lg:tracking-[1.03px]"
+                style={TEXT_STYLES.bodyTeal}
               >
                 Size: {size}
               </p>
@@ -110,43 +105,34 @@ export function CartItem({
           </div>
 
           <button
-            className="text-[12px] leading-[16px] w-[83px] h-[16px] text-center"
-            style={{ fontFamily: "Reddit Sans, sans-serif", color: "#3E5460" }}
+            className="text-[11px] md:text-[11.5px] lg:text-[12px] leading-[14px] md:leading-[15px] lg:leading-[16px] w-[75px] md:w-[79px] lg:w-[83px] h-[14px] md:h-[15px] lg:h-[16px] text-center"
+            style={TEXT_STYLES.link}
           >
             Product details
           </button>
         </div>
 
         {/* Quantity */}
-        <div className="w-[70px] pr-[14.8px]">
-          <div
-            className="flex items-center border border-[#BBA496] min-h-[44px] w-fit bg-[#E5E0D6] -ml-[30px]"
-            style={{ backgroundColor: "#E5E0D6" }}
-          >
+        <div className="w-[60px] md:w-[65px] lg:w-[70px] pr-2 md:pr-3 lg:pr-[14.8px]">
+          <div className={`flex items-center ${COMMON_CLASSES.borderSecondary} min-h-[40px] md:min-h-[42px] lg:min-h-[44px] w-fit ${COMMON_CLASSES.cartItemBg} -ml-[25px] md:-ml-[28px] lg:-ml-[30px]`}>
             <button
               onClick={() => handleQuantityChange(quantity - 1)}
               disabled={quantity <= 1}
-              className="w-auto h-[44px] px-[5px] pt-[1px] pb-[1px] flex items-center justify-center bg-[#E5E0D6] hover:bg-[#D4C4A8] disabled:opacity-50 disabled:cursor-not-allowed text-[#232D35]"
-              style={{
-                fontFamily: "Raleway, sans-serif",
-                backgroundColor: "#E5E0D6",
-              }}
+              className={`w-auto h-[40px] md:h-[42px] lg:h-[44px] px-1 md:px-1.5 lg:px-[5px] pt-[1px] pb-[1px] flex items-center justify-center ${COMMON_CLASSES.cartItemBg} hover:bg-[${COLORS.warmBeige}] disabled:opacity-50 disabled:cursor-not-allowed text-[13px] md:text-[13.5px] lg:text-[14px]`}
+              style={{ ...TEXT_STYLES.bodyGraphite }}
             >
               −
             </button>
             <span
-              className="w-auto h-[44px] px-[5px] pt-[1px] pb-[1px] flex items-center justify-center text-[14px] font-medium"
-              style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+              className="w-auto h-[40px] md:h-[42px] lg:h-[44px] px-1 md:px-1.5 lg:px-[5px] pt-[1px] pb-[1px] flex items-center justify-center text-[13px] md:text-[13.5px] lg:text-[14px] font-medium"
+              style={TEXT_STYLES.bodyGraphite}
             >
               {quantity}
             </span>
             <button
               onClick={() => handleQuantityChange(quantity + 1)}
-              className="w-auto h-[44px] px-[5px] pt-[1px] pb-[1px] flex items-center justify-center bg-[#E5E0D6] hover:bg-[#D4C4A8] text-[#232D35]"
-              style={{
-                fontFamily: "Raleway, sans-serif",
-                backgroundColor: "#E5E0D6",
-              }}
+              className={`w-auto h-[40px] md:h-[42px] lg:h-[44px] px-1 md:px-1.5 lg:px-[5px] pt-[1px] pb-[1px] flex items-center justify-center ${COMMON_CLASSES.cartItemBg} hover:bg-[${COLORS.warmBeige}] text-[13px] md:text-[13.5px] lg:text-[14px]`}
+              style={TEXT_STYLES.bodyGraphite}
             >
               +
             </button>
@@ -154,20 +140,21 @@ export function CartItem({
         </div>
 
         {/* Price */}
-        <div className="w-[112px] flex items-center justify-end gap-[16px]">
+        <div className="w-[90px] md:w-[100px] lg:w-[112px] flex items-center justify-end gap-3 md:gap-4 lg:gap-[16px]">
           <p
-            className="text-[14px] leading-[24px] font-normal tracking-[1.03px] w-[86px] h-[24px] whitespace-nowrap"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+            className="text-[12px] md:text-[13px] lg:text-[14px] leading-[20px] md:leading-[22px] lg:leading-[24px] font-normal tracking-[0.8px] md:tracking-[0.9px] lg:tracking-[1.03px] w-[70px] md:w-[78px] lg:w-[86px] h-[20px] md:h-[22px] lg:h-[24px] whitespace-nowrap"
+            style={TEXT_STYLES.bodyGraphite}
           >
             Rs {totalPrice.toFixed(2)}
           </p>
           <button
             onClick={handleRemove}
             disabled={isUpdating}
-            className="text-[#765C4D] hover:text-[#232D35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="hover:opacity-70 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+            style={{ color: COLORS.richUmber }}
             title="Remove item"
           >
-            <Trash2 className="w-[13.3px] h-[13.3px]" strokeWidth={1} />
+            <Trash2 className="w-[12px] md:w-[12.7px] lg:w-[13.3px] h-[12px] md:h-[12.7px] lg:h-[13.3px]" strokeWidth={1} />
           </button>
         </div>
       </div>

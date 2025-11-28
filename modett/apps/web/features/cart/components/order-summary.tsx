@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
+import { TEXT_STYLES, COMMON_CLASSES, SPACING, COLORS, DIMENSIONS } from "@/features/cart/constants/styles";
 
 interface OrderSummaryProps {
   subtotal: number;
@@ -24,19 +25,19 @@ export function OrderSummary({
   };
 
   return (
-    <div className="w-full lg:w-[300px] lg:h-[716px] bg-[#EFECE5] px-[24px] pb-[24px]">
+    <div className={`w-full lg:w-[${DIMENSIONS.orderSummary.width}] lg:h-[${DIMENSIONS.orderSummary.height}] ${COMMON_CLASSES.orderSummaryBg} px-[24px] pb-[24px]`}>
       {/* Subtotal */}
-      <div className="h-[56px] flex items-start pt-[14px] pb-[8px] border-b border-[#D4C4A8]">
+      <div className={`h-[56px] flex items-start pt-[14px] pb-[8px] border-b ${COMMON_CLASSES.borderPrimary}`}>
         <div className="flex items-center justify-between w-full">
           <span
-            className="text-[17.7px] leading-[28px] font-normal"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+            className={COMMON_CLASSES.heading6}
+            style={TEXT_STYLES.bodyGraphite}
           >
             Subtotal
           </span>
           <span
             className="text-[16px] leading-[24px] font-medium"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+            style={TEXT_STYLES.bodyGraphite}
           >
             Rs {subtotal.toFixed(2)}
           </span>
@@ -45,24 +46,24 @@ export function OrderSummary({
 
       {/* Shipping */}
       <div className="mt-[10px] mb-[10px]">
-        <div className="flex flex-col gap-[6px] pb-[4px]">
+        <div className={`flex flex-col ${SPACING.tinyGap} pb-[4px]`}>
           <div className="flex items-center justify-between">
             <span
-              className="text-[12px] leading-[18px] font-normal"
-              style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+              className={COMMON_CLASSES.bodySmall}
+              style={TEXT_STYLES.bodyGraphite}
             >
               Shipping Times and Costs
             </span>
             <span
               className="text-[14px] leading-[20px] font-medium"
-              style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+              style={TEXT_STYLES.bodyGraphite}
             >
               free
             </span>
           </div>
           <p
             className="text-[10px] leading-[16px] font-normal"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+            style={TEXT_STYLES.bodyGraphite}
           >
             2 to 3 working days after receipt of order confirmation
           </p>
@@ -72,8 +73,8 @@ export function OrderSummary({
       {/* Discount Code */}
       <div className="w-full h-auto pt-[8px] mb-[32px]">
         <label
-          className="w-full h-auto text-[14px] leading-[24px] font-medium block pb-[4px] mb-[8px] tracking-[1.03px]"
-          style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+          className={`w-full h-auto ${COMMON_CLASSES.bodyExtraSmall} font-medium block pb-[4px] mb-[8px]`}
+          style={TEXT_STYLES.label}
         >
           Discount Code
         </label>
@@ -83,20 +84,20 @@ export function OrderSummary({
             value={discountCode}
             onChange={(e) => setDiscountCode(e.target.value)}
             placeholder="Enter your Discount code here"
-            className="w-[175px] h-[40px] pl-[12px] pr-[16px] border border-[#D4C4A8] bg-[#EFECE5] text-[12px] leading-[18px] placeholder:text-[#3E5460]"
-            style={{ fontFamily: "Raleway, sans-serif" }}
+            className={`w-[${DIMENSIONS.input.discountWidth}] h-[${DIMENSIONS.input.height}] pl-[12px] pr-[16px] border ${COMMON_CLASSES.borderPrimary} ${COMMON_CLASSES.orderSummaryBg} ${COMMON_CLASSES.bodySmall}`}
+            style={{ ...TEXT_STYLES.button, color: COLORS.tealBlue }}
           />
           <Button
             onClick={handleApplyDiscount}
-            className="w-[80px] h-[40px] bg-transparent border border-[#D4C4A8] text-[#232D35] hover:bg-[#E5E0D6] rounded-none text-[14px] font-medium uppercase tracking-[2px] shadow-none"
-            style={{ fontFamily: "Raleway, sans-serif" }}
+            className={`w-[${DIMENSIONS.button.applyWidth}] h-[${DIMENSIONS.button.applyHeight}] ${COMMON_CLASSES.secondaryButton} text-[14px] font-medium uppercase tracking-[2px] shadow-none`}
+            style={{ ...TEXT_STYLES.button, color: COLORS.graphite }}
           >
             APPLY
           </Button>
         </div>
         <p
           className="text-[11px] leading-[16px] font-normal mt-[8px]"
-          style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+          style={TEXT_STYLES.bodyGraphite}
         >
           This site is protected by reCAPTCHA and the Google Privacy Policy and
           Terms of Service apply.
@@ -104,17 +105,17 @@ export function OrderSummary({
       </div>
 
       {/* Total */}
-      <div className="flex items-center justify-between pt-[24px] border-t border-[#D4C4A8] mb-[16px]">
+      <div className={`flex items-center justify-between pt-[24px] border-t ${COMMON_CLASSES.borderPrimary} mb-[16px]`}>
         <span
           className="text-[16px] leading-[24px] font-medium"
-          style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+          style={TEXT_STYLES.bodySlate}
         >
           total
           <span className="text-[12px]"> (Taxes inc.)</span>
         </span>
         <span
           className="text-[18px] leading-[28px] font-bold"
-          style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+          style={TEXT_STYLES.bodyGraphite}
         >
           Rs {total.toFixed(2)}
         </span>
@@ -122,40 +123,30 @@ export function OrderSummary({
 
       {/* Proceed Button */}
       <Button
-        className="w-full h-[50px] bg-[#3E5460] text-white hover:bg-[#2c3b44] rounded-none text-[14px] font-medium uppercase tracking-[3px] mb-[32px]"
-        style={{ fontFamily: "Raleway, sans-serif" }}
+        className={`w-full h-[${DIMENSIONS.button.proceedHeight}] ${COMMON_CLASSES.primaryButton} rounded-none text-[14px] font-medium mb-[32px]`}
+        style={TEXT_STYLES.button}
       >
         PROCEED
       </Button>
 
       {/* Payment Options */}
-      <div className="w-full h-auto border-b border-[#D4C4A8] pb-[17px] mb-[24px]">
+      <div className={`w-full h-auto border-b ${COMMON_CLASSES.borderPrimary} pb-[17px] mb-[24px]`}>
         <p
-          className="text-[12px] leading-[18px] font-medium uppercase mb-[12px]"
-          style={{ fontFamily: "Raleway, sans-serif", color: "#232D35" }}
+          className={`${COMMON_CLASSES.bodySmall} font-medium uppercase mb-[12px]`}
+          style={TEXT_STYLES.bodyGraphite}
         >
           PAYMENT OPTIONS
         </p>
-        <div className="flex items-center gap-[8px] flex-wrap">
+        <div className={`flex items-center ${SPACING.smallGap} flex-wrap`}>
           {/* Payment icons placeholder - replace with actual icons */}
-          <div className="w-[40px] h-[26px] bg-[#EFECE5] border border-gray-300 rounded flex items-center justify-center text-[8px]">
-            AMEX
-          </div>
-          <div className="w-[40px] h-[26px] bg-[#EFECE5] border border-gray-300 rounded flex items-center justify-center text-[8px]">
-            VISA
-          </div>
-          <div className="w-[40px] h-[26px] bg-[#EFECE5] border border-gray-300 rounded flex items-center justify-center text-[8px]">
-            MC
-          </div>
-          <div className="w-[40px] h-[26px] bg-[#EFECE5] border border-gray-300 rounded flex items-center justify-center text-[8px]">
-            DISC
-          </div>
-          <div className="w-[40px] h-[26px] bg-[#EFECE5] border border-gray-300 rounded flex items-center justify-center text-[8px]">
-            JCB
-          </div>
-          <div className="w-[40px] h-[26px] bg-[#EFECE5] border border-gray-300 rounded flex items-center justify-center text-[8px]">
-            PP
-          </div>
+          {["AMEX", "VISA", "MC", "DISC", "JCB", "PP"].map((payment) => (
+            <div
+              key={payment}
+              className={`w-[${DIMENSIONS.paymentIcon.width}] h-[${DIMENSIONS.paymentIcon.height}] ${COMMON_CLASSES.orderSummaryBg} border border-gray-300 rounded flex items-center justify-center text-[8px]`}
+            >
+              {payment}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -163,8 +154,8 @@ export function OrderSummary({
       <div className="flex gap-[12px] mb-[16px]">
         <span className="text-[16px]">📦</span>
         <p
-          className="text-[12px] leading-[18px] font-normal"
-          style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+          className={COMMON_CLASSES.bodySmall}
+          style={TEXT_STYLES.bodySlate}
         >
           We offer free shipping on all orders with Express Worldwide service.
         </p>
@@ -174,8 +165,8 @@ export function OrderSummary({
       <div className="flex gap-[12px] mb-[24px]">
         <span className="text-[16px]">↩️</span>
         <p
-          className="text-[12px] leading-[18px] font-normal"
-          style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+          className={COMMON_CLASSES.bodySmall}
+          style={TEXT_STYLES.bodySlate}
         >
           We guarantee 30 days to return or exchange, starting from the delivery
           date of the order. For fragrance returns, we invite you to consult the{" "}
@@ -187,14 +178,14 @@ export function OrderSummary({
       </div>
 
       {/* May We Help You */}
-      <div className="border-t border-[#D4C4A8] pt-[16px]">
+      <div className={`border-t ${COMMON_CLASSES.borderPrimary} pt-[16px]`}>
         <button
           onClick={() => setIsHelpOpen(!isHelpOpen)}
           className="w-full flex items-center justify-between"
         >
           <span
             className="text-[16px] leading-[20px] font-medium uppercase tracking-[2px]"
-            style={{ fontFamily: "Raleway, sans-serif", color: "#3E5460" }}
+            style={TEXT_STYLES.bodyTeal}
           >
             MAY WE HELP YOU?
           </span>
@@ -205,8 +196,8 @@ export function OrderSummary({
         {isHelpOpen && (
           <div className="mt-[16px]">
             <p
-              className="text-[12px] leading-[18px] font-normal"
-              style={{ fontFamily: "Raleway, sans-serif", color: "#6B7B8A" }}
+              className={COMMON_CLASSES.bodySmall}
+              style={TEXT_STYLES.bodySlate}
             >
               If you need assistance, please contact our customer service team.
             </p>
