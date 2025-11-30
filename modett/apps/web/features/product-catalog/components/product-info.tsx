@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Heart, ChevronDown } from "lucide-react";
 import { getColorHex } from "@/lib/colors";
-import { cartService } from "@/services/cart.service";
+import { useAddToCart } from "@/features/cart/queries";
 import { wishlistService } from "@/services/wishlist.service";
 import { toast } from "sonner";
 import { TEXT_STYLES, PRODUCT_CLASSES } from "@/features/cart/constants/styles";
@@ -41,6 +41,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
 
   const defaultVariant = product.variants?.[0];
+  const addToCartMutation = useAddToCart();
 
   useEffect(() => {
     const checkWishlistStatus = async () => {
@@ -88,7 +89,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
     setIsAddingToCart(true);
     try {
-      await cartService.addToCart({
+      await addToCartMutation.mutateAsync({
         variantId: selectedVariant.id,
         quantity: 1,
       });

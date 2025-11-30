@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart, Plus, Minus, ShoppingBag } from "lucide-react";
 import { useState, useEffect } from "react";
-import { cartService } from "@/services/cart.service";
+import { useAddToCart } from "@/features/cart/queries";
 import { wishlistService } from "@/services/wishlist.service";
 import { toast } from "sonner";
 import { getColorHex } from "@/lib/colors";
@@ -47,6 +47,7 @@ export function ProductCard({
   const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
 
   const defaultVariant = variants[0];
+  const addToCartMutation = useAddToCart();
 
   useEffect(() => {
     const checkWishlistStatus = async () => {
@@ -110,7 +111,7 @@ export function ProductCard({
 
     setIsAddingToCart(true);
     try {
-      await cartService.addToCart({
+      await addToCartMutation.mutateAsync({
         variantId: selectedVariant.id,
         quantity: 1,
       });
