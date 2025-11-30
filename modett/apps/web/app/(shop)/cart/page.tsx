@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { productService } from "@/services/product.service";
 import { CartItem } from "@/features/cart/components/cart-item";
 import { OrderSummary } from "@/features/cart/components/order-summary";
 import { ProductCard } from "@/features/product-catalog/components/product-card";
@@ -14,6 +12,7 @@ import {
 } from "@/features/cart/constants/styles";
 import { useCart, useUpdateCartQuantity, useRemoveCartItem } from "@/features/cart/queries";
 import { getStoredCartId } from "@/features/cart/utils";
+import { useFeaturedProducts } from "@/features/product-catalog/queries";
 
 export default function CartPage() {
   const [cartId, setCartId] = useState<string | null>(null);
@@ -30,10 +29,7 @@ export default function CartPage() {
     isLoading,
   } = useCart(cartId);
 
-  const { data: recommendedProducts } = useQuery({
-    queryKey: ["cart-recommendations"],
-    queryFn: () => productService.getFeaturedProducts(6),
-  });
+  const { data: recommendedProducts } = useFeaturedProducts(6);
 
   const updateQuantityMutation = useUpdateCartQuantity();
   const removeItemMutation = useRemoveCartItem();
