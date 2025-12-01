@@ -25,7 +25,6 @@ export const getProducts = async (
 ): Promise<ProductsResponse> => {
   const { page = 1, pageSize = 20, sort } = params || {};
 
-  // Prepare API params
   const apiParams: any = {
     page,
     limit: pageSize,
