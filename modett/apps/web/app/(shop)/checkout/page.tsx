@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import {
   TEXT_STYLES,
   COMMON_CLASSES,
@@ -9,10 +8,14 @@ import {
 } from "@/features/cart/constants/styles";
 import { useCart } from "@/features/cart/queries";
 import { getStoredCartId } from "@/features/cart/utils";
+import { CheckoutProgressBar } from "@/features/checkout/components/checkout-progress-bar";
+import { CartSummary } from "@/features/checkout/components/cart-summary";
+import { useRouter } from "next/navigation";
 
 export default function CheckoutEmailPage() {
   const [email, setEmail] = useState("");
   const [cartId, setCartId] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const storedCartId = getStoredCartId();
@@ -27,6 +30,7 @@ export default function CheckoutEmailPage() {
     e.preventDefault();
     // TODO: Validate email and navigate to shipping page
     console.log("Email:", email);
+    router.push("/checkout/shipping");
   };
 
   if (isLoading) {
@@ -39,52 +43,12 @@ export default function CheckoutEmailPage() {
     );
   }
 
-  const cartItems = cart?.items || [];
-  const subtotal = cart?.summary.subtotal || 0;
-  const total = cart?.summary.total || 0;
-
   return (
     <main className={`w-full min-h-screen ${COMMON_CLASSES.pageBg}`}>
       <div
         className={`w-full max-w-[1440px] mx-auto ${RESPONSIVE.padding.page} py-8`}
       >
-        <div className="w-full max-w-[904px] h-[60px] flex items-center py-4 mb-6">
-          <div className="flex items-center gap-2 pr-[30px]">
-            <span
-              className="text-sm font-medium"
-              style={{ ...TEXT_STYLES.bodyGraphite, letterSpacing: "0.5px" }}
-            >
-              1. E-mail address
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 pr-[30px]">
-            <span
-              className="text-sm font-medium"
-              style={{ ...TEXT_STYLES.bodySlate, letterSpacing: "0.5px" }}
-            >
-              2. Shipping
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 pr-[30px]">
-            <span
-              className="text-sm font-medium"
-              style={{ ...TEXT_STYLES.bodySlate, letterSpacing: "0.5px" }}
-            >
-              3. Information
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 pr-[30px]">
-            <span
-              className="text-sm font-medium"
-              style={{ ...TEXT_STYLES.bodySlate, letterSpacing: "0.5px" }}
-            >
-              4. Payment
-            </span>
-          </div>
-        </div>
+        <CheckoutProgressBar currentStep={1} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
           <div className="space-y-2">
@@ -311,195 +275,7 @@ export default function CheckoutEmailPage() {
           </div>
 
           <div className="mt-[-80px]">
-            <div className={`${COMMON_CLASSES.pageBg} sticky top-4`}>
-              <div className="pt-[26px] px-[34px] pb-[27px] border-b border-[#E5E0D6]">
-                <h2
-                  className="text-base font-medium"
-                  style={TEXT_STYLES.bodyGraphite}
-                >
-                  Your cart ({cartItems.length} items)
-                </h2>
-              </div>
-
-              <div className="p-[34px]">
-                <div className="mb-6 flex flex-col gap-6">
-                  {cartItems.map((item, index) => (
-                    <div
-                      key={item.id || item.cartItemId || index}
-                      className="flex gap-[21px]"
-                    >
-                      <div className="w-[63px] h-[80.31px] bg-gray-200 flex-shrink-0">
-                        {item.product?.images?.[0]?.url && (
-                          <img
-                            src={item.product.images[0].url}
-                            alt={item.product?.title || "Product"}
-                            className="w-full h-full object-cover object-top"
-                          />
-                        )}
-                      </div>
-                      <div className="flex-1 flex flex-col gap-1">
-                        <h3
-                          className="truncate"
-                          style={{
-                            fontFamily: "Raleway, sans-serif",
-                            fontSize: "18px",
-                            lineHeight: "28px",
-                            fontWeight: 400,
-                            color: "#232D35",
-                          }}
-                        >
-                          {item.product?.title || "Product"}
-                        </h3>
-                        <div className="flex justify-between items-start w-full">
-                          {item.variant?.color && (
-                            <p
-                              style={{
-                                fontFamily: "Raleway, sans-serif",
-                                fontSize: "10px",
-                                lineHeight: "16px",
-                                fontWeight: 400,
-                                color: "#232D35",
-                              }}
-                            >
-                              Color: {item.variant.color}
-                            </p>
-                          )}
-                          {item.variant?.size && (
-                            <p
-                              style={{
-                                fontFamily: "Raleway, sans-serif",
-                                fontSize: "10px",
-                                lineHeight: "16px",
-                                fontWeight: 400,
-                                color: "#232D35",
-                              }}
-                            >
-                              Size: {item.variant.size}
-                            </p>
-                          )}
-                        </div>
-                        <p
-                          style={{
-                            fontFamily: "Raleway, sans-serif",
-                            fontSize: "10px",
-                            lineHeight: "16px",
-                            fontWeight: 400,
-                            color: "#232D35",
-                          }}
-                        >
-                          Rs {item.unitPrice.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div
-                  className="border-t pt-6 flex flex-col gap-2"
-                  style={{ borderColor: "#E5E0D6" }}
-                >
-                  <div
-                    className="flex justify-between items-center border-b pb-[9px]"
-                    style={{ borderColor: "#E5E0D6" }}
-                  >
-                    <span
-                      style={{
-                        fontFamily: "Raleway, sans-serif",
-                        fontSize: "18px",
-                        lineHeight: "28px",
-                        fontWeight: 400,
-                        color: "#232D35",
-                      }}
-                    >
-                      Subtotal
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "Raleway, sans-serif",
-                        fontSize: "14px",
-                        lineHeight: "24px",
-                        letterSpacing: "1.03px",
-                        fontWeight: 400,
-                        color: "#232D35",
-                      }}
-                    >
-                      Rs {subtotal.toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between items-center">
-                      <span
-                        style={{
-                          fontFamily: "Raleway, sans-serif",
-                          fontSize: "12px",
-                          lineHeight: "18px",
-                          color: "#232D35",
-                        }}
-                      >
-                        Shipping Times and Costs
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: "Raleway, sans-serif",
-                          fontSize: "14px",
-                          color: "#232D35",
-                        }}
-                      >
-                        free
-                      </span>
-                    </div>
-                    <p
-                      style={{
-                        fontFamily: "Raleway, sans-serif",
-                        fontSize: "10px",
-                        lineHeight: "16px",
-                        color: "#232D35",
-                        marginTop: "4px",
-                      }}
-                    >
-                      2 to 3 working days after receipt of order confirmation
-                    </p>
-                  </div>
-
-                  <div className="flex justify-between items-center pt-2">
-                    <div className="flex items-baseline gap-1">
-                      <span
-                        style={{
-                          fontFamily: "Raleway, sans-serif",
-                          fontSize: "18px",
-                          lineHeight: "28px",
-                          fontWeight: 400,
-                          color: "#232D35",
-                        }}
-                      >
-                        Total
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: "Raleway, sans-serif",
-                          fontSize: "12px",
-                          lineHeight: "18px",
-                          fontWeight: 400,
-                          color: "#3E5460",
-                        }}
-                      >
-                        Taxes inc.
-                      </span>
-                    </div>
-                    <span
-                      style={{
-                        fontFamily: "Raleway, sans-serif",
-                        fontSize: "20px",
-                        color: "#232D35",
-                      }}
-                    >
-                      Rs {total.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <CartSummary cart={cart} />
           </div>
         </div>
       </div>
