@@ -2,8 +2,7 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { productService } from "@/services/product.service";
+import { useProductBySlug } from "@/features/product-catalog/queries";
 import { ProductImages } from "@/features/product-catalog/components/product-images";
 import { ProductInfo } from "@/features/product-catalog/components/product-info";
 import { WearItWith } from "@/features/product-catalog/components/wear-it-with";
@@ -21,10 +20,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   // Unwrap the params Promise using React.use()
   const { handle } = use(params);
 
-  const { data: product, isLoading } = useQuery({
-    queryKey: ["product", handle],
-    queryFn: () => productService.getProductBySlug(handle),
-  });
+  const { data: product, isLoading } = useProductBySlug(handle);
 
   if (isLoading) {
     return (

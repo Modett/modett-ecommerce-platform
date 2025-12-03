@@ -1,7 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { productService } from "@/services/product.service";
+import { useFeaturedProducts } from "../queries";
 import { ProductCard } from "./product-card";
 
 interface YouMayAlsoLikeProps {
@@ -9,10 +8,7 @@ interface YouMayAlsoLikeProps {
 }
 
 export function YouMayAlsoLike({ productId }: YouMayAlsoLikeProps) {
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["you-may-also-like", productId],
-    queryFn: () => productService.getFeaturedProducts(6),
-  });
+  const { data: products, isLoading } = useFeaturedProducts(6);
 
   if (isLoading || !products || products.length === 0) {
     return null;

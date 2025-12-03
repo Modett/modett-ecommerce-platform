@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Heart, ChevronDown } from "lucide-react";
 import { getColorHex } from "@/lib/colors";
-import { cartService } from "@/services/cart.service";
-import { wishlistService } from "@/services/wishlist.service";
+import { useAddToCart } from "@/features/cart/queries";
+import { useWishlistId, useAddToWishlist, useRemoveFromWishlist, useIsProductInWishlist } from "@/features/engagement/queries";
 import { toast } from "sonner";
 import { TEXT_STYLES, PRODUCT_CLASSES } from "@/features/cart/constants/styles";
 
@@ -41,19 +41,24 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
 
   const defaultVariant = product.variants?.[0];
+  const addToCartMutation = useAddToCart();
+
+  // Wishlist hooks
+  const { wishlistId } = useWishlistId();
+  const addToWishlistMutation = useAddToWishlist();
+  const removeFromWishlistMutation = useRemoveFromWishlist();
+
+  const variantIds = product.variants?.map(v => v.id) || [];
+  const { data: isProductWishlisted } = useIsProductInWishlist(wishlistId, variantIds);
+
+  // Sync local state with query result
+  useEffect(() => {
+    if (isProductWishlisted !== undefined) {
+      setIsWishlisted(isProductWishlisted);
+    }
+  }, [isProductWishlisted]);
 
   useEffect(() => {
-    const checkWishlistStatus = async () => {
-      if (product.variants && product.variants.length > 0) {
-        try {
-          const variantIds = product.variants.map(v => v.id);
-          const inWishlist = await wishlistService.isProductInWishlist(variantIds);
-          setIsWishlisted(inWishlist);
-        } catch (error) {}
-      }
-    };
-
-    checkWishlistStatus();
 
     const handleWishlistUpdate = (event: Event) => {
       const customEvent = event as CustomEvent;
@@ -88,7 +93,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
     setIsAddingToCart(true);
     try {
-      await cartService.addToCart({
+      await addToCartMutation.mutateAsync({
         variantId: selectedVariant.id,
         quantity: 1,
       });
@@ -102,7 +107,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   };
 
   const handleWishlist = async () => {
-    if (!defaultVariant) {
+    if (!defaultVariant || !wishlistId) {
       toast.error("Product variant not available");
       return;
     }
@@ -110,11 +115,19 @@ export function ProductInfo({ product }: ProductInfoProps) {
     setIsTogglingWishlist(true);
     try {
       if (isWishlisted) {
-        await wishlistService.removeFromWishlist(defaultVariant.id, product.id);
+        await removeFromWishlistMutation.mutateAsync({
+          wishlistId,
+          variantId: defaultVariant.id,
+          productId: product.id,
+        });
         setIsWishlisted(false);
         toast.success(`${product.title} removed from wishlist`);
       } else {
-        await wishlistService.addToWishlist(defaultVariant.id, product.id);
+        await addToWishlistMutation.mutateAsync({
+          wishlistId,
+          variantId: defaultVariant.id,
+          productId: product.id,
+        });
         setIsWishlisted(true);
         toast.success(`${product.title} added to wishlist!`);
       }

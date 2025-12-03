@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
-import { cartService } from "@/services/cart.service";
-import { productService } from "@/services/product.service";
 import { CartItem } from "@/features/cart/components/cart-item";
 import { OrderSummary } from "@/features/cart/components/order-summary";
 import { ProductCard } from "@/features/product-catalog/components/product-card";
@@ -13,12 +10,15 @@ import {
   COMMON_CLASSES,
   RESPONSIVE,
 } from "@/features/cart/constants/styles";
+import { useCart, useUpdateCartQuantity, useRemoveCartItem } from "@/features/cart/queries";
+import { getStoredCartId } from "@/features/cart/utils";
+import { useFeaturedProducts } from "@/features/product-catalog/queries";
 
 export default function CartPage() {
   const [cartId, setCartId] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedCartId = localStorage.getItem("modett_cart_id");
+    const storedCartId = getStoredCartId();
     if (storedCartId) {
       setCartId(storedCartId);
     }
@@ -27,23 +27,12 @@ export default function CartPage() {
   const {
     data: cart,
     isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ["cart", cartId],
-    queryFn: async () => {
-      if (!cartId) return null;
-      const cartData = await cartService.getCart(cartId);
-      console.log("Cart API Response:", cartData);
-      console.log("First item product data:", cartData?.items?.[0]?.product);
-      return cartData;
-    },
-    enabled: !!cartId,
-  });
+  } = useCart(cartId);
 
-  const { data: recommendedProducts } = useQuery({
-    queryKey: ["cart-recommendations"],
-    queryFn: () => productService.getFeaturedProducts(6),
-  });
+  const { data: recommendedProducts } = useFeaturedProducts(6);
+
+  const updateQuantityMutation = useUpdateCartQuantity();
+  const removeItemMutation = useRemoveCartItem();
 
   const handleQuantityChange = async (
     variantId: string,
@@ -52,8 +41,11 @@ export default function CartPage() {
     if (!cartId) return;
 
     try {
-      await cartService.updateQuantity(cartId, variantId, newQuantity);
-      await refetch();
+      await updateQuantityMutation.mutateAsync({
+        cartId,
+        variantId,
+        quantity: newQuantity,
+      });
     } catch (error) {
       console.error("Failed to update quantity:", error);
     }
@@ -63,8 +55,10 @@ export default function CartPage() {
     if (!cartId) return;
 
     try {
-      await cartService.removeItem(cartId, variantId);
-      await refetch();
+      await removeItemMutation.mutateAsync({
+        cartId,
+        variantId,
+      });
     } catch (error) {
       console.error("Failed to remove item:", error);
     }

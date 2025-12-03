@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { ProductCard } from "@/features/product-catalog/components/product-card";
-import { productService } from "@/services/product.service";
+import { useProducts, useCategories, useSizeCounts, useColorCounts } from "@/features/product-catalog/queries";
 import { getColorHex } from "@/lib/colors";
 import {
   ChevronDown,
@@ -32,10 +31,7 @@ export default function CollectionsPage() {
   const [displayCount, setDisplayCount] = useState(12);
   const pageSize = 12;
 
-  const { data: productsData, isLoading } = useQuery({
-    queryKey: ["collection-products", sortBy],
-    queryFn: () => productService.getProducts({ sort: sortBy, pageSize: 100 }),
-  });
+  const { data: productsData, isLoading } = useProducts({ sort: sortBy, pageSize: 100 });
 
   const handleLoadMore = () => {
     setDisplayCount((prev) => prev + pageSize);
@@ -86,10 +82,7 @@ export default function CollectionsPage() {
   const totalItems = filteredProducts.length;
   const hasMore = displayCount < totalItems;
 
-  const { data: allCategories } = useQuery({
-    queryKey: ["categories"],
-    queryFn: () => productService.getCategories(),
-  });
+  const { data: allCategories } = useCategories();
 
   const productTypeCategories =
     allCategories?.filter(
@@ -100,15 +93,9 @@ export default function CollectionsPage() {
       (cat: any) => ((cat.position as number) || 0) >= 100
     ) || [];
 
-  const { data: sizeCounts = [] } = useQuery({
-    queryKey: ["size-counts"],
-    queryFn: () => productService.getSizeCounts(),
-  });
+  const { data: sizeCounts = [] } = useSizeCounts();
 
-  const { data: colorCounts = [] } = useQuery({
-    queryKey: ["color-counts"],
-    queryFn: () => productService.getColorCounts(),
-  });
+  const { data: colorCounts = [] } = useColorCounts();
 
   const toggleSize = (size: string) => {
     setSelectedSizes((prev) =>

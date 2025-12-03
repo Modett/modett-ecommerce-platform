@@ -1,7 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { productService } from "@/services/product.service";
+import { useFeaturedProducts } from "../queries";
 import { ProductCard } from "./product-card";
 
 interface WearItWithProps {
@@ -9,10 +8,7 @@ interface WearItWithProps {
 }
 
 export function WearItWith({ productId }: WearItWithProps) {
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["wear-it-with", productId],
-    queryFn: () => productService.getFeaturedProducts(3),
-  });
+  const { data: products, isLoading } = useFeaturedProducts(3);
 
   if (isLoading || !products || products.length === 0) {
     return null;

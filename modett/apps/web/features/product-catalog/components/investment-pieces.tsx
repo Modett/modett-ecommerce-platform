@@ -2,18 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "./product-card";
-import { useQuery } from "@tanstack/react-query";
-import { productService } from "@/services/product.service";
+import { useFeaturedProducts } from "../queries";
 
 export function InvestmentPieces() {
   const {
     data: products,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ["featured-products"],
-    queryFn: () => productService.getFeaturedProducts(6),
-  });
+  } = useFeaturedProducts(6);
 
   if (error) {
     console.error("Error loading products:", error);
