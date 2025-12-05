@@ -6,7 +6,8 @@ import { useCart } from "@/features/cart/queries";
 import { getStoredCartId } from "@/features/cart/utils";
 import { CheckoutProgressBar } from "@/features/checkout/components/checkout-progress-bar";
 import { CartSummary } from "@/features/checkout/components/cart-summary";
-import { Check } from "lucide-react";
+import { CheckoutHelpSection } from "@/features/checkout/components/checkout-help-section";
+import { Check, Info } from "lucide-react";
 
 // Payment card logos - using Image component for actual logo files
 import Image from "next/image";
@@ -49,7 +50,7 @@ export default function CheckoutPaymentPage() {
       >
         <CheckoutProgressBar currentStep={4} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 md:gap-6 lg:gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 md:gap-6 lg:gap-10 min-h-[750px]">
           <div className="space-y-2 max-w-[904px]">
             {/* Step 1: E-mail address (Completed) */}
             <div
@@ -178,7 +179,9 @@ export default function CheckoutPaymentPage() {
             </div>
 
             {/* Step 4: Payment (Active) */}
-            <div className={`${COMMON_CLASSES.pageBg} w-full max-w-[904px]`}>
+            <div
+              className={`${COMMON_CLASSES.pageBg} w-full max-w-[904px] border border-[#E5E0D6]`}
+            >
               <div className="bg-[#232D35] p-[16px] flex items-center h-[60px]">
                 <h1
                   className="text-[20px] leading-[140%] font-normal tracking-[0%] text-[#EFECE5]"
@@ -189,7 +192,10 @@ export default function CheckoutPaymentPage() {
               </div>
 
               <div className="py-[24px] px-6 flex flex-col max-w-[780px]">
-                <form onSubmit={handleConfirm} className="flex flex-col gap-[24px]">
+                <form
+                  onSubmit={handleConfirm}
+                  className="flex flex-col gap-[24px]"
+                >
                   <h3
                     className="text-[16.6px] text-[#56575B] font-normal uppercase leading-[28px] tracking-[0px]"
                     style={{ fontFamily: "Raleway, sans-serif" }}
@@ -198,12 +204,12 @@ export default function CheckoutPaymentPage() {
                   </h3>
 
                   {/* Payment Methods */}
-                  <div className="flex flex-col gap-[0.03px] w-[732px]">
+                  <div className="flex flex-col gap-[24px] w-full">
                     {/* Cards */}
                     <div
-                      className={`rounded-[8px] overflow-hidden border ${paymentMethod === "cards" ? "bg-[#E5E0D6] border-[#765C4D]" : "bg-[#EFECE5] border-transparent"}`}
+                      className={`rounded-[8px] overflow-hidden border ${paymentMethod === "cards" ? "bg-[#E5E0D6] border-[#3E5460]" : "bg-[#EFECE5] border-[#BBA496]"}`}
                     >
-                      <label className="flex items-center justify-between p-[10px] cursor-pointer w-full h-[60px]">
+                      <label className="flex items-center justify-between px-[9px] cursor-pointer w-full h-[58px]">
                         <div className="flex items-center gap-3 flex-1">
                           <div
                             className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "cards" ? "border-[#232D35]" : "border-[#BBA496]"}`}
@@ -221,13 +227,13 @@ export default function CheckoutPaymentPage() {
                             className="hidden"
                           />
                           <span
-                            className="text-[14px] text-[#3E5460]"
+                            className="text-[14px] leading-[24px] text-[#3E5460]"
                             style={{ fontFamily: "Raleway, sans-serif" }}
                           >
                             Cards
                           </span>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-[8px]">
                           <div className="w-[58px] h-[40px] relative border border-[#E5E0D6] rounded-[4px] bg-white flex items-center justify-center overflow-hidden">
                             <Image
                               src="/images/payment/visa.png"
@@ -253,63 +259,83 @@ export default function CheckoutPaymentPage() {
                     {/* Card Form */}
                     {paymentMethod === "cards" && (
                       <div className="pb-6 pt-2">
-                        <div className="bg-[#F8F5F2] p-[25px] mb-4 text-[12px] text-[#232D35] border border-[#E5E0D6]">
+                        <div
+                          className="bg-[#F8F5F2] p-[25px] mb-4 text-[13.2px] leading-[18px] text-[#3E5460] border border-[#E5E0D6] flex items-center gap-[8px]"
+                          style={{ fontFamily: "Raleway, sans-serif" }}
+                        >
+                          <Info className="w-6 h-6 text-[#3E5460]" />
                           More information about payments
                         </div>
-                        <p className="text-[10px] text-[#232D35] mb-2">
+                        <p
+                          className="text-[12px] leading-[18px] text-[#3E5460] font-normal mb-2"
+                          style={{ fontFamily: "Raleway, sans-serif" }}
+                        >
                           All fields are required unless marked otherwise.
                         </p>
 
                         <div className="flex flex-col gap-4">
-                          <div className="flex flex-col gap-1">
+                          {/* Card Number */}
+                          <div className="flex flex-col">
                             <label
-                              className="text-[12px] text-[#3E5460]"
+                              className="text-[14px] text-[#3E5460] pb-[4px] w-full block leading-[24px] tracking-[1.03px]"
                               style={{ fontFamily: "Raleway, sans-serif" }}
                             >
-                              Card number *
+                              * Card number
                             </label>
-                            <input
-                              type="text"
-                              className="w-full h-[40px] bg-[#EFECE5] border border-[#D4C4A8] px-3 outline-none focus:border-[#3E5460]"
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="flex flex-col gap-1">
-                              <label
-                                className="text-[12px] text-[#3E5460]"
-                                style={{ fontFamily: "Raleway, sans-serif" }}
-                              >
-                                Expiration date *
-                              </label>
+                            <div className="h-[40px] px-4 bg-[#EFECE5] border border-[#BBA496] rounded-[4px] flex items-center">
                               <input
                                 type="text"
-                                className="w-full h-[40px] bg-[#EFECE5] border border-[#D4C4A8] px-3 outline-none focus:border-[#3E5460]"
-                              />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label
-                                className="text-[12px] text-[#3E5460]"
-                                style={{ fontFamily: "Raleway, sans-serif" }}
-                              >
-                                CVV Code *
-                              </label>
-                              <input
-                                type="text"
-                                className="w-full h-[40px] bg-[#EFECE5] border border-[#D4C4A8] px-3 outline-none focus:border-[#3E5460]"
+                                className="w-full bg-transparent outline-none text-[#3E5460] placeholder-[#3E5460]/50"
                               />
                             </div>
                           </div>
-                          <div className="flex flex-col gap-1">
+
+                          {/* Expiration & CVV */}
+                          <div className="flex gap-4">
+                            <div className="flex-1 flex flex-col">
+                              <label
+                                className="text-[14px] text-[#3E5460] pb-[4px] w-full block leading-[24px] tracking-[1.03px]"
+                                style={{ fontFamily: "Raleway, sans-serif" }}
+                              >
+                                * Expiration date
+                              </label>
+                              <div className="h-[40px] px-4 bg-[#EFECE5] border border-[#BBA496] rounded-[4px] flex items-center">
+                                <input
+                                  type="text"
+                                  className="w-full bg-transparent outline-none text-[#3E5460] placeholder-[#3E5460]/50"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex-1 flex flex-col">
+                              <label
+                                className="text-[14px] text-[#3E5460] pb-[4px] w-full block leading-[24px] tracking-[1.03px]"
+                                style={{ fontFamily: "Raleway, sans-serif" }}
+                              >
+                                * CVV Code
+                              </label>
+                              <div className="h-[40px] px-4 bg-[#EFECE5] border border-[#BBA496] rounded-[4px] flex items-center">
+                                <input
+                                  type="text"
+                                  className="w-full bg-transparent outline-none text-[#3E5460] placeholder-[#3E5460]/50"
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Card Holder */}
+                          <div className="flex flex-col">
                             <label
-                              className="text-[12px] text-[#3E5460]"
+                              className="text-[14px] text-[#3E5460] pb-[4px] w-full block leading-[24px] tracking-[1.03px]"
                               style={{ fontFamily: "Raleway, sans-serif" }}
                             >
-                              Card holder *
+                              * Card holder
                             </label>
-                            <input
-                              type="text"
-                              className="w-full h-[40px] bg-[#EFECE5] border border-[#D4C4A8] px-3 outline-none focus:border-[#3E5460]"
-                            />
+                            <div className="h-[40px] px-4 bg-[#EFECE5] border border-[#BBA496] rounded-[4px] flex items-center">
+                              <input
+                                type="text"
+                                className="w-full bg-transparent outline-none text-[#3E5460] placeholder-[#3E5460]/50"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -317,7 +343,7 @@ export default function CheckoutPaymentPage() {
 
                     {/* Mintpay */}
                     <label
-                      className={`flex items-center p-4 border rounded-[8px] cursor-pointer ${paymentMethod === "mintpay" ? "bg-[#E5E0D6] border-[#3E5460]" : "bg-[#EFECE5] border-[#E5E0D6]"}`}
+                      className={`flex items-center px-[9px] h-[58px] border rounded-[8px] cursor-pointer ${paymentMethod === "mintpay" ? "bg-[#E5E0D6] border-[#3E5460]" : "bg-[#EFECE5] border-[#BBA496]"}`}
                     >
                       <div className="flex items-center gap-3 flex-1">
                         <div
@@ -336,7 +362,7 @@ export default function CheckoutPaymentPage() {
                           className="hidden"
                         />
                         <span
-                          className="text-[14px] text-[#3E5460]"
+                          className="text-[14px] leading-[24px] text-[#3E5460]"
                           style={{ fontFamily: "Raleway, sans-serif" }}
                         >
                           Mintpay
@@ -346,16 +372,16 @@ export default function CheckoutPaymentPage() {
                         <Image
                           src="/images/payment/mintpay.png"
                           alt="Mintpay"
-                          width={58}
-                          height={40}
-                          className="object-contain p-1"
+                          width={42}
+                          height={15}
+                          className="object-cover"
                         />
                       </div>
                     </label>
 
                     {/* Koko */}
                     <label
-                      className={`flex items-center p-4 border rounded-[8px] cursor-pointer ${paymentMethod === "koko" ? "bg-[#E5E0D6] border-[#3E5460]" : "bg-[#EFECE5] border-[#E5E0D6]"}`}
+                      className={`flex items-center px-[9px] h-[58px] border rounded-[8px] cursor-pointer ${paymentMethod === "koko" ? "bg-[#E5E0D6] border-[#3E5460]" : "bg-[#EFECE5] border-[#BBA496]"}`}
                     >
                       <div className="flex items-center gap-3 flex-1">
                         <div
@@ -374,7 +400,7 @@ export default function CheckoutPaymentPage() {
                           className="hidden"
                         />
                         <span
-                          className="text-[14px] text-[#3E5460]"
+                          className="text-[14px] leading-[24px] text-[#3E5460]"
                           style={{ fontFamily: "Raleway, sans-serif" }}
                         >
                           Koko
@@ -384,16 +410,16 @@ export default function CheckoutPaymentPage() {
                         <Image
                           src="/images/payment/koko.png"
                           alt="Koko"
-                          width={58}
-                          height={40}
-                          className="object-contain p-1"
+                          width={42}
+                          height={19}
+                          className="object-contain"
                         />
                       </div>
                     </label>
 
                     {/* American Express */}
                     <label
-                      className={`flex items-center p-4 border rounded-[8px] cursor-pointer ${paymentMethod === "amex" ? "bg-[#E5E0D6] border-[#3E5460]" : "bg-[#EFECE5] border-[#E5E0D6]"}`}
+                      className={`flex items-center px-[9px] h-[58px] border rounded-[8px] cursor-pointer ${paymentMethod === "amex" ? "bg-[#E5E0D6] border-[#3E5460]" : "bg-[#EFECE5] border-[#BBA496]"}`}
                     >
                       <div className="flex items-center gap-3 flex-1">
                         <div
@@ -412,7 +438,7 @@ export default function CheckoutPaymentPage() {
                           className="hidden"
                         />
                         <span
-                          className="text-[14px] text-[#3E5460]"
+                          className="text-[14px] leading-[24px] text-[#3E5460]"
                           style={{ fontFamily: "Raleway, sans-serif" }}
                         >
                           American Express
@@ -424,48 +450,49 @@ export default function CheckoutPaymentPage() {
                           alt="American Express"
                           width={58}
                           height={40}
-                          className="object-contain p-1"
+                          className="object-cover"
                         />
                       </div>
                     </label>
                   </div>
 
-                  {/* Terms Checkbox */}
-                  <label className="flex items-center cursor-pointer">
-                    <div
-                      className={`w-4 h-4 md:w-5 md:h-5 border flex items-center justify-center flex-shrink-0 ${termsAccepted ? "border-[#232D35] bg-[#232D35]" : "border-[#765C4D]"}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={termsAccepted}
-                        onChange={(e) => setTermsAccepted(e.target.checked)}
-                        className="hidden"
-                      />
-                      {termsAccepted && (
-                        <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
-                      )}
-                    </div>
-                    <span
-                      className="text-[11px] md:text-xs text-[#3E5460] pl-3 md:pl-4 flex-1 leading-[16px] md:leading-[18px]"
-                      style={{ fontFamily: "Raleway, sans-serif" }}
-                    >
-                      By confirming the order you accept the Modett{" "}
-                      <a href="#" className="underline">
-                        Terms and Conditions
-                      </a>{" "}
-                      of sale
-                    </span>
-                  </label>
+                  <div className="flex flex-col gap-[16px] w-full">
+                    {/* Terms Checkbox */}
+                    <label className="flex items-center cursor-pointer mx-auto w-[457px]">
+                      <div className="w-[20px] h-[20px] border border-[#BBA496] flex items-center justify-center flex-shrink-0 bg-transparent">
+                        <input
+                          type="checkbox"
+                          checked={termsAccepted}
+                          onChange={(e) => setTermsAccepted(e.target.checked)}
+                          className="hidden"
+                        />
+                        {termsAccepted && (
+                          <Check className="w-[14px] h-[14px] text-[#3E5460]" />
+                        )}
+                      </div>
+                      <span
+                        className="text-[12px] text-[#3E5460] pl-[28px] flex-1 leading-[18px] tracking-[0px]"
+                        style={{ fontFamily: "Raleway, sans-serif" }}
+                      >
+                        *By confirming the order you accept the Modett{" "}
+                        <a
+                          href="#"
+                          className="underline decoration-[#3E5460] underline-offset-2"
+                        >
+                          Terms and Conditions
+                        </a>{" "}
+                        of sale
+                      </span>
+                    </label>
 
-                  {/* Confirm Button */}
-                  <div className="flex justify-center">
+                    {/* Confirm Button */}
                     <button
                       type="submit"
                       disabled={!termsAccepted}
-                      className={`w-full md:w-[320px] lg:w-[350px] h-[44px] md:h-[48px] lg:h-[50px] bg-[#232D35] border border-[#232D35] px-6 md:px-8 lg:px-[31px] flex items-center justify-center transition-opacity ${termsAccepted ? "hover:opacity-90" : "opacity-50 cursor-not-allowed"}`}
+                      className={`w-[460px] mx-auto h-[50px] bg-[#232D35] border border-[#232D35] flex items-center justify-center transition-opacity ${termsAccepted ? "hover:opacity-90" : "cursor-not-allowed"}`}
                     >
                       <span
-                        className="text-sm md:text-[15px] lg:text-[16px] font-medium text-[#E5E0D6] uppercase tracking-[2px] md:tracking-[3px] lg:tracking-[4px] leading-[20px] md:leading-[22px] lg:leading-[24px]"
+                        className="text-[16px] font-medium text-[#E5E0D6] uppercase tracking-[4px] leading-[24px]"
                         style={{ fontFamily: "Raleway, sans-serif" }}
                       >
                         CONFIRM AND COMPLETE PURCHASE
@@ -477,146 +504,7 @@ export default function CheckoutPaymentPage() {
             </div>
 
             {/* Footer Section (Reused) */}
-            <div className="mt-6 md:mt-8 pt-4 md:pt-6 lg:pt-[25px] grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[261px_1fr] gap-4 md:gap-6 lg:gap-8">
-              {/* Left Column: Shipping & Returns */}
-              <div className="space-y-4 md:space-y-6 md:border-r border-[#E5E0D6] md:pr-3 lg:pr-[11px]">
-                <div className="flex items-start gap-2 md:gap-[6px]">
-                  <div className="flex-shrink-0">
-                    <svg
-                      width="20"
-                      height="20"
-                      className="md:w-6 md:h-6"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                      <line x1="12" y1="22.08" x2="12" y2="12" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p
-                      className="text-[11px] md:text-[12px] leading-[16px] md:leading-[18px] text-[#3E5460]"
-                      style={{ fontFamily: "Raleway, sans-serif" }}
-                    >
-                      We offer free shipping on all orders with Express
-                      Worldwide service.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2 md:gap-[6px]">
-                  <div className="flex-shrink-0">
-                    <svg
-                      width="20"
-                      height="20"
-                      className="md:w-6 md:h-6"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                      <polyline points="9 22 9 12 15 12 15 22" />
-                      <path d="M2 12h20" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p
-                      className="text-[11px] md:text-[12px] leading-[16px] md:leading-[18px] text-[#3E5460]"
-                      style={{ fontFamily: "Raleway, sans-serif" }}
-                    >
-                      We guarantee 30 days to return or exchange, starting from
-                      the delivery date of the order. For fragrance returns, we
-                      invite you to consult the{" "}
-                      <a href="#" className="underline">
-                        Frequently Asked Questions
-                      </a>{" "}
-                      section.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Help */}
-              <div className="flex flex-col gap-2 md:pl-3 lg:pl-[10px]">
-                <h3
-                  className="text-sm md:text-[15px] lg:text-[16px] leading-[18px] md:leading-[20px] font-medium text-[#3E5460]"
-                  style={{
-                    fontFamily: "Raleway, sans-serif",
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  MAY WE HELP YOU?
-                </h3>
-
-                <p
-                  className="text-[11px] md:text-[12px] leading-[16px] md:leading-[18px] text-[#3E5460]"
-                  style={{ fontFamily: "Raleway, sans-serif" }}
-                >
-                  Our Customer Care is available from Colombo, Sri Lanka. Monday
-                  through Friday from 8:30 a.m. to 6:30 p.m. and Saturday from
-                  9:00 a.m. to 5:30 p.m.
-                </p>
-
-                <div className="flex flex-wrap gap-4 md:gap-6">
-                  <button
-                    className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-[#3E5460] underline"
-                    style={{ fontFamily: "Raleway, sans-serif" }}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      className="md:w-[18px] md:h-[18px]"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                    </svg>
-                    Call us
-                  </button>
-                  <button
-                    className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-[#3E5460] underline"
-                    style={{ fontFamily: "Raleway, sans-serif" }}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      className="md:w-[18px] md:h-[18px]"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                    </svg>
-                    WhatsApp
-                  </button>
-                  <button
-                    className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-[#3E5460] underline"
-                    style={{ fontFamily: "Raleway, sans-serif" }}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      className="md:w-[18px] md:h-[18px]"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    >
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                    Contact us by e-mail
-                  </button>
-                </div>
-              </div>
-            </div>
+            <CheckoutHelpSection />
           </div>
 
           <div className="lg:mt-[-80px]">
