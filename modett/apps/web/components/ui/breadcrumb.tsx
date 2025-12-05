@@ -9,10 +9,12 @@ interface BreadcrumbProps {
   items: BreadcrumbItem[];
 }
 
+import { PageContainer } from "@/components/layout/page-container";
+
 export function Breadcrumb({ items }: BreadcrumbProps) {
   return (
     <nav className="w-full bg-[#EFECE5]">
-      <div className="w-full max-w-[1440px] mx-auto px-[80px] py-[12px]">
+      <PageContainer className="py-[12px]">
         <ol className="flex items-center gap-[8px] h-[24px]">
           {items.map((item, index) => (
             <li key={index} className="flex items-center gap-[8px]">
@@ -38,7 +40,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
             </li>
           ))}
         </ol>
-      </div>
+      </PageContainer>
     </nav>
   );
 }

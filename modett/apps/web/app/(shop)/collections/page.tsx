@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ProductCard } from "@/features/product-catalog/components/product-card";
-import { useProducts, useCategories, useSizeCounts, useColorCounts } from "@/features/product-catalog/queries";
+import {
+  useProducts,
+  useCategories,
+  useSizeCounts,
+  useColorCounts,
+} from "@/features/product-catalog/queries";
 import { getColorHex } from "@/lib/colors";
 import {
   ChevronDown,
@@ -12,7 +17,15 @@ import {
   Grid3X3,
   LayoutGrid,
 } from "lucide-react";
-import { TEXT_STYLES, COMMON_CLASSES, COLORS, FONTS, RESPONSIVE } from "@/features/cart/constants/styles";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Text } from "@/components/ui/text";
+import {
+  TEXT_STYLES,
+  COMMON_CLASSES,
+  COLORS,
+  FONTS,
+  RESPONSIVE,
+} from "@/features/cart/constants/styles";
 
 export default function CollectionsPage() {
   const [showFilters, setShowFilters] = useState(true);
@@ -31,7 +44,10 @@ export default function CollectionsPage() {
   const [displayCount, setDisplayCount] = useState(12);
   const pageSize = 12;
 
-  const { data: productsData, isLoading } = useProducts({ sort: sortBy, pageSize: 100 });
+  const { data: productsData, isLoading } = useProducts({
+    sort: sortBy,
+    pageSize: 100,
+  });
 
   const handleLoadMore = () => {
     setDisplayCount((prev) => prev + pageSize);
@@ -135,65 +151,54 @@ export default function CollectionsPage() {
 
   return (
     <main className={`min-h-screen ${COMMON_CLASSES.pageBg}`}>
-      <div className={`w-full max-w-[1440px] mx-auto h-[24px] ${RESPONSIVE.padding.page} flex items-center`}>
-        <nav
-          className="text-[12px] uppercase tracking-[2px]"
-          style={TEXT_STYLES.accent}
-        >
-          <Link href="/" className="hover:opacity-80 transition-colors">
-            HOME
-          </Link>
-          <span className="mx-2">/</span>
-          <span style={{ color: COLORS.graphite }}>COLLECTION</span>
-        </nav>
-      </div>
+      <Breadcrumb
+        items={[{ label: "HOME", href: "/" }, { label: "COLLECTION" }]}
+      />
 
-      <div className={`w-full max-w-[768px] mx-auto h-[42px] flex flex-col items-center justify-center gap-[16px] ${COMMON_CLASSES.pageBg}`}>
-        <h1
-          className="w-full max-w-[150px] h-[42px] text-[24px] font-semibold leading-[130%] tracking-[0%]"
-          style={TEXT_STYLES.accent}
-        >
+      <div
+        className={`w-full max-w-[768px] mx-auto h-[42px] flex flex-col items-center justify-center gap-[16px] ${COMMON_CLASSES.pageBg}`}
+      >
+        <Text.Accent className="w-full max-w-[150px] h-[42px] text-[24px] font-semibold leading-[130%] tracking-[0%]">
           Collection
-        </h1>
+        </Text.Accent>
       </div>
 
-      <div className={`w-full max-w-[1440px] mx-auto pt-[16px] ${RESPONSIVE.padding.page} pb-[32px] flex flex-col gap-[80px] ${COMMON_CLASSES.pageBg}`}>
+      <div
+        className={`w-full max-w-[1440px] mx-auto pt-[16px] ${RESPONSIVE.padding.page} pb-[32px] flex flex-col gap-[80px] ${COMMON_CLASSES.pageBg}`}
+      >
         <div className="w-full max-w-[1280px] mx-auto flex flex-col gap-[18px]">
-          <div className="w-full h-[41px] flex items-center justify-between border-b" style={{ borderColor: COLORS.alabaster }}>
+          <div
+            className="w-full h-[41px] flex items-center justify-between border-b"
+            style={{ borderColor: COLORS.alabaster }}
+          >
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="flex flex-col items-start"
             >
               {/* First row: HIDE + chevron */}
               <div className="flex items-center gap-[16px]">
-                <span
-                  className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px]"
-                  style={TEXT_STYLES.secondary}
-                >
+                <Text.Secondary className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px]">
                   {showFilters ? "HIDE" : "SHOW"}
-                </span>
+                </Text.Secondary>
                 <ChevronLeft
                   className="w-4 h-4 transition-transform"
-                  style={{ color: COLORS.slateGray, transform: showFilters ? "" : "rotate(180deg)" }}
+                  style={{
+                    color: COLORS.slateGray,
+                    transform: showFilters ? "" : "rotate(180deg)",
+                  }}
                 />
               </div>
               {/* Second row: FILTERS */}
-              <span
-                className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px]"
-                style={TEXT_STYLES.secondary}
-              >
+              <Text.Secondary className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px]">
                 FILTERS
-              </span>
+              </Text.Secondary>
             </button>
 
             <div className="flex items-center gap-[19px] h-[33px]">
               <div className="flex items-center gap-2 h-[33px]">
-                <span
-                  className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px] whitespace-nowrap"
-                  style={TEXT_STYLES.secondary}
-                >
+                <Text.Secondary className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px] whitespace-nowrap">
                   SORT BY:
-                </span>
+                </Text.Secondary>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
@@ -209,7 +214,7 @@ export default function CollectionsPage() {
                       fontFamily: FONTS.reddit,
                       letterSpacing: "3px",
                       fontSize: "14px",
-                      fontWeight: "500"
+                      fontWeight: "500",
                     }}
                   >
                     Select...
@@ -223,7 +228,7 @@ export default function CollectionsPage() {
                       fontFamily: FONTS.reddit,
                       letterSpacing: "3px",
                       fontSize: "14px",
-                      fontWeight: "500"
+                      fontWeight: "500",
                     }}
                   >
                     Newest
@@ -237,7 +242,7 @@ export default function CollectionsPage() {
                       fontFamily: FONTS.reddit,
                       letterSpacing: "3px",
                       fontSize: "14px",
-                      fontWeight: "500"
+                      fontWeight: "500",
                     }}
                   >
                     Price: Low to High
@@ -251,7 +256,7 @@ export default function CollectionsPage() {
                       fontFamily: FONTS.reddit,
                       letterSpacing: "3px",
                       fontSize: "14px",
-                      fontWeight: "500"
+                      fontWeight: "500",
                     }}
                   >
                     Price: High to Low
@@ -272,13 +277,17 @@ export default function CollectionsPage() {
                 </span>
                 <button
                   onClick={() => setGridView("3")}
-                  style={{ color: gridView === "3" ? COLORS.graphite : COLORS.tealBlue }}
+                  style={{
+                    color: gridView === "3" ? COLORS.graphite : COLORS.tealBlue,
+                  }}
                 >
                   <Grid3X3 className="w-[20px] h-[20px]" />
                 </button>
                 <button
                   onClick={() => setGridView("2")}
-                  style={{ color: gridView === "2" ? COLORS.graphite : COLORS.tealBlue }}
+                  style={{
+                    color: gridView === "2" ? COLORS.graphite : COLORS.tealBlue,
+                  }}
                 >
                   <LayoutGrid className="w-[20px] h-[20px]" />
                 </button>
@@ -291,7 +300,10 @@ export default function CollectionsPage() {
             selectedColors.length > 0 ||
             selectedCategories.length > 0 ||
             selectedCollections.length > 0) && (
-            <div className="w-full max-w-[1280px] mx-auto min-h-[56px] flex items-center gap-[18px] border-b pb-[18px] flex-wrap" style={{ borderColor: COLORS.alabaster }}>
+            <div
+              className="w-full max-w-[1280px] mx-auto min-h-[56px] flex items-center gap-[18px] border-b pb-[18px] flex-wrap"
+              style={{ borderColor: COLORS.alabaster }}
+            >
               {selectedCategories.map((categoryId) => {
                 const category = productTypeCategories.find(
                   (c) => c.id === categoryId
@@ -301,9 +313,17 @@ export default function CollectionsPage() {
                     key={categoryId}
                     onClick={() => toggleCategory(categoryId)}
                     className="h-[32px] px-[10px] py-[4px] flex items-center gap-[21px] transition-colors"
-                    style={{ backgroundColor: COLORS.tealBlue, fontFamily: FONTS.raleway }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.buttonHover}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.tealBlue}
+                    style={{
+                      backgroundColor: COLORS.tealBlue,
+                      fontFamily: FONTS.raleway,
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        COLORS.buttonHover)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = COLORS.tealBlue)
+                    }
                   >
                     <span className="text-[12px] font-medium text-white uppercase tracking-[1px] whitespace-nowrap">
                       {category.name}
@@ -321,9 +341,17 @@ export default function CollectionsPage() {
                     key={collectionId}
                     onClick={() => toggleCollection(collectionId)}
                     className="h-[32px] px-[10px] py-[4px] flex items-center gap-[21px] transition-colors"
-                    style={{ backgroundColor: COLORS.tealBlue, fontFamily: FONTS.raleway }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.buttonHover}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.tealBlue}
+                    style={{
+                      backgroundColor: COLORS.tealBlue,
+                      fontFamily: FONTS.raleway,
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor =
+                        COLORS.buttonHover)
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = COLORS.tealBlue)
+                    }
                   >
                     <span className="text-[12px] font-medium text-white uppercase tracking-[1px] whitespace-nowrap">
                       {collection.name}
@@ -337,9 +365,16 @@ export default function CollectionsPage() {
                   key={color}
                   onClick={() => toggleColor(color)}
                   className="h-[32px] px-[10px] py-[4px] flex items-center gap-[21px] transition-colors"
-                  style={{ backgroundColor: COLORS.tealBlue, fontFamily: FONTS.raleway }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.buttonHover}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.tealBlue}
+                  style={{
+                    backgroundColor: COLORS.tealBlue,
+                    fontFamily: FONTS.raleway,
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = COLORS.buttonHover)
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = COLORS.tealBlue)
+                  }
                 >
                   <div className="flex items-center gap-2">
                     <div
@@ -362,9 +397,16 @@ export default function CollectionsPage() {
                   key={size}
                   onClick={() => toggleSize(size)}
                   className="w-full max-w-[120px] h-[32px] pt-[4px] pr-[9px] pb-[4px] pl-[10px] flex items-center gap-[21px] transition-colors"
-                  style={{ backgroundColor: COLORS.tealBlue, fontFamily: FONTS.raleway }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.buttonHover}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.tealBlue}
+                  style={{
+                    backgroundColor: COLORS.tealBlue,
+                    fontFamily: FONTS.raleway,
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = COLORS.buttonHover)
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = COLORS.tealBlue)
+                  }
                 >
                   <span className="text-[12px] font-medium text-white uppercase tracking-[1px] whitespace-nowrap">
                     SIZE:{size}
@@ -377,14 +419,14 @@ export default function CollectionsPage() {
 
           <div className="w-full max-w-[1280px] mx-auto flex gap-[18px]">
             {showFilters && (
-              <aside className="w-full max-w-[250px] flex-shrink-0" key={filterKey}>
+              <aside
+                className="w-full max-w-[250px] flex-shrink-0"
+                key={filterKey}
+              >
                 <div className="flex items-center justify-between mb-4">
-                  <span
-                    className="text-[12px] uppercase tracking-[2px]"
-                    style={TEXT_STYLES.accent}
-                  >
+                  <Text.Accent className="text-[12px] uppercase tracking-[2px]">
                     FILTER BY
-                  </span>
+                  </Text.Accent>
                   <button
                     onClick={handleClearFilters}
                     className={`w-full max-w-[89px] h-[24px] pt-[4px] pr-[9px] pb-[4px] pl-[10px] text-[12px] flex items-center justify-center hover:${COMMON_CLASSES.cartItemBg} transition-colors rounded whitespace-nowrap`}
@@ -394,21 +436,26 @@ export default function CollectionsPage() {
                   </button>
                 </div>
 
-                <div className={`border-t ${COMMON_CLASSES.borderPrimary} py-3`}>
+                <div
+                  className={`border-t ${COMMON_CLASSES.borderPrimary} py-3`}
+                >
                   <button
                     onClick={() => setCategoriesOpen(!categoriesOpen)}
                     className="flex items-center justify-between w-full"
                   >
-                    <span
-                      className="text-[12px] uppercase tracking-[2px]"
-                      style={TEXT_STYLES.accent}
-                    >
+                    <Text.Accent className="text-[12px] uppercase tracking-[2px]">
                       CATEGORIES
-                    </span>
+                    </Text.Accent>
                     {categoriesOpen ? (
-                      <ChevronUp className="w-4 h-4" style={{ color: COLORS.richUmber }} />
+                      <ChevronUp
+                        className="w-4 h-4"
+                        style={{ color: COLORS.richUmber }}
+                      />
                     ) : (
-                      <ChevronDown className="w-4 h-4" style={{ color: COLORS.richUmber }} />
+                      <ChevronDown
+                        className="w-4 h-4"
+                        style={{ color: COLORS.richUmber }}
+                      />
                     )}
                   </button>
                   {categoriesOpen && (
@@ -433,21 +480,26 @@ export default function CollectionsPage() {
                   )}
                 </div>
 
-                <div className={`border-t ${COMMON_CLASSES.borderPrimary} py-3`}>
+                <div
+                  className={`border-t ${COMMON_CLASSES.borderPrimary} py-3`}
+                >
                   <button
                     onClick={() => setColourOpen(!colourOpen)}
                     className="flex items-center justify-between w-full"
                   >
-                    <span
-                      className="text-[12px] uppercase tracking-[2px]"
-                      style={TEXT_STYLES.accent}
-                    >
+                    <Text.Accent className="text-[12px] uppercase tracking-[2px]">
                       COLOUR
-                    </span>
+                    </Text.Accent>
                     {colourOpen ? (
-                      <ChevronUp className="w-4 h-4" style={{ color: COLORS.richUmber }} />
+                      <ChevronUp
+                        className="w-4 h-4"
+                        style={{ color: COLORS.richUmber }}
+                      />
                     ) : (
-                      <ChevronDown className="w-4 h-4" style={{ color: COLORS.richUmber }} />
+                      <ChevronDown
+                        className="w-4 h-4"
+                        style={{ color: COLORS.richUmber }}
+                      />
                     )}
                   </button>
                   {colourOpen && (
@@ -484,21 +536,26 @@ export default function CollectionsPage() {
                   )}
                 </div>
 
-                <div className={`border-t ${COMMON_CLASSES.borderPrimary} py-3`}>
+                <div
+                  className={`border-t ${COMMON_CLASSES.borderPrimary} py-3`}
+                >
                   <button
                     onClick={() => setCollectionOpen(!collectionOpen)}
                     className="flex items-center justify-between w-full"
                   >
-                    <span
-                      className="text-[12px] uppercase tracking-[2px]"
-                      style={TEXT_STYLES.accent}
-                    >
+                    <Text.Accent className="text-[12px] uppercase tracking-[2px]">
                       COLLECTION
-                    </span>
+                    </Text.Accent>
                     {collectionOpen ? (
-                      <ChevronUp className="w-4 h-4" style={{ color: COLORS.richUmber }} />
+                      <ChevronUp
+                        className="w-4 h-4"
+                        style={{ color: COLORS.richUmber }}
+                      />
                     ) : (
-                      <ChevronDown className="w-4 h-4" style={{ color: COLORS.richUmber }} />
+                      <ChevronDown
+                        className="w-4 h-4"
+                        style={{ color: COLORS.richUmber }}
+                      />
                     )}
                   </button>
                   {collectionOpen && (
@@ -523,21 +580,26 @@ export default function CollectionsPage() {
                   )}
                 </div>
 
-                <div className={`border-t ${COMMON_CLASSES.borderPrimary} py-3`}>
+                <div
+                  className={`border-t ${COMMON_CLASSES.borderPrimary} py-3`}
+                >
                   <button
                     onClick={() => setSizeOpen(!sizeOpen)}
                     className="flex items-center justify-between w-full mb-3"
                   >
-                    <span
-                      className="text-[12px] uppercase tracking-[2px]"
-                      style={TEXT_STYLES.accent}
-                    >
+                    <Text.Accent className="text-[12px] uppercase tracking-[2px]">
                       SIZE
-                    </span>
+                    </Text.Accent>
                     {sizeOpen ? (
-                      <ChevronUp className="w-4 h-4" style={{ color: COLORS.richUmber }} />
+                      <ChevronUp
+                        className="w-4 h-4"
+                        style={{ color: COLORS.richUmber }}
+                      />
                     ) : (
-                      <ChevronDown className="w-4 h-4" style={{ color: COLORS.richUmber }} />
+                      <ChevronDown
+                        className="w-4 h-4"
+                        style={{ color: COLORS.richUmber }}
+                      />
                     )}
                   </button>
                   {sizeOpen && (
@@ -612,12 +674,9 @@ export default function CollectionsPage() {
           {/* Pagination Section */}
           {!isLoading && productsData && productsData.products.length > 0 && (
             <div className="w-full max-w-[1280px] h-[143px] mx-auto flex flex-col items-center justify-center gap-[24px] pt-[32px]">
-              <p
-                className="text-[14px] font-medium leading-[24px] tracking-[3px] uppercase"
-                style={{ ...TEXT_STYLES.secondary }}
-              >
+              <Text.Secondary className="text-[14px] font-medium leading-[24px] tracking-[3px] uppercase">
                 {startItem}-{endItem} of {totalItems} items
-              </p>
+              </Text.Secondary>
               {hasMore && (
                 <button
                   onClick={handleLoadMore}

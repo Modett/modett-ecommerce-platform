@@ -8,9 +8,15 @@ import {
 } from "@/features/cart/constants/styles";
 import { useCart } from "@/features/cart/queries";
 import { getStoredCartId } from "@/features/cart/utils";
-import { CheckoutProgressBar } from "@/features/checkout/components/checkout-progress-bar";
-import { CartSummary } from "@/features/checkout/components/cart-summary";
-import { CheckoutHelpSection } from "@/features/checkout/components/checkout-help-section";
+import {
+  CheckoutProgressBar,
+  CartSummary,
+  CheckoutHelpSection,
+  ActiveStepHeader,
+  CompletedCheckoutStep,
+  LoadingState,
+  FutureStep,
+} from "@/features/checkout/components";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutEmailPage() {
@@ -30,18 +36,12 @@ export default function CheckoutEmailPage() {
   const handleContinue = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Validate email and navigate to shipping page
-    console.log("Email:", email);
+
     router.push("/checkout/shipping");
   };
 
   if (isLoading) {
-    return (
-      <main
-        className={`w-full min-h-screen ${COMMON_CLASSES.pageBg} flex items-center justify-center`}
-      >
-        <div className="animate-pulse text-lg">Loading...</div>
-      </main>
-    );
+    return <LoadingState />;
   }
 
   return (
@@ -55,14 +55,7 @@ export default function CheckoutEmailPage() {
           <div className="space-y-2">
             <div className={`${COMMON_CLASSES.pageBg} w-full max-w-[904px]`}>
               {/* Active Step Header */}
-              <div className="bg-[#232D35] p-[16px] flex items-center h-[60px]">
-                <h1
-                  className="text-[20px] leading-[140%] font-normal tracking-[0%] text-[#EFECE5]"
-                  style={{ fontFamily: "Raleway, sans-serif" }}
-                >
-                  1. E-mail address
-                </h1>
-              </div>
+              <ActiveStepHeader stepNumber={1} title="E-mail address" />
 
               <div className="p-6">
                 <p
@@ -111,32 +104,9 @@ export default function CheckoutEmailPage() {
             </div>
 
             {/* Future Steps */}
-            <div className="bg-[#E5E0D6] border border-[#E5E0D6] h-[60px] flex items-center px-6">
-              <h2
-                className="text-[17.7px] leading-[28px] font-normal text-[#BBA496]"
-                style={{ fontFamily: "Raleway, sans-serif" }}
-              >
-                2. Shipping
-              </h2>
-            </div>
-
-            <div className="bg-[#E5E0D6] border border-[#E5E0D6] h-[60px] flex items-center px-6">
-              <h2
-                className="text-[17.7px] leading-[28px] font-normal text-[#BBA496]"
-                style={{ fontFamily: "Raleway, sans-serif" }}
-              >
-                3. Information
-              </h2>
-            </div>
-
-            <div className="bg-[#E5E0D6] border border-[#E5E0D6] h-[60px] flex items-center px-6">
-              <h2
-                className="text-[17.7px] leading-[28px] font-normal text-[#BBA496]"
-                style={{ fontFamily: "Raleway, sans-serif" }}
-              >
-                4. Payment
-              </h2>
-            </div>
+            <FutureStep stepNumber={2} title="Shipping" />
+            <FutureStep stepNumber={3} title="Information" />
+            <FutureStep stepNumber={4} title="Payment" />
 
             <CheckoutHelpSection />
           </div>

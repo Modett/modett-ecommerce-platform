@@ -1,0 +1,19 @@
+import { FONTS } from "@/features/cart/constants/styles";
+
+interface ActiveStepHeaderProps {
+  stepNumber: number;
+  title: string;
+}
+
+export function ActiveStepHeader({ stepNumber, title }: ActiveStepHeaderProps) {
+  return (
+    <div className="bg-[#232D35] p-[16px] flex items-center h-[60px]">
+      <h1
+        className="text-[20px] leading-[140%] font-normal tracking-[0%] text-[#EFECE5]"
+        style={{ fontFamily: FONTS.raleway }}
+      >
+        {stepNumber}. {title}
+      </h1>
+    </div>
+  );
+}

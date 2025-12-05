@@ -78,7 +78,7 @@ export const CheckoutHelpSection = () => {
         </h3>
 
         <p
-          className="text-[11px] md:text-[12px] leading-[16px] md:leading-[18px] text-[#3E5460]"
+          className="text-[11px] md:text-[12px] leading-[16px] md:leading-[18px] text-[#3E5460] break-words"
           style={{ fontFamily: "Raleway, sans-serif" }}
         >
           Our Customer Care is available from Colombo, Sri Lanka. Monday through

@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { TEXT_STYLES } from "@/features/cart/constants/styles";
 
 interface CompletedCheckoutStepProps {
   stepNumber: number;
@@ -14,7 +15,7 @@ export function CompletedCheckoutStep({
   children,
 }: CompletedCheckoutStepProps) {
   return (
-    <div className="w-full min-h-[120px] flex flex-col border border-[#E5E0D6]">
+    <div className="w-full flex flex-col border border-[#E5E0D6]">
       <div className="flex-1 bg-[#E5E0D6] px-3 md:px-4 lg:px-6 flex justify-between items-center min-h-[48px] md:min-h-[56px] lg:min-h-[60px]">
         <div className="flex items-center gap-2 md:gap-3">
           <div className="w-4 h-4 md:w-5 md:h-5 rounded-full border border-[#232D35] flex items-center justify-center">
@@ -22,7 +23,7 @@ export function CompletedCheckoutStep({
           </div>
           <h2
             className="text-base md:text-lg lg:text-[20px] leading-[24px] md:leading-[26px] lg:leading-[28px] font-normal text-[#232D35]"
-            style={{ fontFamily: "Raleway, sans-serif" }}
+            style={TEXT_STYLES.bodyGraphite}
           >
             {stepNumber}. {title}
           </h2>
@@ -30,7 +31,7 @@ export function CompletedCheckoutStep({
         <button
           onClick={onEdit}
           className="flex items-center justify-end text-[9px] md:text-[10px] leading-[16px] font-normal text-[#232D35] uppercase"
-          style={{ fontFamily: "Raleway, sans-serif" }}
+          style={TEXT_STYLES.button}
         >
           EDIT
         </button>

@@ -25,7 +25,16 @@ export class WishlistItemRepositoryImpl implements IWishlistItemRepository {
 
   async save(item: WishlistItem): Promise<void> {
     const data = this.dehydrate(item);
-    await this.prisma.wishlistItem.create({ data });
+    await this.prisma.wishlistItem.upsert({
+      where: {
+        wishlistId_variantId: {
+          wishlistId: data.wishlistId,
+          variantId: data.variantId,
+        },
+      },
+      create: data,
+      update: {},
+    });
   }
 
   async delete(wishlistId: string, variantId: string): Promise<void> {

@@ -79,9 +79,9 @@ export const useAddToWishlist = () => {
       return wishlistApi.addToWishlist(wishlistId, variantId, productId);
     },
     onSuccess: (data, variables) => {
-      // Invalidate wishlist items to refetch
+      // Invalidate all wishlist queries (items, contains, product-contains)
       queryClient.invalidateQueries({
-        queryKey: wishlistKeys.items(variables.wishlistId),
+        queryKey: wishlistKeys.wishlist(variables.wishlistId),
       });
     },
   });
@@ -102,9 +102,9 @@ export const useRemoveFromWishlist = () => {
       return wishlistApi.removeFromWishlist(wishlistId, variantId, productId);
     },
     onSuccess: (data, variables) => {
-      // Invalidate wishlist items to refetch
+      // Invalidate all wishlist queries (items, contains, product-contains)
       queryClient.invalidateQueries({
-        queryKey: wishlistKeys.items(variables.wishlistId),
+        queryKey: wishlistKeys.wishlist(variables.wishlistId),
       });
     },
   });
