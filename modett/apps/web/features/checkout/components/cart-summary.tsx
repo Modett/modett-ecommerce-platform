@@ -11,17 +11,14 @@ export function CartSummary({ cart }: CartSummaryProps) {
   const total = cart?.summary.total || 0;
 
   return (
-    <div className={`${COMMON_CLASSES.pageBg} sticky top-4 w-[300px] h-[716px] flex flex-col justify-between`}>
-      <div className="pt-[26px] px-[34px] pb-[27px] border-b border-[#E5E0D6]">
-        <h2
-          className="text-base font-medium"
-          style={TEXT_STYLES.bodyGraphite}
-        >
+    <div className={`${COMMON_CLASSES.pageBg} sticky top-4`}>
+      <div className="pt-[26px] px-4 md:px-[34px] pb-[27px] border-b border-[#E5E0D6]">
+        <h2 className="text-base font-medium" style={TEXT_STYLES.bodyGraphite}>
           Your cart ({cartItems.length} items)
         </h2>
       </div>
 
-      <div className="p-[34px]">
+      <div className="p-4 md:p-[34px]">
         <div className="mb-6 flex flex-col gap-6">
           {cartItems.map((item, index) => (
             <div

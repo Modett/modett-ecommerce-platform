@@ -37,6 +37,18 @@ export interface CartItem {
   };
 }
 
+export interface Address {
+  first_name: string;
+  last_name: string;
+  address_1: string;
+  address_2?: string;
+  city: string;
+  province: string;
+  postal_code: string;
+  country_code: string;
+  phone: string;
+}
+
 export interface Cart {
   cartId: string;
   userId?: string;
@@ -49,4 +61,7 @@ export interface Cart {
     discount: number;
     total: number;
   };
+  email?: string;
+  shipping_address?: Address;
+  billing_address?: Address;
 }
