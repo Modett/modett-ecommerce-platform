@@ -1,11 +1,12 @@
 import { COMMON_CLASSES, TEXT_STYLES } from "@/features/cart/constants/styles";
 import { Cart } from "@/features/cart/types";
+import { memo } from "react";
 
 interface CartSummaryProps {
   cart: Cart | undefined;
 }
 
-export function CartSummary({ cart }: CartSummaryProps) {
+export const CartSummary = memo(function CartSummary({ cart }: CartSummaryProps) {
   const cartItems = cart?.items || [];
   const subtotal = cart?.summary.subtotal || 0;
   const total = cart?.summary.total || 0;
@@ -200,4 +201,4 @@ export function CartSummary({ cart }: CartSummaryProps) {
       </div>
     </div>
   );
-}
+});

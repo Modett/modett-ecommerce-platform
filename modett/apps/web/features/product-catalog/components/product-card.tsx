@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Heart, Plus, Minus, ShoppingBag } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAddToCart } from "@/features/cart/queries";
-import { useWishlistId, useAddToWishlist, useRemoveFromWishlist, useIsProductInWishlist } from "@/features/engagement/queries";
+import { useWishlistId, useAddToWishlist, useRemoveFromWishlist, useIsProductInWishlist, useWishlistedVariantId } from "@/features/engagement/queries";
 import { toast } from "sonner";
 import { getColorHex } from "@/lib/colors";
 import { TEXT_STYLES, PRODUCT_CLASSES, COMMON_CLASSES } from "@/features/cart/constants/styles";
@@ -56,6 +56,7 @@ export function ProductCard({
 
   const variantIds = variants.map(v => v.id);
   const { data: isProductWishlisted } = useIsProductInWishlist(wishlistId, variantIds);
+  const { data: wishlistedVariantId } = useWishlistedVariantId(wishlistId, variantIds);
 
   // Sync local state with query result
   useEffect(() => {
@@ -138,9 +139,10 @@ export function ProductCard({
     setIsTogglingWishlist(true);
     try {
       if (isWishlisted) {
+        const variantToRemove = wishlistedVariantId || defaultVariant.id;
         await removeFromWishlistMutation.mutateAsync({
           wishlistId,
-          variantId: defaultVariant.id,
+          variantId: variantToRemove,
           productId,
         });
         setIsWishlisted(false);

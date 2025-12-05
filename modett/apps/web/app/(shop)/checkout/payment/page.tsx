@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
+import { PageContainer } from "@/components/layout/page-container";
 import { useCart } from "@/features/cart/queries";
-import { getStoredCartId } from "@/features/cart/utils";
+import { useCartId } from "@/features/cart/hooks/use-cart-id";
 import {
   CheckoutProgressBar,
   CartSummary,
@@ -22,18 +23,10 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutPaymentPage() {
-  const [cartId, setCartId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("cards");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    const storedCartId = getStoredCartId();
-    if (storedCartId) {
-      setCartId(storedCartId);
-    }
-  }, []);
-
+  const cartId = useCartId();
   const { data: cart, isLoading } = useCart(cartId);
 
   const handleConfirm = (e: React.FormEvent) => {
@@ -47,11 +40,8 @@ export default function CheckoutPaymentPage() {
   }
 
   return (
-    <main className={`w-full min-h-screen ${COMMON_CLASSES.pageBg}`}>
-      <div
-        className={`w-full max-w-[1440px] mx-auto px-4 md:px-8 lg:px-20 py-4 md:py-6 lg:py-8`}
-      >
-        <CheckoutProgressBar currentStep={4} />
+    <PageContainer fullHeight withBackground asMain className="py-4 md:py-6 lg:py-8">
+      <CheckoutProgressBar currentStep={4} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 md:gap-6 lg:gap-10 min-h-[750px]">
           <div className="space-y-2 max-w-[904px]">
@@ -433,7 +423,6 @@ export default function CheckoutPaymentPage() {
             <CartSummary cart={cart} />
           </div>
         </div>
-      </div>
-    </main>
+    </PageContainer>
   );
 }

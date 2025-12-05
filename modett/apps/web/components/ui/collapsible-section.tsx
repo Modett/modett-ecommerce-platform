@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { Text } from "@/components/ui/text";
+import { LabelText } from "@/components/ui/label-text";
 import { cn } from "@/lib/utils";
 
 interface CollapsibleSectionProps {
@@ -24,9 +24,9 @@ export function CollapsibleSection({
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between w-full mb-4 group"
       >
-        <Text.Accent className="text-[12px] font-medium uppercase tracking-[2px] group-hover:opacity-80 transition-opacity">
+        <LabelText className="group-hover:opacity-80 transition-opacity">
           {title}
-        </Text.Accent>
+        </LabelText>
         {isOpen ? (
           <ChevronUp className="w-4 h-4 text-[#765C4D]" />
         ) : (
