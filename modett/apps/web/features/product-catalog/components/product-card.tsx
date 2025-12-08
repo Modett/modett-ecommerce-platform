@@ -3,12 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, Plus, Minus, ShoppingBag } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAddToCart } from "@/features/cart/queries";
-import { useWishlistId, useAddToWishlist, useRemoveFromWishlist, useIsProductInWishlist, useWishlistedVariantId } from "@/features/engagement/queries";
+import {
+  useProductWishlist,
+  useProductVariant,
+} from "@/features/product-catalog/hooks";
 import { toast } from "sonner";
 import { getColorHex } from "@/lib/colors";
-import { TEXT_STYLES, PRODUCT_CLASSES, COMMON_CLASSES } from "@/features/cart/constants/styles";
+import {
+  TEXT_STYLES,
+  PRODUCT_CLASSES,
+  COMMON_CLASSES,
+} from "@/features/cart/constants/styles";
 
 interface Variant {
   id: string;
@@ -41,71 +48,26 @@ export function ProductCard({
   variant = "home",
 }: ProductCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
 
-  const defaultVariant = variants[0];
   const addToCartMutation = useAddToCart();
 
-  // Wishlist hooks
-  const { wishlistId } = useWishlistId();
-  const addToWishlistMutation = useAddToWishlist();
-  const removeFromWishlistMutation = useRemoveFromWishlist();
+  const variantIds = variants.map((v) => v.id);
 
-  const variantIds = variants.map(v => v.id);
-  const { data: isProductWishlisted } = useIsProductInWishlist(wishlistId, variantIds);
-  const { data: wishlistedVariantId } = useWishlistedVariantId(wishlistId, variantIds);
+  const { isWishlisted, isTogglingWishlist, toggleWishlist } =
+    useProductWishlist({
+      productId,
+      variantIds,
+      productTitle: title,
+    });
 
-  // Sync local state with query result
-  useEffect(() => {
-    if (isProductWishlisted !== undefined) {
-      setIsWishlisted(isProductWishlisted);
-    }
-  }, [isProductWishlisted]);
-
-  useEffect(() => {
-
-    // Listen for wishlist updates from other components (product-level)
-    const handleWishlistUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { productId: eventProductId, action } = customEvent.detail;
-
-      // Match on productId for product-level wishlisting
-      if (eventProductId && eventProductId === productId) {
-        setIsWishlisted(action === 'add');
-      }
-    };
-
-    window.addEventListener('wishlistUpdated', handleWishlistUpdate);
-
-    return () => {
-      window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
-    };
-  }, [productId, variants]);
-
-  const availableSizes = Array.from(
-    new Set(variants.map((v) => v.size).filter(Boolean))
-  ).sort((a, b) => {
-    const numA = parseInt(a!);
-    const numB = parseInt(b!);
-    // If both are valid numbers, sort numerically
-    if (!isNaN(numA) && !isNaN(numB)) {
-      return numA - numB;
-    }
-    // Otherwise, sort alphabetically
-    return a!.localeCompare(b!);
-  });
-
-  const availableColors = Array.from(
-    new Set(variants.map((v) => v.color).filter(Boolean))
-  );
-
-  const handleSizeSelect = (size: string) => {
-    const variant = variants.find((v) => v.size === size);
-    setSelectedVariant(variant || null);
-  };
+  const {
+    selectedVariant,
+    defaultVariant,
+    availableSizes,
+    availableColors,
+    handleSizeSelect,
+  } = useProductVariant({ variants });
 
   const handleAddToCart = async () => {
     if (!selectedVariant) {
@@ -130,48 +92,29 @@ export function ProductCard({
     }
   };
 
-  const handleWishlistToggle = async () => {
-    if (!defaultVariant || !wishlistId) {
+  const handleWishlistToggle = () => {
+    if (!defaultVariant) {
       toast.error("Product variant not available");
       return;
     }
-
-    setIsTogglingWishlist(true);
-    try {
-      if (isWishlisted) {
-        const variantToRemove = wishlistedVariantId || defaultVariant.id;
-        await removeFromWishlistMutation.mutateAsync({
-          wishlistId,
-          variantId: variantToRemove,
-          productId,
-        });
-        setIsWishlisted(false);
-        toast.success(`${title} removed from wishlist`);
-      } else {
-        await addToWishlistMutation.mutateAsync({
-          wishlistId,
-          variantId: defaultVariant.id,
-          productId,
-        });
-        setIsWishlisted(true);
-        toast.success(`${title} added to wishlist!`);
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update wishlist");
-    } finally {
-      setIsTogglingWishlist(false);
-    }
+    toggleWishlist(defaultVariant.id);
   };
 
   return (
-    <div className={`group ${COMMON_CLASSES.pageBg} flex flex-col ${
-      variant === "collection"
-        ? "w-full h-[480px] md:h-[498px] lg:h-[516px] gap-[15px] md:gap-[15.5px] lg:gap-[16px]"
-        : "w-full max-w-[330px] md:max-w-[370px] lg:max-w-[394px] h-[485px] md:h-[502px] lg:h-[520px] gap-[18px] md:gap-[18.5px] lg:gap-[19.27px]"
-    }`}>
-      <div className={`relative w-full overflow-hidden bg-gray-50 ${
-        variant === "collection" ? "h-[375px] md:h-[387px] lg:h-[400px]" : "h-[392px] md:h-[406px] lg:h-[420px]"
-      }`}>
+    <div
+      className={`group bg-[#EFECE5] flex flex-col ${
+        variant === "collection"
+          ? "w-full h-[480px] md:h-[498px] lg:h-[516px] gap-[15px] md:gap-[15.5px] lg:gap-[16px]"
+          : "w-full max-w-[350px] md:max-w-[370px] lg:max-w-[394px] h-[502px] md:h-[502px] lg:h-[520px] gap-[18px] md:gap-[18.5px] lg:gap-[19.27px]"
+      }`}
+    >
+      <div
+        className={`relative w-full overflow-hidden bg-gray-50 ${
+          variant === "collection"
+            ? "h-[375px] md:h-[387px] lg:h-[400px]"
+            : "h-[428px] md:h-[406px] lg:h-[420px]"
+        }`}
+      >
         <Link href={`/product/${slug}`} className="block w-full h-full">
           <Image src={image} alt={title} fill className="object-cover" />
         </Link>
@@ -192,18 +135,24 @@ export function ProductCard({
         </button>
 
         {isExpanded && (
-          <div className={`absolute bottom-0 left-0 right-0 bg-[#F8F5F2]/75 pt-[14px] md:pt-[15px] lg:pt-[16px] pr-[12px] md:pr-[13px] lg:pr-[14px] pb-[14px] md:pb-[15px] lg:pb-[16px] pl-[12px] md:pl-[13px] lg:pl-[14px] flex flex-col gap-[5px] md:gap-[5.5px] lg:gap-[6px] border-t-[0.5px] border-[#BBA496] ${
-            variant === "collection" ? "w-full" : "w-[330px] md:w-[370px] lg:w-[394px]"
-          }`}>
+          <div
+            className={`absolute bottom-0 left-0 right-0 bg-[#F8F5F2]/75 pt-[14px] md:pt-[15px] lg:pt-[16px] pr-[12px] md:pr-[13px] lg:pr-[14px] pb-[14px] md:pb-[15px] lg:pb-[16px] pl-[12px] md:pl-[13px] lg:pl-[14px] flex flex-col gap-[5px] md:gap-[5.5px] lg:gap-[6px] border-t-[0.5px] border-[#BBA496] ${
+              variant === "collection"
+                ? "w-full"
+                : "w-[330px] md:w-[370px] lg:w-[394px]"
+            }`}
+          >
             <p
               className="text-[11px] md:text-[11.5px] lg:text-[12px] leading-[15px] md:leading-[15.5px] lg:leading-[16px] font-normal text-center text-gray-600"
               style={TEXT_STYLES.sku}
             >
               {availableSizes.length > 0 ? "Available sizes" : "Select variant"}
             </p>
-            <div className={`grid gap-[7px] md:gap-[7.5px] lg:gap-2 ${
-              variant === "collection" ? "grid-cols-4" : "grid-cols-5"
-            }`}>
+            <div
+              className={`grid gap-[7px] md:gap-[7.5px] lg:gap-2 ${
+                variant === "collection" ? "grid-cols-4" : "grid-cols-5"
+              }`}
+            >
               {availableSizes.map((size) => (
                 <button
                   key={size}
@@ -222,7 +171,9 @@ export function ProductCard({
               onClick={handleAddToCart}
               disabled={!selectedVariant || isAddingToCart}
               className={`h-[44px] md:h-[46px] lg:h-[48px] ${PRODUCT_CLASSES.addToCartButton} text-[#E5E0D6] text-[15px] md:text-[15.5px] lg:text-[16px] leading-[23px] md:leading-[23.5px] lg:leading-[24px] disabled:opacity-50 cursor-pointer rounded-sm transition-colors ${
-                variant === "collection" ? "w-full" : "w-[306px] md:w-[344px] lg:w-[368px]"
+                variant === "collection"
+                  ? "w-full"
+                  : "w-[306px] md:w-[344px] lg:w-[368px]"
               }`}
               style={TEXT_STYLES.button}
             >
@@ -239,7 +190,7 @@ export function ProductCard({
         )}
       </div>
 
-      <div className="relative h-[74px] md:h-[76px] lg:h-[79.19px] py-[3px] md:py-[3.5px] lg:py-1 flex flex-col justify-between">
+      <div className="relative h-[74px] md:h-[76px] lg:h-[79.19px] py-[3px] md:py-[3.5px] lg:py-1 pl-[20px] pr-[24px] flex flex-col justify-between">
         <div className="flex items-start justify-between">
           <div className="flex-1 max-w-[217px] md:w-[153px] lg:w-[164.51px] md:max-w-[224px] lg:max-w-[232.11px] h-[50px] md:h-[52px] lg:h-[54.31px]">
             <Link href={`/product/${slug}`}>
