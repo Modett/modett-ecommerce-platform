@@ -1,11 +1,12 @@
 import { FONTS } from "@/features/cart/constants/styles";
+import { memo } from "react";
 
 interface FutureStepProps {
   stepNumber: number;
   title: string;
 }
 
-export function FutureStep({ stepNumber, title }: FutureStepProps) {
+export const FutureStep = memo(function FutureStep({ stepNumber, title }: FutureStepProps) {
   return (
     <div className="bg-[#E5E0D6] border border-[#E5E0D6] h-[50px] md:h-[56px] lg:h-[60px] flex items-center px-3 md:px-4 lg:px-6">
       <h2
@@ -16,4 +17,4 @@ export function FutureStep({ stepNumber, title }: FutureStepProps) {
       </h2>
     </div>
   );
-}
+});

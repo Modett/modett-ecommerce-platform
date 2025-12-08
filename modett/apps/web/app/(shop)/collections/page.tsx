@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Text } from "@/components/ui/text";
+import { LabelText } from "@/components/ui/label-text";
 import {
   TEXT_STYLES,
   COMMON_CLASSES,
@@ -424,9 +425,9 @@ export default function CollectionsPage() {
                 key={filterKey}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <Text.Accent className="text-[12px] uppercase tracking-[2px]">
+                  <LabelText>
                     FILTER BY
-                  </Text.Accent>
+                  </LabelText>
                   <button
                     onClick={handleClearFilters}
                     className={`w-full max-w-[89px] h-[24px] pt-[4px] pr-[9px] pb-[4px] pl-[10px] text-[12px] flex items-center justify-center hover:${COMMON_CLASSES.cartItemBg} transition-colors rounded whitespace-nowrap`}
@@ -443,9 +444,9 @@ export default function CollectionsPage() {
                     onClick={() => setCategoriesOpen(!categoriesOpen)}
                     className="flex items-center justify-between w-full"
                   >
-                    <Text.Accent className="text-[12px] uppercase tracking-[2px]">
+                    <LabelText>
                       CATEGORIES
-                    </Text.Accent>
+                    </LabelText>
                     {categoriesOpen ? (
                       <ChevronUp
                         className="w-4 h-4"
@@ -487,9 +488,9 @@ export default function CollectionsPage() {
                     onClick={() => setColourOpen(!colourOpen)}
                     className="flex items-center justify-between w-full"
                   >
-                    <Text.Accent className="text-[12px] uppercase tracking-[2px]">
+                    <LabelText>
                       COLOUR
-                    </Text.Accent>
+                    </LabelText>
                     {colourOpen ? (
                       <ChevronUp
                         className="w-4 h-4"
@@ -543,9 +544,9 @@ export default function CollectionsPage() {
                     onClick={() => setCollectionOpen(!collectionOpen)}
                     className="flex items-center justify-between w-full"
                   >
-                    <Text.Accent className="text-[12px] uppercase tracking-[2px]">
+                    <LabelText>
                       COLLECTION
-                    </Text.Accent>
+                    </LabelText>
                     {collectionOpen ? (
                       <ChevronUp
                         className="w-4 h-4"
@@ -587,9 +588,9 @@ export default function CollectionsPage() {
                     onClick={() => setSizeOpen(!sizeOpen)}
                     className="flex items-center justify-between w-full mb-3"
                   >
-                    <Text.Accent className="text-[12px] uppercase tracking-[2px]">
+                    <LabelText>
                       SIZE
-                    </Text.Accent>
+                    </LabelText>
                     {sizeOpen ? (
                       <ChevronUp
                         className="w-4 h-4"

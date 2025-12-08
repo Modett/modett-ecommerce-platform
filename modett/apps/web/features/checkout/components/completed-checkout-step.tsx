@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { TEXT_STYLES } from "@/features/cart/constants/styles";
+import { memo } from "react";
 
 interface CompletedCheckoutStepProps {
   stepNumber: number;
@@ -8,7 +9,7 @@ interface CompletedCheckoutStepProps {
   children: React.ReactNode;
 }
 
-export function CompletedCheckoutStep({
+export const CompletedCheckoutStep = memo(function CompletedCheckoutStep({
   stepNumber,
   title,
   onEdit,
@@ -41,4 +42,4 @@ export function CompletedCheckoutStep({
       </div>
     </div>
   );
-}
+});

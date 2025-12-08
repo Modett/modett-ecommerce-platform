@@ -1,11 +1,12 @@
 import { FONTS } from "@/features/cart/constants/styles";
+import { memo } from "react";
 
 interface ActiveStepHeaderProps {
   stepNumber: number;
   title: string;
 }
 
-export function ActiveStepHeader({ stepNumber, title }: ActiveStepHeaderProps) {
+export const ActiveStepHeader = memo(function ActiveStepHeader({ stepNumber, title }: ActiveStepHeaderProps) {
   return (
     <div className="bg-[#232D35] p-[16px] flex items-center h-[60px]">
       <h1
@@ -16,4 +17,4 @@ export function ActiveStepHeader({ stepNumber, title }: ActiveStepHeaderProps) {
       </h1>
     </div>
   );
-}
+});

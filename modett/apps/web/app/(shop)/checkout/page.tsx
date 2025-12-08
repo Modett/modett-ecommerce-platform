@@ -1,13 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  TEXT_STYLES,
-  COMMON_CLASSES,
-  RESPONSIVE,
-} from "@/features/cart/constants/styles";
+import { useState } from "react";
+import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
 import { useCart } from "@/features/cart/queries";
-import { getStoredCartId } from "@/features/cart/utils";
+import { useCartId } from "@/features/cart/hooks/use-cart-id";
 import {
   CheckoutProgressBar,
   CartSummary,
@@ -17,20 +13,13 @@ import {
   LoadingState,
   FutureStep,
 } from "@/features/checkout/components";
+import { PageContainer } from "@/components/layout/page-container";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutEmailPage() {
   const [email, setEmail] = useState("");
-  const [cartId, setCartId] = useState<string | null>(null);
   const router = useRouter();
-
-  useEffect(() => {
-    const storedCartId = getStoredCartId();
-    if (storedCartId) {
-      setCartId(storedCartId);
-    }
-  }, []);
-
+  const cartId = useCartId();
   const { data: cart, isLoading } = useCart(cartId);
 
   const handleContinue = (e: React.FormEvent) => {
@@ -45,11 +34,8 @@ export default function CheckoutEmailPage() {
   }
 
   return (
-    <main className={`w-full min-h-screen ${COMMON_CLASSES.pageBg}`}>
-      <div
-        className={`w-full max-w-[1440px] mx-auto ${RESPONSIVE.padding.page} py-8`}
-      >
-        <CheckoutProgressBar currentStep={1} />
+    <PageContainer fullHeight withBackground asMain className="py-8">
+      <CheckoutProgressBar currentStep={1} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 min-h-[750px]">
           <div className="space-y-2">
@@ -115,7 +101,6 @@ export default function CheckoutEmailPage() {
             <CartSummary cart={cart} />
           </div>
         </div>
-      </div>
-    </main>
+    </PageContainer>
   );
 }

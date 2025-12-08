@@ -223,3 +223,19 @@ export const isProductInWishlist = async (
     return false;
   }
 };
+
+/**
+ * Get the wishlisted variant ID for a product (if any)
+ */
+export const getWishlistedVariantId = async (
+  wishlistId: string,
+  variantIds: string[]
+): Promise<string | null> => {
+  try {
+    const items = await getWishlistItems(wishlistId);
+    const wishlistedItem = items.find((item) => variantIds.includes(item.variantId));
+    return wishlistedItem?.variantId || null;
+  } catch (error) {
+    return null;
+  }
+};

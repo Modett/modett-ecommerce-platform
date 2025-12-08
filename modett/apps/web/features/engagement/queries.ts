@@ -79,9 +79,8 @@ export const useAddToWishlist = () => {
       return wishlistApi.addToWishlist(wishlistId, variantId, productId);
     },
     onSuccess: (data, variables) => {
-      // Invalidate all wishlist queries (items, contains, product-contains)
       queryClient.invalidateQueries({
-        queryKey: wishlistKeys.wishlist(variables.wishlistId),
+        queryKey: wishlistKeys.all,
       });
     },
   });
@@ -102,9 +101,8 @@ export const useRemoveFromWishlist = () => {
       return wishlistApi.removeFromWishlist(wishlistId, variantId, productId);
     },
     onSuccess: (data, variables) => {
-      // Invalidate all wishlist queries (items, contains, product-contains)
       queryClient.invalidateQueries({
-        queryKey: wishlistKeys.wishlist(variables.wishlistId),
+        queryKey: wishlistKeys.all,
       });
     },
   });
@@ -134,6 +132,20 @@ export const useIsProductInWishlist = (
   return useQuery({
     queryKey: ["wishlist", wishlistId, "product-contains", variantIds],
     queryFn: () => wishlistApi.isProductInWishlist(wishlistId!, variantIds),
+    enabled: !!wishlistId && variantIds.length > 0,
+  });
+};
+
+/**
+ * Hook to get the wishlisted variant ID for a product (if any)
+ */
+export const useWishlistedVariantId = (
+  wishlistId: string | null,
+  variantIds: string[]
+) => {
+  return useQuery({
+    queryKey: ["wishlist", wishlistId, "wishlisted-variant", variantIds],
+    queryFn: () => wishlistApi.getWishlistedVariantId(wishlistId!, variantIds),
     enabled: !!wishlistId && variantIds.length > 0,
   });
 };
