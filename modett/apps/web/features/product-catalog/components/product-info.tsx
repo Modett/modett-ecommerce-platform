@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Heart, ChevronDown } from "lucide-react";
 import { getColorHex } from "@/lib/colors";
 import { useAddToCart } from "@/features/cart/queries";
-import { useWishlistId, useAddToWishlist, useRemoveFromWishlist, useIsProductInWishlist } from "@/features/engagement/queries";
+import { useProductWishlist, useProductVariant } from "@/features/product-catalog/hooks";
 import { toast } from "sonner";
 import { TEXT_STYLES, PRODUCT_CLASSES } from "@/features/cart/constants/styles";
 
@@ -30,61 +30,38 @@ interface ProductInfoProps {
 }
 
 export function ProductInfo({ product }: ProductInfoProps) {
-  const [selectedSize, setSelectedSize] = useState<string>("");
-  const [selectedColor, setSelectedColor] = useState<string>("");
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(true);
   const [isDesignOpen, setIsDesignOpen] = useState(false);
   const [isFabricOpen, setIsFabricOpen] = useState(false);
   const [isSustainabilityOpen, setIsSustainabilityOpen] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
 
-  const defaultVariant = product.variants?.[0];
   const addToCartMutation = useAddToCart();
 
-  // Wishlist hooks
-  const { wishlistId } = useWishlistId();
-  const addToWishlistMutation = useAddToWishlist();
-  const removeFromWishlistMutation = useRemoveFromWishlist();
-
   const variantIds = product.variants?.map(v => v.id) || [];
-  const { data: isProductWishlisted } = useIsProductInWishlist(wishlistId, variantIds);
 
-  // Sync local state with query result
-  useEffect(() => {
-    if (isProductWishlisted !== undefined) {
-      setIsWishlisted(isProductWishlisted);
-    }
-  }, [isProductWishlisted]);
+  const { isWishlisted, isTogglingWishlist, toggleWishlist } = useProductWishlist({
+    productId: product.id,
+    variantIds,
+    productTitle: product.title,
+  });
 
-  useEffect(() => {
-
-    const handleWishlistUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const { productId: eventProductId, action } = customEvent.detail;
-
-      if (eventProductId && eventProductId === product.id) {
-        setIsWishlisted(action === 'add');
-      }
-    };
-
-    window.addEventListener('wishlistUpdated', handleWishlistUpdate);
-
-    return () => {
-      window.removeEventListener('wishlistUpdated', handleWishlistUpdate);
-    };
-  }, [product.id, product.variants]);
+  const {
+    selectedSize,
+    selectedColor,
+    selectedVariant,
+    defaultVariant,
+    availableSizes,
+    availableColors,
+    handleSizeSelect,
+    handleColorSelect,
+  } = useProductVariant({ variants: product.variants || [] });
 
   const handleAddToCart = async () => {
     if (!selectedSize) {
       toast.error("Please select a size");
       return;
     }
-
-    const selectedVariant = product.variants?.find(
-      v => v.size === selectedSize && (!selectedColor || v.color === selectedColor)
-    );
 
     if (!selectedVariant) {
       toast.error("Selected variant not available");
@@ -106,53 +83,13 @@ export function ProductInfo({ product }: ProductInfoProps) {
     }
   };
 
-  const handleWishlist = async () => {
-    if (!defaultVariant || !wishlistId) {
+  const handleWishlist = () => {
+    if (!defaultVariant) {
       toast.error("Product variant not available");
       return;
     }
-
-    setIsTogglingWishlist(true);
-    try {
-      if (isWishlisted) {
-        await removeFromWishlistMutation.mutateAsync({
-          wishlistId,
-          variantId: defaultVariant.id,
-          productId: product.id,
-        });
-        setIsWishlisted(false);
-        toast.success(`${product.title} removed from wishlist`);
-      } else {
-        await addToWishlistMutation.mutateAsync({
-          wishlistId,
-          variantId: defaultVariant.id,
-          productId: product.id,
-        });
-        setIsWishlisted(true);
-        toast.success(`${product.title} added to wishlist!`);
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update wishlist");
-    } finally {
-      setIsTogglingWishlist(false);
-    }
+    toggleWishlist(defaultVariant.id);
   };
-
-  const sizes = Array.from(
-    new Set(product.variants?.map((v) => v.size).filter(Boolean))
-  ).sort((a, b) => {
-    const numA = parseInt(a!);
-    const numB = parseInt(b!);
-    if (!isNaN(numA) && !isNaN(numB)) {
-      return numA - numB;
-    }
-    return a!.localeCompare(b!);
-  });
-
-  // Get unique colors from variants
-  const colors = Array.from(
-    new Set(product.variants?.map((v) => v.color).filter(Boolean))
-  );
 
   return (
     <div className="flex flex-col gap-[8px] md:gap-[9px] lg:gap-[10px] w-full max-w-[280px] md:max-w-[290px] lg:max-w-[300px] pr-[1px] pt-[8px] md:pt-[9px] lg:pt-[10px] sticky top-0">
@@ -172,17 +109,17 @@ export function ProductInfo({ product }: ProductInfoProps) {
           className="text-[13px] md:text-[13.5px] lg:text-[14px] leading-[19px] md:leading-[19.5px] lg:leading-[20px] font-medium uppercase tracking-[1.8px] md:tracking-[1.9px] lg:tracking-[2px]"
           style={TEXT_STYLES.bodyGraphite}
         >
-          COLOUR: {selectedColor || colors[0] || ""}
+          COLOUR: {selectedColor || availableColors[0] || ""}
         </p>
-        {colors.length > 0 && (
+        {availableColors.length > 0 && (
           <div className="flex items-center w-[110px] md:w-[115px] lg:w-[120px] h-[18px] md:h-[19px] lg:h-[20px]" style={{ gap: "13.33px" }}>
-            {colors.map((color) => (
+            {availableColors.map((color) => (
               <button
                 key={color}
-                onClick={() => setSelectedColor(color!)}
+                onClick={() => handleColorSelect(color!)}
                 className={`w-[18px] md:w-[19px] lg:w-5 h-[18px] md:h-[19px] lg:h-5 rounded-full transition-all ${
                   selectedColor === color ||
-                  (!selectedColor && color === colors[0])
+                  (!selectedColor && color === availableColors[0])
                     ? "border-[2px] border-[#232D35]"
                     : "border border-gray-300 hover:border-gray-400"
                 }`}
@@ -211,10 +148,10 @@ export function ProductInfo({ product }: ProductInfoProps) {
           </button>
         </div>
         <div className="grid grid-cols-5 gap-[7px] md:gap-[7.5px] lg:gap-[8px] w-full max-w-[252px] md:max-w-[260px] lg:max-w-[269px] h-[74px] md:h-[77px] lg:h-[80px]">
-          {sizes.map((size) => (
+          {availableSizes.map((size) => (
             <button
               key={size}
-              onClick={() => setSelectedSize(size!)}
+              onClick={() => handleSizeSelect(size!)}
               className={`h-[44px] md:h-[46px] lg:h-[48px] border transition-all ${
                 selectedSize === size
                   ? "bg-[#232D35] text-white border-[#232D35]"
