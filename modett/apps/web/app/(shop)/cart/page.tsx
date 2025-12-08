@@ -82,12 +82,19 @@ export default function CartPage() {
         </div>
       ) : (
         <>
-          <PageContainer className={RESPONSIVE.padding.section}>
-            {/* Cart Label */}
-            <div className="h-[24px] mb-8 md:mb-10 lg:mb-[48px]">
-              <Text.Accent className="text-[14px] md:text-[15px] lg:text-[16px] leading-[24px] font-medium uppercase tracking-[3px] md:tracking-[3.5px] lg:tracking-[4px]">
-                CART
-              </Text.Accent>
+          <PageContainer className="px-4 md:px-8 lg:px-16 pt-4 pb-0 md:py-8 lg:py-[64px]">
+            {/* Cart Title */}
+            <div className="pb-[24px] mb-0 border-b border-[#D2D2D2] lg:border-0 lg:pb-0 lg:mb-[48px]">
+              <h1
+                className="text-[14px] md:text-[15px] lg:text-[16px] leading-[20px] lg:leading-[24px] font-medium tracking-[3px] md:tracking-[3.5px] lg:tracking-[4px] text-center lg:text-left"
+                style={{ fontFamily: "Raleway, sans-serif", color: "#765C4D" }}
+              >
+                <span className="lg:hidden">
+                  Cart ({cart.items.length}{" "}
+                  {cart.items.length === 1 ? "product" : "products"})
+                </span>
+                <span className="hidden lg:inline uppercase">CART</span>
+              </h1>
             </div>
 
             <div
@@ -97,24 +104,24 @@ export default function CartPage() {
                 className={`${RESPONSIVE.cartTable.mobile} ${RESPONSIVE.cartTable.tablet} ${RESPONSIVE.cartTable.desktop}`}
               >
                 <div
-                  className={`flex h-[48px] md:h-[52px] lg:h-[56px] px-3 md:px-4 lg:px-[16px] items-center ${RESPONSIVE.gap.item} border-b ${COMMON_CLASSES.borderLight} ${COMMON_CLASSES.cartItemBg}`}
+                  className={`hidden lg:flex h-[48px] md:h-[52px] lg:h-[56px] px-3 md:px-4 lg:px-[16px] items-center ${RESPONSIVE.gap.item} border-b ${COMMON_CLASSES.borderLight} ${COMMON_CLASSES.cartItemBg}`}
                 >
-                  <div className="w-[120px] md:w-[135px] lg:w-[149.61px] h-[21px]">
+                  <div className="w-[120px] md:w-[135px] lg:w-[149.61px]">
                     <Text.TableHeader className="text-[12px] md:text-[13px] lg:text-[14px] leading-[20px] md:leading-[22px] lg:leading-[24px] font-normal tracking-[0.8px] md:tracking-[0.9px] lg:tracking-[1.03px]">
                       Product
                     </Text.TableHeader>
                   </div>
-                  <div className="flex-1 md:w-[280px] lg:w-[342.02px] h-[24px] pl-3 md:pl-4 lg:pl-[20px]">
+                  <div className="flex-1 md:w-[280px] lg:w-[342.02px] pl-3 md:pl-4 lg:pl-[20px]">
                     <Text.TableHeader className="text-[12px] md:text-[13px] lg:text-[14px] leading-[20px] md:leading-[22px] lg:leading-[24px] font-normal tracking-[0.8px] md:tracking-[0.9px] lg:tracking-[1.03px]">
                       Description
                     </Text.TableHeader>
                   </div>
-                  <div className="w-[60px] md:w-[65px] lg:w-[70px] h-[21px] pr-2 md:pr-3 lg:pr-[14.8px]">
-                    <Text.TableHeader className="text-[12px] md:text-[13px] lg:text-[14px] leading-[20px] md:leading-[22px] lg:leading-[24px] font-normal tracking-[0.8px] md:tracking-[0.9px] lg:tracking-[1.03px] inline-block -ml-[25px] md:-ml-[28px] lg:-ml-[30px]">
+                  <div className="w-[60px] md:w-[65px] lg:w-[70px] pr-2 md:pr-3 lg:pr-[14.8px] flex justify-center">
+                    <Text.TableHeader className="text-[12px] md:text-[13px] lg:text-[14px] leading-[20px] md:leading-[22px] lg:leading-[24px] font-normal tracking-[0.8px] md:tracking-[0.9px] lg:tracking-[1.03px]">
                       Quantity
                     </Text.TableHeader>
                   </div>
-                  <div className="w-[90px] md:w-[100px] lg:w-[112px] h-[24px] text-right">
+                  <div className="w-[90px] md:w-[100px] lg:w-[112px] flex items-center justify-end">
                     <Text.TableHeader className="text-[12px] md:text-[13px] lg:text-[14px] leading-[20px] md:leading-[22px] lg:leading-[24px] font-normal tracking-[0.8px] md:tracking-[0.9px] lg:tracking-[1.03px]">
                       Price
                     </Text.TableHeader>
@@ -122,7 +129,7 @@ export default function CartPage() {
                 </div>
 
                 {/* Cart Items */}
-                <div className="flex flex-col gap-4 md:gap-5 lg:gap-[24px] pt-4 md:pt-5 lg:pt-[24px]">
+                <div className="flex flex-col gap-4 md:gap-5 lg:gap-[24px] pt-[24px] md:pt-5 lg:pt-[24px]">
                   {cart.items.map((item, index) => {
                     const slug = item.product?.slug || "";
                     return (
@@ -130,6 +137,7 @@ export default function CartPage() {
                         key={item.id || item.cartItemId || `cart-item-${index}`}
                         cartItemId={item.variantId}
                         productId={item.product?.productId || item.variantId}
+                        sku={item.variant?.sku}
                         slug={slug}
                         title={item.product?.title || "Product"}
                         price={item.unitPrice}
@@ -164,14 +172,23 @@ export default function CartPage() {
           {/* You may also be interested in */}
           {recommendedProducts && recommendedProducts.length > 0 && (
             <section
-              className={`w-full ${COMMON_CLASSES.pageBg} ${RESPONSIVE.padding.section}`}
+              className={`w-full ${COMMON_CLASSES.pageBg} pb-8 sm:py-12 md:py-16 lg:py-20 xl:py-[64px]`}
             >
               <PageContainer>
-                <Text.PageTitle className="text-[20px] md:text-[22px] lg:text-[24px] leading-[28px] md:leading-[30px] lg:leading-[32px] font-normal mb-8 md:mb-10 lg:mb-[48px]">
+                <Text.PageTitle
+                  className="w-full max-w-[302px] lg:max-w-none mx-auto text-[20px] md:text-[22px] lg:text-[24px] leading-[140%] md:leading-[30px] lg:leading-[32px] font-normal mb-[24px] md:mb-10 lg:mb-[48px] text-center"
+                  style={{
+                    fontFamily: "Raleway, sans-serif",
+                    color: "#765C4D",
+                  }}
+                >
                   You may also be interested in
                 </Text.PageTitle>
 
-                <ProductGrid products={recommendedProducts.slice(0, 6)} />
+                <ProductGrid
+                  products={recommendedProducts.slice(0, 6)}
+                  className="mx-auto max-w-[350px] md:max-w-none"
+                />
 
                 {/* View More Button */}
                 <ViewMoreSection />
