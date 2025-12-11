@@ -21,21 +21,23 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
               {item.href ? (
                 <Link
                   href={item.href}
-                  className="text-[12px] leading-[24px] font-medium uppercase tracking-[2px] text-[#6B7B8A] hover:text-[#232D35] transition-colors"
+                  className="text-[16px] leading-[24px] font-medium uppercase tracking-[4px] text-[#765C4D] hover:opacity-70 transition-opacity"
                   style={{ fontFamily: "Raleway, sans-serif" }}
                 >
                   {item.label}
                 </Link>
               ) : (
                 <span
-                  className="text-[12px] leading-[24px] font-medium uppercase tracking-[2px] text-[#232D35]"
+                  className="text-[16px] leading-[24px] font-medium uppercase tracking-[4px] text-[#765C4D]"
                   style={{ fontFamily: "Raleway, sans-serif" }}
                 >
                   {item.label}
                 </span>
               )}
               {index < items.length - 1 && (
-                <span className="text-[#6B7B8A]">/</span>
+                <span className="text-[16px] leading-[24px] font-medium text-[#765C4D]">
+                  /
+                </span>
               )}
             </li>
           ))}

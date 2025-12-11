@@ -18,11 +18,11 @@ export function ViewMoreSection({
     <section className={`w-full ${COMMON_CLASSES.pageBg} ${className}`}>
       <PageContainer>
         <div
-          className={`w-full max-w-[1280px] mx-auto flex flex-col items-center justify-center ${RESPONSIVE.gap.item} pt-8 md:pt-12 lg:pt-16 xl:pt-[64px] pb-4 md:pb-6 lg:pb-8`}
+          className={`w-full max-w-[1280px] mx-auto flex flex-col items-center justify-center ${RESPONSIVE.gap.item} pt-[32px] md:pt-12 lg:pt-16 xl:pt-[64px] pb-[48px] md:pb-6 lg:pb-8`}
         >
-          <Link href={href}>
+          <Link href={href} className="w-full flex justify-center md:w-auto">
             <button
-              className={`w-full min-w-[180px] md:min-w-[190px] lg:min-w-[200px] h-[44px] md:h-[46px] lg:h-[48px] px-5 md:px-6 py-2.5 md:py-3 ${COMMON_CLASSES.primaryButton}`}
+              className={`w-[260px] md:w-auto min-w-0 md:min-w-[190px] lg:min-w-[200px] h-[48px] md:h-[46px] lg:h-[48px] px-0 md:px-6 py-0 md:py-3 flex items-center justify-center ${COMMON_CLASSES.primaryButton}`}
             >
               <Text.Button
                 as="span"

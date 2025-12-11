@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
   ChevronLeft,
+  ChevronRight,
   Grid3X3,
   LayoutGrid,
 } from "lucide-react";
@@ -42,6 +43,7 @@ export default function CollectionsPage() {
   const [sizeOpen, setSizeOpen] = useState(true);
   const [filterKey, setFilterKey] = useState(0);
   const [sortBy, setSortBy] = useState("newest");
+  const [sortOpen, setSortOpen] = useState(false);
   const [displayCount, setDisplayCount] = useState(12);
   const pageSize = 12;
 
@@ -152,12 +154,14 @@ export default function CollectionsPage() {
 
   return (
     <main className={`min-h-screen ${COMMON_CLASSES.pageBg}`}>
-      <Breadcrumb
-        items={[{ label: "HOME", href: "/" }, { label: "COLLECTION" }]}
-      />
+      <div className="hidden md:block">
+        <Breadcrumb
+          items={[{ label: "HOME", href: "/" }, { label: "COLLECTION" }]}
+        />
+      </div>
 
       <div
-        className={`w-full max-w-[768px] mx-auto h-[42px] flex flex-col items-center justify-center gap-[16px] ${COMMON_CLASSES.pageBg}`}
+        className={`hidden md:flex w-full max-w-[768px] mx-auto h-[42px] flex-col items-center justify-center gap-[16px] ${COMMON_CLASSES.pageBg}`}
       >
         <Text.Accent className="w-full max-w-[150px] h-[42px] text-[24px] font-semibold leading-[130%] tracking-[0%]">
           Collection
@@ -167,19 +171,55 @@ export default function CollectionsPage() {
       <div
         className={`w-full max-w-[1440px] mx-auto pt-[16px] ${RESPONSIVE.padding.page} pb-[32px] flex flex-col gap-[80px] ${COMMON_CLASSES.pageBg}`}
       >
-        <div className="w-full max-w-[1280px] mx-auto flex flex-col gap-[18px]">
+        <div className="w-full max-w-[350px] md:max-w-[1280px] mx-auto flex flex-col gap-[8px] md:gap-[18px]">
+          {/* Mobile Breadcrumb */}
+          <div className="md:hidden w-full h-[24px] flex items-center gap-[8px]">
+            <Link
+              href="/"
+              className="text-[16px] leading-[24px] font-medium uppercase tracking-[4px] text-[#765C4D]"
+              style={{ fontFamily: "Raleway, sans-serif" }}
+            >
+              HOME
+            </Link>
+            <span className="text-[16px] leading-[24px] font-medium text-[#765C4D]">
+              /
+            </span>
+            <span
+              className="text-[16px] leading-[24px] font-medium uppercase tracking-[4px] text-[#765C4D]"
+              style={{ fontFamily: "Raleway, sans-serif" }}
+            >
+              COLLECTION
+            </span>
+          </div>
           <div
-            className="w-full h-[41px] flex items-center justify-between border-b"
+            className="w-full h-[24px] md:h-[41px] flex items-center justify-between"
             style={{ borderColor: COLORS.alabaster }}
           >
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex flex-col items-start"
+              className="flex items-center gap-2"
             >
-              {/* First row: HIDE + chevron */}
-              <div className="flex items-center gap-[16px]">
-                <Text.Secondary className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px]">
-                  {showFilters ? "HIDE" : "SHOW"}
+              {/* Mobile Filter Toggle */}
+              <div className="md:hidden flex items-center gap-2">
+                <Text.Secondary
+                  className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px] whitespace-nowrap"
+                  style={{ fontFamily: FONTS.reddit, color: COLORS.tealBlue }}
+                >
+                  {showFilters ? "HIDE FILTERS" : "SHOW FILTERS"}
+                </Text.Secondary>
+                <ChevronDown
+                  className="w-[24px] h-[24px] transition-transform"
+                  style={{
+                    color: COLORS.tealBlue,
+                    transform: showFilters ? "rotate(180deg)" : "rotate(0deg)",
+                  }}
+                />
+              </div>
+
+              {/* Desktop Filter Toggle */}
+              <div className="hidden md:flex items-center gap-2">
+                <Text.Secondary className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px] whitespace-nowrap">
+                  {showFilters ? "HIDE FILTERS" : "SHOW FILTERS"}
                 </Text.Secondary>
                 <ChevronLeft
                   className="w-4 h-4 transition-transform"
@@ -189,83 +229,149 @@ export default function CollectionsPage() {
                   }}
                 />
               </div>
-              {/* Second row: FILTERS */}
-              <Text.Secondary className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px]">
-                FILTERS
-              </Text.Secondary>
             </button>
 
             <div className="flex items-center gap-[19px] h-[33px]">
-              <div className="flex items-center gap-2 h-[33px]">
-                <Text.Secondary className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px] whitespace-nowrap">
-                  SORT BY:
-                </Text.Secondary>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className={`w-full max-w-[180px] h-[33px] text-[14px] font-medium ${COMMON_CLASSES.pageBg} border-none outline-none cursor-pointer uppercase pr-2 tracking-[3px]`}
-                  style={{ ...TEXT_STYLES.secondary }}
-                >
-                  <option
-                    value="newest"
-                    style={{
-                      backgroundColor: COLORS.linen,
-                      color: COLORS.graphite,
-                      padding: "8px 12px",
-                      fontFamily: FONTS.reddit,
-                      letterSpacing: "3px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                    }}
+              <div className="flex items-center gap-2 h-[24px] md:h-[33px]">
+                {/* Mobile Sort Trigger */}
+
+                {/* Mobile Sort Trigger */}
+                <div className="md:hidden relative">
+                  <button
+                    onClick={() => setSortOpen(!sortOpen)}
+                    className="flex items-center gap-2"
                   >
-                    Select...
-                  </option>
-                  <option
-                    value="newest"
-                    style={{
-                      backgroundColor: COLORS.linen,
-                      color: COLORS.graphite,
-                      padding: "8px 12px",
-                      fontFamily: FONTS.reddit,
-                      letterSpacing: "3px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                    }}
+                    <Text.Secondary
+                      className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px] whitespace-nowrap"
+                      style={{
+                        fontFamily: FONTS.reddit,
+                        color: COLORS.tealBlue,
+                      }}
+                    >
+                      SORT BY
+                    </Text.Secondary>
+                    <ChevronDown
+                      className="w-[24px] h-[24px] transition-transform duration-200"
+                      style={{
+                        color: COLORS.tealBlue,
+                        transform: sortOpen ? "rotate(180deg)" : "rotate(0deg)",
+                      }}
+                    />
+                  </button>
+
+                  {/* Backdrop */}
+                  {sortOpen && (
+                    <div
+                      className="fixed inset-0 z-40 bg-transparent"
+                      onClick={() => setSortOpen(false)}
+                    />
+                  )}
+
+                  {/* Dropdown Menu */}
+                  {sortOpen && (
+                    <div className="absolute top-full right-0 mt-2 z-50 min-w-[180px] bg-[#EFECE5] shadow-lg border border-[#E5E0D6] py-2">
+                      {[
+                        { label: "Select...", value: "placeholder" },
+                        { label: "Newest", value: "newest" },
+                        { label: "Price: Low to High", value: "price_asc" },
+                        { label: "Price: High to Low", value: "price_desc" },
+                      ].map((option, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setSortBy(
+                              option.value === "placeholder"
+                                ? "newest"
+                                : option.value
+                            );
+                            setSortOpen(false);
+                          }}
+                          className={`w-full text-left px-4 py-3 text-[14px] hover:bg-[#E5E0D6] transition-colors ${
+                            sortBy === option.value
+                              ? "font-normal text-[#232D35]"
+                              : "font-normal text-[#3E5460]"
+                          }`}
+                          style={{ fontFamily: "Raleway, sans-serif" }}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop Sort Interface */}
+                <div className="hidden md:flex items-center gap-2 h-[33px]">
+                  <Text.Secondary className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px] whitespace-nowrap">
+                    SORT BY:
+                  </Text.Secondary>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className={`w-full max-w-[180px] h-[33px] text-[14px] font-medium ${COMMON_CLASSES.pageBg} border-none outline-none cursor-pointer uppercase pr-2 tracking-[3px]`}
+                    style={{ ...TEXT_STYLES.secondary }}
                   >
-                    Newest
-                  </option>
-                  <option
-                    value="price_asc"
-                    style={{
-                      backgroundColor: COLORS.linen,
-                      color: COLORS.graphite,
-                      padding: "8px 12px",
-                      fontFamily: FONTS.reddit,
-                      letterSpacing: "3px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                    }}
-                  >
-                    Price: Low to High
-                  </option>
-                  <option
-                    value="price_desc"
-                    style={{
-                      backgroundColor: COLORS.linen,
-                      color: COLORS.graphite,
-                      padding: "8px 12px",
-                      fontFamily: FONTS.reddit,
-                      letterSpacing: "3px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                    }}
-                  >
-                    Price: High to Low
-                  </option>
-                </select>
+                    <option
+                      value="newest"
+                      style={{
+                        backgroundColor: COLORS.linen,
+                        color: COLORS.graphite,
+                        padding: "8px 12px",
+                        fontFamily: FONTS.reddit,
+                        letterSpacing: "3px",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Select...
+                    </option>
+                    <option
+                      value="newest"
+                      style={{
+                        backgroundColor: COLORS.linen,
+                        color: COLORS.graphite,
+                        padding: "8px 12px",
+                        fontFamily: FONTS.reddit,
+                        letterSpacing: "3px",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Newest
+                    </option>
+                    <option
+                      value="price_asc"
+                      style={{
+                        backgroundColor: COLORS.linen,
+                        color: COLORS.graphite,
+                        padding: "8px 12px",
+                        fontFamily: FONTS.reddit,
+                        letterSpacing: "3px",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Price: Low to High
+                    </option>
+                    <option
+                      value="price_desc"
+                      style={{
+                        backgroundColor: COLORS.linen,
+                        color: COLORS.graphite,
+                        padding: "8px 12px",
+                        fontFamily: FONTS.reddit,
+                        letterSpacing: "3px",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Price: High to Low
+                    </option>
+                  </select>
+                </div>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="hidden md:flex items-center gap-1">
                 <span
                   className="text-[14px] font-medium uppercase tracking-[3px] flex items-center"
                   style={{
@@ -418,16 +524,14 @@ export default function CollectionsPage() {
             </div>
           )}
 
-          <div className="w-full max-w-[1280px] mx-auto flex gap-[18px]">
+          <div className="w-full max-w-[1280px] mx-auto flex flex-col md:flex-row gap-[18px]">
             {showFilters && (
               <aside
-                className="w-full max-w-[250px] flex-shrink-0"
+                className="w-full md:w-full md:max-w-[250px] flex-shrink-0"
                 key={filterKey}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <LabelText>
-                    FILTER BY
-                  </LabelText>
+                  <LabelText>FILTER BY</LabelText>
                   <button
                     onClick={handleClearFilters}
                     className={`w-full max-w-[89px] h-[24px] pt-[4px] pr-[9px] pb-[4px] pl-[10px] text-[12px] flex items-center justify-center hover:${COMMON_CLASSES.cartItemBg} transition-colors rounded whitespace-nowrap`}
@@ -444,9 +548,7 @@ export default function CollectionsPage() {
                     onClick={() => setCategoriesOpen(!categoriesOpen)}
                     className="flex items-center justify-between w-full"
                   >
-                    <LabelText>
-                      CATEGORIES
-                    </LabelText>
+                    <LabelText>CATEGORIES</LabelText>
                     {categoriesOpen ? (
                       <ChevronUp
                         className="w-4 h-4"
@@ -488,9 +590,7 @@ export default function CollectionsPage() {
                     onClick={() => setColourOpen(!colourOpen)}
                     className="flex items-center justify-between w-full"
                   >
-                    <LabelText>
-                      COLOUR
-                    </LabelText>
+                    <LabelText>COLOUR</LabelText>
                     {colourOpen ? (
                       <ChevronUp
                         className="w-4 h-4"
@@ -544,9 +644,7 @@ export default function CollectionsPage() {
                     onClick={() => setCollectionOpen(!collectionOpen)}
                     className="flex items-center justify-between w-full"
                   >
-                    <LabelText>
-                      COLLECTION
-                    </LabelText>
+                    <LabelText>COLLECTION</LabelText>
                     {collectionOpen ? (
                       <ChevronUp
                         className="w-4 h-4"
@@ -588,9 +686,7 @@ export default function CollectionsPage() {
                     onClick={() => setSizeOpen(!sizeOpen)}
                     className="flex items-center justify-between w-full mb-3"
                   >
-                    <LabelText>
-                      SIZE
-                    </LabelText>
+                    <LabelText>SIZE</LabelText>
                     {sizeOpen ? (
                       <ChevronUp
                         className="w-4 h-4"
@@ -674,22 +770,36 @@ export default function CollectionsPage() {
 
           {/* Pagination Section */}
           {!isLoading && productsData && productsData.products.length > 0 && (
-            <div className="w-full max-w-[1280px] h-[143px] mx-auto flex flex-col items-center justify-center gap-[24px] pt-[32px]">
+            <div className="w-full max-w-[1280px] mx-auto flex flex-col items-center justify-center gap-[24px] pt-[32px] pb-[32px] md:pb-0">
               <Text.Secondary className="text-[14px] font-medium leading-[24px] tracking-[3px] uppercase">
                 {startItem}-{endItem} of {totalItems} items
               </Text.Secondary>
               {hasMore && (
-                <button
-                  onClick={handleLoadMore}
-                  className={`w-full max-w-[200px] h-[48px] px-6 py-3 ${COMMON_CLASSES.primaryButton}`}
-                >
-                  <span
-                    className="text-[14px] font-medium leading-[24px] tracking-[3px] uppercase text-white whitespace-nowrap"
-                    style={{ fontFamily: FONTS.reddit }}
+                <div className="w-full flex flex-col items-center gap-[12px]">
+                  <button
+                    onClick={handleLoadMore}
+                    className={`w-full max-w-[350px] md:max-w-[200px] h-[48px] px-6 py-3 ${COMMON_CLASSES.primaryButton}`}
                   >
-                    VIEW {pageSize} MORE
-                  </span>
-                </button>
+                    <span
+                      className="text-[14px] font-medium leading-[24px] tracking-[3px] uppercase text-white whitespace-nowrap"
+                      style={{ fontFamily: FONTS.reddit }}
+                    >
+                      VIEW {pageSize} MORE
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setDisplayCount(totalItems)}
+                    className="md:hidden w-full max-w-[350px] h-[48px] px-6 py-3 border border-[#232D35] bg-transparent hover:bg-gray-50 transition-colors"
+                  >
+                    <span
+                      className="text-[14px] font-medium leading-[24px] tracking-[3px] uppercase text-[#232D35] whitespace-nowrap"
+                      style={{ fontFamily: FONTS.reddit }}
+                    >
+                      VIEW ALL
+                    </span>
+                  </button>
+                </div>
               )}
             </div>
           )}

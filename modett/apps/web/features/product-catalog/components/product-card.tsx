@@ -35,7 +35,9 @@ interface ProductCardProps {
   image: string;
   variants: Variant[];
   rating?: number;
-  variant?: "home" | "collection";
+  variant?: "home" | "collection" | "wear-it-with";
+  aspectRatio?: string;
+  textGap?: string;
 }
 
 export function ProductCard({
@@ -46,6 +48,8 @@ export function ProductCard({
   image,
   variants,
   variant = "home",
+  aspectRatio,
+  textGap,
 }: ProductCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -103,106 +107,148 @@ export function ProductCard({
   return (
     <div
       className={`group bg-[#EFECE5] flex flex-col ${
-        variant === "collection"
-          ? "w-full h-[480px] md:h-[498px] lg:h-[516px] gap-[15px] md:gap-[15.5px] lg:gap-[16px]"
-          : "w-full max-w-[350px] md:max-w-[370px] lg:max-w-[394px] h-[502px] md:h-[502px] lg:h-[520px] gap-[18px] md:gap-[18.5px] lg:gap-[19.27px]"
+        textGap
+          ? textGap
+          : aspectRatio
+            ? "w-full h-auto gap-[16.26px]"
+            : variant === "collection"
+              ? "w-full h-[592px] md:h-[496.96px] lg:h-[496.96px] gap-[15px] md:gap-[7.66px] lg:gap-[7.66px]"
+              : variant === "wear-it-with"
+                ? "w-full max-w-[350px] mx-auto gap-[12px]"
+                : "w-full max-w-[350px] md:max-w-[370px] lg:max-w-[394px] h-[594px] md:h-[600px] lg:h-[600px] gap-[18px] md:gap-[18.5px] lg:gap-[19.27px]"
       }`}
     >
       <div
-        className={`relative w-full overflow-hidden bg-gray-50 ${
-          variant === "collection"
-            ? "h-[375px] md:h-[387px] lg:h-[400px]"
-            : "h-[428px] md:h-[406px] lg:h-[420px]"
+        className={`relative w-full overflow-hidden bg-transparent ${
+          aspectRatio
+            ? aspectRatio
+            : variant === "collection"
+              ? "h-[512px] md:h-[407.34px] lg:h-[407.34px]"
+              : "h-[515px] md:h-[518px] lg:h-[518px]"
         }`}
       >
-        <Link href={`/product/${slug}`} className="block w-full h-full">
-          <Image src={image} alt={title} fill className="object-cover" />
-        </Link>
-
-        <button
-          onClick={handleWishlistToggle}
-          disabled={isTogglingWishlist}
-          className={`absolute top-[16px] md:top-[17px] lg:top-[18px] right-[16px] md:right-[17px] lg:right-[18px] w-[18px] md:w-[19px] lg:w-5 h-[18px] md:h-[19px] lg:h-5 transition-all z-10 disabled:opacity-50 cursor-pointer flex items-center justify-center ${
-            isWishlisted ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-          }`}
-          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-        >
-          <Heart
-            className={`h-[18px] md:h-[19px] lg:h-5 w-[18px] md:w-[19px] lg:w-5 transition-all ${
-              isWishlisted ? "fill-black text-black" : "text-white"
-            } ${isTogglingWishlist ? "animate-pulse" : ""}`}
-          />
-        </button>
-
-        {isExpanded && (
+        <div className="relative h-full w-full">
           <div
-            className={`absolute bottom-0 left-0 right-0 bg-[#F8F5F2]/75 pt-[14px] md:pt-[15px] lg:pt-[16px] pr-[12px] md:pr-[13px] lg:pr-[14px] pb-[14px] md:pb-[15px] lg:pb-[16px] pl-[12px] md:pl-[13px] lg:pl-[14px] flex flex-col gap-[5px] md:gap-[5.5px] lg:gap-[6px] border-t-[0.5px] border-[#BBA496] ${
-              variant === "collection"
-                ? "w-full"
-                : "w-[330px] md:w-[370px] lg:w-[394px]"
+            className={`relative w-full overflow-hidden group ${
+              aspectRatio
+                ? "h-full"
+                : "h-[512px] md:h-[407.34px] lg:h-[407.34px]"
             }`}
           >
-            <p
-              className="text-[11px] md:text-[11.5px] lg:text-[12px] leading-[15px] md:leading-[15.5px] lg:leading-[16px] font-normal text-center text-gray-600"
-              style={TEXT_STYLES.sku}
-            >
-              {availableSizes.length > 0 ? "Available sizes" : "Select variant"}
-            </p>
-            <div
-              className={`grid gap-[7px] md:gap-[7.5px] lg:gap-2 ${
-                variant === "collection" ? "grid-cols-4" : "grid-cols-5"
-              }`}
-            >
-              {availableSizes.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => handleSizeSelect(size!)}
-                  className={`py-1 md:py-1.5 text-[11px] md:text-[11.5px] lg:text-xs font-medium border transition-colors ${
-                    selectedVariant?.size === size
-                      ? "bg-gray-800 text-white border-gray-800"
-                      : "bg-white text-gray-700 border-gray-300 hover:border-gray-500"
+            <Link href={`/product/${slug}`} className="block w-full h-full">
+              <Image
+                src={image}
+                alt={title}
+                fill
+                className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                priority
+              />
+            </Link>
+            {variant === "home" && (
+              <button
+                onClick={handleWishlistToggle}
+                className={`absolute top-3 right-3 z-20 w-[32px] md:w-[32px] lg:w-[32px] h-[32px] md:h-[32px] lg:h-[32px] flex items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95 bg-transparent ${isTogglingWishlist ? "opacity-50 cursor-wait" : ""}`}
+              >
+                <Heart
+                  className={`w-[20px] h-[20px] transition-colors ${
+                    isWishlisted
+                      ? "fill-[#232D35] text-[#232D35]"
+                      : "text-white hover:text-gray-200"
                   }`}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={handleAddToCart}
-              disabled={!selectedVariant || isAddingToCart}
-              className={`h-[44px] md:h-[46px] lg:h-[48px] ${PRODUCT_CLASSES.addToCartButton} text-[#E5E0D6] text-[15px] md:text-[15.5px] lg:text-[16px] leading-[23px] md:leading-[23.5px] lg:leading-[24px] disabled:opacity-50 cursor-pointer rounded-sm transition-colors ${
-                variant === "collection"
-                  ? "w-full"
-                  : "w-[306px] md:w-[344px] lg:w-[368px]"
+                  strokeWidth={1.5}
+                />
+              </button>
+            )}
+
+            {/* Quick Add Overlay */}
+            <div
+              className={`absolute inset-x-0 bottom-0 transition-all duration-300 transform flex flex-col ${
+                isExpanded
+                  ? "translate-y-0 opacity-100"
+                  : "translate-y-full opacity-0"
               }`}
-              style={TEXT_STYLES.button}
             >
-              {isAddingToCart ? (
-                <span className="flex items-center gap-2">
-                  <ShoppingBag className="h-[15px] md:h-[15.5px] lg:h-4 w-[15px] md:w-[15.5px] lg:w-4 animate-pulse" />
-                  ADDING...
-                </span>
-              ) : (
-                "ADD TO CART"
-              )}
-            </button>
+              {/* Mobile Wrapper (preserved) / Desktop Sizes Section */}
+              <div
+                className={`w-full flex flex-col items-center
+                  h-[85px] bg-[#F8F5F2]/75 backdrop-blur-sm px-[14px] py-[16px] gap-[6px] justify-center
+                `}
+              >
+                <div className="w-full flex flex-col items-center gap-[6px]">
+                  <p
+                    className="text-center text-[#232D35] text-[14px] font-normal leading-[16px]"
+                    style={{ fontFamily: "Raleway, sans-serif" }}
+                  >
+                    Available sizes
+                  </p>
+                  <div className="flex flex-wrap justify-center items-center gap-6 w-full px-0">
+                    {availableSizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => handleSizeSelect(size!)}
+                        className={`text-[14px] font-normal transition-colors min-w-[24px] text-center ${
+                          selectedVariant?.size === size
+                            ? "text-[#232D35] border border-[#232D35] px-2 py-1"
+                            : "text-[#232D35]/70 hover:text-[#232D35]"
+                        }`}
+                        style={{ fontFamily: "Raleway, sans-serif" }}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Button Section - Mobile & Desktop */}
+              <div
+                className={`w-full h-[69px] bg-[#F8F5F2]/75 backdrop-blur-sm border-t-[0.5px] border-[#BBA496] flex items-center justify-center`}
+              >
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!selectedVariant || isAddingToCart}
+                  className={`h-[48px] ${PRODUCT_CLASSES.addToCartButton} bg-[#232D35] text-[#E5E0D6] text-[14px] font-medium leading-[16px] tracking-[2px] uppercase disabled:opacity-50 cursor-pointer transition-colors w-full max-w-[360px]`}
+                  style={TEXT_STYLES.button}
+                >
+                  {isAddingToCart ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <ShoppingBag className="h-4 w-4 animate-pulse" />
+                      ADDING...
+                    </span>
+                  ) : (
+                    "ADD TO CART"
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
-      <div className="relative h-[74px] md:h-[76px] lg:h-[79.19px] py-[3px] md:py-[3.5px] lg:py-1 pl-[20px] pr-[24px] flex flex-col justify-between">
+      <div
+        className={`relative flex flex-col justify-between ${
+          variant === "wear-it-with"
+            ? "h-[80px] py-[3px] md:py-[3.5px] lg:py-1 px-[16px]"
+            : "h-[74px] md:h-[82px] lg:h-[82px] py-[3px] md:py-[3.5px] lg:py-1 pl-[20px] pr-[24px] md:px-[6px] lg:px-[6px]"
+        }`}
+      >
         <div className="flex items-start justify-between">
-          <div className="flex-1 max-w-[217px] md:w-[153px] lg:w-[164.51px] md:max-w-[224px] lg:max-w-[232.11px] h-[50px] md:h-[52px] lg:h-[54.31px]">
+          <div className="flex-1 w-full md:w-auto lg:w-auto md:max-w-none lg:max-w-none h-auto min-h-[50px] md:min-h-[52px] lg:min-h-[54.31px]">
             <Link href={`/product/${slug}`}>
               <h3
-                className="text-[17px] md:text-[17.5px] lg:text-[18px] leading-[23px] md:leading-[23.5px] lg:leading-[24px] font-normal tracking-[0%] hover:underline cursor-pointer"
+                className={`${
+                  variant === "collection"
+                    ? "text-[16px] leading-[20px] font-medium tracking-[0.02em]"
+                    : "text-[18px] md:text-[18px] lg:text-[18px] leading-[28px] md:leading-[28px] lg:leading-[28px] font-normal tracking-[0%]"
+                } hover:underline cursor-pointer`}
                 style={TEXT_STYLES.bodyGraphite}
               >
                 {title}
               </h3>
             </Link>
             <p
-              className="text-[13px] md:text-[13.5px] lg:text-[14px] leading-[23px] md:leading-[23.5px] lg:leading-[24px] font-normal"
+              className="text-[14px] leading-[24px] font-normal"
               style={{ ...TEXT_STYLES.bodyGraphite, letterSpacing: "1.03px" }}
             >
               Rs {price.toFixed(2)}
@@ -228,11 +274,11 @@ export function ProductCard({
         </div>
 
         {availableColors.length > 0 && (
-          <div className="flex gap-[8px] md:gap-[8.5px] lg:gap-[9px] w-[109px] md:w-[113px] lg:w-[117px] h-[11px] md:h-[11.5px] lg:h-[12px]">
+          <div className="flex gap-[9px] w-[117px] h-[12px]">
             {availableColors.slice(0, 4).map((color, index) => (
               <div
                 key={index}
-                className="w-[11px] md:w-[11.5px] lg:w-3 h-[11px] md:h-[11.5px] lg:h-3 rounded-full border"
+                className="w-[12px] h-[12px] rounded-full border"
                 style={{
                   backgroundColor: getColorHex(color),
                   borderColor: "#765C4D",
