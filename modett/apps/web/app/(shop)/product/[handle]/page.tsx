@@ -42,19 +42,21 @@ export default function ProductPage({ params }: ProductPageProps) {
   return (
     <main className={`w-full ${COMMON_CLASSES.pageBg}`}>
       {/* Breadcrumb Navigation */}
-      <Breadcrumb
-        items={[
-          { label: "Home", href: "/" },
-          { label: "Collection", href: "/collections" },
-          { label: product.title },
-        ]}
-      />
+      <div className="hidden md:block">
+        <Breadcrumb
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Collection", href: "/collections" },
+            { label: product.title },
+          ]}
+        />
+      </div>
 
       <section className="w-full">
         <div
-          className={`w-full max-w-[1440px] mx-auto ${RESPONSIVE.padding.page} pt-12 md:pt-16 lg:pt-[64px] pb-8 md:pb-10 lg:pb-[48px]`}
+          className={`w-full max-w-[1280px] mx-auto ${RESPONSIVE.padding.page} pt-12 md:pt-16 lg:pt-[64px] pb-0 md:pb-10 lg:pb-[48px]`}
         >
-          <div className="flex flex-col lg:flex-row gap-12 md:gap-16 lg:gap-20 xl:gap-[80px]">
+          <div className="flex flex-col lg:flex-row gap-[40px]">
             <ProductImages images={product.images || []} />
 
             <ProductInfo product={product} />

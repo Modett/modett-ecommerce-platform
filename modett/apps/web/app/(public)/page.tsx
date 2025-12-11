@@ -1,7 +1,7 @@
-import { Hero } from '@/components/ui/hero';
-import { InvestmentPieces } from '@/features/product-catalog/components/investment-pieces';
-import { CollectionBanner } from '@/components/ui/collection-banner';
-import { BrandPhilosophy } from '@/components/ui/brand-philosophy';
+import { Hero } from "@/components/sections/hero";
+import { InvestmentPieces } from "@/features/product-catalog/components/investment-pieces";
+import { CollectionBanner } from "@/components/ui/collection-banner";
+import { BrandPhilosophy } from "@/components/sections/brand-philosophy";
 
 export default function HomePage() {
   return (

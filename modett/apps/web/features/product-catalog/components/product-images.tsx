@@ -34,7 +34,7 @@ export function ProductImages({ images }: ProductImagesProps) {
           <div
             key={index}
             onClick={() => setSelectedImage(index)}
-            className={`relative w-full aspect-[444/565] bg-gray-100 overflow-hidden transition-all cursor-pointer ${
+            className={`relative w-full h-[607px] md:h-auto md:aspect-[444/565] bg-gray-100 overflow-hidden transition-all cursor-pointer ${
               selectedImage === index
                 ? "ring-2 ring-[#232D35]"
                 : "hover:opacity-80"

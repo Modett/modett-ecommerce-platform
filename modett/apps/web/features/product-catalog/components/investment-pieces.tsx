@@ -5,11 +5,7 @@ import { ProductCard } from "./product-card";
 import { useFeaturedProducts } from "../queries";
 
 export function InvestmentPieces() {
-  const {
-    data: products,
-    isLoading,
-    error,
-  } = useFeaturedProducts(6);
+  const { data: products, isLoading, error } = useFeaturedProducts(6);
 
   if (error) {
     console.error("Error loading products:", error);
@@ -18,7 +14,7 @@ export function InvestmentPieces() {
   return (
     <section className="pt-[48px] pb-12 md:py-20 bg-[#EFECE5]">
       <div className="w-full px-[20px] md:px-[80px]">
-        <div className="w-full max-w-[350px] md:max-w-[1280px] mx-auto flex flex-col gap-[36px] md:gap-[64px]">
+        <div className="w-full max-w-[350px] md:max-w-[1280px] mx-auto flex flex-col gap-[64px] md:gap-[64px]">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 md:gap-0 md:h-[144px]">
             <div className="flex flex-col w-full md:max-w-3xl gap-3 md:gap-4">
               <div className="flex items-center w-fit h-fit">
@@ -30,22 +26,38 @@ export function InvestmentPieces() {
                 className="font-serif text-[32px] md:text-[48px] leading-[120%] md:leading-[60px] tracking-[0] md:tracking-[0.03em] uppercase w-full md:w-auto"
                 style={{
                   fontWeight: 600,
-                  color: "#232D35"
+                  color: "#232D35",
                 }}
               >
                 Investment Pieces
               </h2>
               <p
-                className="text-[16px] md:text-[18px] leading-[20px] md:leading-[28px] tracking-[0.02em] w-full max-w-[330px] md:max-w-none"
+                className="text-[16px] md:text-[18px] leading-[20px] md:leading-[28px] tracking-[0.02em] w-full max-w-[330px] md:max-w-none text-center md:text-left mx-auto md:mx-0"
                 style={{
                   fontFamily: "Raleway, sans-serif",
                   fontWeight: 500,
-                  color: "#232D35"
+                  color: "#232D35",
                 }}
               >
-                Born from subtle complexity. Crafted for the woman who values
-                quiet confidence.
+                A philosophy of buying fewer, better pieces. We craft
+                investment-quality garments from the finest natural fabrics,
+                designed to endure for years, not seasons.
               </p>
+              <div className="md:hidden w-full flex justify-center mt-[32px]">
+                <a
+                  href="#"
+                  className="flex items-center gap-2 group"
+                  style={{ fontFamily: "Raleway, sans-serif" }}
+                >
+                  <span
+                    className="text-[16px] leading-[24px] font-medium tracking-[0.1em] uppercase text-[#765C4D]"
+                    style={{ letterSpacing: "2px" }}
+                  >
+                    LEARN MORE
+                  </span>
+                  <span className="text-[16px] text-[#765C4D]">›</span>
+                </a>
+              </div>
             </div>
             <Button
               variant="outline"
@@ -67,7 +79,7 @@ export function InvestmentPieces() {
               ))}
             </div>
           ) : products && products.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[64px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[49px]">
               {products.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -79,6 +91,8 @@ export function InvestmentPieces() {
                   compareAtPrice={product.compareAtPrice}
                   image={product.images?.[0]?.url || "/placeholder-product.jpg"}
                   variants={product.variants || []}
+                  aspectRatio="aspect-[394/501.74]"
+                  textGap="gap-[12.95px]"
                 />
               ))}
             </div>
