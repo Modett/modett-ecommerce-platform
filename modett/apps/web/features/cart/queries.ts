@@ -20,8 +20,20 @@ export const cartKeys = {
 export const useCart = (cartId: string | null) => {
   return useQuery({
     queryKey: cartKeys.cart(cartId || ""),
-    queryFn: () => cartApi.getCart(cartId!),
+    queryFn: async () => {
+      console.log('[useCart] Fetching cart for ID:', cartId);
+      try {
+        const result = await cartApi.getCart(cartId!);
+        console.log('[useCart] Successfully fetched cart:', result);
+        return result;
+      } catch (error) {
+        console.error('[useCart] Error fetching cart:', error);
+        throw error;
+      }
+    },
     enabled: !!cartId,
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 

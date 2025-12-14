@@ -43,18 +43,16 @@
     font-feature-settings: 'rlig' 1, 'calt' 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overscroll-behavior-y: none;
     overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: auto;
+    scroll-behavior: auto;
   }
 
   html {
-    scroll-behavior: smooth;
     font-family: var(--font-sans);
     overflow-x: hidden;
-  }
-
-  * {
-    scroll-margin-top: 2rem;
+    scroll-behavior: auto;
   }
 
   h1, h2, h3, h4, h5, h6 {

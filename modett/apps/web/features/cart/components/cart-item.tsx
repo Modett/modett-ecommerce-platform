@@ -66,7 +66,7 @@ export function CartItem({
 
   return (
     <div
-      className={`w-full ${COMMON_CLASSES.borderLight} py-3 md:py-4 lg:py-[16px] lg:bg-[#E5E0D6]`}
+      className={`w-full ${COMMON_CLASSES.borderLight} py-6 md:py-4 lg:py-[16px] lg:bg-[#E5E0D6]`}
     >
       <div
         className={`flex px-0 md:px-4 lg:px-[16px] items-start lg:items-center ${RESPONSIVE.gap.item}`}
@@ -88,17 +88,21 @@ export function CartItem({
         {/* Details Column */}
         <div className="flex-1 md:w-[280px] lg:w-[342.02px] flex flex-col gap-[5px] md:gap-6 lg:gap-[29px] pl-3 md:pl-4 lg:pl-[20px]">
           {/* Header Info */}
-          <div className="flex flex-col gap-1 lg:gap-[5px]">
+          <div className="flex flex-col gap-[5px] lg:gap-[5px]">
             <span
-              className="text-[8px] md:text-[9.5px] lg:text-[10px] leading-[24px] md:leading-[22px] lg:leading-[24px] font-normal tracking-[2px] md:tracking-[1.7px] lg:tracking-[2px] uppercase w-fit md:w-auto -mt-[5px] md:mt-0 block whitespace-nowrap"
+              className="text-[8px] md:text-[9.5px] lg:text-[10px] leading-[14px] md:leading-[22px] lg:leading-[24px] font-normal tracking-[2px] md:tracking-[1.7px] lg:tracking-[2px] uppercase w-fit md:w-auto -mt-[5px] md:mt-0 block break-words"
               style={{ ...TEXT_STYLES.sku, color: "#BBA496" }}
             >
               SKU: {sku || productId.substring(0, 12) + "..."}
             </span>
             <Link href={`/product/${slug}`}>
               <h3
-                className="text-[22px] md:text-[17px] lg:text-[18px] leading-[28px] md:leading-[24px] lg:leading-[26px] font-normal tracking-normal hover:underline text-[#3E5460]"
-                style={TEXT_STYLES.productTitle}
+                className="text-[17px] md:text-[17px] lg:text-[18px] leading-[28px] md:leading-[24px] lg:leading-[26px] font-normal hover:underline text-[#3E5460]"
+                style={{
+                  fontFamily: "Raleway, sans-serif",
+                  fontWeight: 400,
+                  letterSpacing: "0%",
+                }}
               >
                 {title}
               </h3>
@@ -106,9 +110,16 @@ export function CartItem({
           </div>
 
           {/* Mobile Variants (Inline) */}
-          <div className="lg:hidden flex flex-wrap items-center gap-x-4 mt-1">
+          <div className="lg:hidden flex flex-wrap items-center gap-x-2">
             {color && (
-              <span className="text-[14px] leading-[18px] font-light tracking-[0px] text-[#3E5460] uppercase">
+              <span
+                className="text-[14px] leading-[18px] font-light text-[#3E5460] uppercase"
+                style={{
+                  fontFamily: "Raleway, sans-serif",
+                  fontWeight: 300,
+                  letterSpacing: "0%",
+                }}
+              >
                 COLOUR: {color}
               </span>
             )}
@@ -118,7 +129,14 @@ export function CartItem({
               </span>
             )}
             {size && (
-              <span className="text-[13px] leading-[18px] font-light tracking-[0px] text-[#3E5460] uppercase">
+              <span
+                className="text-[13px] leading-[18px] font-light text-[#3E5460] uppercase"
+                style={{
+                  fontFamily: "Raleway, sans-serif",
+                  fontWeight: 300,
+                  letterSpacing: "0%",
+                }}
+              >
                 SIZE: {size}
               </span>
             )}
@@ -145,7 +163,7 @@ export function CartItem({
           </div>
 
           {/* Mobile Quantity & Price Block */}
-          <div className="lg:hidden flex flex-col gap-4 mt-2">
+          <div className="lg:hidden flex flex-col gap-4">
             {/* Boxed Quantity Selector */}
             <div
               className="flex items-center border w-fit h-[35px] px-[5px] py-[1px]"
@@ -181,7 +199,11 @@ export function CartItem({
           {/* Product Details Link */}
           <button
             className="text-[12px] md:text-[11.5px] lg:text-[12px] leading-[16px] md:leading-[15px] lg:leading-[16px] w-[83px] md:w-[79px] lg:w-[83px] text-center md:text-center mt-auto lg:mt-0 text-[#3E5460]"
-            style={TEXT_STYLES.link}
+            style={{
+              fontFamily: "Raleway, sans-serif",
+              fontWeight: 400,
+              letterSpacing: "0px",
+            }}
           >
             Product details
           </button>

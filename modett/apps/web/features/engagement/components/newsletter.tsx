@@ -43,12 +43,7 @@ const MailIcon = ({ size = 16 }: { size?: number }) => (
       strokeWidth="1.5"
       fill="none"
     />
-    <path
-      d="M3 7l9 6 9-6"
-      stroke="#3E5460"
-      strokeWidth="1.5"
-      fill="none"
-    />
+    <path d="M3 7l9 6 9-6" stroke="#3E5460" strokeWidth="1.5" fill="none" />
   </svg>
 );
 
@@ -107,13 +102,10 @@ const SubscribeButton = ({
 const FormMessage = ({ message }: { message: FormMessage | null }) => {
   if (!message) return null;
 
-  const messageColor = message.type === "success" ? "text-green-400" : "text-red-400";
+  const messageColor =
+    message.type === "success" ? "text-green-400" : "text-red-400";
 
-  return (
-    <p className={`text-xs mt-2 ${messageColor}`}>
-      {message.text}
-    </p>
-  );
+  return <p className={`text-xs mt-2 ${messageColor}`}>{message.text}</p>;
 };
 
 /**
@@ -144,7 +136,10 @@ const MobileNewsletterForm = ({
 }) => (
   <div className="block md:hidden text-center">
     {/* Form */}
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-[348px] mx-auto">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 w-[348px] mx-auto"
+    >
       {/* Email Input */}
       <NewsletterInput
         email={email}
@@ -283,32 +278,33 @@ export function Newsletter({
 
   return (
     <section className="bg-[#3E5460] text-white py-[60px] md:py-14">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8">
+      <div className="max-w-7xl mx-auto px-0 md:px-6 lg:px-8">
         {/* Mobile Version: Centered Layout */}
-        <div className="flex md:hidden text-center flex-col gap-[80px]">
+        <div className="flex md:hidden text-center flex-col gap-[80px] px-5">
           {/* Title & Description */}
-          <div className="flex flex-col gap-[24px] w-[348px] mx-auto">
+          <div className="flex flex-col gap-[24px] w-full max-w-[348px] mx-auto">
             <h2
-              className="font-serif text-center"
+              className="font-serif w-full"
               style={{
                 fontFamily: "Playfair Display, serif",
                 fontSize: "24px",
                 fontWeight: 600,
                 lineHeight: "130%",
-                letterSpacing: "0%",
+                textAlign: "center",
                 color: "#F8F5F2",
               }}
             >
               {title}
             </h2>
             <p
-              className="text-center"
+              className="w-full max-w-[350px] mx-auto"
               style={{
                 fontFamily: "Raleway, sans-serif",
                 fontSize: "18px",
                 fontWeight: 400,
                 lineHeight: "28px",
                 letterSpacing: "0%",
+                textAlign: "center",
                 color: "#F8F5F2",
               }}
             >

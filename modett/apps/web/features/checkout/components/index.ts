@@ -8,3 +8,4 @@ export * from "./custom-checkbox";
 export * from "./form-input";
 export * from "./future-step";
 export * from "./loading-state";
+export * from "./mobile-order-summary";

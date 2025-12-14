@@ -11,6 +11,7 @@ import {
   ActiveStepHeader,
   CompletedCheckoutStep,
   LoadingState,
+  MobileOrderSummary,
   FutureStep,
 } from "@/features/checkout/components";
 import { PageContainer } from "@/components/layout/page-container";
@@ -34,11 +35,17 @@ export default function CheckoutEmailPage() {
   }
 
   return (
-    <PageContainer fullHeight withBackground asMain className="py-8">
+    <PageContainer
+      fullHeight
+      withBackground
+      asMain
+      className="pt-1 pb-8 md:py-8"
+    >
+      <MobileOrderSummary cart={cart} />
       <CheckoutProgressBar currentStep={1} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 min-h-[750px]">
-        <div className="space-y-2">
+        <div className="space-y-4">
           <div className={`${COMMON_CLASSES.pageBg} w-full max-w-[904px]`}>
             {/* Active Step Header */}
             <ActiveStepHeader stepNumber={1} title="E-mail address" />
@@ -97,7 +104,7 @@ export default function CheckoutEmailPage() {
           <CheckoutHelpSection />
         </div>
 
-        <div className="mt-[-80px]">
+        <div className="hidden lg:block mt-[-80px]">
           <CartSummary cart={cart} />
         </div>
       </div>

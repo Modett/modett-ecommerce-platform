@@ -24,7 +24,7 @@ export function Hero() {
               fontFamily: "Playfair Display, serif",
               fontWeight: 600,
               letterSpacing: "0",
-              lineHeight: "120%"
+              lineHeight: "120%",
             }}
           >
             Quiet luxury.

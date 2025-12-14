@@ -5,8 +5,8 @@ export function BrandPhilosophy() {
   return (
     <section className="w-full bg-[#EFECE5] overflow-x-hidden">
       <div className="w-full px-[20px] md:px-[80px] pt-[60px] md:pt-[80px] pb-[48px] md:pb-[80px]">
-        <div className="w-[350px] md:w-full md:max-w-[1280px] mx-auto flex flex-col items-center gap-[80px] md:gap-[64px]">
-          <div className="w-full h-[400px] md:h-[480px] flex md:grid md:grid-cols-[200px_1fr_200px]">
+        <div className="w-full md:max-w-[1280px] mx-auto flex flex-col items-center gap-[32px] md:gap-[64px]">
+          <div className="w-full max-w-[350px] md:max-w-none h-[400px] md:h-[480px] flex md:grid md:grid-cols-[200px_1fr_200px]">
             {/* Left section - Papers/Documents - Mobile: 75px, Desktop: 200px */}
             <div className="relative w-[75px] md:w-full h-[400px] md:h-[480px] overflow-hidden">
               <Image
@@ -45,9 +45,9 @@ export function BrandPhilosophy() {
           </div>
 
           {/* Text Content - Mobile: 350px width, Desktop: 1280px width */}
-          <div className="flex flex-col items-center text-center w-full gap-[32px]">
+          <div className="flex flex-col items-start md:items-center text-left md:text-center w-full gap-[32px]">
             <p
-              className="text-[16px] md:text-[18px] font-medium leading-[20px] md:leading-[28px] max-w-[330px] md:max-w-[686px]"
+              className="text-[16px] md:text-[18px] font-medium leading-[20px] md:leading-[28px] w-full max-w-[330px] md:max-w-[686px]"
               style={{
                 fontFamily: "Raleway, sans-serif",
                 color: "#2D2D2D",
@@ -55,8 +55,8 @@ export function BrandPhilosophy() {
               }}
             >
               A philosophy of buying fewer, better pieces. We craft
-              investment-quality garments from the finest natural fabrics, designed to endure for
-              years, not seasons.
+              investment-quality garments from the finest natural fabrics,
+              designed to endure for years, not seasons.
             </p>
             <Button
               variant="link"

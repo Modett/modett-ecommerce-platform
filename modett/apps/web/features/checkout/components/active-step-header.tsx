@@ -11,7 +11,7 @@ export const ActiveStepHeader = memo(function ActiveStepHeader({
   title,
 }: ActiveStepHeaderProps) {
   return (
-    <div className="bg-[#232D35] p-[16px] flex items-center h-[60px] w-full max-w-[358px] md:max-w-none mx-auto md:mx-0">
+    <div className="bg-[#232D35] p-[16px] flex items-center h-[60px] w-full">
       <h1
         className="text-[18px] md:text-[20px] leading-[140%] font-normal tracking-[0%] text-[#EFECE5]"
         style={{ fontFamily: FONTS.raleway }}
