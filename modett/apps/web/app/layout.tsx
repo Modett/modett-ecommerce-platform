@@ -1,6 +1,6 @@
-import '@/styles/globals.css';
-import { QueryProvider } from '@/lib/query-provider';
-import { Toaster } from 'sonner';
+import "@/styles/globals.css";
+import { QueryProvider } from "@/lib/query-provider";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,

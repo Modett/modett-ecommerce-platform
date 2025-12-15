@@ -115,7 +115,7 @@ export function ProductCard({
               ? "w-full h-[592px] md:h-[496.96px] lg:h-[496.96px] gap-[15px] md:gap-[7.66px] lg:gap-[7.66px]"
               : variant === "wear-it-with"
                 ? "w-full max-w-[350px] mx-auto gap-[12px]"
-                : "w-full max-w-[350px] md:max-w-[370px] lg:max-w-[394px] h-[594px] md:h-[600px] lg:h-[600px] gap-[18px] md:gap-[18.5px] lg:gap-[19.27px]"
+                : "w-full max-w-[350px] md:max-w-[370px] lg:max-w-[394px] h-[520px] md:h-[520px] lg:h-[520px] gap-[16px] md:gap-[16px] lg:gap-[16px]"
       }`}
     >
       <div
@@ -124,15 +124,13 @@ export function ProductCard({
             ? aspectRatio
             : variant === "collection"
               ? "h-[512px] md:h-[407.34px] lg:h-[407.34px]"
-              : "h-[515px] md:h-[518px] lg:h-[518px]"
+              : "h-[420px] md:h-[420px] lg:h-[420px]"
         }`}
       >
         <div className="relative h-full w-full">
           <div
             className={`relative w-full overflow-hidden group ${
-              aspectRatio
-                ? "h-full"
-                : "h-[512px] md:h-[407.34px] lg:h-[407.34px]"
+              aspectRatio ? "h-full" : "h-full"
             }`}
           >
             <Link href={`/product/${slug}`} className="block w-full h-full">

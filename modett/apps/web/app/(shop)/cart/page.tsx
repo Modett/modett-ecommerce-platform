@@ -18,6 +18,7 @@ import { ProductGrid } from "@/features/product-catalog/components/product-grid"
 
 export default function CartPage() {
   const { cart, isLoading, cartId } = useCheckoutCart();
+
   const { data: recommendedProducts } = useFeaturedProducts(6);
 
   const updateQuantityMutation = useUpdateCartQuantity();
@@ -129,7 +130,7 @@ export default function CartPage() {
                 </div>
 
                 {/* Cart Items */}
-                <div className="flex flex-col gap-4 md:gap-5 lg:gap-[24px] pt-[24px] md:pt-5 lg:pt-[24px]">
+                <div className="flex flex-col divide-y divide-[#E5E0D6] md:divide-none gap-0 md:gap-5 lg:gap-[24px] pt-[24px] md:pt-5 lg:pt-[24px]">
                   {cart.items.map((item, index) => {
                     const slug = item.product?.slug || "";
                     return (
