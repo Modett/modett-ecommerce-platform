@@ -23,15 +23,12 @@ export function Footer() {
   };
   return (
     <footer className="bg-gray-900 text-gray-300">
-      {/* Newsletter Section - Fixed 1440px, 80px padding */}
       <div className="w-full bg-[#3E5460]">
         <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[80px] py-[48px] md:py-[64px]">
-          {/* Container: Fill 1280px, Hug 84px, 80px gap */}
           <div
             className="w-full max-w-[1280px] flex flex-col md:flex-col lg:flex-row justify-between items-start md:items-start gap-6 lg:gap-[80px]"
             id="newsletter"
           >
-            {/* Left - Content: Vertical flow, Fill 560px, Fixed 54px height */}
             <div className="flex flex-col justify-start w-full md:w-[560px] h-auto md:h-[84px] max-w-[560px]">
               <h3
                 className="text-[24px] md:text-[28px] font-semibold text-[#F8F5F2]"
@@ -48,7 +45,6 @@ export function Footer() {
               </p>
             </div>
 
-            {/* Right - Actions: Vertical flow, Fixed 459px, Hug 84px, 12px gap */}
             <div className="flex flex-col gap-[12px] w-full md:w-full lg:w-[459px]">
               <div className="flex flex-col sm:flex-row">
                 <Input
@@ -73,13 +69,10 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Footer Links Section - Mobile: 390px, Desktop: 1440px, Alabaster bg */}
       <div className="w-full bg-[#E5E0D6] border-t border-[#BBA496]">
         <div className="w-full md:max-w-[1440px] mx-auto px-0 md:px-[80px] pt-[20px] md:pt-[64px] pb-[40px] md:pb-[60px]">
           <div className="flex flex-col gap-[40px] md:gap-[80px]">
-            {/* Links: Mobile vertical, Tablet 2x2 grid, Desktop horizontal */}
             <div className="flex flex-col md:grid md:grid-cols-2 lg:flex lg:flex-row lg:justify-between gap-0 md:gap-x-8 md:gap-y-6 lg:gap-8 w-full md:max-w-[1280px] md:mx-auto">
-              {/* Customer Care */}
               <div className="border-b border-[#BBA496] md:border-none pb-0 md:pb-0">
                 <button
                   onClick={() => toggleSection("customerCare")}
@@ -141,7 +134,6 @@ export function Footer() {
                 </ul>
               </div>
 
-              {/* Philosophy */}
               <div className="border-b border-[#BBA496] md:border-none pb-0 md:pb-0">
                 <button
                   onClick={() => toggleSection("philosophy")}
@@ -185,7 +177,6 @@ export function Footer() {
                 </ul>
               </div>
 
-              {/* General Information */}
               <div className="border-b border-[#BBA496] md:border-none pb-0 md:pb-0">
                 <button
                   onClick={() => toggleSection("generalInfo")}

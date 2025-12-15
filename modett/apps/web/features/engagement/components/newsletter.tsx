@@ -1,6 +1,12 @@
 "use client";
 
-import * as React from "react";
+import React, { memo, useCallback } from "react";
+import {
+  NEWSLETTER_CLASSES,
+  NEWSLETTER_COLORS,
+  NEWSLETTER_TYPOGRAPHY,
+} from "../constants/newsletter-styles";
+import { useNewsletterForm } from "../hooks/use-newsletter-form";
 
 // ============================================================================
 // Types
@@ -10,9 +16,11 @@ interface NewsletterProps {
   title?: string;
   description?: string;
   onSubmit?: (email: string) => void | Promise<void>;
+  onSubscribeSuccess?: () => void;
+  onSubscribeError?: (error: Error) => void;
 }
 
-interface FormMessage {
+interface FormMessageData {
   type: "success" | "error";
   text: string;
 }
@@ -21,10 +29,7 @@ interface FormMessage {
 // Sub-Components
 // ============================================================================
 
-/**
- * Mail icon SVG component
- */
-const MailIcon = ({ size = 16 }: { size?: number }) => (
+const MailIcon = memo(({ size = 16 }: { size?: number }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={size}
@@ -32,6 +37,7 @@ const MailIcon = ({ size = 16 }: { size?: number }) => (
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
+    aria-hidden="true"
   >
     <rect
       x="3"
@@ -39,307 +45,369 @@ const MailIcon = ({ size = 16 }: { size?: number }) => (
       width="18"
       height="14"
       rx="2"
-      stroke="#3E5460"
+      stroke={NEWSLETTER_COLORS.iconStroke}
       strokeWidth="1.5"
       fill="none"
     />
-    <path d="M3 7l9 6 9-6" stroke="#3E5460" strokeWidth="1.5" fill="none" />
+    <path
+      d="M3 7l9 6 9-6"
+      stroke={NEWSLETTER_COLORS.iconStroke}
+      strokeWidth="1.5"
+      fill="none"
+    />
   </svg>
-);
+));
+MailIcon.displayName = "MailIcon";
 
-/**
- * Newsletter email input field
- */
-const NewsletterInput = ({
-  email,
-  onChange,
-  disabled,
-  className = "",
-}: {
-  email: string;
-  onChange: (value: string) => void;
-  disabled: boolean;
-  className?: string;
-}) => (
-  <input
-    type="email"
-    placeholder="Enter e-mail"
-    value={email}
-    onChange={(e) => onChange(e.target.value)}
-    disabled={disabled}
-    className={className}
-    autoComplete="email"
-    required
-  />
-);
-
-/**
- * Subscribe button component
- */
-const SubscribeButton = ({
-  isLoading,
-  className = "",
-  iconSize = 16,
-}: {
-  isLoading: boolean;
-  className?: string;
-  iconSize?: number;
-}) => (
-  <button
-    type="submit"
-    disabled={isLoading}
-    className={className}
-    aria-label="Subscribe to newsletter"
+const LoadingSpinner = memo(() => (
+  <svg
+    className={NEWSLETTER_CLASSES.spinner}
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
   >
-    <MailIcon size={iconSize} />
-    <span>{isLoading ? "SUBSCRIBING..." : "SUBSCRIBE"}</span>
-  </button>
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+    />
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+    />
+  </svg>
+));
+LoadingSpinner.displayName = "LoadingSpinner";
+
+const NewsletterInput = memo(
+  ({
+    email,
+    onChange,
+    disabled,
+    className,
+    id,
+  }: {
+    email: string;
+    onChange: (value: string) => void;
+    disabled: boolean;
+    className: string;
+    id: string;
+  }) => {
+    const handleChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        onChange(e.target.value);
+      },
+      [onChange]
+    );
+
+    return (
+      <input
+        id={id}
+        type="email"
+        placeholder="Enter e-mail"
+        value={email}
+        onChange={handleChange}
+        disabled={disabled}
+        className={className}
+        autoComplete="email"
+        required
+        aria-label="Email address"
+        aria-required="true"
+        maxLength={254}
+      />
+    );
+  }
 );
+NewsletterInput.displayName = "NewsletterInput";
 
-/**
- * Form status message (success or error)
- */
-const FormMessage = ({ message }: { message: FormMessage | null }) => {
-  if (!message) return null;
-
-  const messageColor =
-    message.type === "success" ? "text-green-400" : "text-red-400";
-
-  return <p className={`text-xs mt-2 ${messageColor}`}>{message.text}</p>;
-};
-
-/**
- * Privacy policy disclaimer text
- */
-const PrivacyDisclaimer = ({ className = "" }: { className?: string }) => (
-  <p className={className}>
-    By subscribing, you agree to our privacy policy and terms of service
-  </p>
-);
-
-// ============================================================================
-// Mobile Newsletter Form
-// ============================================================================
-
-const MobileNewsletterForm = ({
-  email,
-  setEmail,
-  isLoading,
-  message,
-  handleSubmit,
-}: {
-  email: string;
-  setEmail: (email: string) => void;
-  isLoading: boolean;
-  message: FormMessage | null;
-  handleSubmit: (e: React.FormEvent) => void;
-}) => (
-  <div className="block md:hidden text-center">
-    {/* Form */}
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 w-[348px] mx-auto"
+const SubscribeButton = memo(
+  ({
+    isLoading,
+    className,
+    iconSize = 16,
+  }: {
+    isLoading: boolean;
+    className: string;
+    iconSize?: number;
+  }) => (
+    <button
+      type="submit"
+      disabled={isLoading}
+      className={className}
+      aria-label={isLoading ? "Subscribing to newsletter" : "Subscribe to newsletter"}
     >
-      {/* Email Input */}
-      <NewsletterInput
-        email={email}
-        onChange={setEmail}
-        disabled={isLoading}
-        className="w-full bg-transparent border border-white/60 text-white placeholder:text-white/60 focus:outline-none focus:ring-0 px-4 h-[54px] text-sm rounded-none"
-      />
-
-      {/* Spacer */}
-      <div className="h-3" />
-
-      {/* Submit Button */}
-      <SubscribeButton
-        isLoading={isLoading}
-        iconSize={18}
-        className="w-full flex items-center justify-center gap-2 bg-white text-[#3E5460] uppercase font-medium tracking-wider px-6 h-12 border-none rounded-none text-sm hover:bg-gray-100 transition-colors"
-      />
-
-      {/* Status Message */}
-      <FormMessage message={message} />
-
-      {/* Privacy Disclaimer */}
-      <PrivacyDisclaimer className="text-[11px] text-white/60 mt-4 leading-relaxed" />
-    </form>
-  </div>
+      {isLoading ? <LoadingSpinner /> : <MailIcon size={iconSize} />}
+      <span>{isLoading ? "SUBSCRIBING..." : "SUBSCRIBE"}</span>
+    </button>
+  )
 );
+SubscribeButton.displayName = "SubscribeButton";
 
-// ============================================================================
-// Desktop Newsletter Form
-// ============================================================================
+const StatusMessage = memo(
+  ({
+    message,
+    onRetry,
+  }: {
+    message: FormMessageData | null;
+    onRetry?: () => void;
+  }) => {
+    if (!message) return null;
 
-const DesktopNewsletterForm = ({
-  email,
-  setEmail,
-  isLoading,
-  message,
-  handleSubmit,
-}: {
-  email: string;
-  setEmail: (email: string) => void;
-  isLoading: boolean;
-  message: FormMessage | null;
-  handleSubmit: (e: React.FormEvent) => void;
-}) => (
-  <div className="hidden md:flex md:items-start md:justify-between gap-8">
-    {/* Right Side: Form Container */}
-    <div className="flex-1 flex flex-col items-end w-full">
-      {/* Inline Form (Input + Button) */}
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md flex flex-row items-stretch border border-white/60 bg-transparent rounded-none overflow-hidden"
+    const isError = message.type === "error";
+    const className = isError
+      ? NEWSLETTER_CLASSES.statusError
+      : NEWSLETTER_CLASSES.statusSuccess;
+
+    return (
+      <div
+        className={className}
+        role="alert"
+        aria-live={isError ? "assertive" : "polite"}
+        aria-atomic="true"
       >
-        {/* Email Input */}
+        <p>{message.text}</p>
+        {isError && onRetry && (
+          <button
+            onClick={onRetry}
+            className="underline hover:no-underline mt-1"
+            type="button"
+          >
+            Try again
+          </button>
+        )}
+      </div>
+    );
+  }
+);
+StatusMessage.displayName = "StatusMessage";
+
+const PrivacyDisclaimer = memo(({ className }: { className: string }) => (
+  <p className={className}>
+    By subscribing, you agree to our{" "}
+    <a href="/privacy" className="underline hover:no-underline">
+      privacy policy
+    </a>{" "}
+    and{" "}
+    <a href="/terms" className="underline hover:no-underline">
+      terms of service
+    </a>
+  </p>
+));
+PrivacyDisclaimer.displayName = "PrivacyDisclaimer";
+
+const NewsletterHeader = memo(
+  ({
+    title,
+    description,
+    isMobile = false,
+  }: {
+    title: string;
+    description: string;
+    isMobile?: boolean;
+  }) => {
+    if (isMobile) {
+      return (
+        <div className={NEWSLETTER_CLASSES.mobileHeaderContainer}>
+          <h2 className="font-serif w-full" style={NEWSLETTER_TYPOGRAPHY.mobileTitle}>
+            {title}
+          </h2>
+          <p className="w-full max-w-[350px] mx-auto" style={NEWSLETTER_TYPOGRAPHY.mobileDescription}>
+            {description}
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className={NEWSLETTER_CLASSES.desktopHeaderContainer}>
+        <h2 className={NEWSLETTER_CLASSES.desktopHeaderTitle}>{title}</h2>
+        <p className={NEWSLETTER_CLASSES.desktopHeaderDescription}>{description}</p>
+      </div>
+    );
+  }
+);
+NewsletterHeader.displayName = "NewsletterHeader";
+
+// ============================================================================
+// Form Components
+// ============================================================================
+
+const MobileNewsletterForm = memo(
+  ({
+    email,
+    setEmail,
+    isLoading,
+    message,
+    handleSubmit,
+    handleRetry,
+  }: {
+    email: string;
+    setEmail: (email: string) => void;
+    isLoading: boolean;
+    message: FormMessageData | null;
+    handleSubmit: (e: React.FormEvent) => void;
+    handleRetry: () => void;
+  }) => (
+    <div className={NEWSLETTER_CLASSES.mobileFormContainer}>
+      <form onSubmit={handleSubmit} className={NEWSLETTER_CLASSES.mobileForm} noValidate>
+        <label htmlFor="newsletter-email-mobile" className={NEWSLETTER_CLASSES.srOnly}>
+          Email Address
+        </label>
         <NewsletterInput
+          id="newsletter-email-mobile"
           email={email}
           onChange={setEmail}
           disabled={isLoading}
-          className="flex-1 bg-transparent border-none text-white placeholder:text-white/60 focus:outline-none focus:ring-0 px-4 h-11 text-sm"
+          className={NEWSLETTER_CLASSES.mobileInput}
         />
 
-        {/* Submit Button */}
+        {/* Anti-spam honeypot */}
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          className={NEWSLETTER_CLASSES.srOnly}
+          aria-hidden="true"
+        />
+
+        <div className="h-3" />
+
+        <SubscribeButton
+          isLoading={isLoading}
+          iconSize={18}
+          className={NEWSLETTER_CLASSES.mobileButton}
+        />
+
+        <StatusMessage message={message} onRetry={handleRetry} />
+
+        <PrivacyDisclaimer className={NEWSLETTER_CLASSES.privacyMobile} />
+      </form>
+    </div>
+  )
+);
+MobileNewsletterForm.displayName = "MobileNewsletterForm";
+
+const DesktopNewsletterForm = memo(
+  ({
+    email,
+    setEmail,
+    isLoading,
+    message,
+    handleSubmit,
+    handleRetry,
+  }: {
+    email: string;
+    setEmail: (email: string) => void;
+    isLoading: boolean;
+    message: FormMessageData | null;
+    handleSubmit: (e: React.FormEvent) => void;
+    handleRetry: () => void;
+  }) => (
+    <div className={NEWSLETTER_CLASSES.desktopFormContainer}>
+      <form onSubmit={handleSubmit} className={NEWSLETTER_CLASSES.desktopForm} noValidate>
+        <label htmlFor="newsletter-email-desktop" className={NEWSLETTER_CLASSES.srOnly}>
+          Email Address
+        </label>
+        <NewsletterInput
+          id="newsletter-email-desktop"
+          email={email}
+          onChange={setEmail}
+          disabled={isLoading}
+          className={NEWSLETTER_CLASSES.desktopInput}
+        />
+
+        {/* Anti-spam honeypot */}
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          className={NEWSLETTER_CLASSES.srOnly}
+          aria-hidden="true"
+        />
+
         <SubscribeButton
           isLoading={isLoading}
           iconSize={16}
-          className="flex items-center justify-center gap-2 bg-white text-[#3E5460] uppercase font-medium tracking-wider px-6 h-11 border-none rounded-none text-sm hover:bg-gray-100 transition-colors border-l border-white/60"
+          className={NEWSLETTER_CLASSES.desktopButton}
         />
       </form>
 
-      {/* Status Message */}
-      <FormMessage message={message} />
+      <StatusMessage message={message} onRetry={handleRetry} />
 
-      {/* Privacy Disclaimer */}
-      <PrivacyDisclaimer className="text-[11px] text-white/50 mt-2 leading-relaxed w-full max-w-md text-right" />
+      <PrivacyDisclaimer className={NEWSLETTER_CLASSES.privacyDesktop} />
     </div>
-  </div>
+  )
 );
+DesktopNewsletterForm.displayName = "DesktopNewsletterForm";
 
 // ============================================================================
 // Main Newsletter Component
 // ============================================================================
 
-export function Newsletter({
-  title = "Join the Modern Muse community",
-  description = "Get the latest fashion trends and exclusive offers",
-  onSubmit,
-}: NewsletterProps) {
-  // ============================================================================
-  // State Management
-  // ============================================================================
+export const Newsletter = memo(
+  ({
+    title = "Join the Modern Muse community",
+    description = "Get the latest fashion trends and exclusive offers",
+    onSubmit,
+    onSubscribeSuccess,
+    onSubscribeError,
+  }: NewsletterProps) => {
+    const { email, setEmail, isLoading, message, handleSubmit, handleRetry } =
+      useNewsletterForm(onSubmit);
 
-  const [email, setEmail] = React.useState("");
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [message, setMessage] = React.useState<FormMessage | null>(null);
-
-  // ============================================================================
-  // Form Submission Handler
-  // ============================================================================
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate email
-    if (!email) {
-      setMessage({ type: "error", text: "Please enter your email address" });
-      return;
-    }
-
-    // Start loading state
-    setIsLoading(true);
-    setMessage(null);
-
-    try {
-      // Call onSubmit callback if provided
-      if (onSubmit) {
-        await onSubmit(email);
+    // Analytics hooks
+    React.useEffect(() => {
+      if (message?.type === "success" && onSubscribeSuccess) {
+        onSubscribeSuccess();
+      } else if (message?.type === "error" && onSubscribeError) {
+        onSubscribeError(new Error(message.text));
       }
+    }, [message, onSubscribeSuccess, onSubscribeError]);
 
-      // Show success message
-      setMessage({ type: "success", text: "Thank you for subscribing!" });
-      setEmail("");
-    } catch (error) {
-      // Show error message
-      setMessage({
-        type: "error",
-        text: "Something went wrong. Please try again.",
-      });
-    } finally {
-      // Stop loading state
-      setIsLoading(false);
-    }
-  };
+    return (
+      <section className={NEWSLETTER_CLASSES.section} aria-labelledby="newsletter-heading">
+        <div className={NEWSLETTER_CLASSES.container}>
+          {/* Screen reader heading */}
+          <h2 id="newsletter-heading" className={NEWSLETTER_CLASSES.srOnly}>
+            Newsletter Subscription
+          </h2>
 
-  // ============================================================================
-  // Render
-  // ============================================================================
-
-  return (
-    <section className="bg-[#3E5460] text-white py-[60px] md:py-14">
-      <div className="max-w-7xl mx-auto px-0 md:px-6 lg:px-8">
-        {/* Mobile Version: Centered Layout */}
-        <div className="flex md:hidden text-center flex-col gap-[80px] px-5">
-          {/* Title & Description */}
-          <div className="flex flex-col gap-[24px] w-full max-w-[348px] mx-auto">
-            <h2
-              className="font-serif w-full"
-              style={{
-                fontFamily: "Playfair Display, serif",
-                fontSize: "24px",
-                fontWeight: 600,
-                lineHeight: "130%",
-                textAlign: "center",
-                color: "#F8F5F2",
-              }}
-            >
-              {title}
-            </h2>
-            <p
-              className="w-full max-w-[350px] mx-auto"
-              style={{
-                fontFamily: "Raleway, sans-serif",
-                fontSize: "18px",
-                fontWeight: 400,
-                lineHeight: "28px",
-                letterSpacing: "0%",
-                textAlign: "center",
-                color: "#F8F5F2",
-              }}
-            >
-              {description}
-            </p>
+          {/* Mobile Version */}
+          <div className={NEWSLETTER_CLASSES.mobileWrapper}>
+            <NewsletterHeader title={title} description={description} isMobile />
+            <MobileNewsletterForm
+              email={email}
+              setEmail={setEmail}
+              isLoading={isLoading}
+              message={message}
+              handleSubmit={handleSubmit}
+              handleRetry={handleRetry}
+            />
           </div>
 
-          {/* Mobile Form */}
-          <MobileNewsletterForm
-            email={email}
-            setEmail={setEmail}
-            isLoading={isLoading}
-            message={message}
-            handleSubmit={handleSubmit}
-          />
-        </div>
-
-        {/* Desktop Version: Side-by-Side Layout */}
-        <div className="hidden md:flex md:items-start md:justify-between gap-8">
-          {/* Left Side: Title & Description */}
-          <div className="flex-1 min-w-[260px]">
-            <h2 className="text-2xl font-semibold mb-1">{title}</h2>
-            <p className="text-white/80 text-sm">{description}</p>
+          {/* Desktop Version */}
+          <div className={NEWSLETTER_CLASSES.desktopWrapper}>
+            <NewsletterHeader title={title} description={description} />
+            <DesktopNewsletterForm
+              email={email}
+              setEmail={setEmail}
+              isLoading={isLoading}
+              message={message}
+              handleSubmit={handleSubmit}
+              handleRetry={handleRetry}
+            />
           </div>
-
-          {/* Right Side: Desktop Form */}
-          <DesktopNewsletterForm
-            email={email}
-            setEmail={setEmail}
-            isLoading={isLoading}
-            message={message}
-            handleSubmit={handleSubmit}
-          />
         </div>
-      </div>
-    </section>
-  );
-}
+      </section>
+    );
+  }
+);
+
+Newsletter.displayName = "Newsletter";
