@@ -24,6 +24,8 @@ import {
 import {
   optionalAuth,
   authenticateUser,
+  authenticateAdmin,
+  authenticateStaff,
 } from "../../../user-management/infra/http/middleware/auth.middleware";
 
 // Standard error responses for Swagger
@@ -220,9 +222,9 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/payment-intents/refund",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Refund a captured payment (full or partial)",
+        description: "Refund a captured payment (full or partial) - Staff/Admin only",
         tags: ["Payment Intents"],
         summary: "Refund Payment",
         security: [{ bearerAuth: [] }],
@@ -264,9 +266,9 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/payment-intents/void",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Void an authorized (not yet captured) payment",
+        description: "Void an authorized (not yet captured) payment - Staff/Admin only",
         tags: ["Payment Intents"],
         summary: "Void Payment",
         security: [{ bearerAuth: [] }],
@@ -445,10 +447,10 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/bnpl/:bnplId/:action",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
         description:
-          "Process a BNPL transaction (approve, reject, activate, complete, cancel)",
+          "Process a BNPL transaction (approve, reject, activate, complete, cancel) - Staff/Admin only",
         tags: ["BNPL"],
         summary: "Process BNPL",
         security: [{ bearerAuth: [] }],
@@ -543,10 +545,10 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/gift-cards",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description:
-          "Create a new gift card with initial balance and optional expiration",
+          "Create a new gift card with initial balance and optional expiration - Admin only",
         tags: ["Gift Cards"],
         summary: "Create Gift Card",
         security: [{ bearerAuth: [] }],
@@ -685,11 +687,13 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.get(
     "/gift-cards/:giftCardId/transactions",
     {
+      preHandler: authenticateAdmin,
       schema: {
         description:
-          "List all transactions (issue, redeem, refund) for a gift card",
+          "List all transactions (issue, redeem, refund) for a gift card - Admin only",
         tags: ["Gift Card Transactions"],
         summary: "List Gift Card Transactions",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["giftCardId"],
@@ -727,10 +731,10 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/promotions",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description:
-          "Create a new promotion with discount rules, validity period, and usage limits",
+          "Create a new promotion with discount rules, validity period, and usage limits - Admin only",
         tags: ["Promotions"],
         summary: "Create Promotion",
         security: [{ bearerAuth: [] }],
@@ -915,10 +919,12 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.get(
     "/promotions/:promoId/usage",
     {
+      preHandler: authenticateAdmin,
       schema: {
-        description: "List all usage records for a promotion",
+        description: "List all usage records for a promotion - Admin only",
         tags: ["Promotion Usage"],
         summary: "List Promotion Usage",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["promoId"],
@@ -1001,11 +1007,13 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.get(
     "/webhooks/events",
     {
+      preHandler: authenticateAdmin,
       schema: {
         description:
-          "List all received payment webhook events with optional filtering by provider or status",
+          "List all received payment webhook events with optional filtering by provider or status - Admin only",
         tags: ["Webhooks"],
         summary: "List Webhook Events",
+        security: [{ bearerAuth: [] }],
         querystring: {
           type: "object",
           properties: {
@@ -1060,10 +1068,10 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/loyalty/programs",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description:
-          "Create a new loyalty program with tier configuration and redemption rules",
+          "Create a new loyalty program with tier configuration and redemption rules - Admin only",
         tags: ["Loyalty Programs"],
         summary: "Create Loyalty Program",
         security: [{ bearerAuth: [] }],
@@ -1109,10 +1117,10 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/loyalty/points/award",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
         description:
-          "Award loyalty points to a customer for a purchase or action",
+          "Award loyalty points to a customer for a purchase or action - Staff/Admin only",
         tags: ["Loyalty Transactions"],
         summary: "Award Loyalty Points",
         security: [{ bearerAuth: [] }],
