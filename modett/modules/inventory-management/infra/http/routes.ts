@@ -13,7 +13,11 @@ import { SupplierManagementService } from "../../application/services/supplier-m
 import { PurchaseOrderManagementService } from "../../application/services/purchase-order-management.service";
 import { StockAlertService } from "../../application/services/stock-alert.service";
 import { PickupReservationService } from "../../application/services/pickup-reservation.service";
-import { authenticateUser } from "../../../user-management/infra/http/middleware/auth.middleware";
+import {
+  authenticateUser,
+  authenticateAdmin,
+  authenticateStaff,
+} from "../../../user-management/infra/http/middleware/auth.middleware";
 
 // Standard error responses for Swagger
 const errorResponses = {
@@ -79,8 +83,9 @@ export async function registerInventoryManagementRoutes(
   fastify.get(
     "/stocks",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "List all stocks with pagination",
+        description: "List all stocks with pagination (Staff/Admin only)",
         tags: ["Stock Management"],
         summary: "List Stocks",
         security: [{ bearerAuth: [] }],
@@ -110,15 +115,17 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    stockController.listStocks.bind(stockController)
+    stockController.listStocks.bind(stockController) as any
   );
 
   // Get stock by variant and location
   fastify.get(
     "/stocks/:variantId/:locationId",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "Get stock for a specific variant at a location",
+        description:
+          "Get stock for a specific variant at a location (Staff/Admin only)",
         tags: ["Stock Management"],
         summary: "Get Stock",
         security: [{ bearerAuth: [] }],
@@ -136,15 +143,17 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    stockController.getStock.bind(stockController)
+    stockController.getStock.bind(stockController) as any
   );
 
   // Get stock by variant (all locations)
   fastify.get(
     "/stocks/:variantId",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "Get stock for a variant across all locations",
+        description:
+          "Get stock for a variant across all locations (Staff/Admin only)",
         tags: ["Stock Management"],
         summary: "Get Stock By Variant",
         security: [{ bearerAuth: [] }],
@@ -161,15 +170,17 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    stockController.getStockByVariant.bind(stockController)
+    stockController.getStockByVariant.bind(stockController) as any
   );
 
   // Get total available stock
   fastify.get(
     "/stocks/:variantId/total",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "Get total available stock for a variant",
+        description:
+          "Get total available stock for a variant (Staff/Admin only)",
         tags: ["Stock Management"],
         summary: "Get Total Available Stock",
         security: [{ bearerAuth: [] }],
@@ -186,14 +197,14 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    stockController.getTotalAvailableStock.bind(stockController)
+    stockController.getTotalAvailableStock.bind(stockController) as any
   );
 
   // Add stock
   fastify.post(
     "/stocks/add",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Add stock to inventory",
         tags: ["Stock Management"],
@@ -225,7 +236,7 @@ export async function registerInventoryManagementRoutes(
   fastify.post(
     "/stocks/adjust",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Adjust stock quantity (positive or negative)",
         tags: ["Stock Management"],
@@ -259,7 +270,7 @@ export async function registerInventoryManagementRoutes(
   fastify.post(
     "/stocks/transfer",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Transfer stock between locations",
         tags: ["Stock Management"],
@@ -288,7 +299,7 @@ export async function registerInventoryManagementRoutes(
   fastify.post(
     "/stocks/reserve",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Reserve stock for an order",
         tags: ["Stock Management"],
@@ -316,7 +327,7 @@ export async function registerInventoryManagementRoutes(
   fastify.post(
     "/stocks/fulfill",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Fulfill stock reservation (removes from inventory)",
         tags: ["Stock Management"],
@@ -344,7 +355,7 @@ export async function registerInventoryManagementRoutes(
   fastify.put(
     "/stocks/:variantId/:locationId/thresholds",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Set low stock and safety stock thresholds",
         tags: ["Stock Management"],
@@ -382,8 +393,9 @@ export async function registerInventoryManagementRoutes(
   fastify.get(
     "/locations",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "List all locations",
+        description: "List all locations (Staff/Admin only)",
         tags: ["Locations"],
         summary: "List Locations",
         security: [{ bearerAuth: [] }],
@@ -443,15 +455,16 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    locationController.listLocations.bind(locationController)
+    locationController.listLocations.bind(locationController) as any
   );
 
   // Get location
   fastify.get(
     "/locations/:locationId",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "Get location by ID",
+        description: "Get location by ID (Staff/Admin only)",
         tags: ["Locations"],
         summary: "Get Location",
         security: [{ bearerAuth: [] }],
@@ -468,14 +481,14 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    locationController.getLocation.bind(locationController)
+    locationController.getLocation.bind(locationController) as any
   );
 
   // Create location
   fastify.post(
     "/locations",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Create a new location",
         tags: ["Locations"],
@@ -512,7 +525,7 @@ export async function registerInventoryManagementRoutes(
   fastify.put(
     "/locations/:locationId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Update location",
         tags: ["Locations"],
@@ -545,7 +558,7 @@ export async function registerInventoryManagementRoutes(
   fastify.delete(
     "/locations/:locationId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Delete location",
         tags: ["Locations"],
@@ -575,8 +588,9 @@ export async function registerInventoryManagementRoutes(
   fastify.get(
     "/suppliers",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "List all suppliers",
+        description: "List all suppliers (Staff/Admin only)",
         tags: ["Suppliers"],
         summary: "List Suppliers",
         security: [{ bearerAuth: [] }],
@@ -593,15 +607,16 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    supplierController.listSuppliers.bind(supplierController)
+    supplierController.listSuppliers.bind(supplierController) as any
   );
 
   // Get supplier
   fastify.get(
     "/suppliers/:supplierId",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "Get supplier by ID",
+        description: "Get supplier by ID (Staff/Admin only)",
         tags: ["Suppliers"],
         summary: "Get Supplier",
         security: [{ bearerAuth: [] }],
@@ -618,14 +633,14 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    supplierController.getSupplier.bind(supplierController)
+    supplierController.getSupplier.bind(supplierController) as any
   );
 
   // Create supplier
   fastify.post(
     "/suppliers",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Create a new supplier",
         tags: ["Suppliers"],
@@ -663,7 +678,7 @@ export async function registerInventoryManagementRoutes(
   fastify.put(
     "/suppliers/:supplierId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Update supplier",
         tags: ["Suppliers"],
@@ -697,7 +712,7 @@ export async function registerInventoryManagementRoutes(
   fastify.delete(
     "/suppliers/:supplierId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Delete supplier",
         tags: ["Suppliers"],
@@ -727,8 +742,9 @@ export async function registerInventoryManagementRoutes(
   fastify.get(
     "/purchase-orders",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "List all purchase orders",
+        description: "List all purchase orders (Staff/Admin only)",
         tags: ["Purchase Orders"],
         summary: "List Purchase Orders",
         security: [{ bearerAuth: [] }],
@@ -759,8 +775,9 @@ export async function registerInventoryManagementRoutes(
   fastify.get(
     "/purchase-orders/:poId",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "Get purchase order by ID",
+        description: "Get purchase order by ID (Staff/Admin only)",
         tags: ["Purchase Orders"],
         summary: "Get Purchase Order",
         security: [{ bearerAuth: [] }],
@@ -777,15 +794,16 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    poController.getPurchaseOrder.bind(poController)
+    poController.getPurchaseOrder.bind(poController) as any
   );
 
   // Get PO items
   fastify.get(
     "/purchase-orders/:poId/items",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "Get all items for a purchase order",
+        description: "Get all items for a purchase order (Staff/Admin only)",
         tags: ["Purchase Orders"],
         summary: "Get PO Items",
         security: [{ bearerAuth: [] }],
@@ -802,7 +820,7 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    poItemController.getPOItems.bind(poItemController)
+    poItemController.getPOItems.bind(poItemController) as any
   );
 
   // Create purchase order
@@ -847,9 +865,10 @@ export async function registerInventoryManagementRoutes(
   fastify.post(
     "/purchase-orders/full",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Create a new purchase order with items",
+        description:
+          "Create a new purchase order with items (Staff/Admin only)",
         tags: ["Purchase Orders"],
         summary: "Create Purchase Order With Items",
         security: [{ bearerAuth: [] }],
@@ -946,9 +965,9 @@ export async function registerInventoryManagementRoutes(
   fastify.post(
     "/purchase-orders/:poId/items",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Add item to purchase order",
+        description: "Add item to purchase order (Staff/Admin only)",
         tags: ["Purchase Orders"],
         summary: "Add PO Item",
         security: [{ bearerAuth: [] }],
@@ -980,9 +999,9 @@ export async function registerInventoryManagementRoutes(
   fastify.put(
     "/purchase-orders/:poId/items/:variantId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Update purchase order item",
+        description: "Update purchase order item (Staff/Admin only)",
         tags: ["Purchase Orders"],
         summary: "Update PO Item",
         security: [{ bearerAuth: [] }],
@@ -1014,9 +1033,9 @@ export async function registerInventoryManagementRoutes(
   fastify.delete(
     "/purchase-orders/:poId/items/:variantId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Remove item from purchase order",
+        description: "Remove item from purchase order (Staff/Admin only)",
         tags: ["Purchase Orders"],
         summary: "Remove PO Item",
         security: [{ bearerAuth: [] }],
@@ -1041,9 +1060,9 @@ export async function registerInventoryManagementRoutes(
   fastify.put(
     "/purchase-orders/:poId/status",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Update purchase order status",
+        description: "Update purchase order status (Staff/Admin only)",
         tags: ["Purchase Orders"],
         summary: "Update PO Status",
         security: [{ bearerAuth: [] }],
@@ -1077,9 +1096,9 @@ export async function registerInventoryManagementRoutes(
   fastify.post(
     "/purchase-orders/:poId/receive",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Receive items from purchase order",
+        description: "Receive items from purchase order (Staff/Admin only)",
         tags: ["Purchase Orders"],
         summary: "Receive PO Items",
         security: [{ bearerAuth: [] }],
@@ -1122,9 +1141,9 @@ export async function registerInventoryManagementRoutes(
   fastify.delete(
     "/purchase-orders/:poId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Delete purchase order (draft only)",
+        description: "Delete purchase order (draft only, Staff/Admin only)",
         tags: ["Purchase Orders"],
         summary: "Delete Purchase Order",
         security: [{ bearerAuth: [] }],
@@ -1152,8 +1171,9 @@ export async function registerInventoryManagementRoutes(
   fastify.get(
     "/alerts",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "List stock alerts",
+        description: "List stock alerts (Staff/Admin only)",
         tags: ["Stock Alerts"],
         summary: "List Alerts",
         security: [{ bearerAuth: [] }],
@@ -1178,8 +1198,9 @@ export async function registerInventoryManagementRoutes(
   fastify.get(
     "/alerts/active",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "Get all active stock alerts",
+        description: "Get all active stock alerts (Staff/Admin only)",
         tags: ["Stock Alerts"],
         summary: "Get Active Alerts",
         security: [{ bearerAuth: [] }],
@@ -1196,8 +1217,9 @@ export async function registerInventoryManagementRoutes(
   fastify.get(
     "/alerts/:alertId",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "Get alert by ID",
+        description: "Get alert by ID (Staff/Admin only)",
         tags: ["Stock Alerts"],
         summary: "Get Alert",
         security: [{ bearerAuth: [] }],
@@ -1214,14 +1236,14 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    alertController.getAlert.bind(alertController)
+    alertController.getAlert.bind(alertController) as any
   );
 
   // Create alert
   fastify.post(
     "/alerts",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Create stock alert",
         tags: ["Stock Alerts"],
@@ -1248,7 +1270,7 @@ export async function registerInventoryManagementRoutes(
   fastify.put(
     "/alerts/:alertId/resolve",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Resolve stock alert",
         tags: ["Stock Alerts"],
@@ -1278,6 +1300,7 @@ export async function registerInventoryManagementRoutes(
   fastify.get(
     "/reservations",
     {
+      preHandler: authenticateUser,
       schema: {
         description: "List pickup reservations",
         tags: ["Pickup Reservations"],
@@ -1304,6 +1327,7 @@ export async function registerInventoryManagementRoutes(
   fastify.get(
     "/reservations/:reservationId",
     {
+      preHandler: authenticateUser,
       schema: {
         description: "Get reservation by ID",
         tags: ["Pickup Reservations"],
@@ -1322,7 +1346,7 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    reservationController.getReservation.bind(reservationController)
+    reservationController.getReservation.bind(reservationController) as any
   );
 
   // Create reservation
@@ -1389,6 +1413,7 @@ export async function registerInventoryManagementRoutes(
   fastify.get(
     "/transactions/variant/:variantId",
     {
+      preHandler: authenticateAdmin,
       schema: {
         description: "Get inventory transactions for a variant",
         tags: ["Inventory Transactions"],
@@ -1415,13 +1440,16 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    transactionController.getTransactionsByVariant.bind(transactionController)
+    transactionController.getTransactionsByVariant.bind(
+      transactionController
+    ) as any
   );
 
   // List transactions
   fastify.get(
     "/transactions",
     {
+      preHandler: authenticateAdmin,
       schema: {
         description: "List all inventory transactions",
         tags: ["Inventory Transactions"],
@@ -1443,6 +1471,6 @@ export async function registerInventoryManagementRoutes(
         },
       },
     },
-    transactionController.listTransactions.bind(transactionController)
+    transactionController.listTransactions.bind(transactionController) as any
   );
 }
