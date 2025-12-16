@@ -1,10 +1,20 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import jwt from "jsonwebtoken";
 
+// User role enum
+export enum UserRole {
+  GUEST = "GUEST",
+  CUSTOMER = "CUSTOMER",
+  STAFF = "STAFF",
+  VENDOR = "VENDOR",
+  ADMIN = "ADMIN",
+}
+
 // User interface for type safety
 export interface AuthenticatedUser {
   userId: string;
   email: string;
+  role: UserRole;
   status: "active" | "inactive" | "blocked";
   isGuest: boolean;
   emailVerified: boolean;
@@ -50,49 +60,19 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
     reply: FastifyReply
   ): Promise<void> {
     try {
-      const verbose = process.env.AUTH_DEBUG === "true";
-      const debugLog = (...args: any[]) => {
-        if (verbose) console.log(...args);
-      };
-      if (verbose) {
-        console.log("[AUTH DEBUG] ========================================");
-        console.log("[AUTH DEBUG] Request URL:", request.url);
-        console.log("[AUTH DEBUG] Request Method:", request.method);
-        console.log("[AUTH DEBUG] All Headers:", JSON.stringify(request.headers, null, 2));
-      }
-
-      // Extract token from Authorization header FIRST (priority), then check cookies
       let authHeader = request.headers.authorization;
 
-      if (verbose) {
-        console.log("[AUTH DEBUG] Authorization Header:", authHeader ? `Present (${authHeader.substring(0, 20)}...)` : "MISSING");
-      }
-
-      // Only check cookies if Authorization header is not present
       if (!authHeader && request.headers.cookie) {
-        debugLog("[AUTH DEBUG] No Authorization header, checking cookies...");
-        const cookieMatch = request.headers.cookie.match(/(?:^|;\s*)token=([^;]+)/);
+        const cookieMatch = request.headers.cookie.match(
+          /(?:^|;\s*)token=([^;]+)/
+        );
         if (cookieMatch) {
-          const tokenFromCookie = cookieMatch[1];
-          debugLog("[AUTH DEBUG] Token found in cookie:", tokenFromCookie.substring(0, 20) + "...");
-          // Format it as Bearer token for consistent processing
-          authHeader = `Bearer ${tokenFromCookie}`;
-        } else {
-          debugLog("[AUTH DEBUG] No token found in cookies");
+          authHeader = `Bearer ${cookieMatch[1]}`;
         }
-      } else if (authHeader) {
-        debugLog("[AUTH DEBUG] Using Authorization header (ignoring any cookies)");
       }
 
       if (!authHeader) {
-        if (verbose) {
-          console.log("[AUTH DEBUG] No authorization header or cookie token found!");
-          console.log("[AUTH DEBUG] Optional auth:", optional);
-        }
-        if (optional) {
-          if (verbose) console.log("[AUTH DEBUG] Continuing without authentication");
-          return; // Continue without authentication
-        }
+        if (optional) return;
         reply.status(401).send({
           success: false,
           error: "Authorization header or token cookie is required",
@@ -101,18 +81,9 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
         return;
       }
 
-      // Validate Bearer token format
-      if (verbose) console.log("[AUTH DEBUG] Validating Bearer token format...");
       const tokenMatch = authHeader.match(/^Bearer\s+(.+)$/);
       if (!tokenMatch) {
-        if (verbose) {
-          debugLog("[AUTH DEBUG] Invalid token format! Expected 'Bearer <token>'");
-          debugLog("[AUTH DEBUG] Received format:", authHeader.substring(0, 50));
-        }
-        if (optional) {
-          if (verbose) console.log("[AUTH DEBUG] Continuing without authentication");
-          return; // Invalid format but optional, continue without auth
-        }
+        if (optional) return;
         reply.status(401).send({
           success: false,
           error:
@@ -123,21 +94,12 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       }
 
       const token = tokenMatch[1];
-      debugLog("[AUTH DEBUG] Token extracted successfully:", token.substring(0, 20) + "...");
 
-      // Check if token is blacklisted (logged out)
       const { TokenBlacklistService } = await import(
         "../security/token-blacklist"
       );
-      const isBlacklisted = TokenBlacklistService.isTokenBlacklisted(token);
-      if (verbose) {
-        console.log(`[DEBUG] Token blacklisted: ${isBlacklisted}`);
-      }
-      if (isBlacklisted) {
-        console.log(`[DEBUG] Token is blacklisted, ${optional ? 'continuing without auth' : 'rejecting request'}`);
-        if (optional) {
-          return; // Blacklisted but optional, continue without auth
-        }
+      if (TokenBlacklistService.isTokenBlacklisted(token)) {
+        if (optional) return;
         reply.status(401).send({
           success: false,
           error: "Token has been revoked",
@@ -146,26 +108,13 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
         return;
       }
 
-      // Verify and decode JWT token
-      debugLog("[AUTH DEBUG] Verifying JWT token...");
-      debugLog("[AUTH DEBUG] JWT_ALGORITHM:", JWT_ALGORITHM);
-
       let decoded: any;
       try {
         decoded = jwt.verify(token, JWT_SECRET, {
           algorithms: [JWT_ALGORITHM],
         });
-        debugLog("[AUTH DEBUG] JWT verified successfully");
-        debugLog("[AUTH DEBUG] Decoded payload:", JSON.stringify(decoded, null, 2));
       } catch (jwtError: any) {
-        debugLog("[AUTH DEBUG] JWT verification failed!");
-        debugLog("[AUTH DEBUG] Error name:", jwtError.name);
-        debugLog("[AUTH DEBUG] Error message:", jwtError.message);
-        debugLog("[AUTH DEBUG] Full error:", jwtError);
-        if (optional) {
-          console.log("[AUTH DEBUG] Continuing without authentication");
-          return; // Invalid token but optional, continue without auth
-        }
+        if (optional) return;
 
         const errorMessage =
           jwtError.name === "TokenExpiredError"
@@ -174,7 +123,6 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
               ? "Invalid token"
               : "Token verification failed";
 
-        console.log("[AUTH DEBUG] Sending 401 response -", jwtError.name);
         reply.status(401).send({
           success: false,
           error: errorMessage,
@@ -183,34 +131,19 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
         return;
       }
 
-      // Validate token payload structure
-      debugLog("[AUTH DEBUG] Validating token payload structure...");
-      debugLog("[AUTH DEBUG] Has userId?", !!decoded.userId);
-      debugLog("[AUTH DEBUG] Has email?", !!decoded.email);
-      debugLog("[AUTH DEBUG] Decoded keys:", Object.keys(decoded));
-
       if (!decoded.userId && !decoded.id) {
-        debugLog("[AUTH DEBUG] Missing userId or id in token payload!");
-        if (optional) {
-          console.log("[AUTH DEBUG] Continuing without authentication");
-          return; // Invalid payload but optional, continue without auth
-        }
+        if (optional) return;
         reply.status(401).send({
           success: false,
-          error: "Invalid token payload - missing userId or id",
+          error: "Invalid token payload",
           code: "INVALID_TOKEN_PAYLOAD",
         });
         return;
       }
-
-      // Support both 'userId' and 'id' field names
-      const userId = decoded.userId || decoded.id;
-      const email = decoded.email || "unknown@example.com"; // Make email optional for now
-
-      // Create user object
       const user: AuthenticatedUser = {
-        userId: userId,
-        email: email,
+        userId: decoded.userId || decoded.id,
+        email: decoded.email || "unknown@example.com",
+        role: decoded.role || UserRole.CUSTOMER,
         status: decoded.status || "active",
         isGuest: decoded.isGuest || false,
         emailVerified: decoded.emailVerified || false,
@@ -223,63 +156,41 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
       if (!allowedStatuses.includes(user.status)) {
         reply.status(403).send({
           success: false,
-          error: `User status '${user.status}' is not allowed to access this resource`,
+          error: `User status '${user.status}' is not allowed`,
           code: "INVALID_USER_STATUS",
         });
         return;
       }
 
-      // Validate guest status
       if (user.isGuest && !allowGuests) {
         reply.status(403).send({
           success: false,
-          error: "Guest users are not allowed to access this resource",
+          error: "Guest users are not allowed",
           code: "GUESTS_NOT_ALLOWED",
         });
         return;
       }
 
-      // Validate email verification
       if (requireEmailVerification && !user.emailVerified) {
         reply.status(403).send({
           success: false,
-          error: "Email verification is required to access this resource",
+          error: "Email verification is required",
           code: "EMAIL_VERIFICATION_REQUIRED",
         });
         return;
       }
 
-      // Validate phone verification
       if (requirePhoneVerification && !user.phoneVerified) {
         reply.status(403).send({
           success: false,
-          error: "Phone verification is required to access this resource",
+          error: "Phone verification is required",
           code: "PHONE_VERIFICATION_REQUIRED",
         });
         return;
       }
 
-      // TODO: Additional validations can be added here:
-      // - Check if user still exists in database
-      // - Check for revoked tokens (token blacklist)
-      // - Check for password changes (invalidate old tokens)
-      // - Rate limiting per user
-      // - Session management
-
-      // Add user to request object
       request.user = user;
-
-      debugLog("[AUTH DEBUG] Authentication successful!");
-      debugLog("[AUTH DEBUG] User ID:", user.userId);
-      debugLog("[AUTH DEBUG] User Email:", user.email);
-      debugLog("[AUTH DEBUG] User Status:", user.status);
-      debugLog("[AUTH DEBUG] ========================================");
-
-      // Continue to route handler
     } catch (error) {
-      // Log error for debugging (use proper logging in production)
-      console.error("Authentication middleware error:", error);
-
       reply.status(500).send({
         success: false,
         error: "Internal server error during authentication",
@@ -324,14 +235,59 @@ export const authenticateWithGuests = createAuthMiddleware({
 });
 
 /**
- * Admin-only middleware (example)
+ * Role-based authorization middleware
+ * Checks if the authenticated user has one of the required roles
  */
-export const authenticateAdmin = createAuthMiddleware({
-  optional: false,
-  requireEmailVerification: true,
-  allowedStatuses: ["active"],
-  // TODO: Add role-based authorization
-});
+export function requireRole(allowedRoles: UserRole[]) {
+  return async function roleMiddleware(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ): Promise<void> {
+    if (!request.user) {
+      reply.status(401).send({
+        success: false,
+        error: "Authentication required",
+        code: "UNAUTHORIZED",
+      });
+      return;
+    }
+
+    if (!allowedRoles.includes(request.user.role)) {
+      reply.status(403).send({
+        success: false,
+        error: "Insufficient permissions",
+        code: "FORBIDDEN",
+        requiredRoles: allowedRoles,
+        currentRole: request.user.role,
+      });
+      return;
+    }
+  };
+}
+
+/**
+ * Convenience middleware for admin-only routes
+ */
+export const authenticateAdmin = [
+  authenticateUser,
+  requireRole([UserRole.ADMIN]),
+];
+
+/**
+ * Convenience middleware for staff and admin routes
+ */
+export const authenticateStaff = [
+  authenticateUser,
+  requireRole([UserRole.STAFF, UserRole.ADMIN]),
+];
+
+/**
+ * Convenience middleware for vendor routes
+ */
+export const authenticateVendor = [
+  authenticateUser,
+  requireRole([UserRole.VENDOR, UserRole.ADMIN]),
+];
 
 /**
  * Utility function to generate JWT tokens
@@ -343,25 +299,29 @@ export function generateAuthTokens(user: Partial<AuthenticatedUser>): {
   const payload = {
     userId: user.userId,
     email: user.email,
+    role: user.role || UserRole.CUSTOMER,
     status: user.status,
     isGuest: user.isGuest,
     emailVerified: user.emailVerified,
     phoneVerified: user.phoneVerified,
   };
 
-  // Access token (short-lived)
   const accessToken = jwt.sign(payload, JWT_SECRET, {
     algorithm: JWT_ALGORITHM,
-    expiresIn: "120m", // 120 minutes
+    expiresIn: "120m",
   });
 
-  // Refresh token (long-lived)
   const refreshToken = jwt.sign(
-    { userId: user.userId, type: "refresh" },
+    {
+      userId: user.userId,
+      email: user.email,
+      role: user.role || UserRole.CUSTOMER,
+      type: "refresh",
+    },
     JWT_SECRET,
     {
       algorithm: JWT_ALGORITHM,
-      expiresIn: "7d", // 7 days
+      expiresIn: "7d",
     }
   );
 
@@ -371,7 +331,9 @@ export function generateAuthTokens(user: Partial<AuthenticatedUser>): {
 /**
  * Utility function to verify refresh tokens
  */
-export function verifyRefreshToken(token: string): { userId: string } | null {
+export function verifyRefreshToken(
+  token: string
+): { userId: string; email: string; role: UserRole } | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET, {
       algorithms: [JWT_ALGORITHM],
@@ -381,7 +343,11 @@ export function verifyRefreshToken(token: string): { userId: string } | null {
       return null;
     }
 
-    return { userId: decoded.userId };
+    return {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role || UserRole.CUSTOMER,
+    };
   } catch {
     return null;
   }
