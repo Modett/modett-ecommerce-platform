@@ -6,7 +6,11 @@ import { CartManagementService } from "../../application/services/cart-managemen
 import { ReservationService } from "../../application/services/reservation.service";
 import { CheckoutService } from "../../application/services/checkout.service";
 import { CheckoutOrderService } from "../../application/services/checkout-order.service";
-import { optionalAuth } from "../../../user-management/infra/http/middleware/auth.middleware";
+import {
+  optionalAuth,
+  requireAdmin,
+  authenticateUser,
+} from "../../../user-management/infra/http/middleware";
 import {
   extractGuestToken,
   requireCartAuth,
@@ -209,10 +213,12 @@ export async function registerCartRoutes(
   fastify.get(
     "/users/:userId/cart",
     {
+      preHandler: authenticateUser,
       schema: {
-        description: "Get active cart for a user",
+        description: "Get active cart for a user (requires authentication)",
         tags: ["Cart"],
         summary: "Get User Cart",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["userId"],
@@ -314,10 +320,12 @@ export async function registerCartRoutes(
   fastify.post(
     "/users/:userId/cart",
     {
+      preHandler: authenticateUser,
       schema: {
-        description: "Create a new cart for a user",
+        description: "Create a new cart for a user (requires authentication)",
         tags: ["Cart"],
         summary: "Create User Cart",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["userId"],
@@ -591,10 +599,12 @@ export async function registerCartRoutes(
   fastify.delete(
     "/users/:userId/cart",
     {
+      preHandler: authenticateUser,
       schema: {
-        description: "Clear all items from user cart.",
+        description: "Clear all items from user cart (requires authentication)",
         tags: ["Cart"],
         summary: "Clear User Cart",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["userId"],
@@ -744,6 +754,7 @@ export async function registerCartRoutes(
   fastify.get(
     "/admin/carts/statistics",
     {
+      preHandler: [requireAdmin()],
       schema: {
         description: "Get cart statistics (admin only)",
         tags: ["Cart Admin"],
@@ -757,6 +768,7 @@ export async function registerCartRoutes(
               data: { type: "object", additionalProperties: true },
             },
           },
+          ...authErrorResponses,
         },
       },
     },
@@ -768,6 +780,7 @@ export async function registerCartRoutes(
   fastify.post(
     "/admin/carts/cleanup",
     {
+      preHandler: [requireAdmin()],
       schema: {
         description: "Cleanup expired carts (admin only)",
         tags: ["Cart Admin"],
@@ -787,6 +800,7 @@ export async function registerCartRoutes(
               message: { type: "string" },
             },
           },
+          ...authErrorResponses,
         },
       },
     },
@@ -1070,10 +1084,12 @@ export async function registerCartRoutes(
   fastify.post(
     "/reservations",
     {
+      preHandler: authenticateUser,
       schema: {
-        description: "Create a new reservation",
+        description: "Create a new reservation (requires authentication)",
         tags: ["Reservations"],
         summary: "Create Reservation",
+        security: [{ bearerAuth: [] }],
         body: {
           type: "object",
           required: ["cartId", "variantId", "quantity"],
@@ -1121,10 +1137,12 @@ export async function registerCartRoutes(
   fastify.get(
     "/reservations/:reservationId",
     {
+      preHandler: authenticateUser,
       schema: {
-        description: "Get reservation details",
+        description: "Get reservation details (requires authentication)",
         tags: ["Reservations"],
         summary: "Get Reservation",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["reservationId"],
@@ -1177,10 +1195,12 @@ export async function registerCartRoutes(
   fastify.get(
     "/carts/:cartId/reservations",
     {
+      preHandler: authenticateUser,
       schema: {
-        description: "Get all reservations for a cart",
+        description: "Get all reservations for a cart (requires authentication)",
         tags: ["Reservations"],
         summary: "Get Cart Reservations",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["cartId"],
@@ -1297,10 +1317,12 @@ export async function registerCartRoutes(
   fastify.post(
     "/reservations/:reservationId/extend",
     {
+      preHandler: authenticateUser,
       schema: {
-        description: "Extend reservation duration",
+        description: "Extend reservation duration (requires authentication)",
         tags: ["Reservations"],
         summary: "Extend Reservation",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["reservationId"],
@@ -1339,10 +1361,12 @@ export async function registerCartRoutes(
   fastify.delete(
     "/reservations/:reservationId",
     {
+      preHandler: authenticateUser,
       schema: {
-        description: "Release a reservation",
+        description: "Release a reservation (requires authentication)",
         tags: ["Reservations"],
         summary: "Release Reservation",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["reservationId"],
@@ -1413,6 +1437,7 @@ export async function registerCartRoutes(
   fastify.get(
     "/admin/reservations/statistics",
     {
+      preHandler: [requireAdmin()],
       schema: {
         description: "Get reservation statistics (admin only)",
         tags: ["Reservations Admin"],
@@ -1426,6 +1451,7 @@ export async function registerCartRoutes(
               data: { type: "object", additionalProperties: true },
             },
           },
+          ...authErrorResponses,
         },
       },
     },
