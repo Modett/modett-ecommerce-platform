@@ -14,6 +14,8 @@ import { BackorderManagementService } from "../../application/services/backorder
 import {
   optionalAuth,
   authenticateUser,
+  authenticateStaff,
+  authenticateAdmin,
 } from "../../../user-management/infra/http/middleware/auth.middleware";
 
 // Standard error responses for Swagger
@@ -490,7 +492,7 @@ export async function registerOrderManagementRoutes(
   fastify.patch(
     "/orders/:orderId/status",
     {
-      preHandler: authenticateUser, // Require authentication to update order status
+      preHandler: authenticateStaff, // Require Staff/Admin to update order status
       schema: {
         description: "Update order status",
         tags: ["Orders"],
@@ -552,10 +554,10 @@ export async function registerOrderManagementRoutes(
   fastify.patch(
     "/orders/:orderId/totals",
     {
-      preHandler: authenticateUser, // Require authentication to update order totals
+      preHandler: authenticateStaff, // Require Staff/Admin to update order totals (pricing/taxes)
       schema: {
         description:
-          "Update order totals. Subtotal is auto-calculated from order items. Total is auto-calculated as: subtotal + tax + shipping - discount.",
+          "Update order totals (Staff/Admin only). Subtotal is auto-calculated from order items. Total is auto-calculated as: subtotal + tax + shipping - discount.",
         tags: ["Orders"],
         summary: "Update Order Totals",
         security: [{ bearerAuth: [] }],
@@ -634,7 +636,7 @@ export async function registerOrderManagementRoutes(
   fastify.post(
     "/orders/:orderId/mark-paid",
     {
-      preHandler: authenticateUser, // Require authentication to mark order as paid
+      preHandler: authenticateStaff, // Require Staff/Admin to mark order as paid
       schema: {
         description: "Mark order as paid",
         tags: ["Orders"],
@@ -678,7 +680,7 @@ export async function registerOrderManagementRoutes(
   fastify.post(
     "/orders/:orderId/mark-fulfilled",
     {
-      preHandler: authenticateUser, // Require authentication to mark order as fulfilled
+      preHandler: authenticateStaff, // Require Staff/Admin to mark order as fulfilled
       schema: {
         description: "Mark order as fulfilled",
         tags: ["Orders"],
@@ -766,7 +768,7 @@ export async function registerOrderManagementRoutes(
   fastify.delete(
     "/orders/:orderId",
     {
-      preHandler: authenticateUser, // Require authentication to delete order
+      preHandler: authenticateAdmin, // Require Admin to delete order
       schema: {
         description: "Delete an order",
         tags: ["Orders"],
@@ -1482,7 +1484,7 @@ export async function registerOrderManagementRoutes(
   fastify.post(
     "/orders/:orderId/shipments",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
         description: "Create a new shipment for an order",
         tags: ["Order Shipments"],
@@ -1643,10 +1645,10 @@ export async function registerOrderManagementRoutes(
   fastify.post(
     "/orders/:orderId/shipments/:shipmentId/mark-shipped",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
         description:
-          "Mark a shipment as shipped with carrier and tracking details",
+          "Mark a shipment as shipped with carrier and tracking details (Staff/Admin only)",
         tags: ["Order Shipments"],
         summary: "Mark Shipment as Shipped",
         security: [{ bearerAuth: [] }],
@@ -1694,9 +1696,9 @@ export async function registerOrderManagementRoutes(
   fastify.patch(
     "/orders/:orderId/shipments/:shipmentId/tracking",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Update shipment tracking information",
+        description: "Update shipment tracking information (Staff/Admin only)",
         tags: ["Order Shipments"],
         summary: "Update Shipment Tracking",
         security: [{ bearerAuth: [] }],
@@ -1747,9 +1749,9 @@ export async function registerOrderManagementRoutes(
   fastify.post(
     "/orders/:orderId/shipments/:shipmentId/mark-delivered",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Mark a shipment as delivered",
+        description: "Mark a shipment as delivered (Staff/Admin only)",
         tags: ["Order Shipments"],
         summary: "Mark Shipment as Delivered",
         security: [{ bearerAuth: [] }],
@@ -1802,10 +1804,10 @@ export async function registerOrderManagementRoutes(
   fastify.post(
     "/orders/:orderId/status-history",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
         description:
-          "Log a status change for an order. Creates an audit trail entry.",
+          "Log a status change for an order (Staff/Admin only). Creates an audit trail entry.",
         tags: ["Order Status History"],
         summary: "Log Order Status Change",
         security: [{ bearerAuth: [] }],
@@ -1957,10 +1959,10 @@ export async function registerOrderManagementRoutes(
   fastify.post(
     "/orders/:orderId/events",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
         description:
-          "Log a custom event for an order. Creates an audit trail entry with event type and payload.",
+          "Log a custom event for an order (Staff/Admin only). Creates an audit trail entry with event type and payload.",
         tags: ["Order Events"],
         summary: "Log Order Event",
         security: [{ bearerAuth: [] }],
@@ -2142,7 +2144,7 @@ export async function registerOrderManagementRoutes(
   fastify.post(
     "/preorders",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description:
           "Create a new preorder for an order item. Used for items that will be available in the future (e.g., seasonal collections, upcoming releases).",
@@ -2350,7 +2352,7 @@ export async function registerOrderManagementRoutes(
   fastify.patch(
     "/preorders/:orderItemId/release-date",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Update the expected release date for a preorder",
         tags: ["Preorders"],
@@ -2416,7 +2418,7 @@ export async function registerOrderManagementRoutes(
   fastify.post(
     "/preorders/:orderItemId/notify",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description:
           "Mark that the customer has been notified about the preorder availability",
@@ -2472,7 +2474,7 @@ export async function registerOrderManagementRoutes(
   fastify.delete(
     "/preorders/:orderItemId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Delete a preorder",
         tags: ["Preorders"],
@@ -2512,7 +2514,7 @@ export async function registerOrderManagementRoutes(
   fastify.post(
     "/backorders",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description:
           "Create a new backorder for an order item. Used for items that are temporarily out of stock but will be restocked soon.",
@@ -2718,7 +2720,7 @@ export async function registerOrderManagementRoutes(
   fastify.patch(
     "/backorders/:orderItemId/eta",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Update the promised ETA for a backorder",
         tags: ["Backorders"],
@@ -2783,7 +2785,7 @@ export async function registerOrderManagementRoutes(
   fastify.post(
     "/backorders/:orderItemId/notify",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description:
           "Mark that the customer has been notified about the backorder availability",
@@ -2838,7 +2840,7 @@ export async function registerOrderManagementRoutes(
   fastify.delete(
     "/backorders/:orderItemId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Delete a backorder",
         tags: ["Backorders"],
