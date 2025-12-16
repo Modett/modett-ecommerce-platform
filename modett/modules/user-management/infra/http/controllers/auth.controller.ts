@@ -21,6 +21,7 @@ import { AuthenticationService } from "../../../application/services/authenticat
 import {
   generateAuthTokens,
   verifyRefreshToken,
+  UserRole,
 } from "../middleware/auth.middleware";
 import { TokenBlacklistService } from "../security/token-blacklist";
 import crypto from "crypto";
@@ -131,6 +132,7 @@ export interface AuthResponse {
     user: {
       id: string;
       email: string;
+      role: string;
       isGuest: boolean;
       emailVerified: boolean;
       phoneVerified: boolean;
@@ -254,7 +256,9 @@ export class AuthController {
     this.registerHandler = new RegisterUserHandler(authService);
     this.loginHandler = new LoginUserHandler(authService);
     this.changePasswordHandler = new ChangePasswordHandler(authService);
-    this.initiatePasswordResetHandler = new InitiatePasswordResetHandler(authService);
+    this.initiatePasswordResetHandler = new InitiatePasswordResetHandler(
+      authService
+    );
     this.resetPasswordHandler = new ResetPasswordHandler(authService);
     this.verifyEmailHandler = new VerifyEmailHandler(authService);
     this.getUserByEmailHandler = new GetUserByEmailHandler(authService);
@@ -382,6 +386,7 @@ export class AuthController {
           data: {
             userId: result.data.user.id,
             email: email,
+            role: result.data.user.role,
             message: "Registration successful",
             ...(process.env.NODE_ENV === "development" && {
               verificationToken,
@@ -393,8 +398,8 @@ export class AuthController {
           success: false,
           error: result.error || "Registration failed",
           errors: result.errors,
-          code: "REGISTRATION_ERROR", // ✅ ADD THIS
-          timestamp: new Date().toISOString(), // ✅ ADD THIS TOO
+          code: "REGISTRATION_ERROR",
+          timestamp: new Date().toISOString(),
         });
       }
     } catch (error) {
@@ -474,6 +479,7 @@ export class AuthController {
         const tokens = generateAuthTokens({
           userId: result.data.user.id,
           email: result.data.user.email,
+          role: result.data.user.role as UserRole,
           status: "active", // Default status since AuthResult doesn't include status
           isGuest: result.data.user.isGuest,
           emailVerified: result.data.user.emailVerified,
@@ -500,6 +506,7 @@ export class AuthController {
             user: {
               id: result.data.user.id,
               email: result.data.user.email,
+              role: result.data.user.role,
               isGuest: result.data.user.isGuest,
               emailVerified: result.data.user.emailVerified,
               phoneVerified: result.data.user.phoneVerified,
@@ -657,14 +664,29 @@ export class AuthController {
         return;
       }
 
-      // TODO: Fetch user data from database using tokenData.userId
-      // For now, return placeholder data
+      // Fetch user data from database using tokenData.userId
+      const query: GetUserByEmailQuery = {
+        email: tokenData.email,
+        timestamp: new Date(),
+      };
+
+      const userResult = await this.getUserByEmailHandler.handle(query);
+
+      if (!userResult.success || !userResult.data) {
+        reply.status(HTTP_STATUS.UNAUTHORIZED).send({
+          success: false,
+          error: ERROR_MESSAGES.USER_NOT_FOUND,
+        });
+        return;
+      }
+
       const userData = {
         userId: tokenData.userId,
-        email: "user@example.com", // TODO: Get from database
+        email: tokenData.email,
+        role: tokenData.role,
         status: "active" as const,
         isGuest: false,
-        emailVerified: true,
+        emailVerified: userResult.data.emailVerified,
         phoneVerified: false,
       };
 
@@ -693,6 +715,7 @@ export class AuthController {
           user: {
             id: userData.userId,
             email: userData.email,
+            role: userData.role,
             isGuest: userData.isGuest,
             emailVerified: userData.emailVerified,
             phoneVerified: userData.phoneVerified,
@@ -750,10 +773,15 @@ export class AuthController {
       };
 
       // Execute command
-      const resetResult = await this.initiatePasswordResetHandler.handle(command);
+      const resetResult =
+        await this.initiatePasswordResetHandler.handle(command);
 
       if (resetResult.success && resetResult.data) {
-        if (resetResult.data.exists && resetResult.data.token && resetResult.data.userId) {
+        if (
+          resetResult.data.exists &&
+          resetResult.data.token &&
+          resetResult.data.userId
+        ) {
           // Store token for later verification (using existing security store for now)
           TokenBlacklistService.storePasswordResetToken(
             resetResult.data.token,
@@ -773,7 +801,9 @@ export class AuthController {
           );
 
           // TODO: Send password reset email with resetResult.data.token
-          console.log(`Password reset token for ${email}: ${resetResult.data.token}`);
+          console.log(
+            `Password reset token for ${email}: ${resetResult.data.token}`
+          );
         } else {
           // Log failed attempt (email not found)
           this.logSecurityEvent(
@@ -1032,7 +1062,8 @@ export class AuthController {
         reply.status(HTTP_STATUS.OK).send({
           success: true,
           data: {
-            message: "If an account with that email exists, verification email has been sent.",
+            message:
+              "If an account with that email exists, verification email has been sent.",
             action: "verification_sent",
           },
         });
@@ -1070,7 +1101,9 @@ export class AuthController {
       );
 
       // TODO: Send new verification email
-      console.log(`Resend verification token for ${email}: ${verificationToken}`);
+      console.log(
+        `Resend verification token for ${email}: ${verificationToken}`
+      );
 
       reply.status(HTTP_STATUS.OK).send({
         success: true,
