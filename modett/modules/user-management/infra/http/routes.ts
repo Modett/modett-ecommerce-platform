@@ -17,6 +17,10 @@ import {
   authenticateUser,
   optionalAuth,
   authenticateVerifiedUser,
+  authenticateAdmin,
+  authenticateStaff,
+  requireRole,
+  UserRole,
 } from "./middleware/auth.middleware";
 import { IUserRepository } from "../../domain/repositories/iuser.repository";
 import { IAddressRepository } from "../../domain/repositories/iaddress.repository";
@@ -403,6 +407,10 @@ export async function registerUserManagementRoutes(
                     nullable: true,
                     description: "From user's default or first address",
                   },
+                  role: {
+                    type: "string",
+                    enum: ["GUEST", "CUSTOMER", "STAFF", "VENDOR", "ADMIN"],
+                  },
                   status: {
                     type: "string",
                     enum: ["active", "inactive", "blocked"],
@@ -416,6 +424,7 @@ export async function registerUserManagementRoutes(
                 required: [
                   "userId",
                   "email",
+                  "role",
                   "status",
                   "emailVerified",
                   "phoneVerified",
@@ -446,9 +455,10 @@ export async function registerUserManagementRoutes(
     "/users/:userId",
     {
       schema: {
-        description: "Get user information by user ID",
+        description: "Get user information by user ID (Admin only)",
         tags: ["Users"],
         summary: "Get User by ID",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           properties: {
@@ -460,7 +470,57 @@ export async function registerUserManagementRoutes(
           },
           required: ["userId"],
         },
+        response: {
+          200: {
+            description: "User information",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  userId: { type: "string", format: "uuid" },
+                  email: { type: "string", format: "email" },
+                  phone: { type: "string", nullable: true },
+                  firstName: { type: "string", nullable: true },
+                  lastName: { type: "string", nullable: true },
+                  role: {
+                    type: "string",
+                    enum: ["GUEST", "CUSTOMER", "STAFF", "VENDOR", "ADMIN"],
+                  },
+                  status: {
+                    type: "string",
+                    enum: ["active", "inactive", "blocked"],
+                  },
+                  emailVerified: { type: "boolean" },
+                  phoneVerified: { type: "boolean" },
+                  isGuest: { type: "boolean" },
+                  createdAt: { type: "string", format: "date-time" },
+                  updatedAt: { type: "string", format: "date-time" },
+                },
+                required: [
+                  "userId",
+                  "email",
+                  "role",
+                  "status",
+                  "emailVerified",
+                  "phoneVerified",
+                  "isGuest",
+                ],
+              },
+            },
+          },
+          404: {
+            description: "User not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "User not found" },
+            },
+          },
+        },
       },
+      preHandler: authenticateAdmin as any,
     },
     usersController.getUser.bind(usersController)
   );
@@ -666,10 +726,12 @@ export async function registerUserManagementRoutes(
   fastify.get(
     "/users/:userId/profile",
     {
+      preHandler: authenticateAdmin,
       schema: {
-        description: "Get profile information for a specific user",
+        description: "Get profile information for a specific user (Admin only)",
         tags: ["Profiles"],
         summary: "Get User Profile by ID",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           properties: {
@@ -740,16 +802,18 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    profileController.getProfile.bind(profileController)
+    profileController.getProfile.bind(profileController) as any
   );
 
   fastify.put(
     "/users/:userId/profile",
     {
+      preHandler: authenticateAdmin,
       schema: {
-        description: "Update profile information for a specific user",
+        description: "Update profile information for a specific user (Admin only)",
         tags: ["Profiles"],
         summary: "Update User Profile by ID",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           properties: {
@@ -877,7 +941,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    profileController.updateProfile.bind(profileController)
+    profileController.updateProfile.bind(profileController) as any
   );
 
   // Address Routes (Protected)
@@ -1048,10 +1112,12 @@ export async function registerUserManagementRoutes(
   fastify.get(
     "/users/:userId/addresses",
     {
+      preHandler: authenticateAdmin,
       schema: {
-        description: "Get addresses for a specific user",
+        description: "Get addresses for a specific user (Admin only)",
         tags: ["Addresses"],
         summary: "List User Addresses",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           properties: {
@@ -1067,16 +1133,18 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    addressesController.listAddresses.bind(addressesController)
+    addressesController.listAddresses.bind(addressesController) as any
   );
 
   fastify.post(
     "/users/:userId/addresses",
     {
+      preHandler: authenticateAdmin,
       schema: {
-        description: "Add new address for a specific user (Admin)",
+        description: "Add new address for a specific user (Admin only)",
         tags: ["Addresses"],
         summary: "Add User Address (Admin)",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           properties: {
@@ -1104,7 +1172,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    addressesController.addAddress.bind(addressesController)
+    addressesController.addAddress.bind(addressesController) as any
   );
 
   // Update and Delete Address Routes (Protected)
@@ -1174,6 +1242,7 @@ export async function registerUserManagementRoutes(
   fastify.put(
     "/users/:userId/addresses/:addressId",
     {
+      preHandler: authenticateAdmin,
       schema: {
         description: "Update user's address (Admin)",
         tags: ["Addresses"],
@@ -1205,12 +1274,13 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    addressesController.updateAddress.bind(addressesController)
+    addressesController.updateAddress.bind(addressesController) as any
   );
 
   fastify.delete(
     "/users/:userId/addresses/:addressId",
     {
+      preHandler: authenticateAdmin,
       schema: {
         description: "Delete user's address (Admin)",
         tags: ["Addresses"],
@@ -1225,7 +1295,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    addressesController.deleteAddress.bind(addressesController)
+    addressesController.deleteAddress.bind(addressesController) as any
   );
 
   // Payment Methods Routes (Protected)
@@ -1458,6 +1528,7 @@ export async function registerUserManagementRoutes(
   fastify.get(
     "/users/:userId/payment-methods",
     {
+      preHandler: authenticateAdmin, // Explicitly require Admin
       schema: {
         description: "Get payment methods for a specific user (Admin)",
         tags: ["Payment Methods"],
@@ -1471,12 +1542,15 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    paymentMethodsController.listPaymentMethods.bind(paymentMethodsController)
+    paymentMethodsController.listPaymentMethods.bind(
+      paymentMethodsController
+    ) as any
   );
 
   fastify.post(
     "/users/:userId/payment-methods",
     {
+      preHandler: authenticateAdmin,
       schema: {
         description: "Add payment method for a specific user (Admin)",
         tags: ["Payment Methods"],
@@ -1507,12 +1581,15 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    paymentMethodsController.addPaymentMethod.bind(paymentMethodsController)
+    paymentMethodsController.addPaymentMethod.bind(
+      paymentMethodsController
+    ) as any
   );
 
   fastify.put(
     "/users/:userId/payment-methods/:paymentMethodId",
     {
+      preHandler: authenticateAdmin,
       schema: {
         description: "Update user's payment method (Admin)",
         tags: ["Payment Methods"],
@@ -1534,12 +1611,15 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    paymentMethodsController.updatePaymentMethod.bind(paymentMethodsController)
+    paymentMethodsController.updatePaymentMethod.bind(
+      paymentMethodsController
+    ) as any
   );
 
   fastify.delete(
     "/users/:userId/payment-methods/:paymentMethodId",
     {
+      preHandler: authenticateAdmin,
       schema: {
         description: "Delete user's payment method (Admin)",
         tags: ["Payment Methods"],
@@ -1554,7 +1634,9 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    paymentMethodsController.deletePaymentMethod.bind(paymentMethodsController)
+    paymentMethodsController.deletePaymentMethod.bind(
+      paymentMethodsController
+    ) as any
   );
 
   // Social Login Routes
@@ -1827,9 +1909,10 @@ export async function registerUserManagementRoutes(
     "/users/:userId/social-accounts",
     {
       schema: {
-        description: "Get social accounts for a specific user (Admin)",
+        description: "Get social accounts for a specific user (Admin only)",
         tags: ["Social Login"],
         summary: "List User Social Accounts (Admin)",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           properties: {
@@ -1838,6 +1921,7 @@ export async function registerUserManagementRoutes(
           required: ["userId"],
         },
       },
+      preHandler: authenticateAdmin as any,
     },
     socialLoginController.getUserSocialAccounts.bind(socialLoginController)
   );
