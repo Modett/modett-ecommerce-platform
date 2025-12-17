@@ -808,6 +808,177 @@ export async function registerCartRoutes(
       cartController.cleanupExpiredCarts(request, reply)
   );
 
+  // Update cart email
+  fastify.patch(
+    "/carts/:cartId/email",
+    {
+      preHandler: [optionalAuth, extractGuestToken],
+      schema: {
+        description: "Update cart email address. Requires either Authorization header (for authenticated users) or X-Guest-Token header (for guest users).",
+        tags: ["Cart"],
+        summary: "Update Cart Email",
+        security: [{ bearerAuth: [] }],
+        headers: {
+          type: "object",
+          properties: {
+            "X-Guest-Token": {
+              type: "string",
+              description: "Guest token for unauthenticated users (64-character hexadecimal string)",
+              pattern: "^[a-f0-9]{64}$",
+            },
+          },
+        },
+        params: {
+          type: "object",
+          required: ["cartId"],
+          properties: {
+            cartId: { type: "string", format: "uuid" },
+          },
+        },
+        body: {
+          type: "object",
+          required: ["email"],
+          properties: {
+            email: { type: "string", format: "email" },
+          },
+        },
+        response: {
+          200: {
+            description: "Cart email updated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: { type: "object", additionalProperties: true },
+              message: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request: any, reply: any) =>
+      cartController.updateCartEmail(request, reply)
+  );
+
+  // Update cart shipping info
+  fastify.patch(
+    "/carts/:cartId/shipping",
+    {
+      preHandler: [optionalAuth, extractGuestToken],
+      schema: {
+        description: "Update cart shipping information. Requires either Authorization header (for authenticated users) or X-Guest-Token header (for guest users).",
+        tags: ["Cart"],
+        summary: "Update Cart Shipping Info",
+        security: [{ bearerAuth: [] }],
+        headers: {
+          type: "object",
+          properties: {
+            "X-Guest-Token": {
+              type: "string",
+              description: "Guest token for unauthenticated users (64-character hexadecimal string)",
+              pattern: "^[a-f0-9]{64}$",
+            },
+          },
+        },
+        params: {
+          type: "object",
+          required: ["cartId"],
+          properties: {
+            cartId: { type: "string", format: "uuid" },
+          },
+        },
+        body: {
+          type: "object",
+          properties: {
+            shippingMethod: { type: "string" },
+            shippingOption: { type: "string" },
+            isGift: { type: "boolean" },
+          },
+        },
+        response: {
+          200: {
+            description: "Cart shipping info updated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: { type: "object", additionalProperties: true },
+              message: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request: any, reply: any) =>
+      cartController.updateCartShippingInfo(request, reply)
+  );
+
+  // Update cart addresses
+  fastify.patch(
+    "/carts/:cartId/addresses",
+    {
+      preHandler: [optionalAuth, extractGuestToken],
+      schema: {
+        description: "Update cart shipping and billing addresses. Requires either Authorization header (for authenticated users) or X-Guest-Token header (for guest users).",
+        tags: ["Cart"],
+        summary: "Update Cart Addresses",
+        security: [{ bearerAuth: [] }],
+        headers: {
+          type: "object",
+          properties: {
+            "X-Guest-Token": {
+              type: "string",
+              description: "Guest token for unauthenticated users (64-character hexadecimal string)",
+              pattern: "^[a-f0-9]{64}$",
+            },
+          },
+        },
+        params: {
+          type: "object",
+          required: ["cartId"],
+          properties: {
+            cartId: { type: "string", format: "uuid" },
+          },
+        },
+        body: {
+          type: "object",
+          properties: {
+            shippingFirstName: { type: "string" },
+            shippingLastName: { type: "string" },
+            shippingAddress1: { type: "string" },
+            shippingAddress2: { type: "string" },
+            shippingCity: { type: "string" },
+            shippingProvince: { type: "string" },
+            shippingPostalCode: { type: "string" },
+            shippingCountryCode: { type: "string" },
+            shippingPhone: { type: "string" },
+            billingFirstName: { type: "string" },
+            billingLastName: { type: "string" },
+            billingAddress1: { type: "string" },
+            billingAddress2: { type: "string" },
+            billingCity: { type: "string" },
+            billingProvince: { type: "string" },
+            billingPostalCode: { type: "string" },
+            billingCountryCode: { type: "string" },
+            billingPhone: { type: "string" },
+            sameAddressForBilling: { type: "boolean" },
+          },
+        },
+        response: {
+          200: {
+            description: "Cart addresses updated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: { type: "object", additionalProperties: true },
+              message: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request: any, reply: any) =>
+      cartController.updateCartAddresses(request, reply)
+  );
+
   // =============================================================================
   // CHECKOUT ROUTES
   // =============================================================================
