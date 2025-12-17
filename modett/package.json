@@ -43,6 +43,7 @@
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "nodemailer": "^7.0.6",
+    "payable-ipg-js": "^4.1.4",
     "pg": "^8.16.3",
     "pino": "^9.9.5",
     "pino-pretty": "^13.1.1",
