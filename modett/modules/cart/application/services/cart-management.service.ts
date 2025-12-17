@@ -653,4 +653,159 @@ export class CartManagementService {
   async getCartStatistics(): Promise<any> {
     return await this.cartRepository.getCartStatistics();
   }
+
+  // Checkout field updates
+  async updateCartEmail(cartId: string, email: string, userId?: string, guestToken?: string): Promise<void> {
+    const cart = await this.cartRepository.findById(CartId.fromString(cartId));
+    if (!cart) {
+      throw new Error('Cart not found');
+    }
+
+    // Validate ownership - more explicit logic
+    const cartUserId = cart.getUserId()?.getValue();
+    const cartGuestToken = cart.getGuestToken()?.getValue();
+
+    // Cart belongs to a user
+    if (cartUserId) {
+      if (!userId || cartUserId !== userId) {
+        throw new Error('Unauthorized: Cart does not belong to user');
+      }
+    }
+    // Cart belongs to a guest
+    else if (cartGuestToken) {
+      if (!guestToken || cartGuestToken !== guestToken) {
+        throw new Error('Unauthorized: Cart does not belong to guest');
+      }
+    }
+    // Orphaned cart (no owner)
+    else {
+      throw new Error('Unauthorized: Cart has no owner');
+    }
+
+    await this.cartRepository.updateEmail(CartId.fromString(cartId), email);
+  }
+
+  async updateCartShippingInfo(
+    cartId: string,
+    data: {
+      shippingMethod?: string;
+      shippingOption?: string;
+      isGift?: boolean;
+    },
+    userId?: string,
+    guestToken?: string
+  ): Promise<void> {
+    const cart = await this.cartRepository.findById(CartId.fromString(cartId));
+    if (!cart) {
+      throw new Error('Cart not found');
+    }
+
+    // Validate ownership - more explicit logic
+    const cartUserId = cart.getUserId()?.getValue();
+    const cartGuestToken = cart.getGuestToken()?.getValue();
+
+    // Cart belongs to a user
+    if (cartUserId) {
+      if (!userId || cartUserId !== userId) {
+        throw new Error('Unauthorized: Cart does not belong to user');
+      }
+    }
+    // Cart belongs to a guest
+    else if (cartGuestToken) {
+      if (!guestToken || cartGuestToken !== guestToken) {
+        throw new Error('Unauthorized: Cart does not belong to guest');
+      }
+    }
+    // Orphaned cart (no owner)
+    else {
+      throw new Error('Unauthorized: Cart has no owner');
+    }
+
+    await this.cartRepository.updateShippingInfo(CartId.fromString(cartId), data);
+  }
+
+  async updateCartAddresses(
+    cartId: string,
+    data: {
+      shippingFirstName?: string;
+      shippingLastName?: string;
+      shippingAddress1?: string;
+      shippingAddress2?: string;
+      shippingCity?: string;
+      shippingProvince?: string;
+      shippingPostalCode?: string;
+      shippingCountryCode?: string;
+      shippingPhone?: string;
+      billingFirstName?: string;
+      billingLastName?: string;
+      billingAddress1?: string;
+      billingAddress2?: string;
+      billingCity?: string;
+      billingProvince?: string;
+      billingPostalCode?: string;
+      billingCountryCode?: string;
+      billingPhone?: string;
+      sameAddressForBilling?: boolean;
+    },
+    userId?: string,
+    guestToken?: string
+  ): Promise<void> {
+    const cart = await this.cartRepository.findById(CartId.fromString(cartId));
+    if (!cart) {
+      throw new Error('Cart not found');
+    }
+
+    // Validate ownership - more explicit logic
+    const cartUserId = cart.getUserId()?.getValue();
+    const cartGuestToken = cart.getGuestToken()?.getValue();
+
+    // Cart belongs to a user
+    if (cartUserId) {
+      if (!userId || cartUserId !== userId) {
+        throw new Error('Unauthorized: Cart does not belong to user');
+      }
+    }
+    // Cart belongs to a guest
+    else if (cartGuestToken) {
+      if (!guestToken || cartGuestToken !== guestToken) {
+        throw new Error('Unauthorized: Cart does not belong to guest');
+      }
+    }
+    // Orphaned cart (no owner)
+    else {
+      throw new Error('Unauthorized: Cart has no owner');
+    }
+
+    await this.cartRepository.updateAddresses(CartId.fromString(cartId), data);
+  }
+
+  async getCartWithCheckoutInfo(cartId: string, userId?: string, guestToken?: string): Promise<any> {
+    const cart = await this.cartRepository.findById(CartId.fromString(cartId));
+    if (!cart) {
+      throw new Error('Cart not found');
+    }
+
+    // Validate ownership - more explicit logic
+    const cartUserId = cart.getUserId()?.getValue();
+    const cartGuestToken = cart.getGuestToken()?.getValue();
+
+    // Cart belongs to a user
+    if (cartUserId) {
+      if (!userId || cartUserId !== userId) {
+        throw new Error('Unauthorized: Cart does not belong to user');
+      }
+    }
+    // Cart belongs to a guest
+    else if (cartGuestToken) {
+      if (!guestToken || cartGuestToken !== guestToken) {
+        throw new Error('Unauthorized: Cart does not belong to guest');
+      }
+    }
+    // Orphaned cart (no owner)
+    else {
+      throw new Error('Unauthorized: Cart has no owner');
+    }
+
+    return await this.cartRepository.getCartWithCheckoutInfo(cartId);
+  }
 }
