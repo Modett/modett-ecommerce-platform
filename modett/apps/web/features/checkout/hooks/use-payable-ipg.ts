@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 
 interface PayableIPGPayment {
   orderId: string;
@@ -21,29 +21,6 @@ interface PaymentResult {
   error?: string;
 }
 
-/**
- * React Hook for PayableIPG Integration
- *
- * Provides methods to create payments, verify payments, and handle refunds
- *
- * @example
- * ```tsx
- * const { createPayment, verifyPayment, loading, error } = usePayableIPG();
- *
- * const handleCheckout = async () => {
- *   const result = await createPayment({
- *     orderId: 'order-123',
- *     amount: 5000,
- *     customerEmail: 'customer@example.com',
- *     customerName: 'John Doe',
- *   });
- *
- *   if (result.success) {
- *     window.location.href = result.redirectUrl;
- *   }
- * };
- * ```
- */
 export function usePayableIPG() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,10 +31,10 @@ export function usePayableIPG() {
       setError(null);
 
       try {
-        const response = await fetch('/api/payments/payable-ipg/create', {
-          method: 'POST',
+        const response = await fetch("/api/payments/payable-ipg/create", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(payment),
         });
@@ -72,7 +49,7 @@ export function usePayableIPG() {
             redirectUrl: data.data.redirectUrl,
           };
         } else {
-          const errorMessage = data.error || 'Payment creation failed';
+          const errorMessage = data.error || "Payment creation failed";
           setError(errorMessage);
           return {
             success: false,
@@ -80,7 +57,7 @@ export function usePayableIPG() {
           };
         }
       } catch (err: any) {
-        const errorMessage = err.message || 'An error occurred';
+        const errorMessage = err.message || "An error occurred";
         setError(errorMessage);
         return {
           success: false,
@@ -102,9 +79,9 @@ export function usePayableIPG() {
         const response = await fetch(
           `/api/payments/payable-ipg/verify/${transactionId}`,
           {
-            method: 'GET',
+            method: "GET",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
           }
         );
@@ -117,7 +94,7 @@ export function usePayableIPG() {
             ...data.data,
           };
         } else {
-          const errorMessage = data.error || 'Payment verification failed';
+          const errorMessage = data.error || "Payment verification failed";
           setError(errorMessage);
           return {
             success: false,
@@ -125,7 +102,7 @@ export function usePayableIPG() {
           };
         }
       } catch (err: any) {
-        const errorMessage = err.message || 'An error occurred';
+        const errorMessage = err.message || "An error occurred";
         setError(errorMessage);
         return {
           success: false,
@@ -148,10 +125,10 @@ export function usePayableIPG() {
       setError(null);
 
       try {
-        const response = await fetch('/api/payments/payable-ipg/refund', {
-          method: 'POST',
+        const response = await fetch("/api/payments/payable-ipg/refund", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             transactionId,
@@ -168,7 +145,7 @@ export function usePayableIPG() {
             ...data.data,
           };
         } else {
-          const errorMessage = data.error || 'Refund failed';
+          const errorMessage = data.error || "Refund failed";
           setError(errorMessage);
           return {
             success: false,
@@ -176,7 +153,7 @@ export function usePayableIPG() {
           };
         }
       } catch (err: any) {
-        const errorMessage = err.message || 'An error occurred';
+        const errorMessage = err.message || "An error occurred";
         setError(errorMessage);
         return {
           success: false,
@@ -191,10 +168,10 @@ export function usePayableIPG() {
 
   const getSupportedCardTypes = useCallback(async () => {
     try {
-      const response = await fetch('/api/payments/payable-ipg/card-types', {
-        method: 'GET',
+      const response = await fetch("/api/payments/payable-ipg/card-types", {
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
