@@ -1,21 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
-import { PageContainer } from "@/components/layout/page-container";
 import { useCart } from "@/features/cart/queries";
-import { useCartId } from "@/features/cart/hooks/use-cart-id";
-import {
-  CheckoutProgressBar,
-  CartSummary,
-  CheckoutHelpSection,
-  CompletedCheckoutStep,
-  ActiveStepHeader,
-  FormInput,
-  CustomCheckbox,
-  LoadingState,
-} from "@/features/checkout/components";
+import { getStoredCartId } from "@/features/cart/utils";
+import { CheckoutProgressBar } from "@/features/checkout/components/checkout-progress-bar";
+import { CartSummary } from "@/features/checkout/components/cart-summary";
+import { CheckoutHelpSection } from "@/features/checkout/components/checkout-help-section";
+import { CompletedCheckoutStep } from "@/features/checkout/components/completed-checkout-step";
+import { ActiveStepHeader } from "@/features/checkout/components/active-step-header";
 import { Check, Info } from "lucide-react";
+import { FormInput } from "@/features/checkout/components/form-input";
+import { CustomCheckbox } from "@/features/checkout/components/custom-checkbox";
+import { LoadingState } from "@/features/checkout/components/loading-state";
 
 // Payment card logos - using Image component for actual logo files
 import Image from "next/image";
@@ -23,10 +20,18 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutPaymentPage() {
+  const [cartId, setCartId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("cards");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const router = useRouter();
-  const cartId = useCartId();
+
+  useEffect(() => {
+    const storedCartId = getStoredCartId();
+    if (storedCartId) {
+      setCartId(storedCartId);
+    }
+  }, []);
+
   const { data: cart, isLoading } = useCart(cartId);
 
   const handleConfirm = (e: React.FormEvent) => {
@@ -40,8 +45,11 @@ export default function CheckoutPaymentPage() {
   }
 
   return (
-    <PageContainer fullHeight withBackground asMain className="py-4 md:py-6 lg:py-8">
-      <CheckoutProgressBar currentStep={4} />
+    <main className={`w-full min-h-screen ${COMMON_CLASSES.pageBg}`}>
+      <div
+        className={`w-full max-w-[1440px] mx-auto px-4 md:px-8 lg:px-20 py-4 md:py-6 lg:py-8`}
+      >
+        <CheckoutProgressBar currentStep={4} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 md:gap-6 lg:gap-10 min-h-[750px]">
           <div className="space-y-2 max-w-[904px]">
@@ -423,6 +431,7 @@ export default function CheckoutPaymentPage() {
             <CartSummary cart={cart} />
           </div>
         </div>
-    </PageContainer>
+      </div>
+    </main>
   );
 }
