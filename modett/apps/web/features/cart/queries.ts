@@ -95,3 +95,85 @@ export const useRemoveCartItem = () => {
     },
   });
 };
+
+/**
+ * Hook to update cart email
+ */
+export const useUpdateCartEmail = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ cartId, email }: { cartId: string; email: string }) =>
+      cartApi.updateCartEmail(cartId, email),
+    onSuccess: (data, variables) => {
+      // Update the specific cart in the cache
+      queryClient.setQueryData(cartKeys.cart(variables.cartId), data);
+    },
+  });
+};
+
+/**
+ * Hook to update cart shipping info
+ */
+export const useUpdateCartShipping = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      cartId,
+      shippingData,
+    }: {
+      cartId: string;
+      shippingData: {
+        shippingMethod?: string;
+        shippingOption?: string;
+        isGift?: boolean;
+      };
+    }) => cartApi.updateCartShipping(cartId, shippingData),
+    onSuccess: (data, variables) => {
+      // Update the specific cart in the cache
+      queryClient.setQueryData(cartKeys.cart(variables.cartId), data);
+    },
+  });
+};
+
+/**
+ * Hook to update cart addresses
+ */
+export const useUpdateCartAddresses = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      cartId,
+      addressData,
+    }: {
+      cartId: string;
+      addressData: {
+        shippingFirstName?: string;
+        shippingLastName?: string;
+        shippingAddress1?: string;
+        shippingAddress2?: string;
+        shippingCity?: string;
+        shippingProvince?: string;
+        shippingPostalCode?: string;
+        shippingCountryCode?: string;
+        shippingPhone?: string;
+        billingFirstName?: string;
+        billingLastName?: string;
+        billingAddress1?: string;
+        billingAddress2?: string;
+        billingCity?: string;
+        billingProvince?: string;
+        billingPostalCode?: string;
+        billingCountryCode?: string;
+        billingPhone?: string;
+        sameAddressForBilling?: boolean;
+      };
+    }) => cartApi.updateCartAddresses(cartId, addressData),
+    onSuccess: (data, variables) => {
+      // Update the specific cart in the cache
+      queryClient.setQueryData(cartKeys.cart(variables.cartId), data);
+    },
+  });
+};
