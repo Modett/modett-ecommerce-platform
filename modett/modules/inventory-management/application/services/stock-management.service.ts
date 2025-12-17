@@ -62,7 +62,8 @@ export class StockManagementService {
     variantId: string,
     locationId: string,
     quantityDelta: number,
-    reason: string
+    reason: string,
+    referenceId?: string
   ): Promise<Stock> {
     const stock = await this.stockRepository.findByVariantAndLocation(
       variantId,
@@ -89,7 +90,7 @@ export class StockManagementService {
       locationId,
       qtyDelta: quantityDelta,
       reason: TransactionReasonVO.create(reason),
-      referenceId: undefined,
+      referenceId: referenceId || undefined,
       createdAt: new Date(),
     });
 
