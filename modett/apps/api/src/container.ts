@@ -500,6 +500,7 @@ export function createServiceContainer(): ServiceContainer {
   );
 
   const orderManagementService = new OrderManagementService(
+    prisma,
     orderRepository,
     orderAddressRepository,
     orderItemRepository,
