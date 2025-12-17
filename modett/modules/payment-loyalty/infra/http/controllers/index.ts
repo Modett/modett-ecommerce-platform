@@ -3,6 +3,7 @@ export { PaymentController } from "./payment.controller.js";
 export { PaymentIntentController } from "./payment-intent.controller.js";
 export { PaymentTransactionController } from "./payment-transaction.controller.js";
 export { PaymentWebhookController } from "./payment-webhook.controller.js";
+export { PayableIPGController } from "./payable-ipg.controller.js";
 
 // BNPL Controllers
 export { BnplTransactionController } from "./bnpl-transaction.controller.js";
