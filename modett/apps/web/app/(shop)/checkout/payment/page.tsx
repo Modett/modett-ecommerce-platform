@@ -9,10 +9,11 @@ import { CartSummary } from "@/features/checkout/components/cart-summary";
 import { CheckoutHelpSection } from "@/features/checkout/components/checkout-help-section";
 import { CompletedCheckoutStep } from "@/features/checkout/components/completed-checkout-step";
 import { ActiveStepHeader } from "@/features/checkout/components/active-step-header";
-import { Check, Info } from "lucide-react";
-import { FormInput } from "@/features/checkout/components/form-input";
+import { Info } from "lucide-react";
 import { CustomCheckbox } from "@/features/checkout/components/custom-checkbox";
 import { LoadingState } from "@/features/checkout/components/loading-state";
+import { usePayableIPG } from "@/features/checkout/hooks/use-payable-ipg";
+import * as cartApi from "@/features/cart/api";
 
 // Payment card logos - using Image component for actual logo files
 import Image from "next/image";
@@ -20,24 +21,157 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutPaymentPage() {
+  console.log("[DEBUG] CheckoutPaymentPage component mounted");
+
   const [cartId, setCartId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("cards");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [checkoutId, setCheckoutId] = useState<string | null>(null);
   const router = useRouter();
+
+  const { createPayment, loading: paymentLoading } = usePayableIPG();
+
+  console.log("[DEBUG] Component state:", {
+    cartId,
+    termsAccepted,
+    processing,
+    paymentLoading,
+    checkoutId,
+  });
 
   useEffect(() => {
     const storedCartId = getStoredCartId();
     if (storedCartId) {
       setCartId(storedCartId);
     }
+
+    // Check for error query parameter (e.g., from payment cancellation)
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorParam = urlParams.get("error");
+    if (errorParam === "payment_cancelled") {
+      setError("Payment was cancelled. Please try again.");
+    }
   }, []);
 
-  const { data: cart, isLoading } = useCart(cartId);
+  const { data: cart, isLoading, refetch } = useCart(cartId);
 
-  const handleConfirm = (e: React.FormEvent) => {
+  // Redirect to cart if it's empty
+  useEffect(() => {
+    if (cart && (!cart.items || cart.items.length === 0)) {
+      router.push("/cart");
+    }
+  }, [cart, router]);
+
+  // Initialize checkout when cart is loaded
+  useEffect(() => {
+    const initCheckout = async () => {
+      if (!cartId || !cart || checkoutId) return;
+
+      // Don't initialize checkout if cart is empty
+      if (!cart.items || cart.items.length === 0) {
+        return;
+      }
+
+      try {
+        const checkout = await cartApi.initializeCheckout(cartId);
+        setCheckoutId(checkout.checkoutId);
+      } catch (err) {
+        console.error("Failed to initialize checkout:", err);
+      }
+    };
+
+    initCheckout();
+  }, [cartId, cart, checkoutId]);
+
+  // Refetch cart data when page loads to ensure we have the latest data
+  useEffect(() => {
+    if (cartId) {
+      refetch();
+    }
+  }, [cartId, refetch]);
+
+  const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!termsAccepted) return;
-    // TODO: Process payment
+    console.log("[DEBUG] handleConfirm called");
+
+    if (!termsAccepted) {
+      console.log("[DEBUG] Terms not accepted");
+      setError("Please accept the terms and conditions to continue");
+      return;
+    }
+
+    if (!cartId || !cart) {
+      console.log("[DEBUG] Cart not found", { cartId, cart });
+      setError("Cart not found");
+      return;
+    }
+
+    if (!cart.email) {
+      console.log("[DEBUG] Email missing");
+      setError("Email is required. Please go back to step 1");
+      return;
+    }
+
+    if (!cart.shippingFirstName || !cart.shippingCity) {
+      console.log("[DEBUG] Shipping address missing");
+      setError("Shipping address is required. Please go back to step 3");
+      return;
+    }
+
+    if (!checkoutId) {
+      console.log("[DEBUG] CheckoutId missing");
+      setError("Checkout session not initialized. Please try again.");
+      return;
+    }
+
+    console.log("[DEBUG] All validations passed, calling createPayment");
+    setProcessing(true);
+    setError(null);
+
+    try {
+      // Use the existing checkout session
+      const customerName =
+        `${cart.shippingFirstName || ""} ${cart.shippingLastName || ""}`.trim();
+
+      console.log("[DEBUG] Calling createPayment with:", {
+        orderId: checkoutId,
+        amount: cart.summary.total,
+        customerEmail: cart.email,
+      });
+
+      const paymentResult = await createPayment({
+        orderId: checkoutId,
+        amount: cart.summary.total,
+        customerEmail: cart.email,
+        customerName: customerName || "Guest Customer",
+        customerPhone: cart.shippingPhone || undefined,
+        returnUrl: `${window.location.origin}/checkout/success?checkoutId=${checkoutId}&intentId=${checkoutId}`,
+        cancelUrl: `${window.location.origin}/checkout/payment?error=payment_cancelled`,
+        description: `Order for ${cart.items.length} item(s)`,
+      });
+
+      console.log("[DEBUG] createPayment result:", paymentResult);
+
+      if (paymentResult.success && paymentResult.redirectUrl) {
+        console.log("[DEBUG] Redirecting to:", paymentResult.redirectUrl);
+        // Update return URL with actual intentId
+        const updatedReturnUrl = `${window.location.origin}/checkout/success?checkoutId=${checkoutId}&intentId=${paymentResult.intentId}`;
+        // Step 3: Redirect to PayableIPG for payment
+        window.location.href = paymentResult.redirectUrl;
+      } else {
+        console.log("[DEBUG] Payment failed:", paymentResult.error);
+        setError(paymentResult.error || "Failed to create payment session");
+        setProcessing(false);
+      }
+    } catch (err: any) {
+      console.log("[DEBUG] Exception:", err);
+      setError(
+        err.message || "Failed to initialize payment. Please try again."
+      );
+      setProcessing(false);
+    }
   };
 
   if (isLoading) {
@@ -78,8 +212,11 @@ export default function CheckoutPaymentPage() {
                 className="text-xs md:text-sm lg:text-[14px] leading-[20px] md:leading-[22px] lg:leading-[24px] font-normal text-[#3E5460] tracking-[0.5px] md:tracking-[0.8px] lg:tracking-[1.03px]"
                 style={TEXT_STYLES.bodyTeal}
               >
-                {cart?.shipping_address?.city || "Colombo 1-15"} shipping in 2-3
-                working days from order confirmation
+                {cart?.shippingOption === "colombo"
+                  ? "Colombo 1-15 shipping in 2-3 working days from order confirmation"
+                  : cart?.shippingOption === "suburbs"
+                    ? "Suburbs shipping in 3-5 working days from order confirmation"
+                    : "Shipping details not provided"}
               </p>
             </CompletedCheckoutStep>
 
@@ -100,29 +237,27 @@ export default function CheckoutPaymentPage() {
                   className="text-[12px] text-[#3E5460] font-normal leading-[18px] tracking-[0px]"
                   style={TEXT_STYLES.bodyTeal}
                 >
-                  {cart?.shipping_address?.first_name}{" "}
-                  {cart?.shipping_address?.last_name}
+                  {cart?.shippingFirstName || ""} {cart?.shippingLastName || ""}
                 </p>
                 <p
                   className="text-[12px] text-[#3E5460] font-normal leading-[18px] tracking-[0px]"
                   style={TEXT_STYLES.bodyTeal}
                 >
-                  {cart?.shipping_address?.address_1}
+                  {cart?.shippingAddress1 || ""}
                 </p>
                 <p
                   className="text-[12px] text-[#3E5460] font-normal leading-[18px] tracking-[0px]"
                   style={TEXT_STYLES.bodyTeal}
                 >
-                  {cart?.shipping_address?.city}{" "}
-                  {cart?.shipping_address?.province}{" "}
-                  {cart?.shipping_address?.postal_code}{" "}
-                  {cart?.shipping_address?.country_code}
+                  {cart?.shippingCity || ""} {cart?.shippingProvince || ""}{" "}
+                  {cart?.shippingPostalCode || ""}{" "}
+                  {cart?.shippingCountryCode || ""}
                 </p>
                 <p
                   className="text-[12px] text-[#3E5460] font-normal leading-[18px] tracking-[0px]"
                   style={TEXT_STYLES.bodyTeal}
                 >
-                  {cart?.shipping_address?.phone}
+                  {cart?.shippingPhone || ""}
                 </p>
               </div>
             </CompletedCheckoutStep>
@@ -198,7 +333,7 @@ export default function CheckoutPaymentPage() {
                       </label>
                     </div>
 
-                    {/* Card Form */}
+                    {/* Payment Gateway Info */}
                     {paymentMethod === "cards" && (
                       <div className="pb-6 pt-2">
                         <div
@@ -206,64 +341,17 @@ export default function CheckoutPaymentPage() {
                           style={TEXT_STYLES.bodyTeal}
                         >
                           <Info className="w-6 h-6 text-[#3E5460]" />
-                          More information about payments
+                          You will be redirected to PAYable IPG secure payment
+                          page to complete your payment
                         </div>
                         <p
-                          className="text-[12px] leading-[18px] text-[#3E5460] font-normal mb-2"
+                          className="text-[12px] leading-[18px] text-[#3E5460] font-normal"
                           style={TEXT_STYLES.bodyTeal}
                         >
-                          All fields are required unless marked otherwise.
+                          Your payment information will be securely handled by
+                          PAYable IPG. We accept Visa, Mastercard, American
+                          Express, and other major cards.
                         </p>
-
-                        <div className="flex flex-col gap-4">
-                          {/* Card Number */}
-                          <FormInput
-                            label="* Card number"
-                            type="text"
-                            labelClassName="text-[14px] text-[#3E5460] w-full block leading-[24px] tracking-[1.03px]"
-                            labelStyle={TEXT_STYLES.bodyTeal}
-                            className="rounded-[4px] border-[#BBA496] bg-transparent"
-                            containerClassName="gap-1"
-                            placeholder=""
-                          />
-
-                          {/* Expiration & CVV */}
-                          <div className="flex gap-4">
-                            <div className="flex-1">
-                              <FormInput
-                                label="* Expiration date"
-                                type="text"
-                                labelClassName="text-[14px] text-[#3E5460] w-full block leading-[24px] tracking-[1.03px]"
-                                labelStyle={TEXT_STYLES.bodyTeal}
-                                className="rounded-[4px] border-[#BBA496] bg-transparent"
-                                containerClassName="gap-1"
-                                placeholder=""
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <FormInput
-                                label="* CVV Code"
-                                type="text"
-                                labelClassName="text-[14px] text-[#3E5460] w-full block leading-[24px] tracking-[1.03px]"
-                                labelStyle={TEXT_STYLES.bodyTeal}
-                                className="rounded-[4px] border-[#BBA496] bg-transparent"
-                                containerClassName="gap-1"
-                                placeholder=""
-                              />
-                            </div>
-                          </div>
-
-                          {/* Card Holder */}
-                          <FormInput
-                            label="* Card holder"
-                            type="text"
-                            labelClassName="text-[14px] text-[#3E5460] w-full block leading-[24px] tracking-[1.03px]"
-                            labelStyle={TEXT_STYLES.bodyTeal}
-                            className="rounded-[4px] border-[#BBA496] bg-transparent"
-                            containerClassName="gap-1"
-                            placeholder=""
-                          />
-                        </div>
                       </div>
                     )}
 
@@ -383,6 +471,13 @@ export default function CheckoutPaymentPage() {
                   </div>
 
                   <div className="flex flex-col gap-[16px] w-full">
+                    {/* Error Message */}
+                    {error && (
+                      <div className="mx-auto w-full max-w-[460px] p-4 bg-red-50 border border-red-200 rounded">
+                        <p className="text-sm text-red-600">{error}</p>
+                      </div>
+                    )}
+
                     {/* Terms Checkbox */}
                     <CustomCheckbox
                       label={
@@ -408,14 +503,22 @@ export default function CheckoutPaymentPage() {
                     {/* Confirm Button */}
                     <button
                       type="submit"
-                      disabled={!termsAccepted}
-                      className={`w-full max-w-[460px] mx-auto h-[50px] bg-[#232D35] border border-[#232D35] flex items-center justify-center transition-opacity ${termsAccepted ? "hover:opacity-90" : "cursor-not-allowed"}`}
+                      onClick={() =>
+                        console.log(
+                          "[DEBUG] Button clicked, disabled:",
+                          !termsAccepted || processing || paymentLoading
+                        )
+                      }
+                      disabled={!termsAccepted || processing || paymentLoading}
+                      className={`w-full max-w-[460px] mx-auto h-[50px] bg-[#232D35] border border-[#232D35] flex items-center justify-center transition-opacity disabled:opacity-50 disabled:cursor-not-allowed ${termsAccepted && !processing && !paymentLoading ? "hover:opacity-90" : ""}`}
                     >
                       <span
                         className="text-[14px] md:text-[16px] font-medium text-[#E5E0D6] uppercase tracking-[2px] md:tracking-[4px] leading-[24px]"
                         style={TEXT_STYLES.button}
                       >
-                        CONFIRM AND COMPLETE PURCHASE
+                        {processing || paymentLoading
+                          ? "PROCESSING..."
+                          : "CONFIRM AND COMPLETE PURCHASE"}
                       </span>
                     </button>
                   </div>
