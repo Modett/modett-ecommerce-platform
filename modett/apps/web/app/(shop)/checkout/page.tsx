@@ -6,7 +6,7 @@ import {
   COMMON_CLASSES,
   RESPONSIVE,
 } from "@/features/cart/constants/styles";
-import { useCart } from "@/features/cart/queries";
+import { useCart, useUpdateCartEmail } from "@/features/cart/queries";
 import { getStoredCartId } from "@/features/cart/utils";
 import { CheckoutProgressBar } from "@/features/checkout/components/checkout-progress-bar";
 import { CartSummary } from "@/features/checkout/components/cart-summary";
@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 export default function CheckoutEmailPage() {
   const [email, setEmail] = useState("");
   const [cartId, setCartId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -30,12 +31,33 @@ export default function CheckoutEmailPage() {
   }, []);
 
   const { data: cart, isLoading } = useCart(cartId);
+  const updateEmailMutation = useUpdateCartEmail();
 
-  const handleContinue = (e: React.FormEvent) => {
+  const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
+
+    if (!email || !cartId) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    try {
+      setError(null);
+
+      // Save email to cart in database
+      await updateEmailMutation.mutateAsync({
+        cartId,
+        email,
+      });
+
+      // Also save to sessionStorage for backward compatibility
       sessionStorage.setItem("checkout_email", email);
+
+      // Navigate to shipping page
       router.push("/checkout/shipping");
+    } catch (err) {
+      console.error("Failed to save email:", err);
+      setError("Failed to save email. Please try again.");
     }
   };
 
@@ -80,21 +102,26 @@ export default function CheckoutEmailPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full h-[42px] px-4 border border-[#BBA496] bg-[#F4F1EB] focus:outline-none focus:border-gray-400"
+                      disabled={updateEmailMutation.isPending}
+                      className="w-full h-[42px] px-4 border border-[#BBA496] bg-[#F4F1EB] focus:outline-none focus:border-gray-400 disabled:opacity-50"
                       style={TEXT_STYLES.bodyGraphite}
                     />
+                    {error && (
+                      <p className="text-red-600 text-sm mt-2">{error}</p>
+                    )}
                   </div>
 
                   <div className="flex justify-center">
                     <button
                       type="submit"
-                      className="w-[300px] h-[50px] bg-[#232D35] border border-[#232D35] flex items-center justify-center hover:opacity-90 transition-opacity"
+                      disabled={updateEmailMutation.isPending}
+                      className="w-[300px] h-[50px] bg-[#232D35] border border-[#232D35] flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span
                         className="text-sm font-medium text-white uppercase tracking-[3px]"
                         style={{ fontFamily: "Reddit Sans, sans-serif" }}
                       >
-                        CONTINUE
+                        {updateEmailMutation.isPending ? "SAVING..." : "CONTINUE"}
                       </span>
                     </button>
                   </div>
