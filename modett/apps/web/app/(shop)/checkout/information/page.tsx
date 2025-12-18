@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
-import { useCart } from "@/features/cart/queries";
+import { useCart, useUpdateCartAddresses } from "@/features/cart/queries";
 import { getStoredCartId } from "@/features/cart/utils";
 import { CheckoutProgressBar } from "@/features/checkout/components/checkout-progress-bar";
 import { CartSummary } from "@/features/checkout/components/cart-summary";
@@ -10,7 +10,6 @@ import { CheckoutHelpSection } from "@/features/checkout/components/checkout-hel
 import { CompletedCheckoutStep } from "@/features/checkout/components/completed-checkout-step";
 import { ActiveStepHeader } from "@/features/checkout/components/active-step-header";
 import { FutureStep } from "@/features/checkout/components/future-step";
-import { CheckoutButton } from "@/features/checkout/components/checkout-button";
 import { FormInput } from "@/features/checkout/components/form-input";
 import { CustomCheckbox } from "@/features/checkout/components/custom-checkbox";
 import { LoadingState } from "@/features/checkout/components/loading-state";
@@ -23,7 +22,19 @@ export default function CheckoutInformationPage() {
   const [sameAddress, setSameAddress] = useState(true);
   /* eslint-disable @typescript-eslint/no-unused-vars */
   const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  // Shipping address form state
+  const [shippingFirstName, setShippingFirstName] = useState("");
+  const [shippingLastName, setShippingLastName] = useState("");
+  const [shippingPhone, setShippingPhone] = useState("");
+  const [shippingAddress1, setShippingAddress1] = useState("");
+  const [shippingCity, setShippingCity] = useState("");
+  const [shippingPostalCode, setShippingPostalCode] = useState("");
+  const [shippingProvince, setShippingProvince] = useState("");
+
   const router = useRouter();
+  const updateAddressesMutation = useUpdateCartAddresses();
 
   useEffect(() => {
     const storedCartId = getStoredCartId();
@@ -44,13 +55,78 @@ export default function CheckoutInformationPage() {
         setEmail(storedEmail);
       }
     }
-  }, [cart?.email]);
 
-  const handleContinue = (e: React.FormEvent) => {
+    // Load saved address data from cart if available
+    if (cart) {
+      if (cart.shippingFirstName) setShippingFirstName(cart.shippingFirstName);
+      if (cart.shippingLastName) setShippingLastName(cart.shippingLastName);
+      if (cart.shippingPhone) setShippingPhone(cart.shippingPhone);
+      if (cart.shippingAddress1) setShippingAddress1(cart.shippingAddress1);
+      if (cart.shippingCity) setShippingCity(cart.shippingCity);
+      if (cart.shippingPostalCode)
+        setShippingPostalCode(cart.shippingPostalCode);
+      if (cart.shippingProvince) setShippingProvince(cart.shippingProvince);
+      if (cart.sameAddressForBilling !== undefined) {
+        setSameAddress(cart.sameAddressForBilling);
+      }
+    }
+  }, [cart]);
+
+  const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Validate form and save information
 
-    router.push("/checkout/payment");
+    if (!cartId) {
+      setError("Cart not found");
+      return;
+    }
+
+    // Validate required fields
+    if (
+      !shippingFirstName ||
+      !shippingLastName ||
+      !shippingPhone ||
+      !shippingAddress1 ||
+      !shippingCity ||
+      !shippingPostalCode ||
+      !shippingProvince
+    ) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      setError(null);
+      // Save address information to backend
+      await updateAddressesMutation.mutateAsync({
+        cartId,
+        addressData: {
+          shippingFirstName,
+          shippingLastName,
+          shippingPhone,
+          shippingAddress1,
+          shippingCity,
+          shippingPostalCode,
+          shippingProvince,
+          shippingCountryCode: "LK", // Sri Lanka
+          sameAddressForBilling: sameAddress,
+          // If same address, copy shipping to billing
+          ...(sameAddress && {
+            billingFirstName: shippingFirstName,
+            billingLastName: shippingLastName,
+            billingPhone: shippingPhone,
+            billingAddress1: shippingAddress1,
+            billingCity: shippingCity,
+            billingPostalCode: shippingPostalCode,
+            billingProvince: shippingProvince,
+            billingCountryCode: "LK",
+          }),
+        },
+      });
+
+      router.push("/checkout/payment");
+    } catch (error) {
+      setError("Failed to save address information. Please try again.");
+    }
   };
 
   if (isLoading) {
@@ -110,6 +186,13 @@ export default function CheckoutInformationPage() {
                       Where do you want your order to be shipped?
                     </p>
 
+                    {/* Error Message */}
+                    {error && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
+                        <p className="text-sm text-red-600">{error}</p>
+                      </div>
+                    )}
+
                     {/* Title Radio Buttons */}
                     <div className="mb-6">
                       <label
@@ -159,11 +242,15 @@ export default function CheckoutInformationPage() {
                       <FormInput
                         label="First Name *"
                         type="text"
+                        value={shippingFirstName}
+                        onChange={(e) => setShippingFirstName(e.target.value)}
                         containerClassName="pb-4 w-full"
                       />
                       <FormInput
                         label="Last Name *"
                         type="text"
+                        value={shippingLastName}
+                        onChange={(e) => setShippingLastName(e.target.value)}
                         containerClassName="pb-4 w-full"
                       />
                     </div>
@@ -172,12 +259,16 @@ export default function CheckoutInformationPage() {
                       <FormInput
                         label="Phone *"
                         type="text"
+                        value={shippingPhone}
+                        onChange={(e) => setShippingPhone(e.target.value)}
                         labelClassName="text-[12px] text-[#3E5460]"
                         labelStyle={TEXT_STYLES.bodyTeal}
                       />
                       <FormInput
                         label="Address *"
                         type="text"
+                        value={shippingAddress1}
+                        onChange={(e) => setShippingAddress1(e.target.value)}
                         labelClassName="text-[12px] text-[#3E5460]"
                         labelStyle={TEXT_STYLES.bodyTeal}
                       />
@@ -187,18 +278,24 @@ export default function CheckoutInformationPage() {
                       <FormInput
                         label="City *"
                         type="text"
+                        value={shippingCity}
+                        onChange={(e) => setShippingCity(e.target.value)}
                         labelClassName="text-[12px] text-[#3E5460]"
                         labelStyle={TEXT_STYLES.bodyTeal}
                       />
                       <FormInput
                         label="ZIP Code *"
                         type="text"
+                        value={shippingPostalCode}
+                        onChange={(e) => setShippingPostalCode(e.target.value)}
                         labelClassName="text-[12px] text-[#3E5460]"
                         labelStyle={TEXT_STYLES.bodyTeal}
                       />
                       <FormInput
                         label="State *"
                         type="text"
+                        value={shippingProvince}
+                        onChange={(e) => setShippingProvince(e.target.value)}
                         labelClassName="text-[12px] text-[#3E5460]"
                         labelStyle={TEXT_STYLES.bodyTeal}
                       />
@@ -214,7 +311,20 @@ export default function CheckoutInformationPage() {
 
                     {/* Continue Button */}
                     <div className="flex justify-center">
-                      <CheckoutButton />
+                      <button
+                        type="submit"
+                        disabled={updateAddressesMutation.isPending}
+                        className={`w-full md:w-[280px] lg:w-[300px] h-[44px] md:h-[48px] lg:h-[50px] bg-[#232D35] border border-[#232D35] px-6 md:px-8 lg:px-[31px] flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        <span
+                          className="text-sm md:text-[15px] lg:text-[16px] font-medium text-[#E5E0D6] uppercase tracking-[2px] md:tracking-[3px] lg:tracking-[4px] leading-[20px] md:leading-[22px] lg:leading-[24px]"
+                          style={TEXT_STYLES.button}
+                        >
+                          {updateAddressesMutation.isPending
+                            ? "SAVING..."
+                            : "CONTINUE"}
+                        </span>
+                      </button>
                     </div>
                   </div>
                 </form>
