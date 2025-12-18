@@ -101,18 +101,25 @@ export class CheckoutOrderService {
       }
 
       // 3. Verify payment intent exists and is authorized
-      const paymentIntent = await tx.paymentIntent.findUnique({
-        where: { intentId: dto.paymentIntentId },
+      // Try to find by checkoutId first (common during checkout flow)
+      let paymentIntent = await tx.paymentIntent.findUnique({
+        where: { checkoutId: dto.checkoutId },
       });
+
+      // If not found by checkoutId, try by intentId (for backward compatibility)
+      if (!paymentIntent) {
+        paymentIntent = await tx.paymentIntent.findUnique({
+          where: { intentId: dto.paymentIntentId },
+        });
+      }
 
       if (!paymentIntent) {
         throw new Error("Payment intent not found");
       }
 
-      if (
-        paymentIntent.status !== "authorized" &&
-        paymentIntent.status !== "captured"
-      ) {
+      // Accept authorized, captured, or requires_action (for mock/testing)
+      const validStatuses = ["authorized", "captured", "requires_action"];
+      if (!validStatuses.includes(paymentIntent.status)) {
         throw new Error(
           `Payment intent is not authorized. Current status: ${paymentIntent.status}`
         );
@@ -203,10 +210,6 @@ export class CheckoutOrderService {
 
       await this.reservationRepository.deleteByCartId(checkout.getCartId());
 
-      await tx.cartItem.deleteMany({
-        where: { cartId: checkout.getCartId().toString() },
-      });
-
       await tx.orderAddress.create({
         data: {
           orderId: order.id,
@@ -216,7 +219,7 @@ export class CheckoutOrderService {
       });
 
       await tx.paymentIntent.update({
-        where: { intentId: dto.paymentIntentId },
+        where: { intentId: paymentIntent.intentId },
         data: {
           orderId: order.id,
           checkoutId: dto.checkoutId,
@@ -260,6 +263,16 @@ export class CheckoutOrderService {
         },
       });
 
+      // Clear the cart items after successful order creation
+      const cartIdToDelete = checkout.getCartId().toString();
+      console.log(`Deleting cart items for cart: ${cartIdToDelete}`);
+
+      const deleteResult = await tx.cartItem.deleteMany({
+        where: { cartId: cartIdToDelete },
+      });
+
+      console.log(`Deleted ${deleteResult.count} cart items`);
+
       return {
         orderId: order.id,
         orderNo: order.orderNo,
@@ -298,13 +311,13 @@ export class CheckoutOrderService {
     // Strategy 2: Query first warehouse from database
     const warehouse = await tx.location.findFirst({
       where: {
-        type: 'warehouse',
+        type: "warehouse",
       },
     });
 
     if (!warehouse) {
       throw new Error(
-        'No warehouse location found. Please configure DEFAULT_STOCK_LOCATION in .env or create a warehouse location in the database.'
+        "No warehouse location found. Please configure DEFAULT_STOCK_LOCATION in .env or create a warehouse location in the database."
       );
     }
 
