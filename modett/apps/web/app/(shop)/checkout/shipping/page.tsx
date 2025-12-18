@@ -67,7 +67,8 @@ export default function CheckoutShippingPage() {
         cartId,
         shippingData: {
           shippingMethod,
-          shippingOption: shippingMethod === "home" ? shippingOption : undefined,
+          shippingOption:
+            shippingMethod === "home" ? shippingOption : undefined,
           isGift,
         },
       });
@@ -75,7 +76,6 @@ export default function CheckoutShippingPage() {
       // Navigate to information page
       router.push("/checkout/information");
     } catch (err) {
-      console.error("Failed to save shipping info:", err);
       setError("Failed to save shipping information. Please try again.");
     }
   };
@@ -257,7 +257,9 @@ export default function CheckoutShippingPage() {
                             className="text-sm font-medium text-white uppercase tracking-[3px]"
                             style={{ fontFamily: "Reddit Sans, sans-serif" }}
                           >
-                            {updateShippingMutation.isPending ? "SAVING..." : "CONTINUE"}
+                            {updateShippingMutation.isPending
+                              ? "SAVING..."
+                              : "CONTINUE"}
                           </span>
                         </button>
                       </div>
