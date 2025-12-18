@@ -1,7 +1,7 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { PayableIPGProvider } from '../../payment-providers/payable-ipg.provider';
-import { getPayableIPGConfig } from '../../config/payable-ipg.config';
-import { PaymentService } from '../../../application/services/payment.service';
+import { FastifyRequest, FastifyReply } from "fastify";
+import { PayableIPGProvider } from "../../payment-providers/payable-ipg.provider";
+import { getPayableIPGConfig } from "../../config/payable-ipg.config";
+import { PaymentService } from "../../../application/services/payment.service";
 
 export class PayableIPGController {
   private payableProvider: PayableIPGProvider;
@@ -27,17 +27,20 @@ export class PayableIPGController {
         returnUrl,
         cancelUrl,
         description,
+        billingAddress,
+        shippingAddress,
       } = req.body as any;
 
       // Get the user from the authenticated request
       const user = (req as any).user;
 
       // Create payment intent in your system
+      // orderId here is actually checkoutId during checkout flow
       const paymentIntent = await this.paymentService.createPaymentIntent({
-        orderId,
-        provider: 'payable-ipg',
+        checkoutId: orderId, // This is checkoutId, not orderId
+        provider: "payable-ipg",
         amount,
-        currency: 'LKR',
+        currency: "LKR",
         userId: user?.userId,
       });
 
@@ -55,6 +58,8 @@ export class PayableIPGController {
         cancelUrl: cancelUrl || `${baseUrl}/payment/cancel`,
         webhookUrl,
         description,
+        billingAddress,
+        shippingAddress,
       });
 
       if (paymentResponse.success) {
@@ -70,14 +75,14 @@ export class PayableIPGController {
       } else {
         return reply.status(400).send({
           success: false,
-          error: paymentResponse.error || 'Failed to create payment',
+          error: paymentResponse.error || "Failed to create payment",
         });
       }
     } catch (error: any) {
       req.log.error(error);
       return reply.status(500).send({
         success: false,
-        error: error.message || 'Internal server error',
+        error: error.message || "Internal server error",
       });
     }
   }
@@ -90,11 +95,12 @@ export class PayableIPGController {
   async handleWebhook(req: FastifyRequest, reply: FastifyReply) {
     try {
       const payload = req.body as any;
-      const signature = req.headers['x-payable-signature'] as string;
+      const signature = req.headers["x-payable-signature"] as string;
 
       // Validate webhook signature (if secret key is configured)
-      const hasSecretKey = process.env.PAYABLE_IPG_SECRET_KEY &&
-                           process.env.PAYABLE_IPG_SECRET_KEY.length > 0;
+      const hasSecretKey =
+        process.env.PAYABLE_IPG_SECRET_KEY &&
+        process.env.PAYABLE_IPG_SECRET_KEY.length > 0;
 
       if (hasSecretKey && signature) {
         const isValid = this.payableProvider.validateWebhookSignature(
@@ -103,25 +109,29 @@ export class PayableIPGController {
         );
 
         if (!isValid) {
-          req.log.warn('Invalid PayableIPG webhook signature');
+          req.log.warn("Invalid PayableIPG webhook signature");
           return reply.status(401).send({
             success: false,
-            error: 'Invalid signature',
+            error: "Invalid signature",
           });
         }
-        req.log.info('PayableIPG webhook signature validated successfully');
+        req.log.info("PayableIPG webhook signature validated successfully");
       } else {
-        req.log.warn('PayableIPG webhook signature validation skipped (no secret key configured)');
+        req.log.warn(
+          "PayableIPG webhook signature validation skipped (no secret key configured)"
+        );
       }
 
       // Process webhook based on event type
       const { event, transactionId, orderId, status, amount } = payload;
 
-      req.log.info(`PayableIPG webhook received: ${event} for ${transactionId}`);
+      req.log.info(
+        `PayableIPG webhook received: ${event} for ${transactionId}`
+      );
 
       switch (event) {
-        case 'payment.success':
-        case 'payment.completed':
+        case "payment.success":
+        case "payment.completed":
           // Mark payment as successful
           await this.paymentService.capturePayment(
             orderId, // This is actually the intentId we passed
@@ -129,20 +139,20 @@ export class PayableIPGController {
           );
           break;
 
-        case 'payment.failed':
+        case "payment.failed":
           // Mark payment as failed
           await this.paymentService.failPayment(
             orderId,
-            payload.failureReason || 'Payment failed'
+            payload.failureReason || "Payment failed"
           );
           break;
 
-        case 'payment.cancelled':
+        case "payment.cancelled":
           // Cancel payment
           await this.paymentService.cancelPayment(orderId);
           break;
 
-        case 'refund.completed':
+        case "refund.completed":
           // Handle refund completion
           req.log.info(`Refund completed for transaction ${transactionId}`);
           break;
@@ -153,13 +163,13 @@ export class PayableIPGController {
 
       return reply.status(200).send({
         success: true,
-        message: 'Webhook processed',
+        message: "Webhook processed",
       });
     } catch (error: any) {
       req.log.error(error);
       return reply.status(500).send({
         success: false,
-        error: error.message || 'Webhook processing failed',
+        error: error.message || "Webhook processing failed",
       });
     }
   }
@@ -183,7 +193,7 @@ export class PayableIPGController {
       req.log.error(error);
       return reply.status(500).send({
         success: false,
-        error: error.message || 'Verification failed',
+        error: error.message || "Verification failed",
       });
     }
   }
@@ -211,14 +221,14 @@ export class PayableIPGController {
       } else {
         return reply.status(400).send({
           success: false,
-          error: result.error || 'Refund failed',
+          error: result.error || "Refund failed",
         });
       }
     } catch (error: any) {
       req.log.error(error);
       return reply.status(500).send({
         success: false,
-        error: error.message || 'Refund processing failed',
+        error: error.message || "Refund processing failed",
       });
     }
   }
@@ -249,7 +259,7 @@ export class PayableIPGController {
       req.log.error(error);
       return reply.status(500).send({
         success: false,
-        error: error.message || 'Failed to get card types',
+        error: error.message || "Failed to get card types",
       });
     }
   }

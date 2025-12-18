@@ -1376,13 +1376,21 @@ export async function registerPaymentLoyaltyRoutes(
     fastify.post(
       "/payments/payable-ipg/create",
       {
-        preHandler: authenticateUser,
+        preHandler: optionalAuth,
         schema: {
           description:
-            "Create a PayableIPG payment session and get redirect URL for checkout",
+            "Create a PayableIPG payment session and get redirect URL for checkout. Supports both authenticated users and guest checkout.",
           tags: ["PayableIPG"],
           summary: "Create PayableIPG Payment",
-          security: [{ bearerAuth: [] }],
+          headers: {
+            type: "object",
+            properties: {
+              "X-Guest-Token": {
+                type: "string",
+                description: "Guest token for unauthenticated users",
+              },
+            },
+          },
           body: {
             type: "object",
             required: ["orderId", "amount", "customerEmail", "customerName"],

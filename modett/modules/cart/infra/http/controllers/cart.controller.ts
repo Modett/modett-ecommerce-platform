@@ -135,11 +135,26 @@ export class CartController {
       // Execute query using handler
       const result = await this.getCartHandler.handle(query);
 
+      console.log('=== CONTROLLER GET CART DEBUG ===');
+      console.log('Result data:', result.data);
+      console.log('Email in result:', result.data?.email);
+      console.log('Shipping option in result:', result.data?.shippingOption);
+      console.log('================================');
+
       if (result.success && result.data) {
-        return reply.code(200).send({
+        const responseData = {
           success: true,
           data: result.data,
-        });
+        };
+
+        console.log('=== RESPONSE OBJECT DEBUG ===');
+        console.log('Full response:', JSON.stringify(responseData, null, 2));
+        console.log('Email in response.data:', responseData.data.email);
+        console.log('ShippingOption in response.data:', responseData.data.shippingOption);
+        console.log('ShippingFirstName in response.data:', responseData.data.shippingFirstName);
+        console.log('============================');
+
+        return reply.code(200).send(responseData);
       } else {
         return reply.code(404).send({
           success: false,

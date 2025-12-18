@@ -8,7 +8,8 @@ import { Money } from "../../domain/value-objects/money.vo.js";
 import { PaymentTransactionType } from "../../domain/value-objects/payment-transaction-type.vo.js";
 
 export interface CreatePaymentIntentDto {
-  orderId: string;
+  orderId?: string;
+  checkoutId?: string;
   provider: string;
   amount: number;
   currency?: string;
@@ -38,7 +39,8 @@ export interface VoidPaymentDto {
 
 export interface PaymentIntentDto {
   intentId: string;
-  orderId: string;
+  orderId?: string;
+  checkoutId?: string;
   provider: string;
   amount: number;
   currency: string;
@@ -63,9 +65,9 @@ export interface PaymentTransactionDto {
 
 export class PaymentService {
   constructor(
-  private readonly prisma: PrismaClient,
-  private readonly paymentIntentRepo: IPaymentIntentRepository,
-  private readonly paymentTxnRepo: IPaymentTransactionRepository
+    private readonly prisma: PrismaClient,
+    private readonly paymentIntentRepo: IPaymentIntentRepository,
+    private readonly paymentTxnRepo: IPaymentTransactionRepository
   ) {}
 
   private async assertOrderOwnership(
@@ -78,7 +80,9 @@ export class PaymentService {
     });
 
     if (!order) {
-      throw new Error("Order not found for payment intent");
+      // Order might not exist yet during checkout - this is OK
+      // We'll validate ownership when the order is created
+      return;
     }
 
     if (userId && order.userId && order.userId !== userId) {
@@ -89,10 +93,25 @@ export class PaymentService {
   async createPaymentIntent(
     dto: CreatePaymentIntentDto
   ): Promise<PaymentIntentDto> {
-    await this.assertOrderOwnership(dto.orderId, dto.userId);
+    // Only validate order ownership if orderId is provided and user is authenticated
+    if (dto.orderId && dto.userId) {
+      await this.assertOrderOwnership(dto.orderId, dto.userId);
+    }
+
+    // Check if payment intent already exists for this checkout
+    if (dto.checkoutId) {
+      const existing = await this.paymentIntentRepo.findByCheckoutId(
+        dto.checkoutId
+      );
+      if (existing) {
+        // Return existing payment intent instead of creating a new one
+        return this.toPaymentIntentDto(existing);
+      }
+    }
 
     const intent = PaymentIntent.create({
       orderId: dto.orderId,
+      checkoutId: dto.checkoutId,
       provider: dto.provider,
       amount: dto.amount,
       currency: dto.currency || "USD",
@@ -111,7 +130,10 @@ export class PaymentService {
       throw new Error(`Payment intent ${dto.intentId} not found`);
     }
 
-    await this.assertOrderOwnership(intent.orderId, dto.userId);
+    // Only validate order ownership if orderId exists
+    if (intent.orderIdOrNull && dto.userId) {
+      await this.assertOrderOwnership(intent.orderIdOrNull, dto.userId);
+    }
 
     // Authorize the payment
     intent.authorize();
@@ -145,7 +167,10 @@ export class PaymentService {
       throw new Error(`Payment intent ${intentId} not found`);
     }
 
-    await this.assertOrderOwnership(intent.orderId, userId);
+    // Only validate order ownership if orderId exists
+    if (intent.orderIdOrNull && userId) {
+      await this.assertOrderOwnership(intent.orderIdOrNull, userId);
+    }
 
     // Capture the payment
     intent.capture();
@@ -175,7 +200,10 @@ export class PaymentService {
       throw new Error(`Payment intent ${dto.intentId} not found`);
     }
 
-    await this.assertOrderOwnership(intent.orderId, dto.userId);
+    // Only validate order ownership if orderId exists
+    if (intent.orderIdOrNull && dto.userId) {
+      await this.assertOrderOwnership(intent.orderIdOrNull, dto.userId);
+    }
 
     if (!intent.isCaptured()) {
       throw new Error(
@@ -230,7 +258,10 @@ export class PaymentService {
       throw new Error(`Payment intent ${dto.intentId} not found`);
     }
 
-    await this.assertOrderOwnership(intent.orderId, dto.userId);
+    // Only validate order ownership if orderId exists
+    if (intent.orderIdOrNull && dto.userId) {
+      await this.assertOrderOwnership(intent.orderIdOrNull, dto.userId);
+    }
 
     if (intent.isCaptured()) {
       throw new Error("Cannot void a captured payment; use refund instead");
@@ -317,7 +348,10 @@ export class PaymentService {
       throw new Error(`Payment intent ${intentId} not found`);
     }
 
-    await this.assertOrderOwnership(intent.orderId, userId);
+    // Only validate order ownership if orderId exists
+    if (intent.orderIdOrNull && userId) {
+      await this.assertOrderOwnership(intent.orderIdOrNull, userId);
+    }
 
     const transactions = await this.paymentTxnRepo.findByIntentId(intentId);
     return transactions.map((txn) => this.toPaymentTransactionDto(txn));
@@ -326,7 +360,8 @@ export class PaymentService {
   private toPaymentIntentDto(intent: PaymentIntent): PaymentIntentDto {
     return {
       intentId: intent.intentId.getValue(),
-      orderId: intent.orderId,
+      orderId: intent.orderIdOrNull ?? undefined,
+      checkoutId: intent.checkoutId ?? undefined,
       provider: intent.provider,
       amount: intent.amount.getAmount(),
       currency: intent.amount.getCurrency().getValue(),

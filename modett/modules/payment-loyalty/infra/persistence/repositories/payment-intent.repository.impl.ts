@@ -49,6 +49,14 @@ export class PaymentIntentRepository implements IPaymentIntentRepository {
     return records.map((record: any) => this.hydrate(record));
   }
 
+  async findByCheckoutId(checkoutId: string): Promise<PaymentIntent | null> {
+    const record = await (this.prisma as any).paymentIntent.findUnique({
+      where: { checkoutId },
+    });
+
+    return record ? this.hydrate(record) : null;
+  }
+
   async findByIdempotencyKey(
     idempotencyKey: string
   ): Promise<PaymentIntent | null> {
