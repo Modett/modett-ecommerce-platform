@@ -56,7 +56,6 @@ export default function CheckoutEmailPage() {
       // Navigate to shipping page
       router.push("/checkout/shipping");
     } catch (err) {
-      console.error("Failed to save email:", err);
       setError("Failed to save email. Please try again.");
     }
   };
@@ -121,7 +120,9 @@ export default function CheckoutEmailPage() {
                         className="text-sm font-medium text-white uppercase tracking-[3px]"
                         style={{ fontFamily: "Reddit Sans, sans-serif" }}
                       >
-                        {updateEmailMutation.isPending ? "SAVING..." : "CONTINUE"}
+                        {updateEmailMutation.isPending
+                          ? "SAVING..."
+                          : "CONTINUE"}
                       </span>
                     </button>
                   </div>
