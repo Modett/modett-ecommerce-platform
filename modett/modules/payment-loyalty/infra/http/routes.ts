@@ -12,6 +12,8 @@ import {
   LoyaltyAccountController,
   LoyaltyTransactionController,
 } from "./controllers";
+import { PayableIPGController } from "./controllers/payable-ipg.controller";
+import { isPayableIPGConfigured } from "../config/payable-ipg.config";
 import {
   PaymentService,
   BnplTransactionService,
@@ -24,6 +26,8 @@ import {
 import {
   optionalAuth,
   authenticateUser,
+  authenticateAdmin,
+  authenticateStaff,
 } from "../../../user-management/infra/http/middleware/auth.middleware";
 
 // Standard error responses for Swagger
@@ -220,9 +224,10 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/payment-intents/refund",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Refund a captured payment (full or partial)",
+        description:
+          "Refund a captured payment (full or partial) - Staff/Admin only",
         tags: ["Payment Intents"],
         summary: "Refund Payment",
         security: [{ bearerAuth: [] }],
@@ -264,9 +269,10 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/payment-intents/void",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Void an authorized (not yet captured) payment",
+        description:
+          "Void an authorized (not yet captured) payment - Staff/Admin only",
         tags: ["Payment Intents"],
         summary: "Void Payment",
         security: [{ bearerAuth: [] }],
@@ -445,10 +451,10 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/bnpl/:bnplId/:action",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
         description:
-          "Process a BNPL transaction (approve, reject, activate, complete, cancel)",
+          "Process a BNPL transaction (approve, reject, activate, complete, cancel) - Staff/Admin only",
         tags: ["BNPL"],
         summary: "Process BNPL",
         security: [{ bearerAuth: [] }],
@@ -543,10 +549,10 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/gift-cards",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description:
-          "Create a new gift card with initial balance and optional expiration",
+          "Create a new gift card with initial balance and optional expiration - Admin only",
         tags: ["Gift Cards"],
         summary: "Create Gift Card",
         security: [{ bearerAuth: [] }],
@@ -685,11 +691,13 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.get(
     "/gift-cards/:giftCardId/transactions",
     {
+      preHandler: authenticateAdmin,
       schema: {
         description:
-          "List all transactions (issue, redeem, refund) for a gift card",
+          "List all transactions (issue, redeem, refund) for a gift card - Admin only",
         tags: ["Gift Card Transactions"],
         summary: "List Gift Card Transactions",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["giftCardId"],
@@ -727,10 +735,10 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/promotions",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description:
-          "Create a new promotion with discount rules, validity period, and usage limits",
+          "Create a new promotion with discount rules, validity period, and usage limits - Admin only",
         tags: ["Promotions"],
         summary: "Create Promotion",
         security: [{ bearerAuth: [] }],
@@ -915,10 +923,12 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.get(
     "/promotions/:promoId/usage",
     {
+      preHandler: authenticateAdmin,
       schema: {
-        description: "List all usage records for a promotion",
+        description: "List all usage records for a promotion - Admin only",
         tags: ["Promotion Usage"],
         summary: "List Promotion Usage",
+        security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           required: ["promoId"],
@@ -1001,11 +1011,13 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.get(
     "/webhooks/events",
     {
+      preHandler: authenticateAdmin,
       schema: {
         description:
-          "List all received payment webhook events with optional filtering by provider or status",
+          "List all received payment webhook events with optional filtering by provider or status - Admin only",
         tags: ["Webhooks"],
         summary: "List Webhook Events",
+        security: [{ bearerAuth: [] }],
         querystring: {
           type: "object",
           properties: {
@@ -1060,10 +1072,10 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/loyalty/programs",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description:
-          "Create a new loyalty program with tier configuration and redemption rules",
+          "Create a new loyalty program with tier configuration and redemption rules - Admin only",
         tags: ["Loyalty Programs"],
         summary: "Create Loyalty Program",
         security: [{ bearerAuth: [] }],
@@ -1109,10 +1121,10 @@ export async function registerPaymentLoyaltyRoutes(
   fastify.post(
     "/loyalty/points/award",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
         description:
-          "Award loyalty points to a customer for a purchase or action",
+          "Award loyalty points to a customer for a purchase or action - Staff/Admin only",
         tags: ["Loyalty Transactions"],
         summary: "Award Loyalty Points",
         security: [{ bearerAuth: [] }],
@@ -1349,4 +1361,256 @@ export async function registerPaymentLoyaltyRoutes(
     },
     async (req: any, reply: any) => loyaltyTxnController.list(req, reply)
   );
+
+  // =============================================================================
+  // PAYABLE IPG ROUTES (Sri Lankan Payment Gateway)
+  // =============================================================================
+
+  // Only register PayableIPG routes if configured
+  if (isPayableIPGConfigured()) {
+    const payableIPGController = new PayableIPGController(
+      services.paymentService
+    );
+
+    // Create PayableIPG payment
+    fastify.post(
+      "/payments/payable-ipg/create",
+      {
+        preHandler: optionalAuth,
+        schema: {
+          description:
+            "Create a PayableIPG payment session and get redirect URL for checkout. Supports both authenticated users and guest checkout.",
+          tags: ["PayableIPG"],
+          summary: "Create PayableIPG Payment",
+          headers: {
+            type: "object",
+            properties: {
+              "X-Guest-Token": {
+                type: "string",
+                description: "Guest token for unauthenticated users",
+              },
+            },
+          },
+          body: {
+            type: "object",
+            required: ["orderId", "amount", "customerEmail", "customerName"],
+            properties: {
+              orderId: {
+                type: "string",
+                format: "uuid",
+                description: "Order ID",
+              },
+              amount: {
+                type: "number",
+                minimum: 0,
+                description: "Payment amount in LKR",
+              },
+              customerEmail: {
+                type: "string",
+                format: "email",
+                description: "Customer email",
+              },
+              customerName: { type: "string", description: "Customer name" },
+              customerPhone: {
+                type: "string",
+                description: "Customer phone number",
+              },
+              returnUrl: {
+                type: "string",
+                description: "URL to redirect after successful payment",
+              },
+              cancelUrl: {
+                type: "string",
+                description: "URL to redirect after cancelled payment",
+              },
+              description: {
+                type: "string",
+                description: "Payment description",
+              },
+            },
+          },
+          response: {
+            200: {
+              description: "Payment session created successfully",
+              type: "object",
+              properties: {
+                success: { type: "boolean", example: true },
+                data: {
+                  type: "object",
+                  properties: {
+                    intentId: { type: "string" },
+                    transactionId: { type: "string" },
+                    redirectUrl: { type: "string" },
+                    status: { type: "string" },
+                  },
+                },
+              },
+            },
+            400: errorResponses[400],
+            401: errorResponses[401],
+          },
+        },
+      },
+      async (req: any, reply: any) =>
+        payableIPGController.createPayment(req, reply)
+    );
+
+    // PayableIPG webhook handler (no authentication - validates signature)
+    fastify.post(
+      "/payments/payable-ipg/webhook",
+      {
+        schema: {
+          description:
+            "Handle PayableIPG webhook notifications for payment status updates",
+          tags: ["PayableIPG"],
+          summary: "PayableIPG Webhook Handler",
+          body: {
+            type: "object",
+            properties: {
+              event: { type: "string", description: "Event type" },
+              transactionId: { type: "string", description: "Transaction ID" },
+              orderId: { type: "string", description: "Order ID" },
+              status: { type: "string", description: "Payment status" },
+              amount: { type: "number", description: "Payment amount" },
+            },
+          },
+          response: {
+            200: {
+              description: "Webhook processed successfully",
+              type: "object",
+              properties: {
+                success: { type: "boolean", example: true },
+                message: { type: "string" },
+              },
+            },
+          },
+        },
+      },
+      async (req: any, reply: any) =>
+        payableIPGController.handleWebhook(req, reply)
+    );
+
+    // Verify PayableIPG payment
+    fastify.get(
+      "/payments/payable-ipg/verify/:transactionId",
+      {
+        preHandler: authenticateUser,
+        schema: {
+          description: "Verify PayableIPG payment status",
+          tags: ["PayableIPG"],
+          summary: "Verify Payment",
+          security: [{ bearerAuth: [] }],
+          params: {
+            type: "object",
+            required: ["transactionId"],
+            properties: {
+              transactionId: {
+                type: "string",
+                description: "PayableIPG transaction ID",
+              },
+            },
+          },
+          response: {
+            200: {
+              description: "Payment status retrieved successfully",
+              type: "object",
+              properties: {
+                success: { type: "boolean" },
+                data: { type: "object", additionalProperties: true },
+              },
+            },
+            401: errorResponses[401],
+          },
+        },
+      },
+      async (req: any, reply: any) =>
+        payableIPGController.verifyPayment(req, reply)
+    );
+
+    // Refund PayableIPG payment
+    fastify.post(
+      "/payments/payable-ipg/refund",
+      {
+        preHandler: authenticateStaff,
+        schema: {
+          description:
+            "Process refund for PayableIPG payment - Staff/Admin only",
+          tags: ["PayableIPG"],
+          summary: "Refund Payment",
+          security: [{ bearerAuth: [] }],
+          body: {
+            type: "object",
+            required: ["transactionId"],
+            properties: {
+              transactionId: {
+                type: "string",
+                description: "PayableIPG transaction ID",
+              },
+              amount: {
+                type: "number",
+                minimum: 0,
+                description:
+                  "Refund amount (optional, full refund if not provided)",
+              },
+              reason: { type: "string", description: "Refund reason" },
+            },
+          },
+          response: {
+            200: {
+              description: "Refund processed successfully",
+              type: "object",
+              properties: {
+                success: { type: "boolean" },
+                data: { type: "object", additionalProperties: true },
+              },
+            },
+            400: errorResponses[400],
+            401: errorResponses[401],
+          },
+        },
+      },
+      async (req: any, reply: any) =>
+        payableIPGController.refundPayment(req, reply)
+    );
+
+    // Get supported card types
+    fastify.get(
+      "/payments/payable-ipg/card-types",
+      {
+        schema: {
+          description:
+            "Get supported card types and recurring payment capabilities",
+          tags: ["PayableIPG"],
+          summary: "Get Card Types",
+          response: {
+            200: {
+              description: "Card types retrieved successfully",
+              type: "object",
+              properties: {
+                success: { type: "boolean" },
+                data: {
+                  type: "object",
+                  properties: {
+                    cardTypes: {
+                      type: "array",
+                      items: { type: "string" },
+                    },
+                    recurringSupport: { type: "object" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      async (req: any, reply: any) =>
+        payableIPGController.getCardTypes(req, reply)
+    );
+
+    fastify.log.info("PayableIPG payment routes registered successfully");
+  } else {
+    fastify.log.warn(
+      "PayableIPG not configured - skipping PayableIPG routes registration"
+    );
+  }
 }

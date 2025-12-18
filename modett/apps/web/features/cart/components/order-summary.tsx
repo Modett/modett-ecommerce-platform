@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Package, Undo2 } from "lucide-react";
 import {
@@ -24,10 +25,14 @@ export function OrderSummary({
 }: OrderSummaryProps) {
   const [discountCode, setDiscountCode] = useState("");
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const router = useRouter();
 
   const handleApplyDiscount = () => {
     // TODO: Implement discount code logic
-    console.log("Applying discount code:", discountCode);
+  };
+
+  const handleProceedToCheckout = () => {
+    router.push("/checkout");
   };
 
   return (
@@ -146,6 +151,7 @@ export function OrderSummary({
 
       {/* Proceed Button */}
       <Button
+        onClick={handleProceedToCheckout}
         className={`w-full h-[${DIMENSIONS.button.proceedHeight}] ${COMMON_CLASSES.primaryButton} rounded-none text-[14px] font-medium mb-[32px] tracking-[2px]`}
         style={TEXT_STYLES.button}
       >

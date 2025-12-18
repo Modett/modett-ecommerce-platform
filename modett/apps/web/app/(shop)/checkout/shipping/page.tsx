@@ -1,37 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
-import { useCart } from "@/features/cart/queries";
-import { useCartId } from "@/features/cart/hooks/use-cart-id";
-import {
-  CheckoutProgressBar,
-  CartSummary,
-  CheckoutHelpSection,
-  CompletedCheckoutStep,
-  ActiveStepHeader,
-  FutureStep,
-  CheckoutButton,
-  CustomCheckbox,
-  LoadingState,
-} from "@/features/checkout/components";
-import { PageContainer } from "@/components/layout/page-container";
-import { Check } from "lucide-react";
+import { useCart, useUpdateCartShipping } from "@/features/cart/queries";
+import { getStoredCartId } from "@/features/cart/utils";
+import { CheckoutProgressBar } from "@/features/checkout/components/checkout-progress-bar";
+import { CartSummary } from "@/features/checkout/components/cart-summary";
+import { CheckoutHelpSection } from "@/features/checkout/components/checkout-help-section";
+import { CompletedCheckoutStep } from "@/features/checkout/components/completed-checkout-step";
+import { ActiveStepHeader } from "@/features/checkout/components/active-step-header";
+import { FutureStep } from "@/features/checkout/components/future-step";
+import { CustomCheckbox } from "@/features/checkout/components/custom-checkbox";
+import { LoadingState } from "@/features/checkout/components/loading-state";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutShippingPage() {
-  const [shippingMethod, setShippingMethod] = useState<"home" | "boutique">("home");
-  const [shippingOption, setShippingOption] = useState<"colombo" | "suburbs">("colombo");
+  const [cartId, setCartId] = useState<string | null>(null);
+  const [shippingMethod, setShippingMethod] = useState<"home" | "boutique">(
+    "home"
+  );
+  const [shippingOption, setShippingOption] = useState<"colombo" | "suburbs">(
+    "colombo"
+  );
   const [isGift, setIsGift] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const cartId = useCartId();
+
+  useEffect(() => {
+    const storedCartId = getStoredCartId();
+    if (storedCartId) {
+      setCartId(storedCartId);
+    }
+  }, []);
+
   const { data: cart, isLoading } = useCart(cartId);
+  const updateShippingMutation = useUpdateCartShipping();
 
-  const handleContinue = (e: React.FormEvent) => {
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    // Priority: Cart email (from backend) > Session storage > Default
+    if (cart?.email) {
+      setEmail(cart.email);
+    } else {
+      const storedEmail = sessionStorage.getItem("checkout_email");
+      if (storedEmail) {
+        setEmail(storedEmail);
+      }
+    }
+  }, [cart?.email]);
+
+  const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Save shipping information
 
-    router.push("/checkout/information");
+    if (!cartId) {
+      setError("Cart not found");
+      return;
+    }
+
+    try {
+      setError(null);
+
+      // Save shipping information to database
+      await updateShippingMutation.mutateAsync({
+        cartId,
+        shippingData: {
+          shippingMethod,
+          shippingOption:
+            shippingMethod === "home" ? shippingOption : undefined,
+          isGift,
+        },
+      });
+
+      // Navigate to information page
+      router.push("/checkout/information");
+    } catch (err) {
+      setError("Failed to save shipping information. Please try again.");
+    }
   };
 
   if (isLoading) {
@@ -39,8 +85,11 @@ export default function CheckoutShippingPage() {
   }
 
   return (
-    <PageContainer fullHeight withBackground asMain className="py-4 md:py-6 lg:py-8">
-      <CheckoutProgressBar currentStep={2} />
+    <main className={`w-full min-h-screen ${COMMON_CLASSES.pageBg}`}>
+      <div
+        className={`w-full max-w-[1440px] mx-auto px-4 md:px-8 lg:px-20 py-4 md:py-6 lg:py-8`}
+      >
+        <CheckoutProgressBar currentStep={2} />
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 md:gap-6 lg:gap-10 min-h-[750px]">
           <div className="space-y-2">
@@ -54,7 +103,7 @@ export default function CheckoutShippingPage() {
                 className="text-[12px] text-[#3E5460] font-normal leading-[18px] tracking-[0px]"
                 style={TEXT_STYLES.bodyTeal}
               >
-                The e-mail address entered is: test@gmail.com
+                The e-mail address entered is: {email}
               </p>
             </CompletedCheckoutStep>
 
@@ -188,11 +237,31 @@ export default function CheckoutShippingPage() {
                           onChange={(e) => setIsGift(e.target.checked)}
                           containerClassName="items-start md:items-center"
                           labelClassName="text-[11px] md:text-xs text-[#3E5460] pl-3 md:pl-6 lg:pl-[28px] flex-1 leading-[16px] md:leading-[18px]"
+                          disabled={updateShippingMutation.isPending}
                         />
                       </div>
 
+                      {error && (
+                        <p className="text-red-600 text-sm text-center">
+                          {error}
+                        </p>
+                      )}
+
                       <div className="flex justify-center">
-                        <CheckoutButton />
+                        <button
+                          type="submit"
+                          disabled={updateShippingMutation.isPending}
+                          className="w-[300px] h-[50px] bg-[#232D35] border border-[#232D35] flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span
+                            className="text-sm font-medium text-white uppercase tracking-[3px]"
+                            style={{ fontFamily: "Reddit Sans, sans-serif" }}
+                          >
+                            {updateShippingMutation.isPending
+                              ? "SAVING..."
+                              : "CONTINUE"}
+                          </span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -213,6 +282,7 @@ export default function CheckoutShippingPage() {
             <CartSummary cart={cart} />
           </div>
         </div>
-    </PageContainer>
+      </div>
+    </main>
   );
 }

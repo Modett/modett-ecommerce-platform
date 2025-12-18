@@ -64,4 +64,28 @@ export interface Cart {
   email?: string;
   shipping_address?: Address;
   billing_address?: Address;
+
+  // Individual address fields
+  shippingMethod?: string;
+  shippingOption?: string;
+  isGift?: boolean;
+  shippingFirstName?: string;
+  shippingLastName?: string;
+  shippingAddress1?: string;
+  shippingAddress2?: string;
+  shippingCity?: string;
+  shippingProvince?: string;
+  shippingPostalCode?: string;
+  shippingCountryCode?: string;
+  shippingPhone?: string;
+  billingFirstName?: string;
+  billingLastName?: string;
+  billingAddress1?: string;
+  billingAddress2?: string;
+  billingCity?: string;
+  billingProvince?: string;
+  billingPostalCode?: string;
+  billingCountryCode?: string;
+  billingPhone?: string;
+  sameAddressForBilling?: boolean;
 }

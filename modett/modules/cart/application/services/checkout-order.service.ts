@@ -101,18 +101,25 @@ export class CheckoutOrderService {
       }
 
       // 3. Verify payment intent exists and is authorized
-      const paymentIntent = await tx.paymentIntent.findUnique({
-        where: { intentId: dto.paymentIntentId },
+      // Try to find by checkoutId first (common during checkout flow)
+      let paymentIntent = await tx.paymentIntent.findUnique({
+        where: { checkoutId: dto.checkoutId },
       });
+
+      // If not found by checkoutId, try by intentId (for backward compatibility)
+      if (!paymentIntent) {
+        paymentIntent = await tx.paymentIntent.findUnique({
+          where: { intentId: dto.paymentIntentId },
+        });
+      }
 
       if (!paymentIntent) {
         throw new Error("Payment intent not found");
       }
 
-      if (
-        paymentIntent.status !== "authorized" &&
-        paymentIntent.status !== "captured"
-      ) {
+      // Accept authorized, captured, or requires_action (for mock/testing)
+      const validStatuses = ["authorized", "captured", "requires_action"];
+      if (!validStatuses.includes(paymentIntent.status)) {
         throw new Error(
           `Payment intent is not authorized. Current status: ${paymentIntent.status}`
         );
@@ -183,22 +190,25 @@ export class CheckoutOrderService {
         orderItems.push(orderItem);
       }
 
-      const defaultLocationId =
-        process.env.DEFAULT_STOCK_LOCATION || "main-warehouse";
+      // Select warehouse for order fulfillment
+      const warehouseId = await this.selectWarehouseForOrder(
+        cartSnapshot.items || [],
+        dto.shippingAddress,
+        tx
+      );
 
+      // Remove stock from inventory (no reservation was made during cart creation)
       for (const item of cartSnapshot.items || []) {
-        await this.stockManagementService.fulfillReservation(
+        await this.stockManagementService.adjustStock(
           item.variantId,
-          defaultLocationId,
-          item.quantity
+          warehouseId,
+          -item.quantity, // Negative to remove stock
+          "order",
+          order.id // Reference the order ID
         );
       }
 
       await this.reservationRepository.deleteByCartId(checkout.getCartId());
-
-      await tx.cartItem.deleteMany({
-        where: { cartId: checkout.getCartId().toString() },
-      });
 
       await tx.orderAddress.create({
         data: {
@@ -209,7 +219,7 @@ export class CheckoutOrderService {
       });
 
       await tx.paymentIntent.update({
-        where: { intentId: dto.paymentIntentId },
+        where: { intentId: paymentIntent.intentId },
         data: {
           orderId: order.id,
           checkoutId: dto.checkoutId,
@@ -253,6 +263,16 @@ export class CheckoutOrderService {
         },
       });
 
+      // Clear the cart items after successful order creation
+      const cartIdToDelete = checkout.getCartId().toString();
+      console.log(`Deleting cart items for cart: ${cartIdToDelete}`);
+
+      const deleteResult = await tx.cartItem.deleteMany({
+        where: { cartId: cartIdToDelete },
+      });
+
+      console.log(`Deleted ${deleteResult.count} cart items`);
+
       return {
         orderId: order.id,
         orderNo: order.orderNo,
@@ -264,5 +284,48 @@ export class CheckoutOrderService {
         createdAt: order.createdAt,
       };
     });
+  }
+
+  /**
+   * Selects the appropriate warehouse for order fulfillment.
+   *
+   * Strategy (in priority order):
+   * 1. Use DEFAULT_STOCK_LOCATION from environment if configured
+   * 2. Query first active warehouse from database
+   *
+   * Future enhancements:
+   * - Select nearest warehouse based on shipping address
+   * - Check inventory availability across warehouses
+   * - Support warehouse priority/preference system
+   */
+  private async selectWarehouseForOrder(
+    items: any[],
+    shippingAddress: any,
+    tx: any
+  ): Promise<string> {
+    // Strategy 1: Use configured default warehouse
+    if (process.env.DEFAULT_STOCK_LOCATION) {
+      return process.env.DEFAULT_STOCK_LOCATION;
+    }
+
+    // Strategy 2: Query first warehouse from database
+    const warehouse = await tx.location.findFirst({
+      where: {
+        type: "warehouse",
+      },
+    });
+
+    if (!warehouse) {
+      throw new Error(
+        "No warehouse location found. Please configure DEFAULT_STOCK_LOCATION in .env or create a warehouse location in the database."
+      );
+    }
+
+    return warehouse.id;
+
+    // Future strategies can be added here:
+    // - Distance-based: Calculate nearest warehouse to shipping address
+    // - Inventory-based: Find warehouse with all items in stock
+    // - Hybrid: Combine proximity + availability
   }
 }

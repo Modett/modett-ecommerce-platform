@@ -17,6 +17,7 @@ export interface AuthResult {
   user: {
     id: string;
     email: string;
+    role: string;
     isGuest: boolean;
     emailVerified: boolean;
     phoneVerified: boolean;
@@ -27,6 +28,7 @@ export interface AuthResult {
 export interface TokenPayload {
   userId: string;
   email: string;
+  role: string;
   type: 'access' | 'refresh';
   iat?: number;
   exp?: number;
@@ -404,6 +406,7 @@ export class AuthenticationService {
       user: {
         id: user.getId().getValue(),
         email: user.getEmail().getValue(),
+        role: user.getRole(),
         isGuest: user.getIsGuest(),
         emailVerified: user.isEmailVerified(),
         phoneVerified: user.isPhoneVerified(),
@@ -416,6 +419,7 @@ export class AuthenticationService {
     const payload: TokenPayload = {
       userId: user.getId().getValue(),
       email: user.getEmail().getValue(),
+      role: user.getRole(),
       type: 'access',
     };
 
@@ -435,6 +439,7 @@ export class AuthenticationService {
     const payload: TokenPayload = {
       userId: user.getId().getValue(),
       email: user.getEmail().getValue(),
+      role: user.getRole(),
       type: 'refresh',
     };
 

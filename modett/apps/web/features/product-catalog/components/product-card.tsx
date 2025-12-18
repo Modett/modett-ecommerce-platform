@@ -143,21 +143,20 @@ export function ProductCard({
                 priority
               />
             </Link>
-            {variant === "home" && (
-              <button
-                onClick={handleWishlistToggle}
-                className={`absolute top-3 right-3 z-20 w-[32px] md:w-[32px] lg:w-[32px] h-[32px] md:h-[32px] lg:h-[32px] flex items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95 bg-transparent ${isTogglingWishlist ? "opacity-50 cursor-wait" : ""}`}
-              >
-                <Heart
-                  className={`w-[20px] h-[20px] transition-colors ${
-                    isWishlisted
-                      ? "fill-[#232D35] text-[#232D35]"
-                      : "text-white hover:text-gray-200"
-                  }`}
-                  strokeWidth={1.5}
-                />
-              </button>
-            )}
+            {/* Wishlist button for all variants */}
+            <button
+              onClick={handleWishlistToggle}
+              className={`absolute top-3 right-3 z-20 w-[32px] md:w-[32px] lg:w-[32px] h-[32px] md:h-[32px] lg:h-[32px] flex items-center justify-center rounded-full transition-transform hover:scale-110 active:scale-95 bg-transparent ${isTogglingWishlist ? "opacity-50 cursor-wait" : ""}`}
+            >
+              <Heart
+                className={`w-[20px] h-[20px] transition-colors ${
+                  isWishlisted
+                    ? "fill-[#232D35] text-[#232D35]"
+                    : "text-white hover:text-gray-200"
+                }`}
+                strokeWidth={1.5}
+              />
+            </button>
 
             {/* Quick Add Overlay */}
             <div

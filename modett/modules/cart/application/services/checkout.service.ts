@@ -1,6 +1,9 @@
 import { CheckoutRepository } from "../../domain/repositories/checkout.repository";
 import { CartRepository } from "../../domain/repositories/cart.repository";
-import { Checkout, CreateCheckoutData } from "../../domain/entities/checkout.entity";
+import {
+  Checkout,
+  CreateCheckoutData,
+} from "../../domain/entities/checkout.entity";
 import { CheckoutId } from "../../domain/value-objects/checkout-id.vo";
 import { CartId } from "../../domain/value-objects/cart-id.vo";
 import { UserId } from "../../../user-management/domain/value-objects/user-id.vo";
@@ -84,10 +87,20 @@ export class CheckoutService {
     const checkout = Checkout.create(checkoutData);
     await this.checkoutRepository.save(checkout);
 
-    return this.mapCheckoutToDto(checkout);
+    // Fetch the checkout back to get the actual ID (in case it was upserted)
+    const savedCheckout = await this.checkoutRepository.findByCartId(cartId);
+    if (!savedCheckout) {
+      throw new Error("Failed to create checkout");
+    }
+
+    return this.mapCheckoutToDto(savedCheckout);
   }
 
-  async getCheckout(checkoutId: string, userId?: string, guestToken?: string): Promise<CheckoutDto | null> {
+  async getCheckout(
+    checkoutId: string,
+    userId?: string,
+    guestToken?: string
+  ): Promise<CheckoutDto | null> {
     const id = CheckoutId.fromString(checkoutId);
     const checkout = await this.checkoutRepository.findById(id);
 
@@ -120,7 +133,10 @@ export class CheckoutService {
       throw new Error("Checkout does not belong to user");
     }
 
-    if (dto.guestToken && checkout.getGuestToken()?.toString() !== dto.guestToken) {
+    if (
+      dto.guestToken &&
+      checkout.getGuestToken()?.toString() !== dto.guestToken
+    ) {
       throw new Error("Checkout does not belong to guest");
     }
 
@@ -141,7 +157,11 @@ export class CheckoutService {
     return this.mapCheckoutToDto(checkout);
   }
 
-  async cancelCheckout(checkoutId: string, userId?: string, guestToken?: string): Promise<CheckoutDto> {
+  async cancelCheckout(
+    checkoutId: string,
+    userId?: string,
+    guestToken?: string
+  ): Promise<CheckoutDto> {
     const id = CheckoutId.fromString(checkoutId);
     const checkout = await this.checkoutRepository.findById(id);
 

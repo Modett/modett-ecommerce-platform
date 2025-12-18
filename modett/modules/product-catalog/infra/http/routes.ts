@@ -24,6 +24,7 @@ import {
 import {
   authenticateUser,
   authenticateAdmin,
+  authenticateStaff,
   optionalAuth,
 } from "../../../user-management/infra/http/middleware/auth.middleware";
 import { PrismaClient } from "@prisma/client";
@@ -169,7 +170,10 @@ export async function registerProductCatalogRoutes(
                               size: { type: "string", nullable: true },
                               color: { type: "string", nullable: true },
                               price: { type: "string" },
-                              compareAtPrice: { type: "string", nullable: true },
+                              compareAtPrice: {
+                                type: "string",
+                                nullable: true,
+                              },
                               inventory: { type: "integer" },
                             },
                           },
@@ -457,7 +461,7 @@ export async function registerProductCatalogRoutes(
   fastify.put(
     "/products/:productId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Update an existing product",
         tags: ["Products"],
@@ -731,7 +735,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/categories",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin,
       schema: {
         description: "Create a new category",
         tags: ["Categories"],
@@ -933,7 +937,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/products/:productId/variants",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Create a new variant for a product",
         tags: ["Variants"],
@@ -985,7 +989,7 @@ export async function registerProductCatalogRoutes(
   fastify.put(
     "/variants/:id",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Update an existing variant",
         tags: ["Variants"],
@@ -1111,7 +1115,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/media",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Create a new media asset",
         tags: ["Media"],
@@ -1161,7 +1165,7 @@ export async function registerProductCatalogRoutes(
   fastify.put(
     "/media/:id",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Update an existing media asset",
         tags: ["Media"],
@@ -1297,7 +1301,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/products/:productId/media",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Add/attach a media asset to a product",
         tags: ["Product Media"],
@@ -1372,7 +1376,7 @@ export async function registerProductCatalogRoutes(
   fastify.delete(
     "/products/:productId/media/:assetId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Remove a media asset from a product",
         tags: ["Product Media"],
@@ -1416,7 +1420,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/products/:productId/media/cover",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Set a media asset as the product cover/primary image",
         tags: ["Product Media"],
@@ -1470,7 +1474,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/products/:productId/media/reorder",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Reorder media assets for a product",
         tags: ["Product Media"],
@@ -1613,7 +1617,7 @@ export async function registerProductCatalogRoutes(
   fastify.get(
     "/tags/statistics",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Get statistics about product tags",
         tags: ["Product Tags"],
@@ -1755,7 +1759,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/tags",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Create a new product tag",
         tags: ["Product Tags"],
@@ -1817,7 +1821,7 @@ export async function registerProductCatalogRoutes(
   fastify.put(
     "/tags/:id",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Update an existing product tag",
         tags: ["Product Tags"],
@@ -1918,7 +1922,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/tags/bulk",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Create multiple product tags in bulk",
         tags: ["Product Tags"],
@@ -2101,7 +2105,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/products/:productId/tags",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Associate tags with a product",
         tags: ["Product Tag Associations"],
@@ -2156,7 +2160,7 @@ export async function registerProductCatalogRoutes(
   fastify.delete(
     "/products/:productId/tags/:tagId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Remove a tag from a product",
         tags: ["Product Tag Associations"],
@@ -2346,7 +2350,7 @@ export async function registerProductCatalogRoutes(
   fastify.get(
     "/size-guides/statistics",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Get statistics about size guides",
         tags: ["Size Guides"],
@@ -2480,7 +2484,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/size-guides/bulk",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Create multiple size guides in bulk",
         tags: ["Size Guides"],
@@ -2619,7 +2623,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/size-guides",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Create a new size guide",
         tags: ["Size Guides"],
@@ -2675,7 +2679,7 @@ export async function registerProductCatalogRoutes(
   fastify.put(
     "/size-guides/:id",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Update an existing size guide",
         tags: ["Size Guides"],
@@ -2842,7 +2846,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/editorial-looks",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Create a new editorial look",
         tags: ["Editorial Looks"],
@@ -2873,7 +2877,7 @@ export async function registerProductCatalogRoutes(
   fastify.put(
     "/editorial-looks/:id",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Update an existing editorial look",
         tags: ["Editorial Looks"],
@@ -2934,7 +2938,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/editorial-looks/:id/publish",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Publish an editorial look immediately",
         tags: ["Editorial Looks"],
@@ -2958,7 +2962,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/editorial-looks/:id/unpublish",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Unpublish an editorial look",
         tags: ["Editorial Looks"],
@@ -2982,7 +2986,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/editorial-looks/:id/schedule",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Schedule an editorial look for future publication",
         tags: ["Editorial Looks"],
@@ -3013,7 +3017,7 @@ export async function registerProductCatalogRoutes(
   fastify.get(
     "/editorial-looks/ready-to-publish",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Get editorial looks ready to be published",
         tags: ["Editorial Looks"],
@@ -3047,7 +3051,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/editorial-looks/:id/hero-image",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Set hero image for an editorial look",
         tags: ["Editorial Looks"],
@@ -3076,7 +3080,7 @@ export async function registerProductCatalogRoutes(
   fastify.delete(
     "/editorial-looks/:id/hero-image",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Remove hero image from an editorial look",
         tags: ["Editorial Looks"],
@@ -3118,7 +3122,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/editorial-looks/:id/products/:productId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Add a product to an editorial look",
         tags: ["Editorial Looks"],
@@ -3143,7 +3147,7 @@ export async function registerProductCatalogRoutes(
   fastify.delete(
     "/editorial-looks/:id/products/:productId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Remove a product from an editorial look",
         tags: ["Editorial Looks"],
@@ -3168,7 +3172,7 @@ export async function registerProductCatalogRoutes(
   fastify.put(
     "/editorial-looks/:id/products",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description:
           "Set all products for an editorial look (replaces existing)",
@@ -3284,7 +3288,7 @@ export async function registerProductCatalogRoutes(
   fastify.patch(
     "/editorial-looks/:id/story",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Update story content for an editorial look",
         tags: ["Editorial Looks"],
@@ -3315,7 +3319,7 @@ export async function registerProductCatalogRoutes(
   fastify.delete(
     "/editorial-looks/:id/story",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Clear story content from an editorial look",
         tags: ["Editorial Looks"],
@@ -3339,7 +3343,7 @@ export async function registerProductCatalogRoutes(
   fastify.get(
     "/editorial-looks/statistics",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Get statistics about editorial looks",
         tags: ["Editorial Looks"],
@@ -3375,7 +3379,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/editorial-looks/bulk",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Create multiple editorial looks at once",
         tags: ["Editorial Looks"],
@@ -3446,7 +3450,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/editorial-looks/bulk-publish",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Publish multiple editorial looks at once",
         tags: ["Editorial Looks"],
@@ -3475,7 +3479,7 @@ export async function registerProductCatalogRoutes(
   fastify.get(
     "/editorial-looks/:id/validate",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Validate an editorial look for publication",
         tags: ["Editorial Looks"],
@@ -3499,7 +3503,7 @@ export async function registerProductCatalogRoutes(
   fastify.post(
     "/editorial-looks/:id/duplicate",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateAdmin as any,
       schema: {
         description: "Duplicate an editorial look with a new title",
         tags: ["Editorial Looks"],

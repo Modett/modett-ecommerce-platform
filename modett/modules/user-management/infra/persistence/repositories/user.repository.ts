@@ -1,6 +1,6 @@
-import { PrismaClient, UserStatus as PrismaUserStatus } from "@prisma/client";
+import { PrismaClient, UserStatus as PrismaUserStatus, UserRole as PrismaUserRole } from "@prisma/client";
 import { IUserRepository } from "../../../domain/repositories/iuser.repository";
-import { User, UserStatus } from "../../../domain/entities/user.entity";
+import { User, UserStatus, UserRole } from "../../../domain/entities/user.entity";
 import { UserId } from "../../../domain/value-objects/user-id.vo";
 import { Email } from "../../../domain/value-objects/email.vo";
 
@@ -40,6 +40,7 @@ export class UserRepository implements IUserRepository {
       email: userData.email,
       password_hash: userData.passwordHash,
       phone: userData.phone,
+      role: this.mapRoleFromPrisma(userData.role),
       status: this.mapStatusFromPrisma(userData.status),
       email_verified: userData.emailVerified,
       phone_verified: userData.phoneVerified,
@@ -63,6 +64,7 @@ export class UserRepository implements IUserRepository {
       email: userData.email,
       password_hash: userData.passwordHash,
       phone: userData.phone,
+      role: this.mapRoleFromPrisma(userData.role),
       status: this.mapStatusFromPrisma(userData.status),
       email_verified: userData.emailVerified,
       phone_verified: userData.phoneVerified,
@@ -110,6 +112,7 @@ export class UserRepository implements IUserRepository {
       email: userData.email,
       password_hash: userData.passwordHash,
       phone: userData.phone,
+      role: this.mapRoleFromPrisma(userData.role),
       status: this.mapStatusFromPrisma(userData.status),
       email_verified: userData.emailVerified,
       phone_verified: userData.phoneVerified,
@@ -127,21 +130,24 @@ export class UserRepository implements IUserRepository {
       },
       take: limit,
       skip: offset,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
-    return users.map(userData => User.fromDatabaseRow({
-      user_id: userData.id,
-      email: userData.email,
-      password_hash: userData.passwordHash,
-      phone: userData.phone,
-      status: this.mapStatusFromPrisma(userData.status),
-      email_verified: userData.emailVerified,
-      phone_verified: userData.phoneVerified,
-      is_guest: userData.isGuest,
-      created_at: userData.createdAt,
-      updated_at: userData.updatedAt,
-    }));
+    return users.map((userData) =>
+      User.fromDatabaseRow({
+        user_id: userData.id,
+        email: userData.email,
+        password_hash: userData.passwordHash,
+        phone: userData.phone,
+        role: this.mapRoleFromPrisma(userData.role),
+        status: this.mapStatusFromPrisma(userData.status),
+        email_verified: userData.emailVerified,
+        phone_verified: userData.phoneVerified,
+        is_guest: userData.isGuest,
+        created_at: userData.createdAt,
+        updated_at: userData.updatedAt,
+      })
+    );
   }
 
   async findGuestUsers(limit?: number, offset?: number): Promise<User[]> {
@@ -149,21 +155,24 @@ export class UserRepository implements IUserRepository {
       where: { isGuest: true },
       take: limit,
       skip: offset,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
-    return users.map(userData => User.fromDatabaseRow({
-      user_id: userData.id,
-      email: userData.email,
-      password_hash: userData.passwordHash,
-      phone: userData.phone,
-      status: this.mapStatusFromPrisma(userData.status),
-      email_verified: userData.emailVerified,
-      phone_verified: userData.phoneVerified,
-      is_guest: userData.isGuest,
-      created_at: userData.createdAt,
-      updated_at: userData.updatedAt,
-    }));
+    return users.map((userData) =>
+      User.fromDatabaseRow({
+        user_id: userData.id,
+        email: userData.email,
+        password_hash: userData.passwordHash,
+        phone: userData.phone,
+        role: this.mapRoleFromPrisma(userData.role),
+        status: this.mapStatusFromPrisma(userData.status),
+        email_verified: userData.emailVerified,
+        phone_verified: userData.phoneVerified,
+        is_guest: userData.isGuest,
+        created_at: userData.createdAt,
+        updated_at: userData.updatedAt,
+      })
+    );
   }
 
   async findUnverifiedUsers(limit?: number, offset?: number): Promise<User[]> {
@@ -174,21 +183,24 @@ export class UserRepository implements IUserRepository {
       },
       take: limit,
       skip: offset,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
-    return users.map(userData => User.fromDatabaseRow({
-      user_id: userData.id,
-      email: userData.email,
-      password_hash: userData.passwordHash,
-      phone: userData.phone,
-      status: this.mapStatusFromPrisma(userData.status),
-      email_verified: userData.emailVerified,
-      phone_verified: userData.phoneVerified,
-      is_guest: userData.isGuest,
-      created_at: userData.createdAt,
-      updated_at: userData.updatedAt,
-    }));
+    return users.map((userData) =>
+      User.fromDatabaseRow({
+        user_id: userData.id,
+        email: userData.email,
+        password_hash: userData.passwordHash,
+        phone: userData.phone,
+        role: this.mapRoleFromPrisma(userData.role),
+        status: this.mapStatusFromPrisma(userData.status),
+        email_verified: userData.emailVerified,
+        phone_verified: userData.phoneVerified,
+        is_guest: userData.isGuest,
+        created_at: userData.createdAt,
+        updated_at: userData.updatedAt,
+      })
+    );
   }
 
   async existsByEmail(email: Email): Promise<boolean> {
@@ -221,24 +233,27 @@ export class UserRepository implements IUserRepository {
   }
 
   async findByIds(ids: UserId[]): Promise<User[]> {
-    const userIds = ids.map(id => id.getValue());
+    const userIds = ids.map((id) => id.getValue());
 
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
     });
 
-    return users.map(userData => User.fromDatabaseRow({
-      user_id: userData.id,
-      email: userData.email,
-      password_hash: userData.passwordHash,
-      phone: userData.phone,
-      status: this.mapStatusFromPrisma(userData.status),
-      email_verified: userData.emailVerified,
-      phone_verified: userData.phoneVerified,
-      is_guest: userData.isGuest,
-      created_at: userData.createdAt,
-      updated_at: userData.updatedAt,
-    }));
+    return users.map((userData) =>
+      User.fromDatabaseRow({
+        user_id: userData.id,
+        email: userData.email,
+        password_hash: userData.passwordHash,
+        phone: userData.phone,
+        role: this.mapRoleFromPrisma(userData.role),
+        status: this.mapStatusFromPrisma(userData.status),
+        email_verified: userData.emailVerified,
+        phone_verified: userData.phoneVerified,
+        is_guest: userData.isGuest,
+        created_at: userData.createdAt,
+        updated_at: userData.updatedAt,
+      })
+    );
   }
 
   async deleteInactiveSince(date: Date): Promise<number> {
@@ -275,6 +290,23 @@ export class UserRepository implements IUserRepository {
         return UserStatus.BLOCKED;
       default:
         throw new Error(`Unknown Prisma user status: ${status}`);
+    }
+  }
+
+  private mapRoleFromPrisma(role: PrismaUserRole): UserRole {
+    switch (role) {
+      case PrismaUserRole.GUEST:
+        return UserRole.GUEST;
+      case PrismaUserRole.CUSTOMER:
+        return UserRole.CUSTOMER;
+      case PrismaUserRole.STAFF:
+        return UserRole.STAFF;
+      case PrismaUserRole.VENDOR:
+        return UserRole.VENDOR;
+      case PrismaUserRole.ADMIN:
+        return UserRole.ADMIN;
+      default:
+        throw new Error(`Unknown Prisma user role: ${role}`);
     }
   }
 }

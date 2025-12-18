@@ -6,7 +6,7 @@ import {
   PaymentWebhookEvent,
   WebhookEventData,
 } from "../../domain/entities/payment-webhook-event.entity.js";
-import crypto from "crypto";
+import * as crypto from "crypto";
 
 export interface CreateWebhookEventDto {
   provider: string;

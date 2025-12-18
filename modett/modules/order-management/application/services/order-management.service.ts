@@ -1,3 +1,4 @@
+import { PrismaClient } from "@prisma/client";
 import {
   IOrderRepository,
   OrderQueryOptions,
@@ -43,6 +44,7 @@ export interface CreateOrderData {
 
 export class OrderManagementService {
   constructor(
+    private readonly prisma: PrismaClient,
     private readonly orderRepository: IOrderRepository,
     private readonly orderAddressRepository: IOrderAddressRepository,
     private readonly orderItemRepository: IOrderItemRepository,
@@ -144,7 +146,7 @@ export class OrderManagementService {
       })
     );
 
-    const defaultLocationId = data.locationId || "main-warehouse";
+    const defaultLocationId = data.locationId || await this.getDefaultWarehouseId();
     for (const item of orderItems) {
       const stock = await this.stockManagementService.getStock(
         item.variantId,
@@ -172,11 +174,14 @@ export class OrderManagementService {
 
     await this.orderRepository.save(order);
 
+    // Remove stock from inventory (no reservation was made during direct order creation)
     for (const item of orderItems) {
-      await this.stockManagementService.fulfillReservation(
+      await this.stockManagementService.adjustStock(
         item.variantId,
         defaultLocationId,
-        item.quantity
+        -item.quantity, // Negative to remove stock
+        "order",
+        order.getOrderId().getValue() // Reference the order ID
       );
     }
 
@@ -407,7 +412,7 @@ export class OrderManagementService {
     order.markAsPaid();
 
     const orderItems = order.getItems();
-    const defaultLocationId = "main-warehouse"; // Default location for stock reservation
+    const defaultLocationId = await this.getDefaultWarehouseId();
 
     for (const item of orderItems) {
       try {
@@ -456,25 +461,27 @@ export class OrderManagementService {
     const shipments = order.getShipments();
 
     // Determine fulfillment location from shipment data
-    // Use the pickupLocationId from the first shipment, or default to "main-warehouse"
+    // Use the pickupLocationId from the first shipment, or default warehouse
     const fulfillmentLocationId =
       shipments.length > 0 && shipments[0].getPickupLocationId()
         ? shipments[0].getPickupLocationId()!
-        : "main-warehouse"; // Default location
+        : await this.getDefaultWarehouseId();
 
-    // Fulfill stock reservations for each order item
+    // Remove stock from inventory for each order item
     for (const item of orderItems) {
       try {
-        await this.stockManagementService.fulfillReservation(
+        await this.stockManagementService.adjustStock(
           item.getVariantId(),
           fulfillmentLocationId,
-          item.getQuantity()
+          -item.getQuantity(), // Negative to remove stock
+          "order",
+          order.getOrderId().getValue() // Reference the order ID
         );
       } catch (error) {
         // Log error but don't fail the entire fulfillment
         // This allows partial fulfillment if some items have stock issues
         console.error(
-          `Failed to fulfill inventory for item ${item.getOrderItemId()}: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to adjust inventory for item ${item.getOrderItemId()}: ${error instanceof Error ? error.message : "Unknown error"}`
         );
       }
     }
@@ -507,7 +514,7 @@ export class OrderManagementService {
     // Only paid orders would have had stock reserved
     if (order.getStatus().getValue() === "paid") {
       const orderItems = order.getItems();
-      const defaultLocationId = "main-warehouse"; // Default location
+      const defaultLocationId = await this.getDefaultWarehouseId();
 
       for (const item of orderItems) {
         try {
@@ -517,7 +524,8 @@ export class OrderManagementService {
             item.getVariantId(),
             defaultLocationId,
             item.getQuantity(), // Positive adjustment to release reserved stock
-            `Order ${order.getOrderNumber().getValue()} cancelled - releasing reserved stock`
+            "adjustment",
+            order.getOrderId().getValue() // Reference the cancelled order ID
           );
         } catch (error) {
           // Log error but don't fail the entire cancellation
@@ -1273,5 +1281,35 @@ export class OrderManagementService {
     historyId: number
   ): Promise<OrderStatusHistory | null> {
     return await this.orderStatusHistoryRepository.findById(historyId);
+  }
+
+  /**
+   * Gets the default warehouse location ID for order fulfillment.
+   *
+   * Strategy:
+   * 1. Use DEFAULT_STOCK_LOCATION from environment if set
+   * 2. Query first warehouse from database
+   * 3. Throw error if no warehouse found
+   */
+  private async getDefaultWarehouseId(): Promise<string> {
+    // Strategy 1: Use configured default warehouse
+    if (process.env.DEFAULT_STOCK_LOCATION) {
+      return process.env.DEFAULT_STOCK_LOCATION;
+    }
+
+    // Strategy 2: Query first warehouse from database
+    const warehouse = await this.prisma.location.findFirst({
+      where: {
+        type: 'warehouse',
+      },
+    });
+
+    if (!warehouse) {
+      throw new Error(
+        'No warehouse location found. Please configure DEFAULT_STOCK_LOCATION in .env or create a warehouse location in the database.'
+      );
+    }
+
+    return warehouse.id;
   }
 }

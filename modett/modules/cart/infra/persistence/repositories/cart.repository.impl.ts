@@ -855,6 +855,71 @@ export class CartRepositoryImpl implements CartRepository {
     });
   }
 
+  // Checkout field operations
+  async updateEmail(cartId: CartId, email: string): Promise<void> {
+    await this.prisma.shoppingCart.update({
+      where: { id: cartId.getValue() },
+      data: { email, updatedAt: new Date() },
+    });
+  }
+
+  async updateShippingInfo(
+    cartId: CartId,
+    data: {
+      shippingMethod?: string;
+      shippingOption?: string;
+      isGift?: boolean;
+    }
+  ): Promise<void> {
+    await this.prisma.shoppingCart.update({
+      where: { id: cartId.getValue() },
+      data: {
+        ...data,
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  async updateAddresses(
+    cartId: CartId,
+    data: {
+      shippingFirstName?: string;
+      shippingLastName?: string;
+      shippingAddress1?: string;
+      shippingAddress2?: string;
+      shippingCity?: string;
+      shippingProvince?: string;
+      shippingPostalCode?: string;
+      shippingCountryCode?: string;
+      shippingPhone?: string;
+      billingFirstName?: string;
+      billingLastName?: string;
+      billingAddress1?: string;
+      billingAddress2?: string;
+      billingCity?: string;
+      billingProvince?: string;
+      billingPostalCode?: string;
+      billingCountryCode?: string;
+      billingPhone?: string;
+      sameAddressForBilling?: boolean;
+    }
+  ): Promise<void> {
+    await this.prisma.shoppingCart.update({
+      where: { id: cartId.getValue() },
+      data: {
+        ...data,
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  async getCartWithCheckoutInfo(cartId: string): Promise<any> {
+    return await this.prisma.shoppingCart.findUnique({
+      where: { id: cartId },
+      include: { items: true },
+    });
+  }
+
   private mapPrismaToEntity(cartData: any): ShoppingCart {
     const entityData: ShoppingCartEntityData = {
       cartId: cartData.id,

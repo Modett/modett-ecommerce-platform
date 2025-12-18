@@ -15,6 +15,7 @@ export interface GetUserDetailsResult {
     phone: string | null;
     firstName: string | null;
     lastName: string | null;
+    role: string;
     status: string;
     emailVerified: boolean;
     phoneVerified: boolean;
@@ -84,6 +85,7 @@ export class GetUserDetailsHandler {
           phone: phone,
           firstName: firstName,
           lastName: lastName,
+          role: userData.role,
           status: userData.status,
           emailVerified: userData.emailVerified,
           phoneVerified: userData.phoneVerified,

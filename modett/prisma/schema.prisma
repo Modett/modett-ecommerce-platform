@@ -14,6 +14,7 @@ model User {
   email             String             @unique
   passwordHash      String?            @map("password_hash")
   phone             String?
+  role              UserRole           @default(CUSTOMER)
   status            UserStatus         @default(active)
   emailVerified     Boolean            @default(false) @map("email_verified")
   phoneVerified     Boolean            @default(false) @map("phone_verified")
@@ -305,17 +306,40 @@ model EditorialLookProduct {
 }
 
 model ShoppingCart {
-  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @map("cart_id") @db.Uuid
-  userId               String?       @map("user_id") @db.Uuid
-  guestToken           String?       @unique @map("guest_token")
-  currency             String?
-  reservationExpiresAt DateTime?     @map("reservation_expires_at") @db.Timestamptz(6)
-  createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  items                CartItem[]
-  reservations         Reservation[]
-  checkout             Checkout?
-  user                 User?         @relation(fields: [userId], references: [id], onUpdate: NoAction)
+  id                    String        @id @default(dbgenerated("gen_random_uuid()")) @map("cart_id") @db.Uuid
+  userId                String?       @map("user_id") @db.Uuid
+  guestToken            String?       @unique @map("guest_token")
+  currency              String?
+  email                 String?
+  shippingMethod        String?       @map("shipping_method")
+  shippingOption        String?       @map("shipping_option")
+  isGift                Boolean       @default(false) @map("is_gift")
+  shippingFirstName     String?       @map("shipping_first_name")
+  shippingLastName      String?       @map("shipping_last_name")
+  shippingAddress1      String?       @map("shipping_address_1")
+  shippingAddress2      String?       @map("shipping_address_2")
+  shippingCity          String?       @map("shipping_city")
+  shippingProvince      String?       @map("shipping_province")
+  shippingPostalCode    String?       @map("shipping_postal_code")
+  shippingCountryCode   String?       @map("shipping_country_code")
+  shippingPhone         String?       @map("shipping_phone")
+  billingFirstName      String?       @map("billing_first_name")
+  billingLastName       String?       @map("billing_last_name")
+  billingAddress1       String?       @map("billing_address_1")
+  billingAddress2       String?       @map("billing_address_2")
+  billingCity           String?       @map("billing_city")
+  billingProvince       String?       @map("billing_province")
+  billingPostalCode     String?       @map("billing_postal_code")
+  billingCountryCode    String?       @map("billing_country_code")
+  billingPhone          String?       @map("billing_phone")
+  sameAddressForBilling Boolean       @default(true) @map("same_address_for_billing")
+  reservationExpiresAt  DateTime?     @map("reservation_expires_at") @db.Timestamptz(6)
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  items                 CartItem[]
+  reservations          Reservation[]
+  checkout              Checkout?
+  user                  User?         @relation(fields: [userId], references: [id], onUpdate: NoAction)
 
   @@map("shopping_carts")
   @@schema("cart")
@@ -1071,6 +1095,17 @@ enum UserStatus {
   blocked
 
   @@map("user_status_enum")
+  @@schema("user_management")
+}
+
+enum UserRole {
+  GUEST
+  CUSTOMER
+  STAFF
+  VENDOR
+  ADMIN
+
+  @@map("user_role_enum")
   @@schema("user_management")
 }
 

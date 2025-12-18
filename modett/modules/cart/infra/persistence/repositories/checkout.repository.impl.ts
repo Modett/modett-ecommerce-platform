@@ -1,6 +1,9 @@
 import { PrismaClient, CheckoutStatusEnum } from "@prisma/client";
 import { CheckoutRepository } from "../../../domain/repositories/checkout.repository";
-import { Checkout, CheckoutEntityData } from "../../../domain/entities/checkout.entity";
+import {
+  Checkout,
+  CheckoutEntityData,
+} from "../../../domain/entities/checkout.entity";
 import { CheckoutId } from "../../../domain/value-objects/checkout-id.vo";
 import { CartId } from "../../../domain/value-objects/cart-id.vo";
 import { UserId } from "../../../../user-management/domain/value-objects/user-id.vo";
@@ -11,21 +14,51 @@ export class CheckoutRepositoryImpl implements CheckoutRepository {
 
   async save(checkout: Checkout): Promise<void> {
     const data = checkout.toData();
-    await this.prisma.checkout.create({
-      data: {
-        id: data.checkoutId,
-        userId: data.userId,
-        guestToken: data.guestToken,
-        cartId: data.cartId,
-        status: data.status as CheckoutStatusEnum,
-        totalAmount: data.totalAmount,
-        currency: data.currency,
-        expiresAt: data.expiresAt,
-        completedAt: data.completedAt,
-        createdAt: data.createdAt,
-        updatedAt: data.updatedAt,
-      },
-    });
+
+    try {
+      // Check if checkout already exists for this cart
+      const existing = await this.prisma.checkout.findUnique({
+        where: { cartId: data.cartId },
+      });
+
+      if (existing) {
+        // Update existing checkout
+        await this.prisma.checkout.update({
+          where: { cartId: data.cartId },
+          data: {
+            userId: data.userId || null,
+            guestToken: data.guestToken || null,
+            status: data.status as CheckoutStatusEnum,
+            totalAmount: data.totalAmount,
+            currency: data.currency,
+            expiresAt: data.expiresAt,
+            completedAt: data.completedAt || null,
+            updatedAt: data.updatedAt,
+          },
+        });
+      } else {
+        // Create new checkout
+        await this.prisma.checkout.create({
+          data: {
+            id: data.checkoutId,
+            userId: data.userId || null,
+            guestToken: data.guestToken || null,
+            cartId: data.cartId,
+            status: data.status as CheckoutStatusEnum,
+            totalAmount: data.totalAmount,
+            currency: data.currency,
+            expiresAt: data.expiresAt,
+            completedAt: data.completedAt || null,
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
+          },
+        });
+      }
+    } catch (error: any) {
+      console.error("Failed to save checkout:", error);
+      console.error("Checkout data:", JSON.stringify(data, null, 2));
+      throw error;
+    }
   }
 
   async findById(checkoutId: CheckoutId): Promise<Checkout | null> {
@@ -110,7 +143,10 @@ export class CheckoutRepositoryImpl implements CheckoutRepository {
     return checkouts.map((c) => this.mapPrismaToEntity(c));
   }
 
-  async markAsCompleted(checkoutId: CheckoutId, completedAt: Date): Promise<void> {
+  async markAsCompleted(
+    checkoutId: CheckoutId,
+    completedAt: Date
+  ): Promise<void> {
     await this.prisma.checkout.update({
       where: { id: checkoutId.toString() },
       data: {

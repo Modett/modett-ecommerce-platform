@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -1678,8 +1679,45 @@ async function main() {
   await Promise.all(inventoryPromises);
   console.log(`✅ Created inventory stock for ${allVariants.length} variants at Main Warehouse`);
 
+  // 6. Create admin user for testing
+  console.log('👤 Creating admin user...');
+
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@modett.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin123!@#';
+
+  // Check if admin already exists
+  const existingAdmin = await prisma.user.findUnique({
+    where: { email: adminEmail }
+  });
+
+  let adminUser;
+  if (existingAdmin) {
+    console.log(`⚠️  Admin user already exists: ${adminEmail}`);
+    adminUser = existingAdmin;
+  } else {
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+    adminUser = await prisma.user.create({
+      data: {
+        email: adminEmail,
+        passwordHash: hashedPassword,
+        role: 'ADMIN',
+        status: 'active',
+        emailVerified: true,
+        isGuest: false,
+      }
+    });
+
+    console.log(`✅ Created admin user: ${adminEmail}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`   Password: ${adminPassword}`);
+      console.log(`   ⚠️  Please change this password in production!`);
+    }
+  }
+
   // Summary
   console.log('\n📊 Seed Summary:');
+  console.log(`   Admin User: ${adminUser.email} (${adminUser.role})`);
   console.log(`   Warehouse: 1 (Main Warehouse)`);
   console.log(`   Categories: 3 (Investment Pieces, New Arrivals, Collections)`);
   console.log(`   Media Assets: ${mediaAssets.length} (high-quality product images)`);

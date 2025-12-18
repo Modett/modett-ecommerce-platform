@@ -3,12 +3,21 @@ import { Email } from "../value-objects/email.vo";
 import { Phone } from "../value-objects/phone.vo";
 import { Password } from "../value-objects/password.vo";
 
+export enum UserRole {
+  GUEST = 'GUEST',
+  CUSTOMER = 'CUSTOMER',
+  STAFF = 'STAFF',
+  VENDOR = 'VENDOR',
+  ADMIN = 'ADMIN',
+}
+
 export class User {
   private constructor(
     private readonly id: UserId,
     private email: Email,
     private passwordHash: string,
     private phone: Phone | null,
+    private role: UserRole,
     private status: UserStatus,
     private emailVerified: boolean,
     private phoneVerified: boolean,
@@ -29,6 +38,7 @@ export class User {
       email,
       data.passwordHash, // Should already be hashed by password service
       phone,
+      data.role || UserRole.CUSTOMER, // Default to CUSTOMER role
       UserStatus.ACTIVE,
       false, // Email not verified initially
       false, // Phone not verified initially
@@ -48,6 +58,7 @@ export class User {
       guestEmail,
       "", // No password for guest
       null,
+      UserRole.GUEST, // Guests have GUEST role
       UserStatus.ACTIVE,
       false,
       false,
@@ -63,6 +74,7 @@ export class User {
       new Email(data.email),
       data.passwordHash,
       data.phone ? new Phone(data.phone) : null,
+      data.role,
       data.status,
       data.emailVerified,
       data.phoneVerified,
@@ -79,6 +91,7 @@ export class User {
       new Email(row.email),
       row.password_hash || "", // Handle nullable password_hash for guests
       row.phone ? new Phone(row.phone) : null,
+      row.role,
       row.status,
       row.email_verified,
       row.phone_verified,
@@ -100,6 +113,9 @@ export class User {
   }
   getPhone(): Phone | null {
     return this.phone;
+  }
+  getRole(): UserRole {
+    return this.role;
   }
   getStatus(): UserStatus {
     return this.status;
@@ -282,6 +298,7 @@ export class User {
       email: this.email.getValue(),
       passwordHash: this.passwordHash,
       phone: this.phone?.getValue() || null,
+      role: this.role,
       status: this.status,
       emailVerified: this.emailVerified,
       phoneVerified: this.phoneVerified,
@@ -298,6 +315,7 @@ export class User {
       email: this.email.getValue(),
       password_hash: this.passwordHash || null,
       phone: this.phone?.getValue() || null,
+      role: this.role,
       status: this.status,
       email_verified: this.emailVerified,
       phone_verified: this.phoneVerified,
@@ -323,6 +341,7 @@ export interface CreateUserData {
   email: string;
   passwordHash: string;
   phone?: string;
+  role?: UserRole;
   isGuest?: boolean;
 }
 
@@ -331,6 +350,7 @@ export interface UserData {
   email: string;
   passwordHash: string;
   phone: string | null;
+  role: UserRole;
   status: UserStatus;
   emailVerified: boolean;
   phoneVerified: boolean;
@@ -345,6 +365,7 @@ export interface UserRow {
   email: string;
   password_hash: string | null; // Nullable for guest users
   phone: string | null;
+  role: UserRole;
   status: UserStatus;
   email_verified: boolean;
   phone_verified: boolean;

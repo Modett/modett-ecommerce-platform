@@ -135,11 +135,26 @@ export class CartController {
       // Execute query using handler
       const result = await this.getCartHandler.handle(query);
 
+      console.log('=== CONTROLLER GET CART DEBUG ===');
+      console.log('Result data:', result.data);
+      console.log('Email in result:', result.data?.email);
+      console.log('Shipping option in result:', result.data?.shippingOption);
+      console.log('================================');
+
       if (result.success && result.data) {
-        return reply.code(200).send({
+        const responseData = {
           success: true,
           data: result.data,
-        });
+        };
+
+        console.log('=== RESPONSE OBJECT DEBUG ===');
+        console.log('Full response:', JSON.stringify(responseData, null, 2));
+        console.log('Email in response.data:', responseData.data.email);
+        console.log('ShippingOption in response.data:', responseData.data.shippingOption);
+        console.log('ShippingFirstName in response.data:', responseData.data.shippingFirstName);
+        console.log('============================');
+
+        return reply.code(200).send(responseData);
       } else {
         return reply.code(404).send({
           success: false,
@@ -1002,6 +1017,194 @@ export class CartController {
         success: false,
         error: "Internal server error",
         message: "Failed to clear cart",
+      });
+    }
+  }
+
+  // Update cart email
+  async updateCartEmail(
+    request: FastifyRequest<{
+      Params: { cartId: string };
+      Body: { email: string };
+    }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { cartId } = request.params;
+      const { email } = request.body;
+      const userId = request.user?.userId;
+      const guestToken = request.guestToken;
+
+      if (!email || typeof email !== "string") {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: "Email is required and must be a valid string",
+        });
+      }
+
+      await this.cartManagementService.updateCartEmail(
+        cartId,
+        email,
+        userId,
+        guestToken
+      );
+
+      // Fetch updated cart
+      const updatedCart = await this.cartManagementService.getCart(
+        cartId,
+        userId,
+        guestToken
+      );
+
+      return reply.code(200).send({
+        success: true,
+        data: updatedCart,
+        message: "Cart email updated successfully",
+      });
+    } catch (error) {
+      request.log.error(error, "Failed to update cart email");
+
+      if (error instanceof Error && error.message.includes("Unauthorized")) {
+        return reply.code(403).send({
+          success: false,
+          error: "Forbidden",
+          message: error.message,
+        });
+      }
+
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to update cart email",
+      });
+    }
+  }
+
+  // Update cart shipping info
+  async updateCartShippingInfo(
+    request: FastifyRequest<{
+      Params: { cartId: string };
+      Body: {
+        shippingMethod?: string;
+        shippingOption?: string;
+        isGift?: boolean;
+      };
+    }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { cartId } = request.params;
+      const data = request.body;
+      const userId = request.user?.userId;
+      const guestToken = request.guestToken;
+
+      await this.cartManagementService.updateCartShippingInfo(
+        cartId,
+        data,
+        userId,
+        guestToken
+      );
+
+      // Fetch updated cart
+      const updatedCart = await this.cartManagementService.getCart(
+        cartId,
+        userId,
+        guestToken
+      );
+
+      return reply.code(200).send({
+        success: true,
+        data: updatedCart,
+        message: "Cart shipping info updated successfully",
+      });
+    } catch (error) {
+      request.log.error(error, "Failed to update cart shipping info");
+
+      if (error instanceof Error && error.message.includes("Unauthorized")) {
+        return reply.code(403).send({
+          success: false,
+          error: "Forbidden",
+          message: error.message,
+        });
+      }
+
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to update cart shipping info",
+      });
+    }
+  }
+
+  // Update cart addresses
+  async updateCartAddresses(
+    request: FastifyRequest<{
+      Params: { cartId: string };
+      Body: {
+        shippingFirstName?: string;
+        shippingLastName?: string;
+        shippingAddress1?: string;
+        shippingAddress2?: string;
+        shippingCity?: string;
+        shippingProvince?: string;
+        shippingPostalCode?: string;
+        shippingCountryCode?: string;
+        shippingPhone?: string;
+        billingFirstName?: string;
+        billingLastName?: string;
+        billingAddress1?: string;
+        billingAddress2?: string;
+        billingCity?: string;
+        billingProvince?: string;
+        billingPostalCode?: string;
+        billingCountryCode?: string;
+        billingPhone?: string;
+        sameAddressForBilling?: boolean;
+      };
+    }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { cartId } = request.params;
+      const data = request.body;
+      const userId = request.user?.userId;
+      const guestToken = request.guestToken;
+
+      await this.cartManagementService.updateCartAddresses(
+        cartId,
+        data,
+        userId,
+        guestToken
+      );
+
+      // Fetch updated cart
+      const updatedCart = await this.cartManagementService.getCart(
+        cartId,
+        userId,
+        guestToken
+      );
+
+      return reply.code(200).send({
+        success: true,
+        data: updatedCart,
+        message: "Cart addresses updated successfully",
+      });
+    } catch (error) {
+      request.log.error(error, "Failed to update cart addresses");
+
+      if (error instanceof Error && error.message.includes("Unauthorized")) {
+        return reply.code(403).send({
+          success: false,
+          error: "Forbidden",
+          message: error.message,
+        });
+      }
+
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to update cart addresses",
       });
     }
   }

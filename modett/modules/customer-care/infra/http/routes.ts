@@ -25,6 +25,7 @@ import {
   authenticateUser,
   optionalAuth,
   authenticateAdmin,
+  authenticateStaff,
 } from "../../../user-management/infra/http/middleware/auth.middleware";
 
 // Standard error responses for Swagger/OpenAPI
@@ -188,7 +189,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/tickets/:ticketId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Get support ticket by ID",
         tags: ["Customer Care - Tickets"],
@@ -240,7 +241,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/tickets",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "List all support tickets",
         tags: ["Customer Care - Tickets"],
@@ -289,7 +290,7 @@ export async function registerCustomerCareRoutes(
   fastify.patch(
     "/customer-care/tickets/:ticketId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Update support ticket details",
         tags: ["Customer Care - Tickets"],
@@ -380,7 +381,7 @@ export async function registerCustomerCareRoutes(
   fastify.post(
     "/customer-care/tickets/:ticketId/messages",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Add a message to a support ticket",
         tags: ["Customer Care - Tickets"],
@@ -442,7 +443,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/tickets/:ticketId/messages",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Get all messages for a ticket",
         tags: ["Customer Care - Tickets"],
@@ -553,7 +554,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/agents/:agentId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Get support agent by ID",
         tags: ["Customer Care - Agents"],
@@ -634,7 +635,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/agents",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "List all support agents",
         tags: ["Customer Care - Agents"],
@@ -739,7 +740,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/chat-sessions/:sessionId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Get chat session by ID",
         tags: ["Customer Care - Chat"],
@@ -772,7 +773,7 @@ export async function registerCustomerCareRoutes(
   fastify.post(
     "/customer-care/chat-sessions/:sessionId/end",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "End a chat session",
         tags: ["Customer Care - Chat"],
@@ -805,7 +806,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/chat-sessions",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "List all chat sessions",
         tags: ["Customer Care - Chat"],
@@ -839,7 +840,7 @@ export async function registerCustomerCareRoutes(
   fastify.post(
     "/customer-care/chat-sessions/:sessionId/messages",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Add a message to a chat session",
         tags: ["Customer Care - Chat"],
@@ -893,7 +894,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/chat-sessions/:sessionId/messages",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Get all messages for a chat session",
         tags: ["Customer Care - Chat"],
@@ -934,7 +935,7 @@ export async function registerCustomerCareRoutes(
   fastify.post(
     "/customer-care/returns",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Create a new return request",
         tags: ["Customer Care - Returns"],
@@ -975,7 +976,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/returns/:rmaId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Get return request by RMA ID",
         tags: ["Customer Care - Returns"],
@@ -1010,7 +1011,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/returns",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "List all return requests",
         tags: ["Customer Care - Returns"],
@@ -1138,7 +1139,7 @@ export async function registerCustomerCareRoutes(
   fastify.post(
     "/customer-care/returns/:rmaId/items",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Add an item to a return request",
         tags: ["Customer Care - Returns"],
@@ -1190,7 +1191,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/returns/:rmaId/items",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Get all items for a return request",
         tags: ["Customer Care - Returns"],
@@ -1277,7 +1278,7 @@ export async function registerCustomerCareRoutes(
   fastify.post(
     "/customer-care/repairs",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Create a new repair request",
         tags: ["Customer Care - Repairs"],
@@ -1312,7 +1313,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/repairs/:repairId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Get repair by ID",
         tags: ["Customer Care - Repairs"],
@@ -1388,7 +1389,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/repairs",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "List all repairs",
         tags: ["Customer Care - Repairs"],
@@ -1551,7 +1552,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/goodwill/:goodwillId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Get goodwill record by ID",
         tags: ["Customer Care - Goodwill"],
@@ -1689,7 +1690,7 @@ export async function registerCustomerCareRoutes(
   fastify.get(
     "/customer-care/feedback/:feedbackId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff as any,
       schema: {
         description: "Get customer feedback by ID",
         tags: ["Customer Care - Feedback"],

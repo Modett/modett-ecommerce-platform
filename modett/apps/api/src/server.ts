@@ -1,6 +1,8 @@
 import fastify, { FastifyInstance } from "fastify";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
+import { createServiceContainer, closeServiceContainer } from "./container";
+import { registerModules } from "./modules";
 const loggerConfig = {
   level: process.env.LOG_LEVEL || "info",
   transport:
@@ -580,8 +582,7 @@ export async function createServer(): Promise<FastifyInstance> {
         },
         {
           name: "System",
-          description:
-            "System health, monitoring, and information endpoints",
+          description: "System health, monitoring, and information endpoints",
         },
       ],
       // Note: Don't set global security here, let individual routes define their own security
@@ -635,6 +636,17 @@ export async function createServer(): Promise<FastifyInstance> {
     transformStaticCSP: (header) => header,
     transformSpecification: (swaggerObject, request, reply) => swaggerObject,
     transformSpecificationClone: true,
+  });
+
+  // Initialize Service Container
+  const container = createServiceContainer();
+
+  // Register all application modules
+  await registerModules(server, container);
+
+  // Graceful shutdown
+  server.addHook("onClose", async (instance) => {
+    await closeServiceContainer(container);
   });
 
   // System endpoints
@@ -850,283 +862,6 @@ export async function createServer(): Promise<FastifyInstance> {
       process.exit(1);
     });
   });
-
-  // Initialize service container once
-  const { createServiceContainer } = await import("./container");
-  const serviceContainer = createServiceContainer();
-
-  // Register user management routes
-  try {
-    const { registerUserManagementRoutes } = await import(
-      "../../../modules/user-management/infra/http/routes"
-    );
-
-    const services = {
-      authService: serviceContainer.authService,
-      userProfileService: serviceContainer.userProfileService,
-      addressService: serviceContainer.addressService,
-      paymentMethodService: serviceContainer.paymentMethodService,
-      userRepository: serviceContainer.userRepository,
-      addressRepository: serviceContainer.addressRepository,
-    };
-
-    // Register routes with services
-    await server.register(
-      async function (fastify) {
-        return await registerUserManagementRoutes(fastify, services);
-      },
-      { prefix: "/api/v1" }
-    );
-
-    server.log.info("User management routes registered successfully");
-  } catch (error) {
-    server.log.error(error as Error, "Failed to register user routes:");
-    server.log.info("Continuing with basic endpoints only");
-  }
-
-  // Register product catalog routes
-  try {
-    const { registerProductCatalogRoutes } = await import(
-      "../../../modules/product-catalog/infra/http/routes"
-    );
-
-    const productCatalogServices = {
-      productService: serviceContainer.productManagementService,
-      productSearchService: serviceContainer.productSearchService,
-      categoryService: serviceContainer.categoryManagementService,
-      variantService: serviceContainer.variantManagementService,
-      mediaService: serviceContainer.mediaManagementService,
-      productTagService: serviceContainer.productTagManagementService,
-      sizeGuideService: serviceContainer.sizeGuideManagementService,
-      editorialLookService: serviceContainer.editorialLookManagementService,
-      productMediaService: serviceContainer.productMediaManagementService,
-      prisma: serviceContainer.prisma,
-    };
-
-    // Register product catalog routes with services
-    await server.register(
-      async function (fastify) {
-        await registerProductCatalogRoutes(fastify, productCatalogServices);
-      },
-      { prefix: "/api/v1/catalog" }
-    );
-
-    server.log.info("Product catalog routes registered successfully");
-  } catch (error) {
-    server.log.error(
-      error as Error,
-      "Failed to register product catalog routes:"
-    );
-    server.log.info("Continuing with user management endpoints only");
-  }
-
-  // Register cart routes
-  try {
-    const { registerCartRoutes } = await import(
-      "../../../modules/cart/infra/http/routes"
-    );
-
-    const cartServices = {
-      cartManagementService: serviceContainer.cartManagementService,
-      reservationService: serviceContainer.reservationService,
-      checkoutService: serviceContainer.checkoutService,
-      checkoutOrderService: serviceContainer.checkoutOrderService,
-    };
-
-    // Register cart routes with services
-    await server.register(
-      async function (fastify) {
-        await registerCartRoutes(fastify, cartServices);
-      },
-      { prefix: "/api/v1/cart" }
-    );
-
-    server.log.info("Cart routes registered successfully");
-  } catch (error) {
-    server.log.error(error as Error, "Failed to register cart routes:");
-    server.log.info("Continuing with other endpoints");
-  }
-
-  // Register order management routes
-  try {
-    const { registerOrderManagementRoutes } = await import(
-      "../../../modules/order-management/infra/http/routes"
-    );
-
-    const orderServices = {
-      orderService: serviceContainer.orderManagementService,
-      orderEventService: serviceContainer.orderEventService,
-      preorderService: serviceContainer.preorderManagementService,
-      backorderService: serviceContainer.backorderManagementService,
-    };
-
-    // Register order management routes with services
-    await server.register(
-      async function (fastify) {
-        await registerOrderManagementRoutes(fastify, orderServices);
-      },
-      { prefix: "/api/v1" }
-    );
-
-    server.log.info("Order management routes registered successfully");
-  } catch (error) {
-    server.log.error(
-      error as Error,
-      "Failed to register order management routes:"
-    );
-    server.log.info("Continuing with other endpoints");
-  }
-
-  // Register inventory management routes
-  try {
-    const { registerInventoryManagementRoutes } = await import(
-      "../../../modules/inventory-management/infra/http/routes"
-    );
-
-    const inventoryServices = {
-      stockService: serviceContainer.stockManagementService,
-      locationService: serviceContainer.locationManagementService,
-      supplierService: serviceContainer.supplierManagementService,
-      poService: serviceContainer.purchaseOrderManagementService,
-      alertService: serviceContainer.stockAlertService,
-      reservationService: serviceContainer.pickupReservationService,
-    };
-
-    // Register inventory management routes with services
-    await server.register(
-      async function (fastify) {
-        await registerInventoryManagementRoutes(fastify, inventoryServices);
-      },
-      { prefix: "/api/v1/inventory" }
-    );
-
-    server.log.info("Inventory management routes registered successfully");
-  } catch (error) {
-    server.log.error(
-      error as Error,
-      "Failed to register inventory management routes:"
-    );
-    server.log.info("Continuing with other endpoints");
-  }
-
-  // Register fulfillment routes
-  try {
-    const { registerFulfillmentRoutes } = await import(
-      "../../../modules/fulfillment/infra/http/routes"
-    );
-
-    const fulfillmentServices = {
-      shipmentService: serviceContainer.shipmentService,
-      shipmentItemService: serviceContainer.shipmentItemService,
-    };
-
-    await server.register(
-      async function (fastify) {
-        await registerFulfillmentRoutes(fastify, fulfillmentServices);
-      },
-      { prefix: "/api/v1/fulfillment" }
-    );
-
-    server.log.info("Fulfillment routes registered successfully");
-  } catch (error) {
-    server.log.error(error as Error, "Failed to register fulfillment routes:");
-    server.log.info("Continuing without fulfillment endpoints");
-  }
-
-  // Register payment & loyalty routes
-  try {
-    const { registerPaymentLoyaltyRoutes } = await import(
-      "../../../modules/payment-loyalty/infra/http/routes"
-    );
-
-    const paymentLoyaltyServices = {
-      paymentService: serviceContainer.paymentService,
-      bnplService: serviceContainer.bnplTransactionService,
-      giftCardService: serviceContainer.giftCardService,
-      promotionService: serviceContainer.promotionService,
-      webhookService: serviceContainer.paymentWebhookService,
-      loyaltyService: serviceContainer.loyaltyService,
-      loyaltyTxnService: serviceContainer.loyaltyTransactionService,
-    };
-
-    await server.register(
-      async function (fastify) {
-        await registerPaymentLoyaltyRoutes(fastify, paymentLoyaltyServices);
-      },
-      { prefix: "/api/v1" }
-    );
-
-    server.log.info("Payment & Loyalty routes registered successfully");
-  } catch (error) {
-    server.log.error(
-      error as Error,
-      "Failed to register payment & loyalty routes:"
-    );
-    server.log.info("Continuing without payment & loyalty endpoints");
-  }
-
-  // Register customer care routes
-  try {
-    const { registerCustomerCareRoutes } = await import(
-      "../../../modules/customer-care/infra/http/routes"
-    );
-
-    const customerCareServices = {
-      supportTicketService: serviceContainer.supportTicketService,
-      ticketMessageService: serviceContainer.ticketMessageService,
-      supportAgentService: serviceContainer.supportAgentService,
-      chatSessionService: serviceContainer.chatSessionService,
-      chatMessageService: serviceContainer.chatMessageService,
-      returnRequestService: serviceContainer.returnRequestService,
-      returnItemService: serviceContainer.returnItemService,
-      repairService: serviceContainer.repairService,
-      goodwillRecordService: serviceContainer.goodwillRecordService,
-      customerFeedbackService: serviceContainer.customerFeedbackService,
-    };
-
-    await server.register(
-      async function (fastify) {
-        await registerCustomerCareRoutes(fastify, customerCareServices);
-      },
-      { prefix: "/api/v1" }
-    );
-
-    server.log.info("Customer Care routes registered successfully");
-  } catch (error) {
-    server.log.error(
-      error as Error,
-      "Failed to register customer care routes:"
-    );
-    server.log.info("Continuing without customer care endpoints");
-  }
-
-  // Register engagement routes
-  try {
-    const { registerEngagementRoutes } = await import(
-      "../../../modules/engagement/infra/http/routes"
-    );
-
-    const engagementServices = {
-      wishlistService: serviceContainer.wishlistManagementService,
-      reminderService: serviceContainer.reminderManagementService,
-      notificationService: serviceContainer.notificationService,
-      appointmentService: serviceContainer.appointmentService,
-      productReviewService: serviceContainer.productReviewService,
-      newsletterService: serviceContainer.newsletterService,
-    };
-
-    await server.register(
-      async function (fastify) {
-        await registerEngagementRoutes(fastify, engagementServices);
-      },
-      { prefix: "/api/v1" }
-    );
-
-    server.log.info("Engagement routes registered successfully");
-  } catch (error) {
-    server.log.error(error as Error, "Failed to register engagement routes:");
-    server.log.info("Continuing without engagement endpoints");
-  }
 
   return server;
 }

@@ -2,7 +2,7 @@ import { Currency } from "./currency.vo";
 
 export class Money {
   private constructor(
-    private readonly cents: number, // amount in cents
+    private readonly cents: number,
     private readonly currency: Currency
   ) {}
 

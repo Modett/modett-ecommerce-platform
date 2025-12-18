@@ -5,7 +5,10 @@ import {
 } from "./controllers";
 import { ShipmentService } from "../../application/services/shipment.service";
 import { ShipmentItemService } from "../../application/services/shipment-item.service";
-import { authenticateUser } from "../../../user-management/infra/http/middleware/auth.middleware";
+import {
+  authenticateUser,
+  authenticateStaff,
+} from "../../../user-management/infra/http/middleware/auth.middleware";
 
 export interface FulfillmentServices {
   shipmentService: ShipmentService;
@@ -58,9 +61,9 @@ export async function registerFulfillmentRoutes(
   fastify.post(
     "/shipments",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Create a shipment",
+        description: "Create a shipment - Staff/Admin only",
         tags: ["Fulfillment"],
         summary: "Create Shipment",
         security: [{ bearerAuth: [] }],
@@ -96,8 +99,9 @@ export async function registerFulfillmentRoutes(
   fastify.get(
     "/shipments",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "List shipments",
+        description: "List shipments - Staff/Admin only",
         tags: ["Fulfillment"],
         summary: "List Shipments",
         security: [{ bearerAuth: [] }],
@@ -126,8 +130,9 @@ export async function registerFulfillmentRoutes(
   fastify.get(
     "/shipments/:shipmentId",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "Get a shipment",
+        description: "Get a shipment - Staff/Admin only",
         tags: ["Fulfillment"],
         summary: "Get Shipment",
         security: [{ bearerAuth: [] }],
@@ -145,9 +150,9 @@ export async function registerFulfillmentRoutes(
   fastify.patch(
     "/shipments/:shipmentId/status",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Update shipment status",
+        description: "Update shipment status - Staff/Admin only",
         tags: ["Fulfillment"],
         summary: "Update Shipment Status",
         security: [{ bearerAuth: [] }],
@@ -170,9 +175,9 @@ export async function registerFulfillmentRoutes(
   fastify.patch(
     "/shipments/:shipmentId/carrier",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Update shipment carrier",
+        description: "Update shipment carrier - Staff/Admin only",
         tags: ["Fulfillment"],
         summary: "Update Shipment Carrier",
         security: [{ bearerAuth: [] }],
@@ -195,9 +200,9 @@ export async function registerFulfillmentRoutes(
   fastify.patch(
     "/shipments/:shipmentId/service",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Update shipment service",
+        description: "Update shipment service - Staff/Admin only",
         tags: ["Fulfillment"],
         summary: "Update Shipment Service",
         security: [{ bearerAuth: [] }],
@@ -220,9 +225,9 @@ export async function registerFulfillmentRoutes(
   fastify.patch(
     "/shipments/:shipmentId/label",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Update shipment label URL",
+        description: "Update shipment label URL - Staff/Admin only",
         tags: ["Fulfillment"],
         summary: "Update Shipment Label",
         security: [{ bearerAuth: [] }],
@@ -246,8 +251,9 @@ export async function registerFulfillmentRoutes(
   fastify.get(
     "/shipments/:shipmentId/items",
     {
+      preHandler: authenticateStaff,
       schema: {
-        description: "List items for a shipment",
+        description: "List items for a shipment - Staff/Admin only",
         tags: ["Fulfillment"],
         summary: "List Shipment Items",
         security: [{ bearerAuth: [] }],
@@ -265,9 +271,9 @@ export async function registerFulfillmentRoutes(
   fastify.post(
     "/shipments/:shipmentId/items",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Add item to shipment",
+        description: "Add item to shipment - Staff/Admin only",
         tags: ["Fulfillment"],
         summary: "Add Shipment Item",
         security: [{ bearerAuth: [] }],
@@ -293,9 +299,9 @@ export async function registerFulfillmentRoutes(
   fastify.patch(
     "/shipments/:shipmentId/items/:orderItemId/qty",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Update shipment item quantity",
+        description: "Update shipment item quantity - Staff/Admin only",
         tags: ["Fulfillment"],
         summary: "Update Shipment Item Quantity",
         security: [{ bearerAuth: [] }],
@@ -324,9 +330,9 @@ export async function registerFulfillmentRoutes(
   fastify.patch(
     "/shipments/:shipmentId/gift",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Update shipment gift options (isGift, giftMessage)",
+        description: "Update shipment gift options (isGift, giftMessage) - Staff/Admin only",
         tags: ["Fulfillment"],
         summary: "Update Shipment Gift",
         security: [{ bearerAuth: [] }],
@@ -352,9 +358,9 @@ export async function registerFulfillmentRoutes(
   fastify.delete(
     "/shipments/:shipmentId/items/:orderItemId",
     {
-      preHandler: authenticateUser,
+      preHandler: authenticateStaff,
       schema: {
-        description: "Delete shipment item",
+        description: "Delete shipment item - Staff/Admin only",
         tags: ["Fulfillment"],
         summary: "Delete Shipment Item",
         security: [{ bearerAuth: [] }],
