@@ -21,15 +21,8 @@ export const useCart = (cartId: string | null) => {
   return useQuery({
     queryKey: cartKeys.cart(cartId || ""),
     queryFn: async () => {
-      console.log('[useCart] Fetching cart for ID:', cartId);
-      try {
-        const result = await cartApi.getCart(cartId!);
-        console.log('[useCart] Successfully fetched cart:', result);
-        return result;
-      } catch (error) {
-        console.error('[useCart] Error fetching cart:', error);
-        throw error;
-      }
+      const result = await cartApi.getCart(cartId!);
+      return result;
     },
     enabled: !!cartId,
     staleTime: 0,
@@ -45,7 +38,7 @@ export const useAddToCart = () => {
 
   return useMutation({
     mutationFn: (params: AddToCartParams) => cartApi.addToCart(params),
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Invalidate cart queries to refetch updated cart
       queryClient.invalidateQueries({ queryKey: cartKeys.all });
     },
