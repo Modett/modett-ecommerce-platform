@@ -21,6 +21,11 @@ interface PaymentResult {
   error?: string;
 }
 
+// Backend API base URL
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL?.replace("/catalog", "") ||
+  "http://localhost:3001/api/v1";
+
 export function usePayableIPG() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,13 +36,26 @@ export function usePayableIPG() {
       setError(null);
 
       try {
-        const response = await fetch("/api/payments/payable-ipg/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payment),
-        });
+        // Get guest token from localStorage
+        const guestToken = localStorage.getItem("modett_guest_token");
+
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+
+        // Add guest token if available
+        if (guestToken) {
+          headers["X-Guest-Token"] = guestToken;
+        }
+
+        const response = await fetch(
+          `${API_BASE_URL}/payments/payable-ipg/create`,
+          {
+            method: "POST",
+            headers,
+            body: JSON.stringify(payment),
+          }
+        );
 
         const data = await response.json();
 
@@ -77,7 +95,7 @@ export function usePayableIPG() {
 
       try {
         const response = await fetch(
-          `/api/payments/payable-ipg/verify/${transactionId}`,
+          `${API_BASE_URL}/payments/payable-ipg/verify/${transactionId}`,
           {
             method: "GET",
             headers: {
@@ -125,17 +143,20 @@ export function usePayableIPG() {
       setError(null);
 
       try {
-        const response = await fetch("/api/payments/payable-ipg/refund", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            transactionId,
-            amount,
-            reason,
-          }),
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/payments/payable-ipg/refund`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              transactionId,
+              amount,
+              reason,
+            }),
+          }
+        );
 
         const data = await response.json();
 
@@ -168,12 +189,15 @@ export function usePayableIPG() {
 
   const getSupportedCardTypes = useCallback(async () => {
     try {
-      const response = await fetch("/api/payments/payable-ipg/card-types", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/payments/payable-ipg/card-types`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const data = await response.json();
       return data.success ? data.data : null;
