@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
-import { useCart } from "@/features/cart/queries";
+import { useCart, useUpdateCartShipping } from "@/features/cart/queries";
 import { getStoredCartId } from "@/features/cart/utils";
 import { CheckoutProgressBar } from "@/features/checkout/components/checkout-progress-bar";
 import { CartSummary } from "@/features/checkout/components/cart-summary";
@@ -10,10 +10,8 @@ import { CheckoutHelpSection } from "@/features/checkout/components/checkout-hel
 import { CompletedCheckoutStep } from "@/features/checkout/components/completed-checkout-step";
 import { ActiveStepHeader } from "@/features/checkout/components/active-step-header";
 import { FutureStep } from "@/features/checkout/components/future-step";
-import { CheckoutButton } from "@/features/checkout/components/checkout-button";
 import { CustomCheckbox } from "@/features/checkout/components/custom-checkbox";
 import { LoadingState } from "@/features/checkout/components/loading-state";
-import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutShippingPage() {
@@ -25,6 +23,7 @@ export default function CheckoutShippingPage() {
     "colombo"
   );
   const [isGift, setIsGift] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -35,6 +34,7 @@ export default function CheckoutShippingPage() {
   }, []);
 
   const { data: cart, isLoading } = useCart(cartId);
+  const updateShippingMutation = useUpdateCartShipping();
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
   const [email, setEmail] = useState("");
@@ -51,11 +51,33 @@ export default function CheckoutShippingPage() {
     }
   }, [cart?.email]);
 
-  const handleContinue = (e: React.FormEvent) => {
+  const handleContinue = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Save shipping information
 
-    router.push("/checkout/information");
+    if (!cartId) {
+      setError("Cart not found");
+      return;
+    }
+
+    try {
+      setError(null);
+
+      // Save shipping information to database
+      await updateShippingMutation.mutateAsync({
+        cartId,
+        shippingData: {
+          shippingMethod,
+          shippingOption: shippingMethod === "home" ? shippingOption : undefined,
+          isGift,
+        },
+      });
+
+      // Navigate to information page
+      router.push("/checkout/information");
+    } catch (err) {
+      console.error("Failed to save shipping info:", err);
+      setError("Failed to save shipping information. Please try again.");
+    }
   };
 
   if (isLoading) {
@@ -215,11 +237,29 @@ export default function CheckoutShippingPage() {
                           onChange={(e) => setIsGift(e.target.checked)}
                           containerClassName="items-start md:items-center"
                           labelClassName="text-[11px] md:text-xs text-[#3E5460] pl-3 md:pl-6 lg:pl-[28px] flex-1 leading-[16px] md:leading-[18px]"
+                          disabled={updateShippingMutation.isPending}
                         />
                       </div>
 
+                      {error && (
+                        <p className="text-red-600 text-sm text-center">
+                          {error}
+                        </p>
+                      )}
+
                       <div className="flex justify-center">
-                        <CheckoutButton />
+                        <button
+                          type="submit"
+                          disabled={updateShippingMutation.isPending}
+                          className="w-[300px] h-[50px] bg-[#232D35] border border-[#232D35] flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span
+                            className="text-sm font-medium text-white uppercase tracking-[3px]"
+                            style={{ fontFamily: "Reddit Sans, sans-serif" }}
+                          >
+                            {updateShippingMutation.isPending ? "SAVING..." : "CONTINUE"}
+                          </span>
+                        </button>
                       </div>
                     </div>
                   </div>
