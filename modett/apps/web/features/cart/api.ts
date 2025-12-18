@@ -4,11 +4,7 @@
 
 import axios from "axios";
 import type { AddToCartParams, Cart } from "./types";
-import {
-  getStoredGuestToken,
-  persistGuestToken,
-  persistCartId
-} from "./utils";
+import { getStoredGuestToken, persistGuestToken, persistCartId } from "./utils";
 
 // Create axios instance for cart API
 const cartApiClient = axios.create({
@@ -34,7 +30,6 @@ export const generateGuestToken = async (): Promise<string> => {
 
     return token;
   } catch (error) {
-    console.error("Failed to generate guest token:", error);
     throw error;
   }
 };
@@ -78,7 +73,6 @@ export const addToCart = async (params: AddToCartParams): Promise<Cart> => {
 
     return data.data;
   } catch (error: any) {
-    console.error("Failed to add item to cart:", error);
     throw new Error(
       error.response?.data?.error || "Failed to add item to cart"
     );
@@ -104,7 +98,6 @@ export const getCart = async (cartId: string): Promise<Cart> => {
 
     return data.data;
   } catch (error: any) {
-    console.error("Failed to get cart:", error);
     throw new Error(error.response?.data?.error || "Failed to get cart");
   }
 };
@@ -132,7 +125,6 @@ export const updateCartQuantity = async (
 
     return data.data;
   } catch (error: any) {
-    console.error("Failed to update cart item:", error);
     throw new Error(
       error.response?.data?.error || "Failed to update cart item"
     );
@@ -160,7 +152,6 @@ export const removeCartItem = async (
 
     return data.data;
   } catch (error: any) {
-    console.error("Failed to remove cart item:", error);
     throw new Error(
       error.response?.data?.error || "Failed to remove cart item"
     );
@@ -192,10 +183,7 @@ export const transferGuestCartToUser = async (
 
     return data.data;
   } catch (error: any) {
-    console.error("Failed to transfer cart:", error);
-    throw new Error(
-      error.response?.data?.error || "Failed to transfer cart"
-    );
+    throw new Error(error.response?.data?.error || "Failed to transfer cart");
   }
 };
 
@@ -221,7 +209,6 @@ export const updateCartEmail = async (
 
     return data.data;
   } catch (error: any) {
-    console.error("Failed to update cart email:", error);
     throw new Error(
       error.response?.data?.error || "Failed to update cart email"
     );
@@ -254,7 +241,6 @@ export const updateCartShipping = async (
 
     return data.data;
   } catch (error: any) {
-    console.error("Failed to update cart shipping:", error);
     throw new Error(
       error.response?.data?.error || "Failed to update cart shipping"
     );
@@ -303,9 +289,109 @@ export const updateCartAddresses = async (
 
     return data.data;
   } catch (error: any) {
-    console.error("Failed to update cart addresses:", error);
     throw new Error(
       error.response?.data?.error || "Failed to update cart addresses"
+    );
+  }
+};
+
+// ============================================================================
+// CHECKOUT API
+// ============================================================================
+
+/**
+ * Initialize checkout from cart
+ */
+export const initializeCheckout = async (
+  cartId: string
+): Promise<{ checkoutId: string; expiresAt: string }> => {
+  try {
+    const token = await getGuestToken();
+    const { data } = await cartApiClient.post(
+      `/checkout/initialize`,
+      { cartId, expiresInMinutes: 120 }, // Extended to 2 hours for development
+      {
+        headers: {
+          "X-Guest-Token": token,
+        },
+      }
+    );
+
+    return data.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.error || "Failed to initialize checkout"
+    );
+  }
+};
+
+/**
+ * Get checkout details
+ */
+export const getCheckout = async (checkoutId: string): Promise<any> => {
+  try {
+    const token = await getGuestToken();
+    const { data } = await cartApiClient.get(`/checkout/${checkoutId}`, {
+      headers: {
+        "X-Guest-Token": token,
+      },
+    });
+
+    return data.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.error || "Failed to get checkout");
+  }
+};
+
+/**
+ * Complete checkout with order creation
+ */
+export const completeCheckoutWithOrder = async (
+  checkoutId: string,
+  paymentIntentId: string,
+  shippingAddress: {
+    firstName: string;
+    lastName: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state?: string;
+    postalCode?: string;
+    country: string;
+    phone?: string;
+  },
+  billingAddress?: {
+    firstName: string;
+    lastName: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state?: string;
+    postalCode?: string;
+    country: string;
+    phone?: string;
+  }
+): Promise<any> => {
+  try {
+    const token = await getGuestToken();
+    const { data } = await cartApiClient.post(
+      `/checkout/${checkoutId}/complete-with-order`,
+      {
+        paymentIntentId,
+        shippingAddress,
+        billingAddress,
+      },
+      {
+        headers: {
+          "X-Guest-Token": token,
+        },
+      }
+    );
+
+    return data.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.error || "Failed to complete checkout"
     );
   }
 };
