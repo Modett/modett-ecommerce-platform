@@ -98,13 +98,7 @@ export default function CheckoutSuccessPage() {
         setOrderId(result.order?.id || checkoutId);
         setStatus("success");
 
-        // Clear all cart data (ID + Guest Token) to ensure fresh session
-        console.log("[DEBUG] Clearing cart data...");
         clearCartData();
-        console.log(
-          "[DEBUG] Cart data cleared. LocalStorage CartID:",
-          localStorage.getItem("modett_cart_id")
-        );
         setCartId(null);
 
         // Clear all React Query cache to ensure fresh data on next page load

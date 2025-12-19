@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Info } from "lucide-react";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
 import { useCart } from "@/features/cart/queries";
 import { getStoredCartId, clearCartData } from "@/features/cart/utils";
@@ -9,16 +12,10 @@ import { CartSummary } from "@/features/checkout/components/cart-summary";
 import { CheckoutHelpSection } from "@/features/checkout/components/checkout-help-section";
 import { CompletedCheckoutStep } from "@/features/checkout/components/completed-checkout-step";
 import { ActiveStepHeader } from "@/features/checkout/components/active-step-header";
-import { Info } from "lucide-react";
 import { CustomCheckbox } from "@/features/checkout/components/custom-checkbox";
 import { LoadingState } from "@/features/checkout/components/loading-state";
 import { usePayableIPG } from "@/features/checkout/hooks/use-payable-ipg";
 import * as cartApi from "@/features/cart/api";
-
-// Payment card logos - using Image component for actual logo files
-import Image from "next/image";
-
-import { useRouter } from "next/navigation";
 
 export default function CheckoutPaymentPage() {
   const [cartId, setCartId] = useState<string | null>(null);
@@ -31,21 +28,12 @@ export default function CheckoutPaymentPage() {
 
   const { createPayment, loading: paymentLoading } = usePayableIPG();
 
-  console.log("[DEBUG] Component state:", {
-    cartId,
-    termsAccepted,
-    processing,
-    paymentLoading,
-    checkoutId,
-  });
-
   useEffect(() => {
     const storedCartId = getStoredCartId();
     if (storedCartId) {
       setCartId(storedCartId);
     }
 
-    // Check for error query parameter (e.g., from payment cancellation)
     const urlParams = new URLSearchParams(window.location.search);
     const errorParam = urlParams.get("error");
     if (errorParam === "payment_cancelled") {
@@ -55,59 +43,40 @@ export default function CheckoutPaymentPage() {
 
   const { data: cart, isLoading, refetch } = useCart(cartId);
 
-  // Redirect to cart if it's empty
   useEffect(() => {
     if (cart && (!cart.items || cart.items.length === 0)) {
       router.push("/cart");
     }
   }, [cart, router]);
 
-  // Initialize checkout when cart is loaded
   useEffect(() => {
     const initCheckout = async () => {
       if (!cartId || !cart || checkoutId) return;
-
-      // Don't initialize checkout if cart is empty
-      if (!cart.items || cart.items.length === 0) {
-        return;
-      }
+      if (!cart.items || cart.items.length === 0) return;
 
       try {
         const checkout = await cartApi.initializeCheckout(cartId);
         setCheckoutId(checkout.checkoutId);
 
-        // Safety Net: Check if this checkout is already completed (e.g. if redirect failed)
+        // Safety net: Prevent reusing completed checkout sessions
         try {
-          const detailedCheckout = await cartApi.getCheckout(
-            checkout.checkoutId
-          );
-          if (
-            detailedCheckout.status === "completed" ||
-            detailedCheckout.status === "paid"
-          ) {
-            console.log(
-              "[DEBUG] Detected completed checkout reuse. Clearing stale cart..."
-            );
+          const detailedCheckout = await cartApi.getCheckout(checkout.checkoutId);
+          if (detailedCheckout.status === "completed" || detailedCheckout.status === "paid") {
             clearCartData();
-            // Redirect to success or shop to force fresh state
             window.location.href = `/checkout/success?checkoutId=${checkout.checkoutId}`;
             return;
           }
         } catch (detailErr) {
-          console.log(
-            "[DEBUG] Failed to fetch detailed checkout status",
-            detailErr
-          );
+          // Silently handle fetch error
         }
       } catch (err) {
-        console.error("Failed to initialize checkout:", err);
+        // Silently handle initialization error
       }
     };
 
     initCheckout();
   }, [cartId, cart, checkoutId]);
 
-  // Refetch cart data when page loads to ensure we have the latest data
   useEffect(() => {
     if (cartId) {
       refetch();
@@ -116,52 +85,37 @@ export default function CheckoutPaymentPage() {
 
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[DEBUG] handleConfirm called");
 
     if (!termsAccepted) {
-      console.log("[DEBUG] Terms not accepted");
       setError("Please accept the terms and conditions to continue");
       return;
     }
 
     if (!cartId || !cart) {
-      console.log("[DEBUG] Cart not found", { cartId, cart });
       setError("Cart not found");
       return;
     }
 
     if (!cart.email) {
-      console.log("[DEBUG] Email missing");
       setError("Email is required. Please go back to step 1");
       return;
     }
 
     if (!cart.shippingFirstName || !cart.shippingCity) {
-      console.log("[DEBUG] Shipping address missing");
       setError("Shipping address is required. Please go back to step 3");
       return;
     }
 
     if (!checkoutId) {
-      console.log("[DEBUG] CheckoutId missing");
       setError("Checkout session not initialized. Please try again.");
       return;
     }
 
-    console.log("[DEBUG] All validations passed, calling createPayment");
     setProcessing(true);
     setError(null);
 
     try {
-      // Use the existing checkout session
-      const customerName =
-        `${cart.shippingFirstName || ""} ${cart.shippingLastName || ""}`.trim();
-
-      console.log("[DEBUG] Calling createPayment with:", {
-        orderId: checkoutId,
-        amount: cart.summary.total,
-        customerEmail: cart.email,
-      });
+      const customerName = `${cart.shippingFirstName || ""} ${cart.shippingLastName || ""}`.trim();
 
       const paymentResult = await createPayment({
         orderId: checkoutId,
@@ -196,24 +150,14 @@ export default function CheckoutPaymentPage() {
         },
       });
 
-      console.log("[DEBUG] createPayment result:", paymentResult);
-
       if (paymentResult.success && paymentResult.redirectUrl) {
-        console.log("[DEBUG] Redirecting to:", paymentResult.redirectUrl);
-        // Update return URL with actual intentId
-        const updatedReturnUrl = `${window.location.origin}/checkout/success?checkoutId=${checkoutId}&intentId=${paymentResult.intentId}`;
-        // Step 3: Redirect to PayableIPG for payment
         window.location.href = paymentResult.redirectUrl;
       } else {
-        console.log("[DEBUG] Payment failed:", paymentResult.error);
         setError(paymentResult.error || "Failed to create payment session");
         setProcessing(false);
       }
     } catch (err: any) {
-      console.log("[DEBUG] Exception:", err);
-      setError(
-        err.message || "Failed to initialize payment. Please try again."
-      );
+      setError(err.message || "Failed to initialize payment. Please try again.");
       setProcessing(false);
     }
   };
@@ -515,14 +459,12 @@ export default function CheckoutPaymentPage() {
                   </div>
 
                   <div className="flex flex-col gap-[16px] w-full">
-                    {/* Error Message */}
                     {error && (
                       <div className="mx-auto w-full max-w-[460px] p-4 bg-red-50 border border-red-200 rounded">
                         <p className="text-sm text-red-600">{error}</p>
                       </div>
                     )}
 
-                    {/* Terms Checkbox */}
                     <CustomCheckbox
                       label={
                         <>
@@ -544,15 +486,8 @@ export default function CheckoutPaymentPage() {
                       labelClassName="text-[12px] text-[#3E5460] pl-[28px] flex-1 leading-[18px] tracking-[0px]"
                     />
 
-                    {/* Confirm Button */}
                     <button
                       type="submit"
-                      onClick={() =>
-                        console.log(
-                          "[DEBUG] Button clicked, disabled:",
-                          !termsAccepted || processing || paymentLoading
-                        )
-                      }
                       disabled={!termsAccepted || processing || paymentLoading}
                       className={`w-full max-w-[460px] mx-auto h-[50px] bg-[#232D35] border border-[#232D35] flex items-center justify-center transition-opacity disabled:opacity-50 disabled:cursor-not-allowed ${termsAccepted && !processing && !paymentLoading ? "hover:opacity-90" : ""}`}
                     >
@@ -570,7 +505,6 @@ export default function CheckoutPaymentPage() {
               </div>
             </div>
 
-            {/* Footer Section (Reused) */}
             <CheckoutHelpSection />
           </div>
 

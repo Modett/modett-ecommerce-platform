@@ -12,7 +12,6 @@ import { CheckoutProgressBar } from "@/features/checkout/components/checkout-pro
 import { CartSummary } from "@/features/checkout/components/cart-summary";
 import { CheckoutHelpSection } from "@/features/checkout/components/checkout-help-section";
 import { ActiveStepHeader } from "@/features/checkout/components/active-step-header";
-import { CompletedCheckoutStep } from "@/features/checkout/components/completed-checkout-step";
 import { LoadingState } from "@/features/checkout/components/loading-state";
 import { FutureStep } from "@/features/checkout/components/future-step";
 import { useRouter } from "next/navigation";
@@ -44,16 +43,12 @@ export default function CheckoutEmailPage() {
     try {
       setError(null);
 
-      // Save email to cart in database
       await updateEmailMutation.mutateAsync({
         cartId,
         email,
       });
 
-      // Also save to sessionStorage for backward compatibility
       sessionStorage.setItem("checkout_email", email);
-
-      // Navigate to shipping page
       router.push("/checkout/shipping");
     } catch (err) {
       setError("Failed to save email. Please try again.");
@@ -74,7 +69,6 @@ export default function CheckoutEmailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8 min-h-[750px]">
           <div className="space-y-2">
             <div className={`${COMMON_CLASSES.pageBg} w-full max-w-[904px]`}>
-              {/* Active Step Header */}
               <ActiveStepHeader stepNumber={1} title="E-mail address" />
 
               <div className="p-6">
@@ -130,7 +124,6 @@ export default function CheckoutEmailPage() {
               </div>
             </div>
 
-            {/* Future Steps */}
             <FutureStep stepNumber={2} title="Shipping" />
             <FutureStep stepNumber={3} title="Information" />
             <FutureStep stepNumber={4} title="Payment" />

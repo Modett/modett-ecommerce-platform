@@ -158,11 +158,6 @@ export class CheckoutOrderService {
         };
       }
 
-      const debugCheckoutId = checkout.getCheckoutId().toString();
-      console.log(
-        `[DEBUG] Creating order for checkoutId: ${debugCheckoutId}, paymentIntentId: ${dto.paymentIntentId}`
-      );
-
       const order = await tx.order.create({
         data: {
           orderNo,
@@ -269,12 +264,8 @@ export class CheckoutOrderService {
         },
       });
 
-      // Clear the cart items after successful order creation
-      const cartIdToDelete = checkout.getCartId().toString();
-      console.log(`Deleting cart items for cart: ${cartIdToDelete}`);
-
-      const deleteResult = await tx.cartItem.deleteMany({
-        where: { cartId: cartIdToDelete },
+      await tx.cartItem.deleteMany({
+        where: { cartId: checkout.getCartId().toString() },
       });
 
       // Clear cart addresses and shipping info to prevent reuse of old details
@@ -301,13 +292,9 @@ export class CheckoutOrderService {
           billingPhone: null,
           shippingMethod: null,
           shippingOption: null,
-          email: null, // Depending on if we want to keep email or not. Safest is to clear everything given Guest Token persistence.
-        } as any, // Cast to any because some fields might be optional in Prisma types but we want to force null
+          email: null,
+        } as any,
       });
-
-      console.log(
-        `Deleted ${deleteResult.count} cart items and cleared cart details`
-      );
 
       return {
         orderId: order.id,
