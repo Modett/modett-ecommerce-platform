@@ -59,4 +59,8 @@ export const clearCartId = (): void => {
 export const clearCartData = (): void => {
   clearGuestToken();
   clearCartId();
+  // Clear checkout session data
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem("checkout_email");
+  }
 };
