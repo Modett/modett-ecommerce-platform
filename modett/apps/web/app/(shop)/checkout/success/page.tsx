@@ -86,11 +86,9 @@ export default function CheckoutSuccessPage() {
               phone: cart.billingPhone,
             };
 
-        // Complete checkout with order creation
-        // Use the actual intentId from payment creation
         const result = await cartApi.completeCheckoutWithOrder(
           checkoutId,
-          intentId || checkoutId, // Use intentId from URL, fallback to checkoutId
+          intentId || checkoutId,
           shippingAddress,
           billingAddress
         );
@@ -101,14 +99,13 @@ export default function CheckoutSuccessPage() {
         clearCartData();
         setCartId(null);
 
-        // Clear all React Query cache to ensure fresh data on next page load
         queryClient.clear();
-      } catch (err: any) {
-        const errorMessage = err.message || "Failed to complete order";
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to complete order";
+        console.error("[CheckoutSuccess] Order completion failed:", err);
         setError(errorMessage);
         setStatus("error");
 
-        // If checkout expired, redirect back to payment page
         if (errorMessage.includes("expired")) {
           setTimeout(() => {
             router.push("/checkout/payment");
@@ -118,7 +115,7 @@ export default function CheckoutSuccessPage() {
     };
 
     completeOrder();
-  }, [checkoutId, cart, router]);
+  }, [checkoutId, cart, router, hasProcessed, intentId, queryClient]);
 
   if (status === "loading") {
     return (
