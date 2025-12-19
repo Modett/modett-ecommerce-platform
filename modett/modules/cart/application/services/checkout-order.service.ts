@@ -164,6 +164,7 @@ export class CheckoutOrderService {
           userId: checkout.getUserId()?.toString(),
           guestToken: checkout.getGuestToken()?.toString(),
           checkoutId: checkout.getCheckoutId().toString(),
+          paymentIntentId: dto.paymentIntentId,
           totals: totals as any,
           status: "created",
           source: "web",
@@ -271,7 +272,37 @@ export class CheckoutOrderService {
         where: { cartId: cartIdToDelete },
       });
 
-      console.log(`Deleted ${deleteResult.count} cart items`);
+      // Clear cart addresses and shipping info to prevent reuse of old details
+      await tx.shoppingCart.update({
+        where: { id: checkout.getCartId().toString() },
+        data: {
+          shippingFirstName: null,
+          shippingLastName: null,
+          shippingAddress1: null,
+          shippingAddress2: null,
+          shippingCity: null,
+          shippingProvince: null,
+          shippingPostalCode: null,
+          shippingCountryCode: null,
+          shippingPhone: null,
+          billingFirstName: null,
+          billingLastName: null,
+          billingAddress1: null,
+          billingAddress2: null,
+          billingCity: null,
+          billingProvince: null,
+          billingPostalCode: null,
+          billingCountryCode: null,
+          billingPhone: null,
+          shippingMethod: null,
+          shippingOption: null,
+          email: null, // Depending on if we want to keep email or not. Safest is to clear everything given Guest Token persistence.
+        } as any, // Cast to any because some fields might be optional in Prisma types but we want to force null
+      });
+
+      console.log(
+        `Deleted ${deleteResult.count} cart items and cleared cart details`
+      );
 
       return {
         orderId: order.id,
