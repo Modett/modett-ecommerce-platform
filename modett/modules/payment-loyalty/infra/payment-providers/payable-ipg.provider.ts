@@ -11,6 +11,7 @@ export interface PayableIPGConfig {
 export interface PaymentResponse {
   success: boolean;
   transactionId?: string;
+  invoiceId?: string;
   redirectUrl?: string;
   status?: string;
   message?: string;
@@ -121,11 +122,41 @@ export class PayableIPGProvider {
       // Using numeric-only ID based on timestamp to avoid any regex/format strictness
       const shortInvoiceId = Date.now().toString();
 
-      // Webhook needs to be a valid POST endpoint (ReqRes returns 200 OK)
-      const webhookUrl = "https://reqres.in/api/users";
-      // Return/Referer need to be valid HTML pages. Using merchant domain for matching.
-      const returnUrl = "https://modett.com/payment-success";
-      const refererUrl = "https://modett.com";
+      // Use ngrok URL from environment, OR fallback to the confirmed active one to bypass env loading issues
+      // Auto-updated at 2025-12-19 00:35 based on active tunnel
+      const ngrokUrl =
+        process.env.NGROK_URL || "https://514b1dac2aa5.ngrok-free.app";
+
+      // When NGROK_URL is set, always use it (for local development)
+      // Otherwise, use the provided params or fallback to production domain
+      let returnUrl: string;
+      let webhookUrl: string;
+      let refererUrl: string;
+
+      if (ngrokUrl) {
+        // Local development with ngrok
+        returnUrl = `${ngrokUrl}/checkout/success`;
+        webhookUrl = `${ngrokUrl}/api/v1/payments/payable-ipg/webhook`;
+        // CRITICAL: Referer MUST be the registered merchant domain (modett.com), NOT ngrok.
+        // The Gateway validates this against your Merchant ID.
+        refererUrl = "https://modett.com";
+      } else {
+        // Production fallback
+        const baseUrl =
+          params.returnUrl?.split("/checkout")[0] || "https://modett.com";
+        returnUrl = params.returnUrl || `${baseUrl}/checkout/success`;
+        webhookUrl =
+          params.webhookUrl || `${baseUrl}/api/v1/payments/payable-ipg/webhook`;
+        refererUrl = baseUrl; // In prod, baseUrl should be https://modett.com
+      }
+
+      console.log("[PayableIPG] Using URLs:", {
+        returnUrl,
+        webhookUrl,
+        refererUrl,
+        ngrokEnabled: !!ngrokUrl,
+        activeNgrok: ngrokUrl,
+      });
 
       const checkValue = this.generateCheckValue(
         this.config.merchantId,
@@ -169,12 +200,13 @@ export class PayableIPGProvider {
         shippingAddressPostcodeZip: shippingAddress?.postcode || "00300",
         shippingAddressCountry: "LKA",
 
-        returnUrl: "https://modett.com/payment-success",
-        refererUrl: "https://modett.com",
+        returnUrl: returnUrl,
+        refererUrl: refererUrl,
         // Use a high-availability public logo to prevent UI crash
         logoUrl: "https://placehold.co/200x50.png", // Short, reliable, SSL-compliant logo
         webhookUrl: webhookUrl,
 
+        custom1: params.orderId, // Pass the Order UUID to link back in webhook
         orderDescription: "Order " + shortInvoiceId, // Short description to avoid length limits
       };
 
@@ -212,6 +244,7 @@ export class PayableIPGProvider {
           return {
             success: true,
             transactionId: transactionId,
+            invoiceId: shortInvoiceId, // Returning local invoice ID to save in DB
             redirectUrl: redirectUrl,
             status: data.status || "PENDING",
             message: "Payment session created successfully",
