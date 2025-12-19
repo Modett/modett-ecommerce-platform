@@ -67,8 +67,12 @@ export class CheckoutService {
 
     // Check if checkout already exists for this cart
     const existingCheckout = await this.checkoutRepository.findByCartId(cartId);
-    if (existingCheckout && existingCheckout.isPending()) {
-      return this.mapCheckoutToDto(existingCheckout);
+    if (existingCheckout) {
+      if (existingCheckout.isPending()) {
+        return this.mapCheckoutToDto(existingCheckout);
+      } else {
+        await this.checkoutRepository.delete(existingCheckout.getCheckoutId());
+      }
     }
 
     // Calculate total amount
