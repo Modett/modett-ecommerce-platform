@@ -24,6 +24,7 @@ export interface IPaymentIntentRepository {
   findByOrderId(orderId: string): Promise<PaymentIntent[]>;
   findByCheckoutId(checkoutId: string): Promise<PaymentIntent | null>;
   findByIdempotencyKey(key: string): Promise<PaymentIntent | null>;
+  findByClientSecret(secret: string): Promise<PaymentIntent | null>;
   findWithFilters(
     filters: PaymentIntentFilterOptions,
     options?: PaymentIntentQueryOptions
