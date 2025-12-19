@@ -338,7 +338,7 @@ model ShoppingCart {
   updatedAt             DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   items                 CartItem[]
   reservations          Reservation[]
-  checkout              Checkout?
+  checkouts             Checkout[]
   user                  User?         @relation(fields: [userId], references: [id], onUpdate: NoAction)
 
   @@map("shopping_carts")
@@ -379,7 +379,7 @@ model Checkout {
   id              String           @id @default(dbgenerated("gen_random_uuid()")) @map("checkout_id") @db.Uuid
   userId          String?          @map("user_id") @db.Uuid
   guestToken      String?          @map("guest_token")
-  cartId          String           @unique @map("cart_id") @db.Uuid
+  cartId          String           @map("cart_id") @db.Uuid
   status          CheckoutStatusEnum @default(pending)
   expiresAt       DateTime         @map("expires_at") @db.Timestamptz(6)
   totalAmount     Decimal          @map("total_amount") @db.Decimal(12, 2)
@@ -422,7 +422,7 @@ model Order {
   shipments              OrderShipment[]
   statusHistory          OrderStatusHistory[]
   user                   User?                 @relation(fields: [userId], references: [id], onUpdate: NoAction)
-  checkout               Checkout?             @relation("CheckoutOrders", fields: [checkoutId], references: [id])
+  checkout               Checkout?             @relation("CheckoutOrders", fields: [checkoutId], references: [id], onDelete: SetNull)
   bnpl_transactions      BnplTransaction[]
   gift_card_transactions GiftCardTransaction[]
   loyalty_transactions   LoyaltyTransaction[]
