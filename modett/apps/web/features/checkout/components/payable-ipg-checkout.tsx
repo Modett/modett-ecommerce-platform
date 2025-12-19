@@ -13,6 +13,18 @@ interface PayableIPGCheckoutProps {
   onError?: (error: string) => void;
   returnUrl?: string;
   cancelUrl?: string;
+  billingAddress?: {
+    street: string;
+    city: string;
+    postcode: string;
+    country: string;
+  };
+  shippingAddress?: {
+    street: string;
+    city: string;
+    postcode: string;
+    country: string;
+  };
 }
 
 export function PayableIPGCheckout({
@@ -25,6 +37,8 @@ export function PayableIPGCheckout({
   onError,
   returnUrl,
   cancelUrl,
+  billingAddress,
+  shippingAddress,
 }: PayableIPGCheckoutProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -52,6 +66,8 @@ export function PayableIPGCheckout({
           returnUrl: returnUrl || `${window.location.origin}/payment/success`,
           cancelUrl: cancelUrl || `${window.location.origin}/payment/cancel`,
           description: `Payment for Order ${orderId}`,
+          billingAddress,
+          shippingAddress,
         }),
       });
 
