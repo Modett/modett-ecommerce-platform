@@ -20,7 +20,6 @@ export default function CheckoutInformationPage() {
   const [cartId, setCartId] = useState<string | null>(null);
   const [title, setTitle] = useState("ms");
   const [sameAddress, setSameAddress] = useState(true);
-  /* eslint-disable @typescript-eslint/no-unused-vars */
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -142,7 +141,6 @@ export default function CheckoutInformationPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4 md:gap-6 lg:gap-10 min-h-[750px]">
           <div className="space-y-6 max-w-[904px] pb-16">
-            {/* Step 1: E-mail address (Completed) */}
             {/* Step 1: E-mail address (Completed) */}
             <CompletedCheckoutStep
               stepNumber={1}

@@ -23,6 +23,7 @@ import {
   LoyaltyService,
   LoyaltyTransactionService,
 } from "../../application/services";
+import { CheckoutOrderService } from "../../../cart/application/services/checkout-order.service";
 import {
   optionalAuth,
   authenticateUser,
@@ -78,6 +79,7 @@ export async function registerPaymentLoyaltyRoutes(
     webhookService: PaymentWebhookService;
     loyaltyService: LoyaltyService;
     loyaltyTxnService: LoyaltyTransactionService;
+    checkoutOrderService: CheckoutOrderService;
   }
 ) {
   // Initialize controllers
@@ -1369,7 +1371,8 @@ export async function registerPaymentLoyaltyRoutes(
   // Only register PayableIPG routes if configured
   if (isPayableIPGConfigured()) {
     const payableIPGController = new PayableIPGController(
-      services.paymentService
+      services.paymentService,
+      services.checkoutOrderService
     );
 
     // Create PayableIPG payment

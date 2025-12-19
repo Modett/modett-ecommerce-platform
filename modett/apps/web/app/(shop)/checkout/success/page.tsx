@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
 import { useCart } from "@/features/cart/queries";
-import { getStoredCartId, clearCartId } from "@/features/cart/utils";
+import { getStoredCartId, clearCartData } from "@/features/cart/utils";
 import { LoadingState } from "@/features/checkout/components/loading-state";
 import * as cartApi from "@/features/cart/api";
 import { Check, X } from "lucide-react";
@@ -98,8 +98,7 @@ export default function CheckoutSuccessPage() {
         setOrderId(result.order?.id || checkoutId);
         setStatus("success");
 
-        // Clear cart ID from localStorage using utility function
-        clearCartId();
+        clearCartData();
         setCartId(null);
 
         // Clear all React Query cache to ensure fresh data on next page load
@@ -197,13 +196,13 @@ export default function CheckoutSuccessPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => router.push("/shop")}
+              onClick={() => (window.location.href = "/shop")}
               className="bg-[#232D35] text-[#E5E0D6] px-8 py-3 hover:opacity-90 transition-opacity"
             >
               Continue Shopping
             </button>
             <button
-              onClick={() => router.push("/orders")}
+              onClick={() => (window.location.href = "/orders")}
               className="border border-[#232D35] text-[#232D35] px-8 py-3 hover:bg-[#232D35] hover:text-[#E5E0D6] transition-colors"
             >
               View Orders

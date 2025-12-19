@@ -102,6 +102,7 @@ export async function registerModules(
         webhookService: container.paymentWebhookService,
         loyaltyService: container.loyaltyService,
         loyaltyTxnService: container.loyaltyTransactionService,
+        checkoutOrderService: container.checkoutOrderService,
       });
     },
     { prefix: "/api/v1" }

@@ -11,6 +11,7 @@ export interface PayableIPGConfig {
 export interface PaymentResponse {
   success: boolean;
   transactionId?: string;
+  invoiceId?: string;
   redirectUrl?: string;
   status?: string;
   message?: string;
@@ -68,11 +69,6 @@ export class PayableIPGProvider {
 
     const dataString = `${merchantKey}|${invoiceId}|${amount}|${currency}|${hashedToken}`;
 
-    console.log(
-      "[PayableIPG] CheckValue String:",
-      dataString.replace(hashedToken, "HASHED_TOKEN")
-    );
-
     return crypto
       .createHash("sha512")
       .update(dataString)
@@ -117,15 +113,28 @@ export class PayableIPGProvider {
       const amountStr = amount.toFixed(2);
       const currency = this.config.currency || "LKR";
 
-      // Generate a short Invoice ID (max 20 chars).
-      // Using numeric-only ID based on timestamp to avoid any regex/format strictness
       const shortInvoiceId = Date.now().toString();
 
-      // Webhook needs to be a valid POST endpoint (ReqRes returns 200 OK)
-      const webhookUrl = "https://reqres.in/api/users";
-      // Return/Referer need to be valid HTML pages. Using merchant domain for matching.
-      const returnUrl = "https://modett.com/payment-success";
-      const refererUrl = "https://modett.com";
+      const ngrokUrl = process.env.NGROK_URL;
+
+      // When NGROK_URL is set, always use it (for local development)
+      // Otherwise, use the provided params or fallback to production domain
+      let returnUrl: string;
+      let webhookUrl: string;
+      let refererUrl: string;
+
+      if (ngrokUrl) {
+        returnUrl = `${ngrokUrl}/checkout/success`;
+        webhookUrl = `${ngrokUrl}/api/v1/payments/payable-ipg/webhook`;
+        refererUrl = "https://modett.com";
+      } else {
+        const baseUrl =
+          params.returnUrl?.split("/checkout")[0] || "https://modett.com";
+        returnUrl = params.returnUrl || `${baseUrl}/checkout/success`;
+        webhookUrl =
+          params.webhookUrl || `${baseUrl}/api/v1/payments/payable-ipg/webhook`;
+        refererUrl = baseUrl;
+      }
 
       const checkValue = this.generateCheckValue(
         this.config.merchantId,
@@ -134,14 +143,6 @@ export class PayableIPGProvider {
         currency,
         this.config.apiKey
       );
-
-      console.log("[PayableIPG] Generated CheckValue for:", {
-        invoiceId: shortInvoiceId,
-        amount: amountStr,
-        currency,
-      });
-
-      // Construct payload using CamelCase keys (Confirmed by API Error Message)
       const payload = {
         merchantKey: this.config.merchantId,
         invoiceId: shortInvoiceId,
@@ -169,20 +170,14 @@ export class PayableIPGProvider {
         shippingAddressPostcodeZip: shippingAddress?.postcode || "00300",
         shippingAddressCountry: "LKA",
 
-        returnUrl: "https://modett.com/payment-success",
-        refererUrl: "https://modett.com",
-        // Use a high-availability public logo to prevent UI crash
-        logoUrl: "https://placehold.co/200x50.png", // Short, reliable, SSL-compliant logo
+        returnUrl: returnUrl,
+        refererUrl: refererUrl,
+        logoUrl: "https://placehold.co/200x50.png",
         webhookUrl: webhookUrl,
 
-        orderDescription: "Order " + shortInvoiceId, // Short description to avoid length limits
+        custom1: params.orderId,
+        orderDescription: "Order " + shortInvoiceId,
       };
-
-      console.log("[PayableIPG] Creating payment with new payload:", {
-        url: this.apiUrl,
-        ...payload,
-        checkValue: "***",
-      });
 
       const response = await fetch(this.apiUrl, {
         method: "POST",
@@ -192,10 +187,7 @@ export class PayableIPGProvider {
         body: JSON.stringify(payload),
       });
 
-      console.log("[PayableIPG] Response status:", response.status);
-
       const data: any = await response.json();
-      console.log("[PayableIPG] Response data:", JSON.stringify(data, null, 2));
 
       if (
         data.isSuccess ||
@@ -212,6 +204,7 @@ export class PayableIPGProvider {
           return {
             success: true,
             transactionId: transactionId,
+            invoiceId: shortInvoiceId, // Returning local invoice ID to save in DB
             redirectUrl: redirectUrl,
             status: data.status || "PENDING",
             message: "Payment session created successfully",
@@ -219,17 +212,11 @@ export class PayableIPGProvider {
         }
       }
 
-      // Fallback for failure
       return {
         success: false,
         error: `PAYable Error: ${JSON.stringify(data)}`,
       };
     } catch (error: any) {
-      console.error("[PayableIPG] Payment creation error:", {
-        message: error.message,
-        cause: error.cause,
-        stack: error.stack,
-      });
       return {
         success: false,
         error: error.message || "Payment creation failed",

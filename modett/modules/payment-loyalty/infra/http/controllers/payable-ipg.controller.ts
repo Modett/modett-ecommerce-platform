@@ -2,11 +2,15 @@ import { FastifyRequest, FastifyReply } from "fastify";
 import { PayableIPGProvider } from "../../payment-providers/payable-ipg.provider";
 import { getPayableIPGConfig } from "../../config/payable-ipg.config";
 import { PaymentService } from "../../../application/services/payment.service";
+import { CheckoutOrderService } from "../../../../cart/application/services/checkout-order.service";
 
 export class PayableIPGController {
   private payableProvider: PayableIPGProvider;
 
-  constructor(private readonly paymentService: PaymentService) {
+  constructor(
+    private readonly paymentService: PaymentService,
+    private readonly checkoutOrderService: CheckoutOrderService
+  ) {
     const config = getPayableIPGConfig();
     this.payableProvider = new PayableIPGProvider(config);
   }
@@ -34,6 +38,15 @@ export class PayableIPGController {
       // Get the user from the authenticated request
       const user = (req as any).user;
 
+      req.log.info(
+        `[DEBUG] createPayment received body: ${JSON.stringify({
+          orderId,
+          amount,
+          shippingAddress,
+          billingAddress,
+        })}`
+      );
+
       // Create payment intent in your system
       // orderId here is actually checkoutId during checkout flow
       const paymentIntent = await this.paymentService.createPaymentIntent({
@@ -42,6 +55,13 @@ export class PayableIPGController {
         amount,
         currency: "LKR",
         userId: user?.userId,
+        metadata: {
+          shippingAddress,
+          billingAddress,
+          customerEmail,
+          customerName,
+          customerPhone,
+        },
       });
 
       // Create payment session with PayableIPG
@@ -63,6 +83,20 @@ export class PayableIPGController {
       });
 
       if (paymentResponse.success) {
+        // Save the Payable UID (transactionId) or Invoice ID to the Payment Intent for later lookup
+        // We use 'clientSecret' field to store this external reference temporarily
+        const lookupKey =
+          paymentResponse.transactionId || paymentResponse.invoiceId;
+
+        if (lookupKey) {
+          await this.paymentService.updatePaymentIntent(
+            paymentIntent.intentId,
+            {
+              clientSecret: lookupKey,
+            }
+          );
+        }
+
         return reply.status(200).send({
           success: true,
           data: {
@@ -122,43 +156,147 @@ export class PayableIPGController {
         );
       }
 
-      // Process webhook based on event type
-      const { event, transactionId, orderId, status, amount } = payload;
+      // Process webhook based on PAYable schema
+      const {
+        statusCode,
+        statusMessage,
+        payableTransactionId,
+        paymentId,
+        custom1,
+        invoiceNo,
+        failureReason,
+      } = payload;
+
+      // Lookup the order/intent using the stored reference (paymentId/uid or invoiceNo)
+      // Custom1 is unreliable/missing in some cases
+      let paymentIntent = null;
+
+      // 1. Try finding by ClientSecret using paymentId (which is the uid we saved)
+      if (paymentId) {
+        paymentIntent = await (
+          this.paymentService as any
+        ).paymentIntentRepo.findByClientSecret(paymentId);
+      }
+
+      // 2. If not found, try finding by ClientSecret using invoiceNo (fallback if we saved invoiceId)
+      if (!paymentIntent && invoiceNo) {
+        paymentIntent = await (
+          this.paymentService as any
+        ).paymentIntentRepo.findByClientSecret(invoiceNo);
+      }
+
+      // 3. Fallback to custom1 if available
+      if (!paymentIntent && custom1) {
+        // custom1 is the Order UUID (which is Intent ID in our system)
+        paymentIntent = await this.paymentService.getPaymentIntent(custom1);
+      }
+
+      if (!paymentIntent) {
+        req.log.error(
+          `PayableIPG webhook: Could not find matching PaymentIntent for payload: ${JSON.stringify(payload)}`
+        );
+        return reply
+          .status(404)
+          .send({ success: false, error: "Order not found" });
+      }
+
+      // Fix: Extract primitive string from Value Object
+      const orderUUID = paymentIntent.intentId.getValue();
+      const transactionRef = payableTransactionId || paymentId;
 
       req.log.info(
-        `PayableIPG webhook received: ${event} for ${transactionId}`
+        `PayableIPG webhook received: Status ${statusCode} (${statusMessage}) for Intent ${orderUUID}`
       );
 
-      switch (event) {
-        case "payment.success":
-        case "payment.completed":
-          // Mark payment as successful
-          await this.paymentService.capturePayment(
-            orderId, // This is actually the intentId we passed
-            transactionId
-          );
-          break;
+      // Check for Success (statusCode 1 or "1")
+      // OR Check for statusMessage "SUCCESS" (sent by some gateways/versions)
+      const isSuccess =
+        statusCode == 1 || statusMessage?.toUpperCase() === "SUCCESS";
 
-        case "payment.failed":
-          // Mark payment as failed
-          await this.paymentService.failPayment(
-            orderId,
-            payload.failureReason || "Payment failed"
-          );
-          break;
+      if (isSuccess) {
+        // Mark payment as successful
+        req.log.info(`Processing Successful Payment for Intent ${orderUUID}`);
 
-        case "payment.cancelled":
-          // Cancel payment
-          await this.paymentService.cancelPayment(orderId);
-          break;
+        // 1. Check current status to handle idempotency
+        const currentStatus = paymentIntent.status.getValue();
+        req.log.info(`Current Intent Status: ${currentStatus}`);
 
-        case "refund.completed":
-          // Handle refund completion
-          req.log.info(`Refund completed for transaction ${transactionId}`);
-          break;
+        if (currentStatus === "captured") {
+          req.log.info("Payment already captured. Skipping capture logic.");
+        } else {
+          // 2. Authorize if needed (Transition: REQUIRES_ACTION -> AUTHORIZED)
+          // Check for "requires_action" or "failed" (lowercase) as per VO Enum
+          if (
+            currentStatus === "requires_action" ||
+            currentStatus === "failed"
+          ) {
+            try {
+              await this.paymentService.authorizePayment({
+                intentId: orderUUID,
+                pspReference: transactionRef,
+                userId: undefined,
+              });
+            } catch (err: any) {
+              req.log.warn(
+                `Authorization step failed (might have raced): ${err.message}`
+              );
+              // Proceed to capture check anyway, in case it was authorized in parallel
+            }
+          }
 
-        default:
-          req.log.warn(`Unknown PayableIPG webhook event: ${event}`);
+          // 3. Capture the payment (Transition: AUTHORIZED -> CAPTURED)
+          await this.paymentService.capturePayment(orderUUID, transactionRef);
+        }
+
+        // 4. Create the Order in the database (Complete Checkout)
+        if (paymentIntent.checkoutId) {
+          try {
+            req.log.info(
+              `Creating Order for Checkout ${paymentIntent.checkoutId}`
+            );
+
+            // Retrieve address from metadata
+            const shippingAddress = paymentIntent.metadata?.shippingAddress;
+
+            // Map to DTO format
+            const mappedShippingAddress = {
+              firstName: (
+                paymentIntent.metadata?.customerName || "Guest"
+              ).split(" ")[0],
+              lastName:
+                (paymentIntent.metadata?.customerName || "Guest")
+                  .split(" ")
+                  .slice(1)
+                  .join(" ") || "User",
+              addressLine1: shippingAddress?.street || "N/A",
+              city: shippingAddress?.city || "N/A",
+              postalCode: shippingAddress?.postcode || "N/A",
+              country: shippingAddress?.country || "LKA",
+              phone: paymentIntent.metadata?.customerPhone,
+            };
+
+            const orderResult =
+              await this.checkoutOrderService.completeCheckoutWithOrder({
+                checkoutId: paymentIntent.checkoutId,
+                paymentIntentId: orderUUID,
+                shippingAddress: mappedShippingAddress as any,
+                // userId derived from Checkout entity inside service
+              } as any);
+
+            req.log.info(
+              `Order Successfully Created for Checkout ${paymentIntent.checkoutId}. Order ID: ${orderResult.orderId}`
+            );
+          } catch (err: any) {
+            req.log.error(`Order Creation Failed: ${err.message}`);
+            // Don't fail webhook - payment is secured. Merchant can intervene.
+          }
+        }
+      } else {
+        // Mark payment as failed
+        await this.paymentService.failPayment(
+          orderUUID,
+          failureReason || statusMessage || "Payment failed"
+        );
       }
 
       return reply.status(200).send({

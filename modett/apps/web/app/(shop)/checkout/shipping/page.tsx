@@ -35,12 +35,9 @@ export default function CheckoutShippingPage() {
 
   const { data: cart, isLoading } = useCart(cartId);
   const updateShippingMutation = useUpdateCartShipping();
-
-  /* eslint-disable @typescript-eslint/no-unused-vars */
   const [email, setEmail] = useState("");
 
   useEffect(() => {
-    // Priority: Cart email (from backend) > Session storage > Default
     if (cart?.email) {
       setEmail(cart.email);
     } else {
@@ -62,7 +59,6 @@ export default function CheckoutShippingPage() {
     try {
       setError(null);
 
-      // Save shipping information to database
       await updateShippingMutation.mutateAsync({
         cartId,
         shippingData: {
@@ -73,7 +69,6 @@ export default function CheckoutShippingPage() {
         },
       });
 
-      // Navigate to information page
       router.push("/checkout/information");
     } catch (err) {
       setError("Failed to save shipping information. Please try again.");

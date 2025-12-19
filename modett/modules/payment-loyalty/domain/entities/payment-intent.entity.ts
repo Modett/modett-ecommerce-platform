@@ -11,6 +11,7 @@ export interface CreatePaymentIntentData {
   currency: string;
   idempotencyKey?: string;
   clientSecret?: string;
+  metadata?: any;
 }
 
 export class PaymentIntent {
@@ -23,6 +24,7 @@ export class PaymentIntent {
     private _status: PaymentIntentStatus,
     private readonly _amount: Money,
     private _clientSecret: string | undefined,
+    private _metadata: any,
     private readonly _createdAt: Date,
     private _updatedAt: Date
   ) {}
@@ -42,6 +44,7 @@ export class PaymentIntent {
       PaymentIntentStatus.requiresAction(),
       amount,
       data.clientSecret,
+      data.metadata || {},
       now,
       now
     );
@@ -56,6 +59,7 @@ export class PaymentIntent {
     status: PaymentIntentStatus;
     amount: Money;
     clientSecret?: string;
+    metadata?: any;
     createdAt: Date;
     updatedAt: Date;
   }): PaymentIntent {
@@ -68,6 +72,7 @@ export class PaymentIntent {
       data.status,
       data.amount,
       data.clientSecret,
+      data.metadata || {},
       data.createdAt,
       data.updatedAt
     );
@@ -113,6 +118,10 @@ export class PaymentIntent {
     return this._clientSecret;
   }
 
+  get metadata(): any {
+    return this._metadata;
+  }
+
   get createdAt(): Date {
     return this._createdAt;
   }
@@ -153,7 +162,8 @@ export class PaymentIntent {
   }
 
   canAuthorize(): boolean {
-    return this._status.isRequiresAction();
+    // Modify to allow RE-Authorization if it failed previously (Recovery Mode)
+    return this._status.isRequiresAction() || this._status.isFailed();
   }
 
   canCapture(): boolean {

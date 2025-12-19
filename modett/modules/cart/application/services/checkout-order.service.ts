@@ -164,6 +164,7 @@ export class CheckoutOrderService {
           userId: checkout.getUserId()?.toString(),
           guestToken: checkout.getGuestToken()?.toString(),
           checkoutId: checkout.getCheckoutId().toString(),
+          paymentIntentId: dto.paymentIntentId,
           totals: totals as any,
           status: "created",
           source: "web",
@@ -263,15 +264,37 @@ export class CheckoutOrderService {
         },
       });
 
-      // Clear the cart items after successful order creation
-      const cartIdToDelete = checkout.getCartId().toString();
-      console.log(`Deleting cart items for cart: ${cartIdToDelete}`);
-
-      const deleteResult = await tx.cartItem.deleteMany({
-        where: { cartId: cartIdToDelete },
+      await tx.cartItem.deleteMany({
+        where: { cartId: checkout.getCartId().toString() },
       });
 
-      console.log(`Deleted ${deleteResult.count} cart items`);
+      // Clear cart addresses and shipping info to prevent reuse of old details
+      await tx.shoppingCart.update({
+        where: { id: checkout.getCartId().toString() },
+        data: {
+          shippingFirstName: null,
+          shippingLastName: null,
+          shippingAddress1: null,
+          shippingAddress2: null,
+          shippingCity: null,
+          shippingProvince: null,
+          shippingPostalCode: null,
+          shippingCountryCode: null,
+          shippingPhone: null,
+          billingFirstName: null,
+          billingLastName: null,
+          billingAddress1: null,
+          billingAddress2: null,
+          billingCity: null,
+          billingProvince: null,
+          billingPostalCode: null,
+          billingCountryCode: null,
+          billingPhone: null,
+          shippingMethod: null,
+          shippingOption: null,
+          email: null,
+        } as any,
+      });
 
       return {
         orderId: order.id,

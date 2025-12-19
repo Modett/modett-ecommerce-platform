@@ -90,6 +90,7 @@ export class CheckoutRepositoryImpl implements CheckoutRepository {
     await this.prisma.checkout.update({
       where: { id: data.checkoutId },
       data: {
+        cartId: data.cartId, // Allow updating cartId (for archiving)
         status: data.status as CheckoutStatusEnum,
         completedAt: data.completedAt,
         updatedAt: data.updatedAt,
