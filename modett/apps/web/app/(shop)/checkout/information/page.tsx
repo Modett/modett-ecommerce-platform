@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Check } from "lucide-react";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
 import { useCart, useUpdateCartAddresses } from "@/features/cart/queries";
 import { getStoredCartId } from "@/features/cart/utils";
@@ -13,8 +15,8 @@ import { FutureStep } from "@/features/checkout/components/future-step";
 import { FormInput } from "@/features/checkout/components/form-input";
 import { CustomCheckbox } from "@/features/checkout/components/custom-checkbox";
 import { LoadingState } from "@/features/checkout/components/loading-state";
-import { Check } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { DEFAULT_COUNTRY } from "@/constants/countries";
+import { getErrorMessage } from "@/lib/errors";
 
 export default function CheckoutInformationPage() {
   const [cartId, setCartId] = useState<string | null>(null);
@@ -95,7 +97,7 @@ export default function CheckoutInformationPage() {
 
     try {
       setError(null);
-      // Save address information to backend
+
       await updateAddressesMutation.mutateAsync({
         cartId,
         addressData: {
@@ -106,9 +108,8 @@ export default function CheckoutInformationPage() {
           shippingCity,
           shippingPostalCode,
           shippingProvince,
-          shippingCountryCode: "LK", // Sri Lanka
+          shippingCountryCode: DEFAULT_COUNTRY.code,
           sameAddressForBilling: sameAddress,
-          // If same address, copy shipping to billing
           ...(sameAddress && {
             billingFirstName: shippingFirstName,
             billingLastName: shippingLastName,
@@ -117,14 +118,16 @@ export default function CheckoutInformationPage() {
             billingCity: shippingCity,
             billingPostalCode: shippingPostalCode,
             billingProvince: shippingProvince,
-            billingCountryCode: "LK",
+            billingCountryCode: DEFAULT_COUNTRY.code,
           }),
         },
       });
 
       router.push("/checkout/payment");
-    } catch (error) {
-      setError("Failed to save address information. Please try again.");
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error);
+      console.error("[CheckoutInformation] Failed to save address:", error);
+      setError(errorMessage || "Failed to save address information. Please try again.");
     }
   };
 
