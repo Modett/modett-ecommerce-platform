@@ -463,11 +463,13 @@ export function createServiceContainer(): ServiceContainer {
     prisma,
     stockManagementService
   );
+  const checkoutRepository = new CheckoutRepositoryImpl(prisma);
 
   // Initialize Cart services
   const cartManagementService = new CartManagementService(
     cartRepository,
     reservationRepository,
+    checkoutRepository,
     productVariantRepository,
     productRepository,
     productMediaRepository,
@@ -477,7 +479,6 @@ export function createServiceContainer(): ServiceContainer {
     reservationRepository,
     cartRepository
   );
-  const checkoutRepository = new CheckoutRepositoryImpl(prisma);
   const checkoutService = new CheckoutService(
     checkoutRepository,
     cartRepository
