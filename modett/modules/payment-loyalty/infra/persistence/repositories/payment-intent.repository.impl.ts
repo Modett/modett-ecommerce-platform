@@ -67,6 +67,14 @@ export class PaymentIntentRepository implements IPaymentIntentRepository {
     return record ? this.hydrate(record) : null;
   }
 
+  async findByClientSecret(secret: string): Promise<PaymentIntent | null> {
+    const record = await (this.prisma as any).paymentIntent.findFirst({
+      where: { clientSecret: secret },
+    });
+
+    return record ? this.hydrate(record) : null;
+  }
+
   async findWithFilters(
     filters: PaymentIntentFilterOptions,
     options?: PaymentIntentQueryOptions
@@ -149,6 +157,7 @@ export class PaymentIntentRepository implements IPaymentIntentRepository {
         Currency.create(record.currency)
       ),
       clientSecret: record.clientSecret,
+      metadata: record.metadata,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
     });
@@ -165,6 +174,7 @@ export class PaymentIntentRepository implements IPaymentIntentRepository {
       amount: paymentIntent.amount.getAmount(),
       currency: paymentIntent.amount.getCurrency().getValue(),
       clientSecret: paymentIntent.clientSecret,
+      metadata: paymentIntent.metadata,
       createdAt: paymentIntent.createdAt,
       updatedAt: paymentIntent.updatedAt,
     };
