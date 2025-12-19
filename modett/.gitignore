@@ -6,3 +6,5 @@ dist/
 Thumbs.db
 .security-store.json
 
+# Security store
+.security-store.json

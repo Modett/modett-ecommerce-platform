@@ -1,5 +1,6 @@
 import { CartRepository } from "../../domain/repositories/cart.repository";
 import { ReservationRepository } from "../../domain/repositories/reservation.repository";
+import { CheckoutRepository } from "../../domain/repositories/checkout.repository";
 import {
   ShoppingCart,
   CreateShoppingCartData,
@@ -150,6 +151,7 @@ export class CartManagementService {
   constructor(
     private readonly cartRepository: CartRepository,
     private readonly reservationRepository: ReservationRepository,
+    private readonly checkoutRepository: CheckoutRepository,
     private readonly productVariantRepository: IProductVariantRepository,
     private readonly productRepository: IProductRepository,
     private readonly productMediaRepository: IProductMediaRepository,
@@ -227,15 +229,26 @@ export class CartManagementService {
           existingCart.getCartId().getValue()
         );
 
-        // Update reservation expiry and return existing cart
-        const newExpiryTime = new Date(
-          Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000
+        // CRITICAL: Check if this cart has a completed checkout
+        // If so, don't reuse it - create a fresh cart instead
+        const existingCheckout = await this.checkoutRepository.findByCartId(
+          existingCart.getCartId()
         );
-        existingCart.updateReservationExpiry(newExpiryTime);
-        await this.cartRepository.update(existingCart);
-        console.log("Updated existing cart reservation to:", newExpiryTime);
 
-        return await this.mapCartToDto(existingCart);
+        if (!existingCheckout || !existingCheckout.isCompleted()) {
+          // Safe to reuse - update reservation expiry and return existing cart
+          const newExpiryTime = new Date(
+            Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000
+          );
+          existingCart.updateReservationExpiry(newExpiryTime);
+          await this.cartRepository.update(existingCart);
+          console.log("Updated existing cart reservation to:", newExpiryTime);
+
+          return await this.mapCartToDto(existingCart);
+        } else {
+          console.log("Existing cart has completed checkout - creating new cart");
+          // Fall through to create new cart
+        }
       }
 
       // Create new guest cart
@@ -319,6 +332,34 @@ export class CartManagementService {
       cart = await this.cartRepository.findById(CartId.fromString(dto.cartId));
       if (!cart) {
         throw new Error("Cart not found");
+      }
+
+      // CRITICAL: Check if this cart has a completed checkout
+      // If so, we should NOT add items to it - create a new cart instead
+      const existingCheckout = await this.checkoutRepository.findByCartId(
+        CartId.fromString(dto.cartId)
+      );
+      if (existingCheckout && existingCheckout.isCompleted()) {
+        // Cart has a completed order - create a new cart instead
+        if (dto.guestToken) {
+          const newCartDto = await this.createGuestCart({
+            guestToken: dto.guestToken,
+            currency: cart.getCurrency().toString(),
+          });
+          cart = await this.cartRepository.findById(
+            CartId.fromString(newCartDto.cartId)
+          );
+        } else if (dto.userId) {
+          const newCartDto = await this.createUserCart({
+            userId: dto.userId,
+            currency: cart.getCurrency().toString(),
+          });
+          cart = await this.cartRepository.findById(
+            CartId.fromString(newCartDto.cartId)
+          );
+        } else {
+          throw new Error("Cannot add items to a cart with a completed order");
+        }
       }
     } else if (dto.userId) {
       cart = await this.cartRepository.findActiveCartByUserId(

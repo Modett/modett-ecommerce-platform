@@ -62,15 +62,29 @@ export default function CheckoutPaymentPage() {
         try {
           const detailedCheckout = await cartApi.getCheckout(checkout.checkoutId);
           if (detailedCheckout.status === "completed" || detailedCheckout.status === "paid") {
+            console.warn("[Checkout] Detected completed checkout session, redirecting to success");
             clearCartData();
             window.location.href = `/checkout/success?checkoutId=${checkout.checkoutId}`;
             return;
           }
         } catch (detailErr) {
-          // Silently handle fetch error
+          console.error("[Checkout] Failed to fetch checkout status:", detailErr);
         }
-      } catch (err) {
-        // Silently handle initialization error
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error("[Checkout] Failed to initialize checkout:", err);
+
+        // If cart has a completed order, clear cart data and redirect to cart page
+        if (errorMessage.includes("completed order")) {
+          console.warn("[Checkout] Cart has completed order, clearing cart data");
+          clearCartData();
+          setError("Your previous order is complete. Please add items to your cart to place a new order.");
+          setTimeout(() => {
+            window.location.href = "/cart";
+          }, 2000);
+        } else {
+          setError("Failed to initialize checkout. Please try again.");
+        }
       }
     };
 
@@ -156,8 +170,10 @@ export default function CheckoutPaymentPage() {
         setError(paymentResult.error || "Failed to create payment session");
         setProcessing(false);
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to initialize payment. Please try again.");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to initialize payment. Please try again.";
+      console.error("[Payment] Payment initialization failed:", err);
+      setError(errorMessage);
       setProcessing(false);
     }
   };

@@ -17,14 +17,18 @@ export class CheckoutRepositoryImpl implements CheckoutRepository {
 
     try {
       // Check if checkout already exists for this cart
-      const existing = await this.prisma.checkout.findUnique({
-        where: { cartId: data.cartId },
+      // Check if there is an active (pending) checkout for this cart
+      const existing = await this.prisma.checkout.findFirst({
+        where: {
+          cartId: data.cartId,
+          status: CheckoutStatusEnum.pending,
+        },
       });
 
       if (existing) {
         // Update existing checkout
         await this.prisma.checkout.update({
-          where: { cartId: data.cartId },
+          where: { id: existing.id }, // Use ID instead of cartId because cartId is no longer unique
           data: {
             userId: data.userId || null,
             guestToken: data.guestToken || null,
@@ -74,8 +78,14 @@ export class CheckoutRepositoryImpl implements CheckoutRepository {
   }
 
   async findByCartId(cartId: CartId): Promise<Checkout | null> {
-    const checkoutData = await this.prisma.checkout.findUnique({
-      where: { cartId: cartId.toString() },
+    // Only return the active (pending) or most recent checkout
+    // If we have completed checkouts, we ignore them here so the service creates a new one
+    const checkoutData = await this.prisma.checkout.findFirst({
+      where: {
+        cartId: cartId.toString(),
+        status: CheckoutStatusEnum.pending,
+      },
+      orderBy: { createdAt: "desc" },
     });
 
     if (!checkoutData) {
