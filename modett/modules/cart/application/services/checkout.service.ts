@@ -71,6 +71,9 @@ export class CheckoutService {
       if (existingCheckout.isPending()) {
         return this.mapCheckoutToDto(existingCheckout);
       } else {
+        // If checkout exists but is not pending (e.g. Completed, Cancelled, Expired),
+        // we must DELETE it to allow creating a new one because CartId is unique in Checkouts table.
+        // This ensures the new checkout gets a FRESH ID, avoiding "Duplicate Order" issues in Webhook.
         await this.checkoutRepository.delete(existingCheckout.getCheckoutId());
       }
     }

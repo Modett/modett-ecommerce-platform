@@ -158,6 +158,11 @@ export class CheckoutOrderService {
         };
       }
 
+      const debugCheckoutId = checkout.getCheckoutId().toString();
+      console.log(
+        `[DEBUG] Creating order for checkoutId: ${debugCheckoutId}, paymentIntentId: ${dto.paymentIntentId}`
+      );
+
       const order = await tx.order.create({
         data: {
           orderNo,

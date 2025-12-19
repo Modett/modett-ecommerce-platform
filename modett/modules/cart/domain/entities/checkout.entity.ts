@@ -3,7 +3,10 @@ import { CartId } from "../value-objects/cart-id.vo";
 import { UserId } from "../../../user-management/domain/value-objects/user-id.vo";
 import { GuestToken } from "../value-objects/guest-token.vo";
 import { Currency } from "../value-objects/currency.vo";
-import { CheckoutStatus, CheckoutStatusEnum } from "../value-objects/checkout-status.vo";
+import {
+  CheckoutStatus,
+  CheckoutStatusEnum,
+} from "../value-objects/checkout-status.vo";
 
 export interface CreateCheckoutData {
   cartId: string;
@@ -57,7 +60,9 @@ export class Checkout {
     const checkoutId = CheckoutId.create();
     const cartId = CartId.fromString(data.cartId);
     const userId = data.userId ? UserId.fromString(data.userId) : null;
-    const guestToken = data.guestToken ? GuestToken.fromString(data.guestToken) : null;
+    const guestToken = data.guestToken
+      ? GuestToken.fromString(data.guestToken)
+      : null;
     const currency = Currency.fromString(data.currency);
     const status = CheckoutStatus.pending();
     const now = new Date();
@@ -83,7 +88,9 @@ export class Checkout {
     const checkoutId = CheckoutId.fromString(data.checkoutId);
     const cartId = CartId.fromString(data.cartId);
     const userId = data.userId ? UserId.fromString(data.userId) : null;
-    const guestToken = data.guestToken ? GuestToken.fromString(data.guestToken) : null;
+    const guestToken = data.guestToken
+      ? GuestToken.fromString(data.guestToken)
+      : null;
     const currency = Currency.fromString(data.currency);
     const status = CheckoutStatus.fromString(data.status);
 
