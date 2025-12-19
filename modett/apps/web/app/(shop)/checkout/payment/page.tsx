@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
 import { useCart } from "@/features/cart/queries";
-import { getStoredCartId } from "@/features/cart/utils";
+import { getStoredCartId, clearCartData } from "@/features/cart/utils";
 import { CheckoutProgressBar } from "@/features/checkout/components/checkout-progress-bar";
 import { CartSummary } from "@/features/checkout/components/cart-summary";
 import { CheckoutHelpSection } from "@/features/checkout/components/checkout-help-section";
@@ -21,8 +21,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutPaymentPage() {
-  console.log("[DEBUG] CheckoutPaymentPage component mounted");
-
   const [cartId, setCartId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState("cards");
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -77,6 +75,30 @@ export default function CheckoutPaymentPage() {
       try {
         const checkout = await cartApi.initializeCheckout(cartId);
         setCheckoutId(checkout.checkoutId);
+
+        // Safety Net: Check if this checkout is already completed (e.g. if redirect failed)
+        try {
+          const detailedCheckout = await cartApi.getCheckout(
+            checkout.checkoutId
+          );
+          if (
+            detailedCheckout.status === "completed" ||
+            detailedCheckout.status === "paid"
+          ) {
+            console.log(
+              "[DEBUG] Detected completed checkout reuse. Clearing stale cart..."
+            );
+            clearCartData();
+            // Redirect to success or shop to force fresh state
+            window.location.href = `/checkout/success?checkoutId=${checkout.checkoutId}`;
+            return;
+          }
+        } catch (detailErr) {
+          console.log(
+            "[DEBUG] Failed to fetch detailed checkout status",
+            detailErr
+          );
+        }
       } catch (err) {
         console.error("Failed to initialize checkout:", err);
       }
@@ -150,6 +172,28 @@ export default function CheckoutPaymentPage() {
         returnUrl: `${window.location.origin}/checkout/success?checkoutId=${checkoutId}&intentId=${checkoutId}`,
         cancelUrl: `${window.location.origin}/checkout/payment?error=payment_cancelled`,
         description: `Order for ${cart.items.length} item(s)`,
+        shippingAddress: {
+          firstName: cart.shippingFirstName || "",
+          lastName: cart.shippingLastName || "",
+          addressLine1: cart.shippingAddress1 || "",
+          addressLine2: cart.shippingAddress2 || "",
+          city: cart.shippingCity || "",
+          state: cart.shippingProvince || "",
+          postalCode: cart.shippingPostalCode || "",
+          country: cart.shippingCountryCode || "LK",
+          phone: cart.shippingPhone || "",
+        },
+        billingAddress: {
+          firstName: cart.billingFirstName || cart.shippingFirstName || "",
+          lastName: cart.billingLastName || cart.shippingLastName || "",
+          addressLine1: cart.billingAddress1 || cart.shippingAddress1 || "",
+          addressLine2: cart.billingAddress2 || cart.shippingAddress2 || "",
+          city: cart.billingCity || cart.shippingCity || "",
+          state: cart.billingProvince || cart.shippingProvince || "",
+          postalCode: cart.billingPostalCode || cart.shippingPostalCode || "",
+          country: cart.billingCountryCode || cart.shippingCountryCode || "LK",
+          phone: cart.billingPhone || cart.shippingPhone || "",
+        },
       });
 
       console.log("[DEBUG] createPayment result:", paymentResult);
