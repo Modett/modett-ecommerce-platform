@@ -1,4 +1,4 @@
 export const config = {
-  apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1",
+  apiUrl: "https://57db2dac1c3e.ngrok-free.app/api/v1",
   apiTimeout: 30000,
 } as const;

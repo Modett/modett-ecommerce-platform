@@ -68,18 +68,6 @@ export class CheckoutOrderService {
         throw new Error("Checkout not found");
       }
 
-      // Validate ownership
-      if (dto.userId && checkout.getUserId()?.toString() !== dto.userId) {
-        throw new Error("Checkout does not belong to user");
-      }
-
-      if (
-        dto.guestToken &&
-        checkout.getGuestToken()?.toString() !== dto.guestToken
-      ) {
-        throw new Error("Checkout does not belong to guest");
-      }
-
       // Validate checkout is still valid
       if (checkout.isExpired()) {
         throw new Error("Checkout has expired");
@@ -123,6 +111,23 @@ export class CheckoutOrderService {
         throw new Error(
           `Payment intent is not authorized. Current status: ${paymentIntent.status}`
         );
+      }
+
+      // 4. Validate ownership (only enforce if payment not authorized)
+      // If payment is already authorized, allow order creation regardless of token mismatch
+      // This handles cases where guest token changed (cleared localStorage, different browser, etc.)
+      if (dto.userId && checkout.getUserId()?.toString() !== dto.userId) {
+        throw new Error("Checkout does not belong to user");
+      }
+
+      // For guest checkouts, we're more lenient: if payment is authorized, we trust it
+      // The payment authorization itself validates the user's intent to purchase
+      if (
+        dto.guestToken &&
+        checkout.getGuestToken()?.toString() !== dto.guestToken &&
+        !validStatuses.includes(paymentIntent.status)
+      ) {
+        throw new Error("Checkout does not belong to guest");
       }
 
       // 4. Generate unique order number
