@@ -191,7 +191,14 @@ export class CheckoutController {
     reply: FastifyReply
   ) {
     try {
+      console.log("============================================");
+      console.log("[CheckoutController] completeWithOrder called");
+      console.log("Checkout ID:", request.params.checkoutId);
+      console.log("Payment Intent ID:", request.body.paymentIntentId);
+      console.log("============================================");
+
       if (!this.checkoutOrderService) {
+        console.error("[CheckoutController] ERROR: checkoutOrderService not initialized");
         return reply.code(500).send({
           success: false,
           error: "Checkout order service not initialized",
@@ -203,12 +210,18 @@ export class CheckoutController {
       const { checkoutId } = request.params;
       const body = request.body;
 
+      console.log("[CheckoutController] User ID:", userId);
+      console.log("[CheckoutController] Guest Token:", guestToken ? "present" : "missing");
+
       if (!userId && !guestToken) {
+        console.error("[CheckoutController] ERROR: No authentication");
         return reply.code(401).send({
           success: false,
           error: "Authentication required",
         });
       }
+
+      console.log("[CheckoutController] Calling checkoutOrderService.completeCheckoutWithOrder...");
 
       const result = await this.checkoutOrderService.completeCheckoutWithOrder(
         {
@@ -221,12 +234,22 @@ export class CheckoutController {
         }
       );
 
+      console.log("[CheckoutController] SUCCESS! Order created:");
+      console.log("Order ID:", result.orderId);
+      console.log("Order No:", result.orderNo);
+      console.log("============================================");
+
       return reply.code(200).send({
         success: true,
         data: result,
         message: "Order created successfully from checkout",
       });
     } catch (error: any) {
+      console.error("============================================");
+      console.error("[CheckoutController] ERROR in completeWithOrder:");
+      console.error("Error message:", error.message);
+      console.error("Full error:", error);
+      console.error("============================================");
       return reply.code(400).send({
         success: false,
         error: error.message || "Failed to complete checkout and create order",

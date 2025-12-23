@@ -65,8 +65,10 @@ export class PayableIPGController {
       });
 
       // Create payment session with PayableIPG
-      const baseUrl = `${req.protocol}://${req.hostname}`;
-      const webhookUrl = `${baseUrl}/api/payments/payable-ipg/webhook`;
+      const baseUrl = process.env.NGROK_URL || "https://modett.com";
+      const webhookUrl = `${baseUrl}/api/v1/payments/payable-ipg/webhook`;
+
+      req.log.info(`[PayableIPG] Webhook URL: ${webhookUrl}`);
 
       const paymentResponse = await this.payableProvider.createPayment({
         orderId: paymentIntent.intentId,
@@ -257,30 +259,59 @@ export class PayableIPGController {
 
             // Retrieve address from metadata
             const shippingAddress = paymentIntent.metadata?.shippingAddress;
+            const billingAddress = paymentIntent.metadata?.billingAddress;
 
-            // Map to DTO format
+            // Map to DTO format - use the correct field names from frontend
             const mappedShippingAddress = {
-              firstName: (
-                paymentIntent.metadata?.customerName || "Guest"
-              ).split(" ")[0],
+              firstName:
+                shippingAddress?.firstName ||
+                (paymentIntent.metadata?.customerName || "Guest").split(" ")[0],
               lastName:
+                shippingAddress?.lastName ||
                 (paymentIntent.metadata?.customerName || "Guest")
                   .split(" ")
                   .slice(1)
-                  .join(" ") || "User",
-              addressLine1: shippingAddress?.street || "N/A",
+                  .join(" ") ||
+                "User",
+              addressLine1: shippingAddress?.addressLine1 || "N/A",
+              addressLine2: shippingAddress?.addressLine2,
               city: shippingAddress?.city || "N/A",
-              postalCode: shippingAddress?.postcode || "N/A",
-              country: shippingAddress?.country || "LKA",
-              phone: paymentIntent.metadata?.customerPhone,
+              state: shippingAddress?.state,
+              postalCode: shippingAddress?.postalCode || "N/A",
+              country: shippingAddress?.country || "LK",
+              phone:
+                shippingAddress?.phone || paymentIntent.metadata?.customerPhone,
             };
+
+            const mappedBillingAddress = billingAddress
+              ? {
+                  firstName:
+                    billingAddress?.firstName ||
+                    mappedShippingAddress.firstName,
+                  lastName:
+                    billingAddress?.lastName || mappedShippingAddress.lastName,
+                  addressLine1:
+                    billingAddress?.addressLine1 ||
+                    mappedShippingAddress.addressLine1,
+                  addressLine2: billingAddress?.addressLine2,
+                  city: billingAddress?.city || mappedShippingAddress.city,
+                  state: billingAddress?.state,
+                  postalCode:
+                    billingAddress?.postalCode ||
+                    mappedShippingAddress.postalCode,
+                  country:
+                    billingAddress?.country || mappedShippingAddress.country,
+                  phone: billingAddress?.phone || mappedShippingAddress.phone,
+                }
+              : undefined;
 
             const orderResult =
               await this.checkoutOrderService.completeCheckoutWithOrder({
                 checkoutId: paymentIntent.checkoutId,
                 paymentIntentId: orderUUID,
                 shippingAddress: mappedShippingAddress as any,
-                // userId derived from Checkout entity inside service
+                billingAddress: mappedBillingAddress as any,
+                // userId and guestToken derived from Checkout entity inside service
               } as any);
 
             req.log.info(

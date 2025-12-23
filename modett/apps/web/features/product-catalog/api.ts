@@ -44,7 +44,9 @@ export const getProducts = async (
     delete apiParams.sortOrder;
   }
 
-  const { data } = await apiClient.get("/products", { params: apiParams });
+  const { data } = await apiClient.get("/catalog/products", {
+    params: apiParams,
+  });
   // Backend wraps response in { success, data }
   const responseData = data.data || data;
 
@@ -68,7 +70,7 @@ export const getProducts = async (
  * Get product by ID
  */
 export const getProductById = async (id: string): Promise<Product> => {
-  const { data } = await apiClient.get(`/products/${id}`);
+  const { data } = await apiClient.get(`/catalog/products/${id}`);
   const responseData = data.data || data;
 
   return {
@@ -87,7 +89,7 @@ export const getProductById = async (id: string): Promise<Product> => {
  * Get product by slug
  */
 export const getProductBySlug = async (slug: string): Promise<Product> => {
-  const { data } = await apiClient.get(`/products/slug/${slug}`);
+  const { data } = await apiClient.get(`/catalog/products/slug/${slug}`);
   const responseData = data.data || data;
 
   return transformProduct(responseData);
@@ -99,7 +101,7 @@ export const getProductBySlug = async (slug: string): Promise<Product> => {
 export const getFeaturedProducts = async (
   limit: number = 6
 ): Promise<Product[]> => {
-  const { data } = await apiClient.get("/products", {
+  const { data } = await apiClient.get("/catalog/products", {
     params: { limit, page: 1 },
   });
 
@@ -113,7 +115,7 @@ export const getFeaturedProducts = async (
  * Get product categories
  */
 export const getCategories = async (): Promise<ProductCategory[]> => {
-  const { data } = await apiClient.get("/categories");
+  const { data } = await apiClient.get("/catalog/categories");
   const responseData = data.data || data;
 
   return responseData.map((c: any) => ({
@@ -128,7 +130,7 @@ export const getCategories = async (): Promise<ProductCategory[]> => {
  * Get size counts across all products
  */
 export const getSizeCounts = async (): Promise<CountItem[]> => {
-  const { data } = await apiClient.get("/products", {
+  const { data } = await apiClient.get("/catalog/products", {
     params: { limit: 100, page: 1 },
   });
 
@@ -142,7 +144,7 @@ export const getSizeCounts = async (): Promise<CountItem[]> => {
  * Get color counts across all products
  */
 export const getColorCounts = async (): Promise<CountItem[]> => {
-  const { data } = await apiClient.get("/products", {
+  const { data } = await apiClient.get("/catalog/products", {
     params: { limit: 100, page: 1 },
   });
 

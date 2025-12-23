@@ -7,13 +7,16 @@ import type { AddToCartParams, Cart } from "./types";
 import { getStoredGuestToken, persistGuestToken, persistCartId } from "./utils";
 
 // Create axios instance for cart API
+import { config } from "@/lib/config";
+
+// Create axios instance for cart API
+// Use the shared configuration but append /cart for this specific client
 const cartApiClient = axios.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_API_URL?.replace("/catalog", "/cart") ||
-    "http://localhost:3001/api/v1/cart",
-  timeout: 30000,
+  baseURL: `${config.apiUrl}/cart`,
+  timeout: config.apiTimeout,
   headers: {
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true",
   },
 });
 

@@ -1,4 +1,4 @@
 export const config = {
-  apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1",
-  apiTimeout: 30000,
+  apiUrl: "http://localhost:3001/api/v1",
+  apiTimeout: 60000,
 } as const;

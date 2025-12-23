@@ -45,6 +45,7 @@ export async function createServer(): Promise<FastifyInstance> {
       "Authorization",
       "X-Requested-With",
       "X-Guest-Token",
+      "ngrok-skip-browser-warning",
     ],
   });
 
@@ -637,6 +638,21 @@ export async function createServer(): Promise<FastifyInstance> {
     transformSpecification: (swaggerObject, request, reply) => swaggerObject,
     transformSpecificationClone: true,
   });
+
+  // Log response body in development
+  if (process.env.NODE_ENV !== "production") {
+    server.addHook("onSend", async (request, reply, payload) => {
+      try {
+        if (payload && typeof payload === "string") {
+          const body = JSON.parse(payload);
+          request.log.info({ responseBody: body }, "Response Details");
+        }
+      } catch (err) {
+        // Ignore JSON parse errors for non-JSON responses
+      }
+      return payload;
+    });
+  }
 
   // Initialize Service Container
   const container = createServiceContainer();

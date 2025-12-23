@@ -44,9 +44,10 @@ interface PaymentResult {
 }
 
 // Backend API base URL
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace("/catalog", "") ||
-  "http://localhost:3001/api/v1";
+import { config } from "@/lib/config";
+
+// Backend API base URL
+const API_BASE_URL = config.apiUrl;
 
 export function usePayableIPG() {
   const [loading, setLoading] = useState(false);
@@ -63,6 +64,7 @@ export function usePayableIPG() {
 
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         };
 
         // Add guest token if available
@@ -122,6 +124,7 @@ export function usePayableIPG() {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
             },
           }
         );
@@ -171,6 +174,7 @@ export function usePayableIPG() {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              "ngrok-skip-browser-warning": "true",
             },
             body: JSON.stringify({
               transactionId,
@@ -217,6 +221,7 @@ export function usePayableIPG() {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
           },
         }
       );

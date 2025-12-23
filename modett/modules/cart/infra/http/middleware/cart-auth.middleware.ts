@@ -7,11 +7,6 @@ declare module "fastify" {
   }
 }
 
-/**
- * Cart authentication middleware for guest users
- * Extracts guest token from X-Guest-Token header
- * Should be used with optionalAuth middleware
- */
 export async function extractGuestToken(
   request: FastifyRequest,
   reply: FastifyReply
@@ -25,7 +20,8 @@ export async function extractGuestToken(
     if (!guestTokenRegex.test(guestTokenHeader)) {
       return reply.status(400).send({
         success: false,
-        error: "Invalid guest token format. Must be a 64-character hexadecimal string",
+        error:
+          "Invalid guest token format. Must be a 64-character hexadecimal string",
         code: "INVALID_GUEST_TOKEN",
       });
     }
@@ -34,20 +30,16 @@ export async function extractGuestToken(
     if (request.user) {
       return reply.status(400).send({
         success: false,
-        error: "Cannot provide both Authorization token and X-Guest-Token header",
+        error:
+          "Cannot provide both Authorization token and X-Guest-Token header",
         code: "MULTIPLE_AUTH_METHODS",
       });
     }
 
     request.guestToken = guestTokenHeader;
   }
-
-  // Continue to route handler
 }
 
-/**
- * Require either authenticated user or guest token
- */
 export async function requireCartAuth(
   request: FastifyRequest,
   reply: FastifyReply
@@ -56,17 +48,18 @@ export async function requireCartAuth(
   if (!request.user && !request.guestToken) {
     reply.status(401).send({
       success: false,
-      error: "Authentication required. Provide either Authorization header (for users) or X-Guest-Token header (for guests)",
+      error:
+        "Authentication required. Provide either Authorization header (for users) or X-Guest-Token header (for guests)",
       code: "AUTHENTICATION_REQUIRED",
     });
     return;
   }
 }
 
-/**
- * Helper to get user identifier from request
- */
-export function getCartIdentifier(request: FastifyRequest): { userId?: string; guestToken?: string } {
+export function getCartIdentifier(request: FastifyRequest): {
+  userId?: string;
+  guestToken?: string;
+} {
   if (request.user) {
     return { userId: request.user.userId };
   }
