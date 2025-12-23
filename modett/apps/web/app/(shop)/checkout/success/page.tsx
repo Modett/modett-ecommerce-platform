@@ -101,7 +101,8 @@ export default function CheckoutSuccessPage() {
 
         queryClient.clear();
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to complete order";
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to complete order";
         console.error("[CheckoutSuccess] Order completion failed:", err);
         setError(errorMessage);
         setStatus("error");
@@ -116,6 +117,17 @@ export default function CheckoutSuccessPage() {
 
     completeOrder();
   }, [checkoutId, cart, router, hasProcessed, intentId, queryClient]);
+
+  // Ensure component only renders after hydration to avoid mismatches
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null; // or a loading skeleton that matches server output perfectly
+  }
 
   if (status === "loading") {
     return (

@@ -320,18 +320,6 @@ export class CheckoutOrderService {
     });
   }
 
-  /**
-   * Selects the appropriate warehouse for order fulfillment.
-   *
-   * Strategy (in priority order):
-   * 1. Use DEFAULT_STOCK_LOCATION from environment if configured
-   * 2. Query first active warehouse from database
-   *
-   * Future enhancements:
-   * - Select nearest warehouse based on shipping address
-   * - Check inventory availability across warehouses
-   * - Support warehouse priority/preference system
-   */
   private async selectWarehouseForOrder(
     items: any[],
     shippingAddress: any,

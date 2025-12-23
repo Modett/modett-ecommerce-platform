@@ -1,4 +1,4 @@
 export const config = {
-  apiUrl: "https://57db2dac1c3e.ngrok-free.app/api/v1",
-  apiTimeout: 30000,
+  apiUrl: "http://localhost:3001/api/v1",
+  apiTimeout: 60000,
 } as const;

@@ -6,8 +6,6 @@ import {
 } from "../../domain/entities/checkout.entity";
 import { CheckoutId } from "../../domain/value-objects/checkout-id.vo";
 import { CartId } from "../../domain/value-objects/cart-id.vo";
-import { UserId } from "../../../user-management/domain/value-objects/user-id.vo";
-import { GuestToken } from "../../domain/value-objects/guest-token.vo";
 
 export interface InitializeCheckoutDto {
   cartId: string;

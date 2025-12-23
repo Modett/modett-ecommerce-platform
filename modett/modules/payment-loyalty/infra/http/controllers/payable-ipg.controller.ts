@@ -65,12 +65,10 @@ export class PayableIPGController {
       });
 
       // Create payment session with PayableIPG
-      // FORCE Ngrok URL for development debugging
-      const baseUrl = "https://57db2dac1c3e.ngrok-free.app";
-      // const baseUrl = `${req.protocol}://${req.hostname}`;
+      const baseUrl = process.env.NGROK_URL || "https://modett.com";
       const webhookUrl = `${baseUrl}/api/v1/payments/payable-ipg/webhook`;
 
-      req.log.info(`[DEBUG] Generated Webhook URL: ${webhookUrl}`);
+      req.log.info(`[PayableIPG] Webhook URL: ${webhookUrl}`);
 
       const paymentResponse = await this.payableProvider.createPayment({
         orderId: paymentIntent.intentId,
@@ -133,11 +131,6 @@ export class PayableIPGController {
   async handleWebhook(req: FastifyRequest, reply: FastifyReply) {
     try {
       const payload = req.body as any;
-      console.log("============================================");
-      console.log("[PayableIPGController] Webhook Received!");
-      console.log("Payload:", JSON.stringify(payload, null, 2));
-      console.log("============================================");
-
       const signature = req.headers["x-payable-signature"] as string;
 
       // Validate webhook signature (if secret key is configured)
