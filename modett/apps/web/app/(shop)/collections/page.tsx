@@ -759,6 +759,9 @@ export default function CollectionsPage() {
                       image={
                         product.images?.[0]?.url || "/placeholder-product.jpg"
                       }
+                      secondaryImage={
+                        product.images?.[1]?.url || product.images?.[0]?.url
+                      }
                       variants={product.variants || []}
                       variant="collection"
                     />

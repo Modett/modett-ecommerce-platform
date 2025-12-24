@@ -38,6 +38,7 @@ interface ProductCardProps {
   variant?: "home" | "collection" | "wear-it-with";
   aspectRatio?: string;
   textGap?: string;
+  secondaryImage?: string;
 }
 
 export function ProductCard({
@@ -50,6 +51,7 @@ export function ProductCard({
   variant = "home",
   aspectRatio,
   textGap,
+  secondaryImage,
 }: ProductCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -133,15 +135,42 @@ export function ProductCard({
               aspectRatio ? "h-full" : "h-full"
             }`}
           >
-            <Link href={`/product/${slug}`} className="block w-full h-full">
-              <Image
-                src={image}
-                alt={title}
-                fill
-                className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                priority
-              />
+            <Link
+              href={`/product/${slug}`}
+              className="block w-full h-full relative"
+            >
+              {secondaryImage ? (
+                <>
+                  {/* Primary Image: Fades out on hover */}
+                  <Image
+                    src={image}
+                    alt={title}
+                    fill
+                    className="object-cover object-top transition-opacity duration-500 ease-in-out group-hover:opacity-0"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    priority
+                  />
+                  {/* Secondary Image: Fades in on hover */}
+                  <Image
+                    src={secondaryImage}
+                    alt={`${title} - Back`}
+                    fill
+                    className="object-cover object-top absolute inset-0 transition-opacity duration-500 ease-in-out opacity-0 group-hover:opacity-100"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    priority
+                  />
+                </>
+              ) : (
+                /* Standard Image: Zoom on hover if no secondary image */
+                <Image
+                  src={image}
+                  alt={title}
+                  fill
+                  className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  priority
+                />
+              )}
             </Link>
             {/* Wishlist button for all variants */}
             <button
