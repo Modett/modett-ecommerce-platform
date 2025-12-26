@@ -74,3 +74,60 @@ export function PageLoadingSkeleton() {
     </div>
   );
 }
+
+export function ProductDetailSkeleton() {
+  return (
+    <div className="w-full min-h-screen p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Image Gallery Skeleton */}
+          <div className="space-y-4">
+            <Skeleton className="w-full aspect-square" />
+            <div className="grid grid-cols-4 gap-2">
+              <Skeleton className="aspect-square" />
+              <Skeleton className="aspect-square" />
+              <Skeleton className="aspect-square" />
+              <Skeleton className="aspect-square" />
+            </div>
+          </div>
+
+          {/* Product Details Skeleton */}
+          <div className="space-y-6">
+            {/* Title */}
+            <Skeleton className="h-8 w-3/4" />
+
+            {/* Price */}
+            <Skeleton className="h-10 w-1/3" />
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+
+            {/* Size/Color Selector */}
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-20" />
+              <div className="flex gap-2">
+                <Skeleton className="h-10 w-16" />
+                <Skeleton className="h-10 w-16" />
+                <Skeleton className="h-10 w-16" />
+                <Skeleton className="h-10 w-16" />
+              </div>
+            </div>
+
+            {/* Add to Cart Button */}
+            <Skeleton className="h-12 w-full" />
+
+            {/* Additional Info */}
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
