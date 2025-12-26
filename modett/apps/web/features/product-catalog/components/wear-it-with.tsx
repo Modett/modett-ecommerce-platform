@@ -43,9 +43,7 @@ export function WearItWith({ productId }: WearItWithProps) {
                 price={product.price}
                 compareAtPrice={product.compareAtPrice}
                 image={product.images?.[0]?.url || "/placeholder-product.jpg"}
-                secondaryImage={
-                  product.images?.[1]?.url || product.images?.[0]?.url
-                }
+                secondaryImage={product.images?.[1]?.url}
                 variants={product.variants || []}
                 variant="wear-it-with"
                 aspectRatio="aspect-[350/502]"
