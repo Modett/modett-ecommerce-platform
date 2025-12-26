@@ -37,12 +37,8 @@ export function ProductGrid({
         className
       )}
     >
-      {products.map((product) => {
-        console.log(
-          `Product: ${product.title} -- IMG1: ${product.images?.[0]?.url} -- IMG2: ${product.images?.[1]?.url} -- SEC: ${product.images?.[1]?.url || product.images?.[0]?.url}`
-        );
-        return (
-          <ProductCard
+      {products.map((product) => (
+        <ProductCard
             key={product.id}
             id={product.id}
             productId={product.productId}
@@ -54,8 +50,7 @@ export function ProductGrid({
             secondaryImage={product.images?.[1]?.url}
             variants={product.variants || []}
           />
-        );
-      })}
+      ))}
     </div>
   );
 }
