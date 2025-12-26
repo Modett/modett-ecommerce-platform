@@ -1,5 +1,6 @@
 import axios from "axios";
 import { config } from "./config";
+import { logError } from "./error-handler";
 
 export const apiClient = axios.create({
   baseURL: config.apiUrl,
@@ -24,7 +25,7 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error("API Error:", error.response?.data || error.message);
+    logError(error.response?.data || error, "API Error");
     return Promise.reject(error);
   }
 );
