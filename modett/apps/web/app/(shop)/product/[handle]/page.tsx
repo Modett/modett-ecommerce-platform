@@ -65,7 +65,6 @@ export default function ProductPage({ params }: ProductPageProps) {
 
       <YouMayAlsoLike productId={product.id} />
 
-      {/* View More Button Section */}
       <ViewMoreSection />
     </main>
   );
