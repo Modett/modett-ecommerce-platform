@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { Info } from "lucide-react";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
 import { useCart } from "@/features/cart/queries";
 import { getStoredCartId, clearCartData } from "@/features/cart/utils";
@@ -14,7 +12,11 @@ import { CompletedCheckoutStep } from "@/features/checkout/components/completed-
 import { ActiveStepHeader } from "@/features/checkout/components/active-step-header";
 import { CustomCheckbox } from "@/features/checkout/components/custom-checkbox";
 import { LoadingState } from "@/features/checkout/components/loading-state";
+import { PaymentMethodOption } from "@/features/checkout/components/payment-method-option";
+import { PaymentGatewayInfo } from "@/features/checkout/components/payment-gateway-info";
 import { usePayableIPG } from "@/features/checkout/hooks/use-payable-ipg";
+import { Alert } from "@/components/ui/alert";
+import { handleError } from "@/lib/error-handler";
 import * as cartApi from "@/features/cart/api";
 
 export default function CheckoutPaymentPage() {
@@ -68,11 +70,10 @@ export default function CheckoutPaymentPage() {
             return;
           }
         } catch (detailErr) {
-          console.error("[Checkout] Failed to fetch checkout status:", detailErr);
+          handleError(detailErr, "Fetch checkout status");
         }
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        console.error("[Checkout] Failed to initialize checkout:", err);
+        const errorMessage = handleError(err, "Initialize checkout");
 
         // If cart has a completed order, clear cart data and redirect to cart page
         if (errorMessage.includes("completed order")) {
@@ -83,7 +84,7 @@ export default function CheckoutPaymentPage() {
             window.location.href = "/cart";
           }, 2000);
         } else {
-          setError("Failed to initialize checkout. Please try again.");
+          setError(errorMessage);
         }
       }
     };
@@ -171,8 +172,7 @@ export default function CheckoutPaymentPage() {
         setProcessing(false);
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to initialize payment. Please try again.";
-      console.error("[Payment] Payment initialization failed:", err);
+      const errorMessage = handleError(err, "Payment initialization");
       setError(errorMessage);
       setProcessing(false);
     }
@@ -287,198 +287,69 @@ export default function CheckoutPaymentPage() {
                   {/* Payment Methods */}
                   <div className="flex flex-col gap-[24px] w-full">
                     {/* Cards */}
-                    <div
-                      className={`rounded-[8px] overflow-hidden border ${paymentMethod === "cards" ? "bg-[#E5E0D6] border-[#3E5460]" : "bg-[#EFECE5] border-[#BBA496]"}`}
-                    >
-                      <label className="flex items-center justify-between px-[9px] cursor-pointer w-full h-[58px]">
-                        <div className="flex items-center gap-3 flex-1">
-                          <div
-                            className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "cards" ? "border-[#232D35]" : "border-[#BBA496]"}`}
-                          >
-                            {paymentMethod === "cards" && (
-                              <div className="w-2 h-2 rounded-full bg-[#232D35]" />
-                            )}
-                          </div>
-                          <input
-                            type="radio"
-                            name="paymentMethod"
-                            value="cards"
-                            checked={paymentMethod === "cards"}
-                            onChange={() => setPaymentMethod("cards")}
-                            className="hidden"
-                          />
-                          <span
-                            className="text-[14px] leading-[24px] text-[#3E5460]"
-                            style={TEXT_STYLES.bodyTeal}
-                          >
-                            Cards
-                          </span>
-                        </div>
-                        <div className="flex gap-[8px]">
-                          <div className="w-[58px] h-[40px] relative border border-[#E5E0D6] rounded-[4px] bg-white flex items-center justify-center overflow-hidden">
-                            <Image
-                              src="/images/payment/visa.png"
-                              alt="Visa"
-                              width={58}
-                              height={40}
-                              className="object-contain p-1"
-                            />
-                          </div>
-                          <div className="w-[58px] h-[40px] relative border border-[#E5E0D6] rounded-[4px] bg-white flex items-center justify-center overflow-hidden">
-                            <Image
-                              src="/images/payment/mastercard.png"
-                              alt="Mastercard"
-                              width={58}
-                              height={40}
-                              className="object-contain p-1"
-                            />
-                          </div>
-                        </div>
-                      </label>
+                    <div className="rounded-[8px] overflow-hidden">
+                      <PaymentMethodOption
+                        value="cards"
+                        label="Cards"
+                        isSelected={paymentMethod === "cards"}
+                        onSelect={setPaymentMethod}
+                        icons={[
+                          {
+                            src: "/images/payment/visa.png",
+                            alt: "Visa",
+                            width: 58,
+                            height: 40,
+                          },
+                          {
+                            src: "/images/payment/mastercard.png",
+                            alt: "Mastercard",
+                            width: 58,
+                            height: 40,
+                          },
+                        ]}
+                      />
                     </div>
 
                     {/* Payment Gateway Info */}
-                    {paymentMethod === "cards" && (
-                      <div className="pb-6 pt-2">
-                        <div
-                          className="bg-[#F8F5F2] p-[25px] mb-4 text-[13.2px] leading-[18px] text-[#3E5460] border border-[#E5E0D6] flex items-center gap-[8px]"
-                          style={TEXT_STYLES.bodyTeal}
-                        >
-                          <Info className="w-6 h-6 text-[#3E5460]" />
-                          You will be redirected to PAYable IPG secure payment
-                          page to complete your payment
-                        </div>
-                        <p
-                          className="text-[12px] leading-[18px] text-[#3E5460] font-normal"
-                          style={TEXT_STYLES.bodyTeal}
-                        >
-                          Your payment information will be securely handled by
-                          PAYable IPG. We accept Visa, Mastercard, American
-                          Express, and other major cards.
-                        </p>
-                      </div>
-                    )}
+                    {paymentMethod === "cards" && <PaymentGatewayInfo />}
 
                     {/* Mintpay */}
-                    <label
-                      className={`flex items-center px-[9px] h-[58px] border rounded-[8px] cursor-pointer ${paymentMethod === "mintpay" ? "bg-[#E5E0D6] border-[#3E5460]" : "bg-[#EFECE5] border-[#BBA496]"}`}
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "mintpay" ? "border-[#232D35]" : "border-[#BBA496]"}`}
-                        >
-                          {paymentMethod === "mintpay" && (
-                            <div className="w-2 h-2 rounded-full bg-[#232D35]" />
-                          )}
-                        </div>
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="mintpay"
-                          checked={paymentMethod === "mintpay"}
-                          onChange={() => setPaymentMethod("mintpay")}
-                          className="hidden"
-                        />
-                        <span
-                          className="text-[14px] leading-[24px] text-[#3E5460]"
-                          style={TEXT_STYLES.bodyTeal}
-                        >
-                          Mintpay
-                        </span>
-                      </div>
-                      <div className="w-[58px] h-[40px] relative border border-[#E5E0D6] rounded-[4px] bg-white flex items-center justify-center overflow-hidden">
-                        <Image
-                          src="/images/payment/mintpay.png"
-                          alt="Mintpay"
-                          width={42}
-                          height={15}
-                          className="object-cover"
-                        />
-                      </div>
-                    </label>
+                    <PaymentMethodOption
+                      value="mintpay"
+                      label="Mintpay"
+                      isSelected={paymentMethod === "mintpay"}
+                      onSelect={setPaymentMethod}
+                      icon="/images/payment/mintpay.png"
+                    />
 
                     {/* Koko */}
-                    <label
-                      className={`flex items-center px-[9px] h-[58px] border rounded-[8px] cursor-pointer ${paymentMethod === "koko" ? "bg-[#E5E0D6] border-[#3E5460]" : "bg-[#EFECE5] border-[#BBA496]"}`}
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "koko" ? "border-[#232D35]" : "border-[#BBA496]"}`}
-                        >
-                          {paymentMethod === "koko" && (
-                            <div className="w-2 h-2 rounded-full bg-[#232D35]" />
-                          )}
-                        </div>
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="koko"
-                          checked={paymentMethod === "koko"}
-                          onChange={() => setPaymentMethod("koko")}
-                          className="hidden"
-                        />
-                        <span
-                          className="text-[14px] leading-[24px] text-[#3E5460]"
-                          style={TEXT_STYLES.bodyTeal}
-                        >
-                          Koko
-                        </span>
-                      </div>
-                      <div className="w-[58px] h-[40px] relative border border-[#E5E0D6] rounded-[4px] bg-white flex items-center justify-center overflow-hidden">
-                        <Image
-                          src="/images/payment/koko.png"
-                          alt="Koko"
-                          width={42}
-                          height={19}
-                          className="object-contain"
-                        />
-                      </div>
-                    </label>
+                    <PaymentMethodOption
+                      value="koko"
+                      label="Koko"
+                      isSelected={paymentMethod === "koko"}
+                      onSelect={setPaymentMethod}
+                      icon="/images/payment/koko.png"
+                    />
 
                     {/* American Express */}
-                    <label
-                      className={`flex items-center px-[9px] h-[58px] border rounded-[8px] cursor-pointer ${paymentMethod === "amex" ? "bg-[#E5E0D6] border-[#3E5460]" : "bg-[#EFECE5] border-[#BBA496]"}`}
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${paymentMethod === "amex" ? "border-[#232D35]" : "border-[#BBA496]"}`}
-                        >
-                          {paymentMethod === "amex" && (
-                            <div className="w-2 h-2 rounded-full bg-[#232D35]" />
-                          )}
-                        </div>
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value="amex"
-                          checked={paymentMethod === "amex"}
-                          onChange={() => setPaymentMethod("amex")}
-                          className="hidden"
-                        />
-                        <span
-                          className="text-[14px] leading-[24px] text-[#3E5460]"
-                          style={TEXT_STYLES.bodyTeal}
-                        >
-                          American Express
-                        </span>
-                      </div>
-                      <div className="w-[58px] h-[40px] relative border border-[#E5E0D6] rounded-[4px] bg-white flex items-center justify-center overflow-hidden">
-                        <Image
-                          src="/images/payment/amex.png"
-                          alt="American Express"
-                          width={58}
-                          height={40}
-                          className="object-cover"
-                        />
-                      </div>
-                    </label>
+                    <PaymentMethodOption
+                      value="amex"
+                      label="American Express"
+                      isSelected={paymentMethod === "amex"}
+                      onSelect={setPaymentMethod}
+                      icon="/images/payment/amex.png"
+                    />
                   </div>
 
                   <div className="flex flex-col gap-[16px] w-full">
                     {error && (
-                      <div className="mx-auto w-full max-w-[460px] p-4 bg-red-50 border border-red-200 rounded">
-                        <p className="text-sm text-red-600">{error}</p>
-                      </div>
+                      <Alert
+                        variant="error"
+                        onClose={() => setError(null)}
+                        className="mx-auto w-full max-w-[460px]"
+                      >
+                        {error}
+                      </Alert>
                     )}
 
                     <CustomCheckbox
