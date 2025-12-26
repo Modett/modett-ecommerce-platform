@@ -14,6 +14,8 @@ import { CheckoutHelpSection } from "@/features/checkout/components/checkout-hel
 import { ActiveStepHeader } from "@/features/checkout/components/active-step-header";
 import { LoadingState } from "@/features/checkout/components/loading-state";
 import { FutureStep } from "@/features/checkout/components/future-step";
+import { Alert } from "@/components/ui/alert";
+import { handleError } from "@/lib/error-handler";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutEmailPage() {
@@ -51,7 +53,8 @@ export default function CheckoutEmailPage() {
       sessionStorage.setItem("checkout_email", email);
       router.push("/checkout/shipping");
     } catch (err) {
-      setError("Failed to save email. Please try again.");
+      const errorMessage = handleError(err, "Save email");
+      setError(errorMessage);
     }
   };
 
@@ -81,6 +84,16 @@ export default function CheckoutEmailPage() {
                 </p>
 
                 <form onSubmit={handleContinue}>
+                  {error && (
+                    <Alert
+                      variant="error"
+                      onClose={() => setError(null)}
+                      className="mb-6"
+                    >
+                      {error}
+                    </Alert>
+                  )}
+
                   <div className="mb-6">
                     <label
                       htmlFor="email"
@@ -99,9 +112,6 @@ export default function CheckoutEmailPage() {
                       className="w-full h-[42px] px-4 border border-[#BBA496] bg-[#F4F1EB] focus:outline-none focus:border-gray-400 disabled:opacity-50"
                       style={TEXT_STYLES.bodyGraphite}
                     />
-                    {error && (
-                      <p className="text-red-600 text-sm mt-2">{error}</p>
-                    )}
                   </div>
 
                   <div className="flex justify-center">

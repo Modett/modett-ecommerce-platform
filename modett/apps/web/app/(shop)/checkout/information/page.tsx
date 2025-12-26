@@ -16,7 +16,8 @@ import { FormInput } from "@/features/checkout/components/form-input";
 import { CustomCheckbox } from "@/features/checkout/components/custom-checkbox";
 import { LoadingState } from "@/features/checkout/components/loading-state";
 import { DEFAULT_COUNTRY } from "@/constants/countries";
-import { getErrorMessage } from "@/lib/errors";
+import { Alert } from "@/components/ui/alert";
+import { handleError } from "@/lib/error-handler";
 
 export default function CheckoutInformationPage() {
   const [cartId, setCartId] = useState<string | null>(null);
@@ -125,9 +126,8 @@ export default function CheckoutInformationPage() {
 
       router.push("/checkout/payment");
     } catch (error: unknown) {
-      const errorMessage = getErrorMessage(error);
-      console.error("[CheckoutInformation] Failed to save address:", error);
-      setError(errorMessage || "Failed to save address information. Please try again.");
+      const errorMessage = handleError(error, "Save address information");
+      setError(errorMessage);
     }
   };
 
@@ -189,9 +189,13 @@ export default function CheckoutInformationPage() {
 
                     {/* Error Message */}
                     {error && (
-                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
-                        <p className="text-sm text-red-600">{error}</p>
-                      </div>
+                      <Alert
+                        variant="error"
+                        onClose={() => setError(null)}
+                        className="mt-4"
+                      >
+                        {error}
+                      </Alert>
                     )}
 
                     {/* Title Radio Buttons */}

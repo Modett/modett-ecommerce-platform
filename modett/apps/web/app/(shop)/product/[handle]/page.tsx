@@ -10,6 +10,7 @@ import { YouMayAlsoLike } from "@/features/product-catalog/components/you-may-al
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { COMMON_CLASSES, RESPONSIVE } from "@/features/cart/constants/styles";
 import { ViewMoreSection } from "@/features/product-catalog/components/view-more-section";
+import { ProductDetailSkeleton } from "@/components/ui/skeleton";
 
 interface ProductPageProps {
   params: Promise<{
@@ -24,11 +25,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { data: product, isLoading } = useProductBySlug(handle);
 
   if (isLoading) {
-    return (
-      <div className="w-full min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-lg">Loading...</div>
-      </div>
-    );
+    return <ProductDetailSkeleton />;
   }
 
   if (!product) {
