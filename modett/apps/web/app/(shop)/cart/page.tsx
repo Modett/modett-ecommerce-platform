@@ -11,13 +11,17 @@ import {
 import { useFeaturedProducts } from "@/features/product-catalog/queries";
 import { PageContainer } from "@/components/layout/page-container";
 import { useCheckoutCart } from "@/features/checkout/hooks/use-checkout-cart";
-import { LoadingState } from "@/features/checkout/components/loading-state";
 import { Text } from "@/components/ui/text";
 import { ViewMoreSection } from "@/features/product-catalog/components/view-more-section";
 import { ProductGrid } from "@/features/product-catalog/components/product-grid";
+import { CartItemSkeleton } from "@/components/ui/skeleton";
+import { Alert } from "@/components/ui/alert";
+import { handleError } from "@/lib/error-handler";
+import { useState } from "react";
 
 export default function CartPage() {
   const { cart, isLoading, cartId } = useCheckoutCart();
+  const [error, setError] = useState<string | null>(null);
 
   const { data: recommendedProducts } = useFeaturedProducts(6);
 
@@ -31,13 +35,15 @@ export default function CartPage() {
     if (!cartId) return;
 
     try {
+      setError(null);
       await updateQuantityMutation.mutateAsync({
         cartId,
         variantId,
         quantity: newQuantity,
       });
-    } catch (error) {
-      console.error("Failed to update quantity:", error);
+    } catch (err) {
+      const errorMessage = handleError(err, "Update cart quantity");
+      setError(errorMessage);
     }
   };
 
@@ -45,17 +51,37 @@ export default function CartPage() {
     if (!cartId) return;
 
     try {
+      setError(null);
       await removeItemMutation.mutateAsync({
         cartId,
         variantId,
       });
-    } catch (error) {
-      console.error("Failed to remove item:", error);
+    } catch (err) {
+      const errorMessage = handleError(err, "Remove cart item");
+      setError(errorMessage);
     }
   };
 
   if (isLoading) {
-    return <LoadingState message="Loading cart..." />;
+    return (
+      <main className={`w-full ${COMMON_CLASSES.pageBg}`}>
+        <PageContainer className="px-4 md:px-8 lg:px-16 pt-4 pb-0 md:py-8 lg:py-[64px]">
+          <div className="pb-[24px] mb-0 border-b border-[#D2D2D2] lg:border-0 lg:pb-0 lg:mb-[48px]">
+            <h1
+              className="text-[14px] md:text-[15px] lg:text-[16px] leading-[20px] lg:leading-[24px] font-medium tracking-[3px] md:tracking-[3.5px] lg:tracking-[4px] text-center lg:text-left"
+              style={{ fontFamily: "Raleway, sans-serif", color: "#765C4D" }}
+            >
+              <span className="uppercase">CART</span>
+            </h1>
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <CartItemSkeleton key={i} />
+            ))}
+          </div>
+        </PageContainer>
+      </main>
+    );
   }
 
   const isEmpty = !cart || !cart.items || cart.items.length === 0;
@@ -97,6 +123,17 @@ export default function CartPage() {
                 <span className="hidden lg:inline uppercase">CART</span>
               </h1>
             </div>
+
+            {/* Error Alert */}
+            {error && (
+              <Alert
+                variant="error"
+                onClose={() => setError(null)}
+                className="mb-6"
+              >
+                {error}
+              </Alert>
+            )}
 
             <div
               className={`flex flex-col lg:flex-row ${RESPONSIVE.gap.section} lg:items-start`}
