@@ -51,10 +51,7 @@ export function ProductGrid({
             price={product.price}
             compareAtPrice={product.compareAtPrice || undefined}
             image={product.images?.[0]?.url || "/placeholder-product.jpg"}
-            // DEBUG: Use 1st image if 2nd missing to verify SWAP logic
-            secondaryImage={
-              product.images?.[1]?.url || product.images?.[0]?.url
-            }
+            secondaryImage={product.images?.[1]?.url}
             variants={product.variants || []}
           />
         );

@@ -80,9 +80,7 @@ export function InvestmentPieces() {
                   price={product.price}
                   compareAtPrice={product.compareAtPrice}
                   image={product.images?.[0]?.url || "/placeholder-product.jpg"}
-                  secondaryImage={
-                    product.images?.[1]?.url || product.images?.[0]?.url
-                  }
+                  secondaryImage={product.images?.[1]?.url}
                   variants={product.variants || []}
                   aspectRatio="aspect-[394/501.74]"
                   textGap="gap-[12.95px]"
