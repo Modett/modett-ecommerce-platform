@@ -13,6 +13,7 @@ import {
   shouldRetryOnError,
   dispatchWishlistUpdate,
 } from "./utils";
+import { handleError } from "@/lib/error-handler";
 
 // Create axios instance for wishlist API
 const wishlistApiClient = axios.create({
@@ -40,7 +41,7 @@ export const generateGuestToken = async (): Promise<string> => {
 
     return token;
   } catch (error: any) {
-    console.error("Failed to generate guest token:", error);
+    handleError(error, "Generate guest token");
     throw new Error(
       error.response?.data?.error || "Failed to generate guest token"
     );
@@ -80,7 +81,7 @@ export const createDefaultWishlist = async (): Promise<Wishlist> => {
 
     return wishlist;
   } catch (error: any) {
-    console.error("Failed to create wishlist:", error);
+    handleError(error, "Create wishlist");
     throw new Error(
       error.response?.data?.error || "Failed to create wishlist"
     );
@@ -125,7 +126,7 @@ export const addToWishlistInternal = async (
       return addToWishlistInternal(newWishlist.wishlistId, variantId, true);
     }
 
-    console.error("L Failed to add to wishlist:", errorMessages[0] || error.message);
+    handleError(error, "Add to wishlist");
 
     throw new Error(errorMessages[0] || "Failed to add to wishlist");
   }
@@ -168,7 +169,7 @@ export const removeFromWishlist = async (
     // Dispatch custom event to notify all components
     dispatchWishlistUpdate(variantId, productId, "remove");
   } catch (error: any) {
-    console.error("Failed to remove from wishlist:", error);
+    handleError(error, "Remove from wishlist");
     throw new Error(
       error.response?.data?.error || "Failed to remove from wishlist"
     );
@@ -188,7 +189,7 @@ export const getWishlistItems = async (
 
     return data.data || [];
   } catch (error: any) {
-    console.error("Failed to get wishlist items:", error);
+    handleError(error, "Get wishlist items");
     // Return empty array if wishlist doesn't exist yet
     return [];
   }
