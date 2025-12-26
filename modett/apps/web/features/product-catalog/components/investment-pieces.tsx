@@ -3,12 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "./product-card";
 import { useFeaturedProducts } from "../queries";
+import { handleError } from "@/lib/error-handler";
 
 export function InvestmentPieces() {
   const { data: products, isLoading, error } = useFeaturedProducts(6);
 
   if (error) {
-    console.error("Error loading products:", error);
+    handleError(error, "Load featured products");
   }
 
   return (
