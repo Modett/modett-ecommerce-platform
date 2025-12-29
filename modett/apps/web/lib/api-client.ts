@@ -25,7 +25,17 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    logError(error.response?.data || error, "API Error");
+    const responseData = error.response?.data;
+    console.log("[Debug] API Error Response:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: responseData,
+      dataType: typeof responseData,
+      isObject: typeof responseData === "object",
+      keys: responseData ? Object.keys(responseData) : [],
+    });
+
+    logError(responseData || error, "API Error");
     return Promise.reject(error);
   }
 );
