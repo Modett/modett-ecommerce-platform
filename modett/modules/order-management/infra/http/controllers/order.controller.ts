@@ -695,57 +695,32 @@ export class OrderController {
           return reply.code(404).send({
             success: false,
             error: "Order not found",
-            message:
-              "No order found with the provided order number. Please check and try again.",
+            message: `No order found with the provided order number: ${orderNumber}. Please check and try again.`,
           });
         }
 
         const order = result.data;
 
         // Get the order addresses to verify contact info
-        const orderAddress =
-          await this.orderManagementService.getOrderAddress(
-            order.orderId as string
-          );
+        const orderAddress = await this.orderManagementService.getOrderAddress(
+          order.orderId as string
+        );
 
         // Verify contact matches billing or shipping address
         const contactLower = contact.toLowerCase().trim();
         const billingAddress = orderAddress?.getBillingAddress()?.toJSON();
         const shippingAddress = orderAddress?.getShippingAddress()?.toJSON();
 
-        // Debug logging
-        request.log.info({
-          contact,
-          contactLower,
-          billingAddress,
-          shippingAddress,
-        }, "Debug: Contact verification data");
-
         const billingEmail = billingAddress?.email?.toLowerCase().trim();
         const billingPhone = billingAddress?.phone?.trim();
         const shippingEmail = shippingAddress?.email?.toLowerCase().trim();
         const shippingPhone = shippingAddress?.phone?.trim();
-
-        request.log.info({
-          billingEmail,
-          billingPhone,
-          shippingEmail,
-          shippingPhone,
-        }, "Debug: Extracted contact info");
 
         const contactMatches =
           contactLower === billingEmail ||
           contactLower === shippingEmail ||
           contact === billingPhone ||
           contact === shippingPhone;
-
-        request.log.info({
-          contactMatches,
-          emailMatch1: contactLower === billingEmail,
-          emailMatch2: contactLower === shippingEmail,
-          phoneMatch1: contact === billingPhone,
-          phoneMatch2: contact === shippingPhone,
-        }, "Debug: Contact matching results");
 
         if (!contactMatches) {
           return reply.code(403).send({
@@ -764,10 +739,16 @@ export class OrderController {
         return reply.code(200).send({
           success: true,
           data: {
-            ...order,
+            orderId: order.orderId,
+            orderNumber: order.orderNumber,
+            status: order.status,
+            items: order.items,
+            totals: order.totals,
             shipments: shipments || [],
-            billingAddress: billingAddress || null,
-            shippingAddress: shippingAddress || null,
+            billingAddress: billingAddress || {},
+            shippingAddress: shippingAddress || {},
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt,
           },
         });
       }
