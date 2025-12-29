@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
-import { trackOrder, type OrderDetails } from "@/lib/order-api";
-import { OrderTrackingResult } from "./OrderTrackingResult";
+import { useTrackOrderMutation } from "@/features/order-management/queries";
+import { OrderTrackingResult } from "@/features/order-management/components/OrderTrackingResult";
 import {
   COLORS,
   FONTS,
@@ -31,97 +31,90 @@ const STYLES = {
 // ============================================================================
 
 export default function OrderTrackingPage() {
-  // State for Order Number tracking
+  // Form state
   const [orderNumber, setOrderNumber] = useState("");
   const [emailOrPhone, setEmailOrPhone] = useState("");
-  const [isLoadingOrder, setIsLoadingOrder] = useState(false);
-
-  // State for Tracking Number
   const [trackingNumber, setTrackingNumber] = useState("");
-  const [isLoadingTracking, setIsLoadingTracking] = useState(false);
 
-  // State for tracking result
-  const [trackingResult, setTrackingResult] = useState<OrderDetails | null>(
-    null
-  );
+  // React Query mutation
+  const {
+    mutate: trackOrderMutation,
+    data: trackingResponse,
+    isPending,
+  } = useTrackOrderMutation();
+
+  // Get the tracked order from response
+  const trackingResult = trackingResponse?.success
+    ? trackingResponse.data
+    : null;
 
   // Handle Order Number tracking
-  const handleOrderTrack = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
+  const handleOrderTrack = (e: React.FormEvent) => {
+    e.preventDefault();
 
-      if (!orderNumber.trim()) {
-        toast.error("Please enter your order number");
-        return;
+    if (!orderNumber.trim()) {
+      toast.error("Please enter your order number");
+      return;
+    }
+
+    if (!emailOrPhone.trim()) {
+      toast.error("Please enter your email or phone number");
+      return;
+    }
+
+    trackOrderMutation(
+      {
+        orderNumber: orderNumber.trim(),
+        contact: emailOrPhone.trim(),
+      },
+      {
+        onSuccess: (response) => {
+          if (response.success && response.data) {
+            toast.success("Order found!");
+          } else {
+            toast.error(
+              response.message ||
+                "Order not found. Please check your details and try again."
+            );
+          }
+        },
+        onError: () => {
+          toast.error("An unexpected error occurred. Please try again.");
+        },
       }
-
-      if (!emailOrPhone.trim()) {
-        toast.error("Please enter your email or phone number");
-        return;
-      }
-
-      setIsLoadingOrder(true);
-      setTrackingResult(null); // Clear previous results
-
-      try {
-        const response = await trackOrder({
-          orderNumber: orderNumber.trim(),
-          contact: emailOrPhone.trim(),
-        });
-
-        if (response.success && response.data) {
-          toast.success("Order found!");
-          setTrackingResult(response.data);
-        } else {
-          toast.error(
-            response.message ||
-              "Order not found. Please check your details and try again."
-          );
-        }
-      } catch (error) {
-        toast.error("An unexpected error occurred. Please try again.");
-      } finally {
-        setIsLoadingOrder(false);
-      }
-    },
-    [orderNumber, emailOrPhone]
-  );
+    );
+  };
 
   // Handle Tracking Number lookup
-  const handleTrackingTrack = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
+  const handleTrackingTrack = (e: React.FormEvent) => {
+    e.preventDefault();
 
-      if (!trackingNumber.trim()) {
-        toast.error("Please enter your tracking number");
-        return;
+    if (!trackingNumber.trim()) {
+      toast.error("Please enter your tracking number");
+      return;
+    }
+
+    trackOrderMutation(
+      {
+        trackingNumber: trackingNumber.trim(),
+      },
+      {
+        onSuccess: (response) => {
+          if (response.success && response.data) {
+            toast.success("Order found!");
+          } else {
+            toast.error(
+              response.message ||
+                "Tracking number not found. This feature may not be fully implemented yet."
+            );
+          }
+        },
+        onError: () => {
+          toast.error("An unexpected error occurred. Please try again.");
+        },
       }
-
-      setIsLoadingTracking(true);
-      setTrackingResult(null); // Clear previous results
-
-      try {
-        const response = await trackOrder({
-          trackingNumber: trackingNumber.trim(),
-        });
-
-        if (response.success && response.data) {
-          toast.success("Order found!");
-          setTrackingResult(response.data);
-        } else {
-          toast.error(
-            response.message ||
-              "Tracking number not found. This feature may not be fully implemented yet."
-          );
-        }
-      } catch (error) {
-        toast.error("An unexpected error occurred. Please try again.");
-      } finally {
-        setIsLoadingTracking(false);
-      }
-    },
-    [trackingNumber]
-  );
+    );
+  };
 
   return (
     <main className={STYLES.page}>
@@ -167,7 +160,7 @@ export default function OrderTrackingPage() {
                       borderColor: COLORS.warmBeige,
                       color: COLORS.graphite,
                     }}
-                    disabled={isLoadingOrder}
+                    disabled={isPending}
                   />
                 </div>
 
@@ -192,18 +185,18 @@ export default function OrderTrackingPage() {
                       borderColor: COLORS.warmBeige,
                       color: COLORS.graphite,
                     }}
-                    disabled={isLoadingOrder}
+                    disabled={isPending}
                   />
                 </div>
 
                 {/* Track Button */}
                 <button
                   type="submit"
-                  disabled={isLoadingOrder}
+                  disabled={isPending}
                   className={STYLES.button}
                   style={TEXT_STYLES.button}
                 >
-                  {isLoadingOrder ? "TRACKING..." : "TRACK ORDER"}
+                  {isPending ? "TRACKING..." : "TRACK ORDER"}
                 </button>
               </form>
             </div>
@@ -274,7 +267,7 @@ export default function OrderTrackingPage() {
                       borderColor: COLORS.warmBeige,
                       color: COLORS.graphite,
                     }}
-                    disabled={isLoadingTracking}
+                    disabled={isPending}
                   />
                 </div>
 
@@ -284,11 +277,11 @@ export default function OrderTrackingPage() {
                 {/* Track Button */}
                 <button
                   type="submit"
-                  disabled={isLoadingTracking}
+                  disabled={isPending}
                   className={STYLES.button}
                   style={TEXT_STYLES.button}
                 >
-                  {isLoadingTracking ? "TRACKING..." : "TRACK SHIPMENT"}
+                  {isPending ? "TRACKING..." : "TRACK SHIPMENT"}
                 </button>
               </form>
             </div>
