@@ -5,6 +5,10 @@ import { ReservationRepository } from "../../domain/repositories/reservation.rep
 import { StockManagementService } from "../../../inventory-management/application/services/stock-management.service";
 import { CheckoutId } from "../../domain/value-objects/checkout-id.vo";
 import { CartId } from "../../domain/value-objects/cart-id.vo";
+import { IProductRepository } from "../../../product-catalog/domain/repositories/product.repository";
+import { IProductVariantRepository } from "../../../product-catalog/domain/repositories/product-variant.repository";
+import { ProductSnapshot } from "../../../order-management/domain/value-objects/product-snapshot.vo";
+import { VariantId } from "../../../product-catalog/domain/value-objects/variant-id.vo";
 
 export interface CompleteCheckoutWithOrderDto {
   checkoutId: string;
@@ -52,7 +56,9 @@ export class CheckoutOrderService {
     private readonly checkoutRepository: CheckoutRepository,
     private readonly cartRepository: CartRepository,
     private readonly reservationRepository: ReservationRepository,
-    private readonly stockManagementService: StockManagementService
+    private readonly stockManagementService: StockManagementService,
+    private readonly productRepository: IProductRepository,
+    private readonly productVariantRepository: IProductVariantRepository
   ) {}
 
   async completeCheckoutWithOrder(
@@ -179,16 +185,47 @@ export class CheckoutOrderService {
 
       const orderItems = [];
       for (const item of cartSnapshot.items || []) {
+        // Fetch variant and product to build a valid snapshot
+        const variantId = VariantId.fromString(item.variantId);
+        const variant = await this.productVariantRepository.findById(variantId);
+
+        if (!variant) {
+          throw new Error(`Variant not found: ${item.variantId}`);
+        }
+
+        const product = await this.productRepository.findById(
+          variant.getProductId()
+        );
+
+        if (!product) {
+          throw new Error(`Product not found for variant: ${item.variantId}`);
+        }
+
+        // Create valid ProductSnapshot
+        const productSnapshot = ProductSnapshot.create({
+          productId: product.getId().getValue(),
+          variantId: variant.getId().getValue(),
+          sku: variant.getSku().getValue(),
+          name: product.getTitle(),
+          variantName:
+            [variant.getSize(), variant.getColor()]
+              .filter(Boolean)
+              .join(" / ") || undefined,
+          price: variant.getPrice().getValue(), // DB price
+          imageUrl: undefined, // You might want to fetch images too
+          weight: variant.getWeightG() || undefined,
+          attributes: {
+            size: variant.getSize(),
+            color: variant.getColor(),
+          },
+        });
+
         const orderItem = await tx.orderItem.create({
           data: {
             orderId: order.id,
             variantId: item.variantId,
             qty: item.quantity,
-            productSnapshot: {
-              variantId: item.variantId,
-              unitPrice: item.unitPriceSnapshot,
-              quantity: item.quantity,
-            } as any,
+            productSnapshot: productSnapshot.toJSON() as any,
             isGift: item.isGift,
             giftMessage: item.giftMessage,
           },
@@ -216,11 +253,21 @@ export class CheckoutOrderService {
 
       await this.reservationRepository.deleteByCartId(checkout.getCartId());
 
+      // Fetch email from ShoppingCart (stored in DB but not in domain entity)
+      const cartData = await tx.shoppingCart.findUnique({
+        where: { id: checkout.getCartId().toString() },
+        select: { email: true },
+      });
+      const cartEmail = cartData?.email;
+
       await tx.orderAddress.create({
         data: {
           orderId: order.id,
-          shippingSnapshot: dto.shippingAddress as any,
-          billingSnapshot: (dto.billingAddress || dto.shippingAddress) as any,
+          shippingSnapshot: { ...dto.shippingAddress, email: cartEmail } as any,
+          billingSnapshot: {
+            ...(dto.billingAddress || dto.shippingAddress),
+            email: cartEmail,
+          } as any,
         },
       });
 
@@ -271,7 +318,6 @@ export class CheckoutOrderService {
 
       // Clear the cart items after successful order creation
       const cartIdToDelete = checkout.getCartId().toString();
-      console.log(`Deleting cart items for cart: ${cartIdToDelete}`);
 
       const deleteResult = await tx.cartItem.deleteMany({
         where: { cartId: cartIdToDelete },
@@ -304,8 +350,6 @@ export class CheckoutOrderService {
           email: null, // Depending on if we want to keep email or not. Safest is to clear everything given Guest Token persistence.
         } as any, // Cast to any because some fields might be optional in Prisma types but we want to force null
       });
-
-      console.log(`Deleted ${deleteResult.count} cart items`);
 
       return {
         orderId: order.id,
