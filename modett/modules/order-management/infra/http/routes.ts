@@ -89,6 +89,63 @@ export async function registerOrderManagementRoutes(
   // ORDER ROUTES
   // =============================================================================
 
+  // Public order tracking (no authentication required)
+  fastify.get(
+    "/orders/track",
+    {
+      schema: {
+        description:
+          "Track an order publicly without authentication. Requires either order number + email/phone, or tracking number.",
+        tags: ["Orders"],
+        summary: "Track Order (Public)",
+        querystring: {
+          type: "object",
+          properties: {
+            orderNumber: {
+              type: "string",
+              description: "Order number to track",
+            },
+            contact: {
+              type: "string",
+              description:
+                "Email or phone number associated with the order (required when using orderNumber)",
+            },
+            trackingNumber: {
+              type: "string",
+              description: "Shipping tracking number",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Order found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  orderId: { type: "string", format: "uuid" },
+                  orderNumber: { type: "string" },
+                  status: { type: "string" },
+                  items: { type: "array" },
+                  totals: { type: "object" },
+                  shipments: { type: "array" },
+                  shippingAddress: { type: "object" },
+                  billingAddress: { type: "object" },
+                  createdAt: { type: "string", format: "date-time" },
+                  updatedAt: { type: "string", format: "date-time" },
+                },
+              },
+            },
+          },
+          ...errorResponses,
+        },
+      },
+    },
+    orderController.trackOrder.bind(orderController) as any
+  );
+
   // Create new order
   fastify.post(
     "/orders",
