@@ -4,35 +4,26 @@ import React, { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { trackOrder, type OrderDetails } from "@/lib/order-api";
 import { OrderTrackingResult } from "./OrderTrackingResult";
-
-// ============================================================================
-// Types
-// ============================================================================
+import {
+  COLORS,
+  FONTS,
+  TEXT_STYLES,
+  COMMON_CLASSES,
+  RESPONSIVE,
+} from "@/features/cart/constants/styles";
 
 // ============================================================================
 // Styles
 // ============================================================================
 
 const STYLES = {
-  page: "min-h-screen bg-[#EFECE5]",
-  container: "w-full max-w-[1280px] mx-auto px-4 md:px-[80px] py-12 md:py-16",
-  title: {
-    fontFamily: "Raleway, sans-serif",
-    fontWeight: 400,
-    color: "#232D35",
-  },
-  label: {
-    fontFamily: "Raleway, sans-serif",
-    fontWeight: 400,
-    color: "#232D35",
-    fontSize: "14px",
-  },
+  page: `min-h-screen ${COMMON_CLASSES.pageBg}`,
+  container: `w-full max-w-[1280px] mx-auto ${RESPONSIVE.padding.page} py-12 md:py-16`,
   input:
-    "w-full h-[48px] px-4 border border-[#232D35] bg-white text-[14px] text-[#232D35] placeholder:text-[#A09B93] focus:outline-none focus:border-[#232D35] focus:ring-1 focus:ring-[#232D35] transition-colors",
-  button:
-    "h-[48px] px-8 bg-[#232D35] text-white text-[14px] font-medium tracking-[2px] uppercase hover:bg-[#1a2228] transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+    "w-full h-[48px] px-4 border bg-white/50 text-[14px] transition-colors focus:outline-none focus:ring-1 focus:ring-[#232D35]",
+  button: `h-[48px] px-8 text-[14px] font-medium tracking-[2px] uppercase transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${COMMON_CLASSES.primaryButton}`,
   divider: "text-[14px] text-[#6B7280]",
-  section: "border border-[#E5E0D6] p-6 md:p-8 bg-white/50",
+  section: `border ${COMMON_CLASSES.borderPrimary} p-6 md:p-8 bg-white/50`,
 };
 
 // ============================================================================
@@ -82,7 +73,10 @@ export default function OrderTrackingPage() {
           toast.success("Order found!");
           setTrackingResult(response.data);
         } else {
-          toast.error(response.message || "Order not found. Please check your details and try again.");
+          toast.error(
+            response.message ||
+              "Order not found. Please check your details and try again."
+          );
         }
       } catch (error) {
         toast.error("An unexpected error occurred. Please try again.");
@@ -115,7 +109,10 @@ export default function OrderTrackingPage() {
           toast.success("Order found!");
           setTrackingResult(response.data);
         } else {
-          toast.error(response.message || "Tracking number not found. This feature may not be fully implemented yet.");
+          toast.error(
+            response.message ||
+              "Tracking number not found. This feature may not be fully implemented yet."
+          );
         }
       } catch (error) {
         toast.error("An unexpected error occurred. Please try again.");
@@ -131,8 +128,8 @@ export default function OrderTrackingPage() {
       <div className={STYLES.container}>
         {/* Page Title */}
         <h1
-          className="text-[32px] md:text-[36px] leading-[120%] mb-8 md:mb-12"
-          style={STYLES.title}
+          className="text-[32px] md:text-[36px] leading-[120%] mb-8 md:mb-12 text-center md:text-left"
+          style={TEXT_STYLES.pageTitle}
         >
           Track Your Order
         </h1>
@@ -142,13 +139,19 @@ export default function OrderTrackingPage() {
           <div className="flex flex-col lg:flex-row lg:items-start gap-8 lg:gap-0">
             {/* Left Side: Order Number + Email/Phone */}
             <div className="flex-1 lg:pr-12">
+              <h2
+                className="text-[18px] mb-6 uppercase tracking-[1px]"
+                style={TEXT_STYLES.bodyGraphite}
+              >
+                By Order Number
+              </h2>
               <form onSubmit={handleOrderTrack} className="space-y-6">
                 {/* Order Number Field */}
                 <div className="space-y-2">
                   <label
                     htmlFor="orderNumber"
-                    className="block"
-                    style={STYLES.label}
+                    className="block text-xs uppercase tracking-[1px]"
+                    style={TEXT_STYLES.label}
                   >
                     Order Number
                   </label>
@@ -159,7 +162,11 @@ export default function OrderTrackingPage() {
                     onChange={(e) => setOrderNumber(e.target.value)}
                     placeholder="e.g., ORD-2024-001234"
                     className={STYLES.input}
-                    style={{ fontFamily: "Raleway, sans-serif" }}
+                    style={{
+                      fontFamily: FONTS.raleway,
+                      borderColor: COLORS.warmBeige,
+                      color: COLORS.graphite,
+                    }}
                     disabled={isLoadingOrder}
                   />
                 </div>
@@ -168,8 +175,8 @@ export default function OrderTrackingPage() {
                 <div className="space-y-2">
                   <label
                     htmlFor="emailOrPhone"
-                    className="block"
-                    style={STYLES.label}
+                    className="block text-xs uppercase tracking-[1px]"
+                    style={TEXT_STYLES.label}
                   >
                     Email or Phone Number
                   </label>
@@ -180,7 +187,11 @@ export default function OrderTrackingPage() {
                     onChange={(e) => setEmailOrPhone(e.target.value)}
                     placeholder="Enter your email or phone"
                     className={STYLES.input}
-                    style={{ fontFamily: "Raleway, sans-serif" }}
+                    style={{
+                      fontFamily: FONTS.raleway,
+                      borderColor: COLORS.warmBeige,
+                      color: COLORS.graphite,
+                    }}
                     disabled={isLoadingOrder}
                   />
                 </div>
@@ -190,41 +201,64 @@ export default function OrderTrackingPage() {
                   type="submit"
                   disabled={isLoadingOrder}
                   className={STYLES.button}
-                  style={{ fontFamily: "Raleway, sans-serif" }}
+                  style={TEXT_STYLES.button}
                 >
-                  {isLoadingOrder ? "TRACKING..." : "TRACK"}
+                  {isLoadingOrder ? "TRACKING..." : "TRACK ORDER"}
                 </button>
               </form>
             </div>
 
             {/* Divider */}
-            <div className="hidden lg:flex flex-col items-center justify-center px-8">
-              <div className="w-px h-[200px] border-l border-dashed border-[#D1D5DB]" />
+            <div className="hidden lg:flex flex-col items-center justify-center px-8 pt-12">
+              <div
+                className="w-px h-[180px] border-l border-dashed"
+                style={{ borderColor: COLORS.sand }}
+              />
               <span
-                className="my-4"
-                style={{ ...STYLES.label, color: "#6B7280" }}
+                className="my-4 text-xs uppercase tracking-widest bg-[#EFECE5] px-2 py-1 rounded-full"
+                style={{ ...TEXT_STYLES.label, color: COLORS.slateGray }}
               >
-                Or
+                OR
               </span>
-              <div className="w-px h-[200px] border-l border-dashed border-[#D1D5DB]" />
+              <div
+                className="w-px h-[180px] border-l border-dashed"
+                style={{ borderColor: COLORS.sand }}
+              />
             </div>
 
             {/* Mobile Divider */}
-            <div className="lg:hidden flex items-center gap-4">
-              <div className="flex-1 border-t border-dashed border-[#D1D5DB]" />
-              <span style={{ ...STYLES.label, color: "#6B7280" }}>Or</span>
-              <div className="flex-1 border-t border-dashed border-[#D1D5DB]" />
+            <div className="lg:hidden flex items-center gap-4 py-4">
+              <div
+                className="flex-1 border-t border-dashed"
+                style={{ borderColor: COLORS.sand }}
+              />
+              <span
+                className="text-xs uppercase tracking-widest"
+                style={{ color: COLORS.slateGray }}
+              >
+                OR
+              </span>
+              <div
+                className="flex-1 border-t border-dashed"
+                style={{ borderColor: COLORS.sand }}
+              />
             </div>
 
             {/* Right Side: Tracking Number */}
             <div className="flex-1 lg:pl-12">
+              <h2
+                className="text-[18px] mb-6 uppercase tracking-[1px]"
+                style={TEXT_STYLES.bodyGraphite}
+              >
+                By Tracking Number
+              </h2>
               <form onSubmit={handleTrackingTrack} className="space-y-6">
                 {/* Tracking Number Field */}
                 <div className="space-y-2">
                   <label
                     htmlFor="trackingNumber"
-                    className="block"
-                    style={STYLES.label}
+                    className="block text-xs uppercase tracking-[1px]"
+                    style={TEXT_STYLES.label}
                   >
                     Tracking Number
                   </label>
@@ -235,22 +269,26 @@ export default function OrderTrackingPage() {
                     onChange={(e) => setTrackingNumber(e.target.value)}
                     placeholder="Enter shipping tracking number"
                     className={STYLES.input}
-                    style={{ fontFamily: "Raleway, sans-serif" }}
+                    style={{
+                      fontFamily: FONTS.raleway,
+                      borderColor: COLORS.warmBeige,
+                      color: COLORS.graphite,
+                    }}
                     disabled={isLoadingTracking}
                   />
                 </div>
 
                 {/* Spacer to align with left side */}
-                <div className="h-[76px]" />
+                <div className="hidden lg:block h-[76px]" />
 
                 {/* Track Button */}
                 <button
                   type="submit"
                   disabled={isLoadingTracking}
                   className={STYLES.button}
-                  style={{ fontFamily: "Raleway, sans-serif" }}
+                  style={TEXT_STYLES.button}
                 >
-                  {isLoadingTracking ? "TRACKING..." : "TRACK"}
+                  {isLoadingTracking ? "TRACKING..." : "TRACK SHIPMENT"}
                 </button>
               </form>
             </div>
@@ -260,13 +298,14 @@ export default function OrderTrackingPage() {
         {/* Help Text */}
         <div className="mt-8 text-center">
           <p
-            className="text-[14px] text-[#6B7280]"
-            style={{ fontFamily: "Raleway, sans-serif" }}
+            className="text-[14px]"
+            style={{ ...TEXT_STYLES.bodySlate, fontFamily: FONTS.raleway }}
           >
             Can't find your order?{" "}
             <a
               href="/contact"
-              className="text-[#232D35] underline hover:no-underline"
+              className="underline hover:no-underline transition-all"
+              style={{ color: COLORS.graphite }}
             >
               Contact our support team
             </a>
