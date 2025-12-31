@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import * as wishlistApi from "./api";
 import type { AddToWishlistParams, RemoveFromWishlistParams } from "./types";
 import { getStoredWishlistId, persistWishlistId } from "./utils";
+import { handleError } from "@/lib/error-handler";
 
 /**
  * Query key factory for wishlist queries
@@ -41,7 +42,7 @@ export const useWishlistId = () => {
         setWishlistId(wishlist.wishlistId);
         persistWishlistId(wishlist.wishlistId);
       } catch (error) {
-        console.error("Failed to initialize wishlist:", error);
+        handleError(error, "Initialize wishlist");
       } finally {
         setIsInitializing(false);
       }

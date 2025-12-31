@@ -1,5 +1,6 @@
 import { transferGuestCartToUser } from "@/features/cart/api";
 import { getStoredGuestToken } from "@/features/cart/utils";
+import { handleError } from "@/lib/error-handler";
 
 export async function handleCartTransfer(
   userId: string,
@@ -50,7 +51,7 @@ export async function handleCartTransfer(
 
     return true;
   } catch (error) {
-    console.error("[Cart Transfer] ✗ Failed to transfer cart:", error);
+    handleError(error, "Cart Transfer");
 
     // Call error callback if provided
     if (onError && error instanceof Error) {

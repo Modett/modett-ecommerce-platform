@@ -1,6 +1,6 @@
-import { OrderManagementService } from '../services/order-management.service';
-import { Order } from '../../domain/entities/order.entity';
-import { CommandResult } from '../commands/create-order.command';
+import { OrderManagementService } from "../services/order-management.service";
+import { Order } from "../../domain/entities/order.entity";
+import { CommandResult } from "../commands/create-order.command";
 
 // Query interfaces
 export interface IQuery {
@@ -26,6 +26,7 @@ export interface OrderResult {
     orderItemId: string;
     variantId: string;
     quantity: number;
+    subtotal: number;
     productSnapshot: {
       productId: string;
       variantId: string;
@@ -52,6 +53,38 @@ export interface OrderResult {
     discount: number;
     total: number;
   };
+  billingAddress: {
+    firstName: string;
+    lastName: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    phone?: string;
+    email?: string;
+  } | null;
+  shippingAddress: {
+    firstName: string;
+    lastName: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    phone?: string;
+    email?: string;
+  } | null;
+  shipments: Array<{
+    shipmentId: string;
+    carrier: string;
+    service: string;
+    trackingNumber?: string;
+    shippedAt?: Date;
+    deliveredAt?: Date;
+  }>;
   status: string;
   source: string;
   currency: string;
@@ -59,7 +92,9 @@ export interface OrderResult {
   updatedAt: Date;
 }
 
-export class GetOrderHandler implements IQueryHandler<GetOrderQuery, CommandResult<OrderResult>> {
+export class GetOrderHandler
+  implements IQueryHandler<GetOrderQuery, CommandResult<OrderResult>>
+{
   constructor(
     private readonly orderManagementService: OrderManagementService
   ) {}
@@ -69,8 +104,8 @@ export class GetOrderHandler implements IQueryHandler<GetOrderQuery, CommandResu
       // Validate that either orderId or orderNumber is provided
       if (!query.orderId && !query.orderNumber) {
         return CommandResult.failure<OrderResult>(
-          'Either orderId or orderNumber is required',
-          ['orderId', 'orderNumber']
+          "Either orderId or orderNumber is required",
+          ["orderId", "orderNumber"]
         );
       }
 
@@ -79,16 +114,22 @@ export class GetOrderHandler implements IQueryHandler<GetOrderQuery, CommandResu
       if (query.orderId) {
         order = await this.orderManagementService.getOrderById(query.orderId);
       } else if (query.orderNumber) {
-        order = await this.orderManagementService.getOrderByOrderNumber(query.orderNumber);
+        order = await this.orderManagementService.getOrderByOrderNumber(
+          query.orderNumber
+        );
       } else {
         order = null;
       }
 
       if (!order) {
-        return CommandResult.failure<OrderResult>(
-          'Order not found'
-        );
+        return CommandResult.failure<OrderResult>("Order not found");
       }
+
+      // Get address and shipments explicitly since they might be loaded differently
+      const address = await this.orderManagementService.getOrderAddress(
+        order.getOrderId().getValue()
+      );
+      const shipments = order.getShipments();
 
       const result: OrderResult = {
         orderId: order.getOrderId().toString(),
@@ -99,29 +140,39 @@ export class GetOrderHandler implements IQueryHandler<GetOrderQuery, CommandResu
           orderItemId: item.getOrderItemId(),
           variantId: item.getVariantId(),
           quantity: item.getQuantity(),
+          subtotal: item.calculateSubtotal(),
           productSnapshot: item.getProductSnapshot().toJSON(),
           isGift: item.isGiftItem(),
           giftMessage: item.getGiftMessage(),
         })),
         totals: order.getTotals().toJSON(),
+        billingAddress: address?.getBillingAddress()?.toJSON() || null,
+        shippingAddress: address?.getShippingAddress()?.toJSON() || null,
+        shipments: shipments.map((s) => ({
+          shipmentId: s.getShipmentId(),
+          carrier: s.getCarrier() || "Unknown",
+          service: s.getService() || "Standard",
+          trackingNumber: s.getTrackingNumber(),
+          shippedAt: s.getShippedAt(),
+          deliveredAt: s.getDeliveredAt(),
+        })),
         status: order.getStatus().toString(),
         source: order.getSource().toString(),
         currency: order.getCurrency().toString(),
         createdAt: order.getCreatedAt(),
-        updatedAt: order.getUpdatedAt()
+        updatedAt: order.getUpdatedAt(),
       };
 
       return CommandResult.success<OrderResult>(result);
     } catch (error) {
       if (error instanceof Error) {
-        return CommandResult.failure<OrderResult>(
-          'Failed to retrieve order',
-          [error.message]
-        );
+        return CommandResult.failure<OrderResult>("Failed to retrieve order", [
+          error.message,
+        ]);
       }
 
       return CommandResult.failure<OrderResult>(
-        'An unexpected error occurred while retrieving order'
+        "An unexpected error occurred while retrieving order"
       );
     }
   }

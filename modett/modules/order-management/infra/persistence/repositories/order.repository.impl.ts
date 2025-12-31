@@ -1,13 +1,13 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 import {
   IOrderRepository,
   OrderQueryOptions,
   OrderFilterOptions,
-} from '../../../domain/repositories/order.repository';
-import { Order } from '../../../domain/entities/order.entity';
-import { OrderItem } from '../../../domain/entities/order-item.entity';
-import { OrderAddress } from '../../../domain/entities/order-address.entity';
-import { OrderShipment } from '../../../domain/entities/order-shipment.entity';
+} from "../../../domain/repositories/order.repository";
+import { Order } from "../../../domain/entities/order.entity";
+import { OrderItem } from "../../../domain/entities/order-item.entity";
+import { OrderAddress } from "../../../domain/entities/order-address.entity";
+import { OrderShipment } from "../../../domain/entities/order-shipment.entity";
 import {
   OrderId,
   OrderNumber,
@@ -17,7 +17,7 @@ import {
   OrderTotals,
   ProductSnapshot,
   AddressSnapshot,
-} from '../../../domain/value-objects';
+} from "../../../domain/value-objects";
 
 interface OrderDatabaseRow {
   id: string;
@@ -41,15 +41,18 @@ export class OrderRepositoryImpl implements IOrderRepository {
   // Hydration: Database row → Entity
   private toEntity(row: OrderDatabaseRow): Order {
     // Hydrate order items
-    const items = row.items?.map(item => OrderItem.reconstitute({
-      orderItemId: item.id,
-      orderId: row.id,
-      variantId: item.variantId,
-      quantity: item.qty,
-      productSnapshot: ProductSnapshot.create(item.productSnapshot),
-      isGift: item.isGift,
-      giftMessage: item.giftMessage,
-    })) || [];
+    const items =
+      row.items?.map((item) =>
+        OrderItem.reconstitute({
+          orderItemId: item.id,
+          orderId: row.id,
+          variantId: item.variantId,
+          quantity: item.qty,
+          productSnapshot: ProductSnapshot.create(item.productSnapshot),
+          isGift: item.isGift,
+          giftMessage: item.giftMessage,
+        })
+      ) || [];
 
     // Hydrate order address
     let address: OrderAddress | undefined;
@@ -61,40 +64,42 @@ export class OrderRepositoryImpl implements IOrderRepository {
 
     if (addressData) {
       // Check if address snapshots have required data (not empty JSON objects)
-      const hasBillingData = addressData.billingSnapshot &&
-                              typeof addressData.billingSnapshot === 'object' &&
-                              Object.keys(addressData.billingSnapshot).length > 0;
-      const hasShippingData = addressData.shippingSnapshot &&
-                               typeof addressData.shippingSnapshot === 'object' &&
-                               Object.keys(addressData.shippingSnapshot).length > 0;
+      const hasBillingData =
+        addressData.billingSnapshot &&
+        typeof addressData.billingSnapshot === "object" &&
+        Object.keys(addressData.billingSnapshot).length > 0;
+      const hasShippingData =
+        addressData.shippingSnapshot &&
+        typeof addressData.shippingSnapshot === "object" &&
+        Object.keys(addressData.shippingSnapshot).length > 0;
 
       // Only create address if we have valid data
       if (hasBillingData && hasShippingData) {
-        try {
-          address = OrderAddress.reconstitute({
-            orderId: row.id,
-            billingAddress: AddressSnapshot.create(addressData.billingSnapshot),
-            shippingAddress: AddressSnapshot.create(addressData.shippingSnapshot),
-          });
-        } catch (error) {
-          // Log error but don't fail the entire order load
-          console.error('Failed to hydrate order address:', error);
-        }
+        address = OrderAddress.reconstitute({
+          orderId: row.id,
+          billingAddress: AddressSnapshot.create(addressData.billingSnapshot),
+          shippingAddress: AddressSnapshot.create(
+            addressData.shippingSnapshot
+          ),
+        });
       }
     }
 
     // Hydrate shipments
-    const shipments = row.shipments?.map(shipment => OrderShipment.reconstitute({
-      shipmentId: shipment.id,
-      orderId: row.id,
-      carrier: shipment.carrier,
-      service: shipment.service,
-      trackingNumber: shipment.trackingNo,
-      giftReceipt: shipment.giftReceipt,
-      pickupLocationId: shipment.pickupLocationId,
-      shippedAt: shipment.shippedAt,
-      deliveredAt: shipment.deliveredAt,
-    })) || [];
+    const shipments =
+      row.shipments?.map((shipment) =>
+        OrderShipment.reconstitute({
+          shipmentId: shipment.id,
+          orderId: row.id,
+          carrier: shipment.carrier,
+          service: shipment.service,
+          trackingNumber: shipment.trackingNo,
+          giftReceipt: shipment.giftReceipt,
+          pickupLocationId: shipment.pickupLocationId,
+          shippedAt: shipment.shippedAt,
+          deliveredAt: shipment.deliveredAt,
+        })
+      ) || [];
 
     return Order.reconstitute({
       orderId: row.id,
@@ -139,7 +144,7 @@ export class OrderRepositoryImpl implements IOrderRepository {
       // Create order items
       if (items.length > 0) {
         await tx.orderItem.createMany({
-          data: items.map(item => ({
+          data: items.map((item) => ({
             id: item.getOrderItemId(),
             orderId: orderId,
             variantId: item.getVariantId(),
@@ -165,7 +170,7 @@ export class OrderRepositoryImpl implements IOrderRepository {
       // Create shipments
       if (shipments.length > 0) {
         await tx.orderShipment.createMany({
-          data: shipments.map(shipment => ({
+          data: shipments.map((shipment) => ({
             id: shipment.getShipmentId(),
             orderId: orderId,
             carrier: shipment.getCarrier(),
@@ -210,7 +215,7 @@ export class OrderRepositoryImpl implements IOrderRepository {
 
       if (items.length > 0) {
         await tx.orderItem.createMany({
-          data: items.map(item => ({
+          data: items.map((item) => ({
             id: item.getOrderItemId(),
             orderId: orderId,
             variantId: item.getVariantId(),
@@ -249,7 +254,7 @@ export class OrderRepositoryImpl implements IOrderRepository {
 
       if (shipments.length > 0) {
         await tx.orderShipment.createMany({
-          data: shipments.map(shipment => ({
+          data: shipments.map((shipment) => ({
             id: shipment.getShipmentId(),
             orderId: orderId,
             carrier: shipment.getCarrier(),
@@ -312,8 +317,8 @@ export class OrderRepositoryImpl implements IOrderRepository {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = options || {};
 
     const orders = await this.prisma.order.findMany({
@@ -338,8 +343,8 @@ export class OrderRepositoryImpl implements IOrderRepository {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = options || {};
 
     const orders = await this.prisma.order.findMany({
@@ -364,8 +369,8 @@ export class OrderRepositoryImpl implements IOrderRepository {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = options || {};
 
     const orders = await this.prisma.order.findMany({
@@ -387,8 +392,8 @@ export class OrderRepositoryImpl implements IOrderRepository {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = options || {};
 
     const orders = await this.prisma.order.findMany({
@@ -412,8 +417,8 @@ export class OrderRepositoryImpl implements IOrderRepository {
     const {
       limit = 50,
       offset = 0,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = options || {};
 
     const whereClause: any = {};

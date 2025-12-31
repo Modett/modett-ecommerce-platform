@@ -1,5 +1,6 @@
 import axios from "axios";
 import { config } from "./config";
+import { logError } from "./error-handler";
 
 export const apiClient = axios.create({
   baseURL: config.apiUrl,
@@ -24,7 +25,17 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error("API Error:", error.response?.data || error.message);
+    const responseData = error.response?.data;
+    console.log("[Debug] API Error Response:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: responseData,
+      dataType: typeof responseData,
+      isObject: typeof responseData === "object",
+      keys: responseData ? Object.keys(responseData) : [],
+    });
+
+    logError(responseData || error, "API Error");
     return Promise.reject(error);
   }
 );

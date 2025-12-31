@@ -39,16 +39,17 @@ export function ProductGrid({
     >
       {products.map((product) => (
         <ProductCard
-          key={product.id}
-          id={product.id}
-          productId={product.productId}
-          slug={product.slug}
-          title={product.title}
-          price={product.price}
-          compareAtPrice={product.compareAtPrice || undefined}
-          image={product.images?.[0]?.url || "/placeholder-product.jpg"}
-          variants={product.variants || []}
-        />
+            key={product.id}
+            id={product.id}
+            productId={product.productId}
+            slug={product.slug}
+            title={product.title}
+            price={product.price}
+            compareAtPrice={product.compareAtPrice || undefined}
+            image={product.images?.[0]?.url || "/placeholder-product.jpg"}
+            secondaryImage={product.images?.[1]?.url}
+            variants={product.variants || []}
+          />
       ))}
     </div>
   );

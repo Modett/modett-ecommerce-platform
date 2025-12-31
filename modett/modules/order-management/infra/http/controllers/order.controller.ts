@@ -650,4 +650,132 @@ export class OrderController {
       });
     }
   }
+
+  // Public order tracking (no authentication required)
+  async trackOrder(
+    request: FastifyRequest<{
+      Querystring: {
+        orderNumber: string;
+        contact: string; // email or phone
+        trackingNumber?: string;
+      };
+    }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { orderNumber, contact, trackingNumber } = request.query;
+
+      // Validate inputs
+      if (!orderNumber && !trackingNumber) {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: "Either order number or tracking number is required",
+        });
+      }
+
+      if (orderNumber && !contact) {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message:
+            "Email or phone number is required when tracking by order number",
+        });
+      }
+
+      // Track by order number + contact verification
+      if (orderNumber && contact) {
+        const query: GetOrderQuery = {
+          orderNumber,
+        };
+
+        const result = await this.getOrderHandler.handle(query);
+
+        if (!result.success || !result.data) {
+          return reply.code(404).send({
+            success: false,
+            error: "Order not found",
+            message: `No order found with the provided order number: ${orderNumber}. Please check and try again.`,
+          });
+        }
+
+        const order = result.data;
+
+        // Get the order addresses to verify contact info
+        const orderAddress = await this.orderManagementService.getOrderAddress(
+          order.orderId as string
+        );
+
+        // Verify contact matches billing or shipping address
+        const contactLower = contact.toLowerCase().trim();
+        const billingAddress = orderAddress?.getBillingAddress()?.toJSON();
+        const shippingAddress = orderAddress?.getShippingAddress()?.toJSON();
+
+        const billingEmail = billingAddress?.email?.toLowerCase().trim();
+        const billingPhone = billingAddress?.phone?.trim();
+        const shippingEmail = shippingAddress?.email?.toLowerCase().trim();
+        const shippingPhone = shippingAddress?.phone?.trim();
+
+        const contactMatches =
+          contactLower === billingEmail ||
+          contactLower === shippingEmail ||
+          contact === billingPhone ||
+          contact === shippingPhone;
+
+        if (!contactMatches) {
+          return reply.code(403).send({
+            success: false,
+            error: "Forbidden",
+            message:
+              "The email or phone number does not match our records for this order.",
+          });
+        }
+
+        // Get shipment information
+        const shipments = await this.orderManagementService.getOrderShipments(
+          order.orderId as string
+        );
+
+        return reply.code(200).send({
+          success: true,
+          data: {
+            orderId: order.orderId,
+            orderNumber: order.orderNumber,
+            status: order.status,
+            items: order.items,
+            totals: order.totals,
+            shipments: shipments || [],
+            billingAddress: billingAddress || {},
+            shippingAddress: shippingAddress || {},
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt,
+          },
+        });
+      }
+
+      // Track by tracking number only
+      if (trackingNumber) {
+        // TODO: Implement tracking number lookup
+        // This would search shipments table for the tracking number
+        return reply.code(501).send({
+          success: false,
+          error: "Not Implemented",
+          message: "Tracking by tracking number is not yet implemented",
+        });
+      }
+
+      return reply.code(400).send({
+        success: false,
+        error: "Bad Request",
+        message: "Invalid tracking request",
+      });
+    } catch (error) {
+      request.log.error(error, "Failed to track order");
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+        message: "Failed to track order. Please try again later.",
+      });
+    }
+  }
 }

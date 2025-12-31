@@ -89,6 +89,141 @@ export async function registerOrderManagementRoutes(
   // ORDER ROUTES
   // =============================================================================
 
+  // Public order tracking (no authentication required)
+  fastify.get(
+    "/orders/track",
+    {
+      schema: {
+        description:
+          "Track an order publicly without authentication. Requires either order number + email/phone, or tracking number.",
+        tags: ["Orders"],
+        summary: "Track Order (Public)",
+        querystring: {
+          type: "object",
+          properties: {
+            orderNumber: {
+              type: "string",
+              description: "Order number to track",
+            },
+            contact: {
+              type: "string",
+              description:
+                "Email or phone number associated with the order (required when using orderNumber)",
+            },
+            trackingNumber: {
+              type: "string",
+              description: "Shipping tracking number",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Order found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  orderId: { type: "string", format: "uuid" },
+                  orderNumber: { type: "string" },
+                  status: { type: "string" },
+                  items: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        orderItemId: { type: "string", format: "uuid" },
+                        variantId: { type: "string", format: "uuid" },
+                        quantity: { type: "integer", minimum: 1 },
+                        subtotal: { type: "number" },
+                        productSnapshot: {
+                          type: "object",
+                          properties: {
+                            productId: { type: "string", format: "uuid" },
+                            variantId: { type: "string", format: "uuid" },
+                            sku: { type: "string" },
+                            name: { type: "string" },
+                            variantName: { type: "string" },
+                            price: { type: "number" },
+                            imageUrl: { type: "string" },
+                            weight: { type: "number" },
+                            dimensions: { type: "object" },
+                            attributes: { type: "object" },
+                          },
+                        },
+                        isGift: { type: "boolean" },
+                        giftMessage: { type: "string", nullable: true },
+                      },
+                    },
+                  },
+                  totals: {
+                    type: "object",
+                    properties: {
+                      subtotal: { type: "number" },
+                      tax: { type: "number" },
+                      shipping: { type: "number" },
+                      discount: { type: "number" },
+                      total: { type: "number" },
+                    },
+                  },
+                  shipments: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        shipmentId: { type: "string" },
+                        carrier: { type: "string" },
+                        service: { type: "string" },
+                        trackingNumber: { type: "string" },
+                        shippedAt: { type: "string", format: "date-time" },
+                        deliveredAt: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                  shippingAddress: {
+                    type: "object",
+                    properties: {
+                      firstName: { type: "string" },
+                      lastName: { type: "string" },
+                      addressLine1: { type: "string" },
+                      addressLine2: { type: "string", nullable: true },
+                      city: { type: "string" },
+                      state: { type: "string" },
+                      postalCode: { type: "string" },
+                      country: { type: "string" },
+                      phone: { type: "string", nullable: true },
+                      email: { type: "string", nullable: true },
+                    },
+                  },
+                  billingAddress: {
+                    type: "object",
+                    properties: {
+                      firstName: { type: "string" },
+                      lastName: { type: "string" },
+                      addressLine1: { type: "string" },
+                      addressLine2: { type: "string", nullable: true },
+                      city: { type: "string" },
+                      state: { type: "string" },
+                      postalCode: { type: "string" },
+                      country: { type: "string" },
+                      phone: { type: "string", nullable: true },
+                      email: { type: "string", nullable: true },
+                    },
+                  },
+                  createdAt: { type: "string", format: "date-time" },
+                  updatedAt: { type: "string", format: "date-time" },
+                },
+              },
+            },
+          },
+          ...errorResponses,
+        },
+      },
+    },
+    orderController.trackOrder.bind(orderController) as any
+  );
+
   // Create new order
   fastify.post(
     "/orders",

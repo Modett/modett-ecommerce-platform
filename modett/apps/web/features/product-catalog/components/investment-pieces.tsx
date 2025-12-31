@@ -3,12 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "./product-card";
 import { useFeaturedProducts } from "../queries";
+import { handleError } from "@/lib/error-handler";
 
 export function InvestmentPieces() {
   const { data: products, isLoading, error } = useFeaturedProducts(6);
 
   if (error) {
-    console.error("Error loading products:", error);
+    handleError(error, "Load featured products");
   }
 
   return (
@@ -80,6 +81,7 @@ export function InvestmentPieces() {
                   price={product.price}
                   compareAtPrice={product.compareAtPrice}
                   image={product.images?.[0]?.url || "/placeholder-product.jpg"}
+                  secondaryImage={product.images?.[1]?.url}
                   variants={product.variants || []}
                   aspectRatio="aspect-[394/501.74]"
                   textGap="gap-[12.95px]"

@@ -6,7 +6,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["cart", "customer_care", "engagement", "fulfillment", "inventory_management", "order_management", "payment_loyalty", "product_catalog", "public", "user_management"]
+  schemas  = ["analytics", "cart", "customer_care", "engagement", "fulfillment", "inventory_management", "order_management", "payment_loyalty", "product_catalog", "public", "user_management"]
 }
 
 model User {
@@ -1379,4 +1379,56 @@ enum cm_sender_type_enum {
   agent
 
   @@schema("customer_care")
+}
+
+// ============================================================================
+// ANALYTICS MODULE
+// ============================================================================
+
+model AnalyticsEvent {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @map("event_id") @db.Uuid
+  eventType       EventTypeEnum  @map("event_type")
+
+  // User context (either userId OR guestToken)
+  userId          String?        @map("user_id") @db.Uuid
+  guestToken      String?        @map("guest_token")
+  sessionId       String         @map("session_id")
+
+  // Product reference
+  productId       String         @map("product_id") @db.Uuid
+  variantId       String?        @map("variant_id") @db.Uuid
+
+  // Event-specific data (JSON for flexibility)
+  eventData       Json?          @map("event_data")
+
+  // Metadata
+  userAgent       String?        @map("user_agent")
+  ipAddress       String?        @map("ip_address")
+  referrer        String?        @map("referrer")
+
+  // Timestamps
+  eventTimestamp  DateTime       @map("event_timestamp") @db.Timestamptz(6)
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Indexes for performance
+  @@index([eventType])
+  @@index([productId])
+  @@index([variantId])
+  @@index([userId])
+  @@index([guestToken])
+  @@index([sessionId])
+  @@index([eventTimestamp])
+  @@index([eventType, productId])
+  @@index([eventType, eventTimestamp])
+
+  @@map("analytics_events")
+  @@schema("analytics")
+}
+
+enum EventTypeEnum {
+  product_view
+  purchase
+
+  @@map("event_type_enum")
+  @@schema("analytics")
 }

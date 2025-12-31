@@ -488,7 +488,9 @@ export function createServiceContainer(): ServiceContainer {
     checkoutRepository,
     cartRepository,
     reservationRepository,
-    stockManagementService
+    stockManagementService,
+    productRepository,
+    productVariantRepository
   );
 
   // Initialize Order Management services

@@ -12,6 +12,8 @@ import { ActiveStepHeader } from "@/features/checkout/components/active-step-hea
 import { FutureStep } from "@/features/checkout/components/future-step";
 import { CustomCheckbox } from "@/features/checkout/components/custom-checkbox";
 import { LoadingState } from "@/features/checkout/components/loading-state";
+import { Alert } from "@/components/ui/alert";
+import { handleError } from "@/lib/error-handler";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutShippingPage() {
@@ -71,7 +73,8 @@ export default function CheckoutShippingPage() {
 
       router.push("/checkout/information");
     } catch (err) {
-      setError("Failed to save shipping information. Please try again.");
+      const errorMessage = handleError(err, "Save shipping information");
+      setError(errorMessage);
     }
   };
 
@@ -237,9 +240,12 @@ export default function CheckoutShippingPage() {
                       </div>
 
                       {error && (
-                        <p className="text-red-600 text-sm text-center">
+                        <Alert
+                          variant="error"
+                          onClose={() => setError(null)}
+                        >
                           {error}
-                        </p>
+                        </Alert>
                       )}
 
                       <div className="flex justify-center">

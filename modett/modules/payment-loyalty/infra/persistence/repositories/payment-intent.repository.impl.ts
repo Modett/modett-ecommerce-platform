@@ -152,7 +152,7 @@ export class PaymentIntentRepository implements IPaymentIntentRepository {
       idempotencyKey: record.idempotencyKey,
       provider: record.provider,
       status: PaymentIntentStatus.fromString(record.status),
-      amount: Money.create(
+      amount: Money.fromAmount(
         Number(record.amount),
         Currency.create(record.currency)
       ),
@@ -171,6 +171,7 @@ export class PaymentIntentRepository implements IPaymentIntentRepository {
       idempotencyKey: paymentIntent.idempotencyKey,
       provider: paymentIntent.provider,
       status: paymentIntent.status.getValue(),
+      // DB expects Decimal (Units)
       amount: paymentIntent.amount.getAmount(),
       currency: paymentIntent.amount.getCurrency().getValue(),
       clientSecret: paymentIntent.clientSecret,

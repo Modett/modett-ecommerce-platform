@@ -7,6 +7,7 @@ import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
 import { useCart } from "@/features/cart/queries";
 import { getStoredCartId, clearCartData } from "@/features/cart/utils";
 import { LoadingState } from "@/features/checkout/components/loading-state";
+import { handleError } from "@/lib/error-handler";
 import * as cartApi from "@/features/cart/api";
 import { Check, X } from "lucide-react";
 
@@ -101,9 +102,7 @@ export default function CheckoutSuccessPage() {
 
         queryClient.clear();
       } catch (err: unknown) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to complete order";
-        console.error("[CheckoutSuccess] Order completion failed:", err);
+        const errorMessage = handleError(err, "Complete order");
         setError(errorMessage);
         setStatus("error");
 
