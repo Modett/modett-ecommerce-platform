@@ -6,7 +6,7 @@ import {
   TrackPurchaseHandler,
 } from '../../../application/commands';
 
-interface TrackProductViewRequest {
+export interface TrackProductViewRequest {
   productId: string;
   variantId?: string;
   sessionId: string;
@@ -17,7 +17,7 @@ interface TrackProductViewRequest {
   };
 }
 
-interface TrackPurchaseRequest {
+export interface TrackPurchaseRequest {
   orderId: string;
   orderItems: Array<{
     productId: string;
