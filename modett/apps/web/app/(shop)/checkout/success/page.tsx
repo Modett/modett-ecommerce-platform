@@ -10,11 +10,13 @@ import { LoadingState } from "@/features/checkout/components/loading-state";
 import { handleError } from "@/lib/error-handler";
 import * as cartApi from "@/features/cart/api";
 import { Check, X } from "lucide-react";
+import { useTrackOrder } from "@/features/analytics/hooks";
 
 export default function CheckoutSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const trackOrder = useTrackOrder();
   // Extract checkoutId and ensure it doesn't contain query parameters
   const rawCheckoutId = searchParams?.get("checkoutId");
   const checkoutId = rawCheckoutId?.split("?")[0] || rawCheckoutId;
@@ -94,8 +96,43 @@ export default function CheckoutSuccessPage() {
           billingAddress
         );
 
-        setOrderId(result.order?.id || checkoutId);
+        setOrderId(result.orderId || checkoutId);
         setStatus("success");
+
+        console.log("DEBUG: Checking Analytics Trigger Condition");
+        console.log("DEBUG: Cart Items Count:", cart.items?.length);
+        console.log("DEBUG: Result Order ID:", result.orderId);
+
+        // Track purchase events for analytics
+        if (cart.items && result.orderId) {
+          console.log("DEBUG: Condition Passed. Preparing Payload...");
+
+          const orderItems = cart.items.map((item: any) => ({
+            productId: item.productId,
+            variantId: item.variantId,
+            quantity: item.quantity || 1,
+            price: item.price || 0,
+          }));
+
+          console.log("DEBUG: Order Items:", JSON.stringify(orderItems));
+
+          const totalAmount = cart.items.reduce(
+            (sum: number, item: any) =>
+              sum + (item.price || 0) * (item.quantity || 1),
+            0
+          );
+
+          console.log("DEBUG: Total Amount:", totalAmount);
+          console.log("DEBUG: Calling trackOrder...");
+
+          trackOrder(result.orderId, orderItems, totalAmount);
+        } else {
+          console.log("DEBUG: Analytics Condition FAILED.");
+          if (!cart.items)
+            console.log("DEBUG: Reason: cart.items is missing/empty");
+          if (!result.orderId)
+            console.log("DEBUG: Reason: result.orderId is missing");
+        }
 
         clearCartData();
         setCartId(null);

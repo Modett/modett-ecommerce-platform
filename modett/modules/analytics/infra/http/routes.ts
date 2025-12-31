@@ -33,7 +33,9 @@ export async function registerAnalyticsRoutes(
           properties: {
             productId: { type: 'string', format: 'uuid' },
             variantId: { type: 'string', format: 'uuid' },
-            sessionId: { type: 'string', format: 'uuid' },
+            sessionId: { type: 'string' },
+            guestToken: { type: 'string' },
+            userId: { type: 'string', format: 'uuid' },
             context: {
               type: 'object',
               properties: {
@@ -95,8 +97,10 @@ export async function registerAnalyticsRoutes(
                 },
               },
             },
-            sessionId: { type: 'string', format: 'uuid' },
+            sessionId: { type: 'string' },
             totalAmount: { type: 'number', minimum: 0 },
+            guestToken: { type: 'string' },
+            userId: { type: 'string', format: 'uuid' },
           },
         },
         response: {

@@ -77,7 +77,8 @@ export class PayableIPGProvider {
   }
 
   async createPayment(params: {
-    orderId: string;
+    checkoutId?: string; // Added checkoutId to params
+    orderId: string; // This is actually the Intent ID
     amount: number;
     customerEmail: string;
     customerName: string;
@@ -107,6 +108,8 @@ export class PayableIPGProvider {
         customerPhone,
         billingAddress,
         shippingAddress,
+        checkoutId,
+        orderId, // This is the payment intent ID
       } = params;
       const [firstName, ...lastNameParts] = customerName.split(" ");
       const lastName = lastNameParts.join(" ") || firstName;
@@ -123,14 +126,31 @@ export class PayableIPGProvider {
       let webhookUrl: string;
       let refererUrl: string;
 
+      // Construct query params to append
+      const queryParams = new URLSearchParams();
+      if (checkoutId) queryParams.append("checkoutId", checkoutId);
+      queryParams.append("intentId", orderId);
+
+      const queryString = queryParams.toString();
+
       if (ngrokUrl) {
-        returnUrl = `${ngrokUrl}/checkout/success`;
+        returnUrl = `${ngrokUrl}/checkout/success?${queryString}`;
         webhookUrl = `${ngrokUrl}/api/v1/payments/payable-ipg/webhook`;
         refererUrl = "https://modett.com";
       } else {
         const baseUrl =
           params.returnUrl?.split("/checkout")[0] || "https://modett.com";
-        returnUrl = params.returnUrl || `${baseUrl}/checkout/success`;
+        // If params.returnUrl is provided, we assume it's the base return URL.
+        // We append the query params if they aren't already there.
+        // However, usually params.returnUrl comes from the frontend which MIGHT include them,
+        // but for safety, let's construct it cleanly if we're building it.
+        if (params.returnUrl) {
+          const hasQuery = params.returnUrl.includes("?");
+          returnUrl = `${params.returnUrl}${hasQuery ? "&" : "?"}${queryString}`;
+        } else {
+          returnUrl = `${baseUrl}/checkout/success?${queryString}`;
+        }
+
         webhookUrl =
           params.webhookUrl || `${baseUrl}/api/v1/payments/payable-ipg/webhook`;
         refererUrl = baseUrl;

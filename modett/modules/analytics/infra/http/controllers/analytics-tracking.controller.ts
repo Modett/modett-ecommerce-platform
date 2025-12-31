@@ -10,6 +10,8 @@ export interface TrackProductViewRequest {
   productId: string;
   variantId?: string;
   sessionId: string;
+  guestToken?: string;
+  userId?: string;
   context?: {
     source?: 'search' | 'category' | 'recommendation' | 'direct';
     searchQuery?: string;
@@ -27,6 +29,8 @@ export interface TrackPurchaseRequest {
   }>;
   sessionId: string;
   totalAmount: number;
+  guestToken?: string;
+  userId?: string;
 }
 
 export class AnalyticsTrackingController {
@@ -39,13 +43,9 @@ export class AnalyticsTrackingController {
     request: FastifyRequest<{ Body: TrackProductViewRequest }>,
     reply: FastifyReply
   ) {
-    const { productId, variantId, sessionId, context } = request.body;
+    const { productId, variantId, sessionId, guestToken, userId, context } = request.body;
 
-    // Extract user context from request
-    const userId = (request as any).user?.id;
-    const guestToken = request.headers['x-guest-token'] as string;
-
-    // Extract metadata
+    // Extract metadata from headers
     const userAgent = request.headers['user-agent'];
     const ipAddress = request.ip;
     const referrer = request.headers.referer;
@@ -80,10 +80,9 @@ export class AnalyticsTrackingController {
     request: FastifyRequest<{ Body: TrackPurchaseRequest }>,
     reply: FastifyReply
   ) {
-    const { orderId, orderItems, sessionId, totalAmount } = request.body;
+    const { orderId, orderItems, sessionId, totalAmount, guestToken, userId } = request.body;
 
-    const userId = (request as any).user?.id;
-    const guestToken = request.headers['x-guest-token'] as string;
+    // Extract metadata from headers
     const userAgent = request.headers['user-agent'];
     const ipAddress = request.ip;
 

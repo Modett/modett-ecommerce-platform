@@ -71,6 +71,7 @@ export class PayableIPGController {
       req.log.info(`[PayableIPG] Webhook URL: ${webhookUrl}`);
 
       const paymentResponse = await this.payableProvider.createPayment({
+        checkoutId: orderId, // Pass the checkoutId so it can be appended to returnUrl
         orderId: paymentIntent.intentId,
         amount,
         customerEmail,
