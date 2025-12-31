@@ -153,6 +153,14 @@ import {
   NewsletterService,
 } from "../../../modules/engagement/application/services";
 
+// Analytics imports
+import { AnalyticsEventRepositoryImpl } from "../../../modules/analytics/infra/persistence/repositories/analytics-event.repository.impl";
+import { AnalyticsTrackingService } from "../../../modules/analytics/application/services/analytics-tracking.service";
+import {
+  TrackProductViewHandler,
+  TrackPurchaseHandler,
+} from "../../../modules/analytics/application/commands";
+
 export interface ServiceContainer {
   // Infrastructure
   prisma: PrismaClient;
@@ -302,6 +310,14 @@ export interface ServiceContainer {
   appointmentService: AppointmentService;
   productReviewService: ProductReviewService;
   newsletterService: NewsletterService;
+
+  // Analytics Repository
+  analyticsEventRepository: AnalyticsEventRepositoryImpl;
+
+  // Analytics Service & Handlers
+  analyticsTrackingService: AnalyticsTrackingService;
+  trackProductViewHandler: TrackProductViewHandler;
+  trackPurchaseHandler: TrackPurchaseHandler;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -643,6 +659,22 @@ export function createServiceContainer(): ServiceContainer {
     newsletterSubscriptionRepository
   );
 
+  // Initialize Analytics repository
+  const analyticsEventRepository = new AnalyticsEventRepositoryImpl(prisma);
+
+  // Initialize Analytics service
+  const analyticsTrackingService = new AnalyticsTrackingService(
+    analyticsEventRepository
+  );
+
+  // Initialize Analytics command handlers
+  const trackProductViewHandler = new TrackProductViewHandler(
+    analyticsTrackingService
+  );
+  const trackPurchaseHandler = new TrackPurchaseHandler(
+    analyticsTrackingService
+  );
+
   return {
     // Infrastructure
     prisma,
@@ -792,6 +824,14 @@ export function createServiceContainer(): ServiceContainer {
     appointmentService,
     productReviewService,
     newsletterService,
+
+    // Analytics Repository
+    analyticsEventRepository,
+
+    // Analytics Service & Handlers
+    analyticsTrackingService,
+    trackProductViewHandler,
+    trackPurchaseHandler,
   };
 }
 
