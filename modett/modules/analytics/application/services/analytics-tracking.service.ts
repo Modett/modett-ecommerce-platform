@@ -69,7 +69,6 @@ export class AnalyticsTrackingService {
   }
 
   async trackPurchase(dto: TrackPurchaseDto): Promise<void> {
-    // Validate user context
     if (!dto.userId && !dto.guestToken) {
       throw new Error('Either userId or guestToken is required');
     }
@@ -78,7 +77,6 @@ export class AnalyticsTrackingService {
       ? UserContext.forUser(dto.userId)
       : UserContext.forGuest(dto.guestToken!);
 
-    // Create one purchase event per product in the order
     const events = dto.orderItems.map((item) =>
       AnalyticsEvent.create({
         eventType: EventType.purchase(),
@@ -98,7 +96,6 @@ export class AnalyticsTrackingService {
       })
     );
 
-    // Batch save for efficiency
     await this.analyticsEventRepository.saveMany(events);
   }
 }
