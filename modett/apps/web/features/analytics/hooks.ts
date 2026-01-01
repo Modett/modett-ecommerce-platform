@@ -2,9 +2,9 @@
 // ANALYTICS REACT HOOKS
 // ============================================================================
 
-import { useCallback, useEffect } from 'react';
-import * as analyticsApi from './api';
-import { getOrCreateSessionId, getGuestToken } from '@/lib/session-manager';
+import { useCallback, useEffect } from "react";
+import * as analyticsApi from "./api";
+import { getOrCreateSessionId, getGuestToken } from "@/lib/session-manager";
 
 /**
  * Hook to track product view
@@ -32,7 +32,10 @@ export function useTrackProductView() {
  * Hook to automatically track product view on mount
  * Use this in product detail pages
  */
-export function useAutoTrackProductView(productId?: string, variantId?: string) {
+export function useAutoTrackProductView(
+  productId?: string,
+  variantId?: string
+) {
   const trackProductView = useTrackProductView();
 
   useEffect(() => {
