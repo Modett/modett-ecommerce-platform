@@ -398,3 +398,23 @@ export const completeCheckoutWithOrder = async (
     );
   }
 };
+
+/**
+ * Get order by checkout ID (for orders already created by webhook)
+ */
+export const getOrderByCheckoutId = async (checkoutId: string): Promise<any> => {
+  try {
+    const token = await getGuestToken();
+    const { data } = await cartApiClient.get(`/checkout/${checkoutId}/order`, {
+      headers: {
+        "X-Guest-Token": token,
+      },
+    });
+
+    return data.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.error || "Order not found for this checkout"
+    );
+  }
+};
