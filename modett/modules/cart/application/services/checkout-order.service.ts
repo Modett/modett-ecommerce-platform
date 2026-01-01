@@ -48,6 +48,7 @@ export interface OrderResult {
   currency: string;
   status: string;
   createdAt: Date;
+  items: any[];
 }
 
 export class CheckoutOrderService {
@@ -154,6 +155,7 @@ export class CheckoutOrderService {
 
       const existingOrder = await tx.order.findFirst({
         where: { checkoutId: dto.checkoutId },
+        include: { items: true },
       });
 
       if (existingOrder) {
@@ -166,6 +168,7 @@ export class CheckoutOrderService {
           currency: checkout.getCurrency().toString(),
           status: existingOrder.status,
           createdAt: existingOrder.createdAt,
+          items: existingOrder.items,
         };
       }
 
@@ -360,6 +363,7 @@ export class CheckoutOrderService {
         currency: checkout.getCurrency().toString(),
         status: "paid",
         createdAt: order.createdAt,
+        items: orderItems,
       };
     });
   }
