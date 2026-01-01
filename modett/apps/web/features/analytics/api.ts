@@ -37,7 +37,7 @@ export const trackProductView = async (
   params: TrackProductViewParams
 ): Promise<void> => {
   try {
-    await apiClient.post("/analytics/track/product-view", params);
+    await apiClient.post("/analytics/events/capture-view", params);
   } catch (error) {
     // Silent fail - don't break user experience if analytics fails
     console.error("Failed to track product view:", error);
@@ -51,7 +51,7 @@ export const trackPurchase = async (
   params: TrackPurchaseParams
 ): Promise<void> => {
   try {
-    await apiClient.post("/analytics/track/purchase", params);
+    await apiClient.post("/analytics/events/capture-purchase", params);
   } catch (error) {
     // Silent fail - don't break user experience if analytics fails
     console.error("Failed to track purchase:", error);
