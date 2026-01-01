@@ -1290,6 +1290,64 @@ export async function registerCartRoutes(
       checkoutController.completeWithOrder(request, reply)
   );
 
+  // Get order by checkout ID (for already completed checkouts)
+  fastify.get(
+    "/checkout/:checkoutId/order",
+    {
+      preHandler: [optionalAuth, extractGuestToken, requireCartAuth],
+      schema: {
+        description:
+          "Get order details for a checkout that has already been completed (e.g., by webhook). Use this when the success page needs to fetch an already-created order.",
+        tags: ["Checkout"],
+        summary: "Get Order by Checkout ID",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          required: ["checkoutId"],
+          properties: {
+            checkoutId: { type: "string", format: "uuid" },
+          },
+        },
+        response: {
+          200: {
+            description: "Order found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  orderId: { type: "string", format: "uuid" },
+                  orderNo: { type: "string" },
+                  checkoutId: { type: "string", format: "uuid" },
+                  paymentIntentId: { type: "string" },
+                  totalAmount: { type: "number" },
+                  currency: { type: "string" },
+                  status: { type: "string" },
+                  createdAt: { type: "string", format: "date-time" },
+                  items: {
+                    type: "array",
+                    items: { type: "object", additionalProperties: true },
+                  },
+                },
+              },
+            },
+          },
+          404: {
+            description: "Order not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request: any, reply: any) =>
+      checkoutController.getOrderByCheckoutId(request, reply)
+  );
+
   // =============================================================================
   // RESERVATION ROUTES
   // =============================================================================
