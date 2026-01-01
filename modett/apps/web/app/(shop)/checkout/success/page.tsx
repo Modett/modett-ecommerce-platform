@@ -104,23 +104,31 @@ export default function CheckoutSuccessPage() {
         console.log("DEBUG: Result Order ID:", result.orderId);
 
         // Track purchase events for analytics
-        if (cart.items && result.orderId) {
+        // Use items directly from the order result if available (backend source of truth)
+        // This is robust against cart clearing race conditions.
+        const trackingItems = result.items || cart.items;
+
+        if (trackingItems?.length > 0 && result.orderId) {
           console.log("DEBUG: Condition Passed. Preparing Payload...");
 
-          const orderItems = cart.items.map((item: any) => ({
-            productId: item.productId,
+          const orderItems = trackingItems.map((item: any) => ({
+            productId: item.productId || item.productSnapshot?.productId,
             variantId: item.variantId,
-            quantity: item.quantity || 1,
-            price: item.price || 0,
+            quantity: item.quantity || item.qty || 1,
+            price: item.price || item.productSnapshot?.price || 0,
           }));
 
           console.log("DEBUG: Order Items:", JSON.stringify(orderItems));
 
-          const totalAmount = cart.items.reduce(
-            (sum: number, item: any) =>
-              sum + (item.price || 0) * (item.quantity || 1),
-            0
-          );
+          // Calculate total from items if needed, or use cart.total/result.totalAmount?
+          // result.totalAmount is reliable.
+          const totalAmount =
+            result.totalAmount ||
+            cart.items.reduce(
+              (sum: number, item: any) =>
+                sum + (item.price || 0) * (item.quantity || 1),
+              0
+            );
 
           console.log("DEBUG: Total Amount:", totalAmount);
           console.log("DEBUG: Calling trackOrder...");
@@ -128,8 +136,10 @@ export default function CheckoutSuccessPage() {
           trackOrder(result.orderId, orderItems, totalAmount);
         } else {
           console.log("DEBUG: Analytics Condition FAILED.");
-          if (!cart.items)
-            console.log("DEBUG: Reason: cart.items is missing/empty");
+          if (!trackingItems || trackingItems.length === 0)
+            console.log(
+              "DEBUG: Reason: items are missing/empty in result AND cart"
+            );
           if (!result.orderId)
             console.log("DEBUG: Reason: result.orderId is missing");
         }
