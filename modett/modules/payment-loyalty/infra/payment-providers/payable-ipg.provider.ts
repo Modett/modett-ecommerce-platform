@@ -134,16 +134,16 @@ export class PayableIPGProvider {
       const queryString = queryParams.toString();
 
       if (ngrokUrl) {
-        returnUrl = `${ngrokUrl}/checkout/success?${queryString}`;
+        // Use backend redirection endpoint to bridge HTTPS -> HTTP (localhost:3000)
+        returnUrl = `${ngrokUrl}/api/v1/payments/payable-ipg/return?${queryString}`;
+
+        // Webhook always goes to backend (Ngrok in dev)
         webhookUrl = `${ngrokUrl}/api/v1/payments/payable-ipg/webhook`;
         refererUrl = "https://modett.com";
       } else {
         const baseUrl =
           params.returnUrl?.split("/checkout")[0] || "https://modett.com";
-        // If params.returnUrl is provided, we assume it's the base return URL.
-        // We append the query params if they aren't already there.
-        // However, usually params.returnUrl comes from the frontend which MIGHT include them,
-        // but for safety, let's construct it cleanly if we're building it.
+
         if (params.returnUrl) {
           const hasQuery = params.returnUrl.includes("?");
           returnUrl = `${params.returnUrl}${hasQuery ? "&" : "?"}${queryString}`;
@@ -198,6 +198,13 @@ export class PayableIPGProvider {
         custom1: params.orderId,
         orderDescription: "Order " + shortInvoiceId,
       };
+
+      console.log("[DEBUG] Generated Return URL:", returnUrl);
+      console.log("[DEBUG] Using Ngrok URL:", ngrokUrl || "undefined");
+      console.log(
+        "[DEBUG] Full Payment Payload:",
+        JSON.stringify(payload, null, 2)
+      );
 
       const response = await fetch(this.apiUrl, {
         method: "POST",
