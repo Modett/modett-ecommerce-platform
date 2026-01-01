@@ -61,42 +61,51 @@ export default function CheckoutSuccessPage() {
       try {
         setStatus("loading");
 
-        // Build shipping address from cart data
-        const shippingAddress = {
-          firstName: cart.shippingFirstName || "",
-          lastName: cart.shippingLastName || "",
-          addressLine1: cart.shippingAddress1 || "",
-          addressLine2: cart.shippingAddress2,
-          city: cart.shippingCity || "",
-          state: cart.shippingProvince,
-          postalCode: cart.shippingPostalCode,
-          country: cart.shippingCountryCode || "LK",
-          phone: cart.shippingPhone,
-        };
+        let result;
+        try {
+          // Try to get existing order first (webhook may have already created it)
+          result = await cartApi.getOrderByCheckoutId(checkoutId);
+          console.log("DEBUG: Order already exists (created by webhook):", result);
+        } catch (orderFetchError) {
+          console.log("DEBUG: Order doesn't exist yet, creating it...");
 
-        // Build billing address (use shipping if same address)
-        const billingAddress = cart.sameAddressForBilling
-          ? shippingAddress
-          : {
-              firstName: cart.billingFirstName || "",
-              lastName: cart.billingLastName || "",
-              addressLine1: cart.billingAddress1 || "",
-              addressLine2: cart.billingAddress2,
-              city: cart.billingCity || "",
-              state: cart.billingProvince,
-              postalCode: cart.billingPostalCode,
-              country: cart.billingCountryCode || "LK",
-              phone: cart.billingPhone,
-            };
+          // Build shipping address from cart data
+          const shippingAddress = {
+            firstName: cart.shippingFirstName || "",
+            lastName: cart.shippingLastName || "",
+            addressLine1: cart.shippingAddress1 || "",
+            addressLine2: cart.shippingAddress2,
+            city: cart.shippingCity || "",
+            state: cart.shippingProvince,
+            postalCode: cart.shippingPostalCode,
+            country: cart.shippingCountryCode || "LK",
+            phone: cart.shippingPhone,
+          };
 
-        const result = await cartApi.completeCheckoutWithOrder(
-          checkoutId,
-          intentId || checkoutId,
-          shippingAddress,
-          billingAddress
-        );
+          // Build billing address (use shipping if same address)
+          const billingAddress = cart.sameAddressForBilling
+            ? shippingAddress
+            : {
+                firstName: cart.billingFirstName || "",
+                lastName: cart.billingLastName || "",
+                addressLine1: cart.billingAddress1 || "",
+                addressLine2: cart.billingAddress2,
+                city: cart.billingCity || "",
+                state: cart.billingProvince,
+                postalCode: cart.billingPostalCode,
+                country: cart.billingCountryCode || "LK",
+                phone: cart.billingPhone,
+              };
 
-        setOrderId(result.orderId || checkoutId);
+          result = await cartApi.completeCheckoutWithOrder(
+            checkoutId,
+            intentId || checkoutId,
+            shippingAddress,
+            billingAddress
+          );
+        }
+
+        setOrderId(result.orderId || result.id || checkoutId);
         setStatus("success");
 
         console.log("DEBUG: Checking Analytics Trigger Condition");
