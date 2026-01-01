@@ -433,4 +433,27 @@ export class PayableIPGController {
       });
     }
   }
+
+  /**
+   * Handle PayableIPG return (redirection from gateway)
+   * URL: /api/payments/payable-ipg/return
+   */
+  async handleReturn(req: FastifyRequest, reply: FastifyReply) {
+    const query = req.query as any;
+    const { checkoutId, intentId } = query;
+
+    console.log("[DEBUG] PayableIPG handleReturn hit!", {
+      checkoutId,
+      intentId,
+    });
+
+    // Use the configured frontend URL or default to localhost:3000 for dev
+    // In production this might be different, but for this specific "Ngrok bridge" fix,
+    // we explicitly want to go to the local frontend.
+    const frontendUrl = "http://localhost:3000";
+
+    const redirectUrl = `${frontendUrl}/checkout/success?checkoutId=${checkoutId}&intentId=${intentId}`;
+
+    return reply.redirect(redirectUrl);
+  }
 }
