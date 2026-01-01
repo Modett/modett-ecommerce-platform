@@ -368,6 +368,50 @@ export class CheckoutOrderService {
     });
   }
 
+  async getOrderByCheckoutId(
+    checkoutId: string,
+    userId?: string,
+    guestToken?: string
+  ): Promise<OrderResult | null> {
+    // Find the order associated with this checkout
+    const order = await this.prisma.order.findFirst({
+      where: {
+        checkoutId: checkoutId,
+        ...(userId ? { userId } : { guestToken }),
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!order) {
+      return null;
+    }
+
+    // Extract totals from JSONB field
+    const totals = order.totals as any;
+    const totalAmount = totals?.total || 0;
+
+    // Transform to OrderResult format
+    return {
+      orderId: order.id,
+      orderNo: order.orderNo,
+      checkoutId: order.checkoutId!,
+      paymentIntentId: order.paymentIntentId || "",
+      totalAmount: Number(totalAmount) || 0,
+      currency: order.currency,
+      status: order.status,
+      createdAt: order.createdAt,
+      items: order.items.map((item: any) => ({
+        id: item.id,
+        productId: item.productSnapshot?.productId || item.productId,
+        variantId: item.variantId,
+        quantity: item.qty,
+        price: Number(item.productSnapshot?.price || item.price) || 0,
+      })),
+    };
+  }
+
   private async selectWarehouseForOrder(
     items: any[],
     shippingAddress: any,
