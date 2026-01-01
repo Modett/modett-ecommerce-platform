@@ -1,9 +1,9 @@
 // ============================================================================
-// ENGAGEMENT (WISHLIST) API
+// ENGAGEMENT (WISHLIST & NEWSLETTER) API
 // ============================================================================
 
 import axios from "axios";
-import type { Wishlist, WishlistItem } from "./types";
+import type { Wishlist, WishlistItem, NewsletterSubscription, SubscribeNewsletterParams, UnsubscribeNewsletterParams } from "./types";
 import {
   getStoredGuestToken,
   persistGuestToken,
@@ -238,5 +238,81 @@ export const getWishlistedVariantId = async (
     return wishlistedItem?.variantId || null;
   } catch (error) {
     return null;
+  }
+};
+
+// ============================================================================
+// NEWSLETTER API
+// ============================================================================
+
+/**
+ * Subscribe to newsletter
+ */
+export const subscribeNewsletter = async (
+  params: SubscribeNewsletterParams
+): Promise<NewsletterSubscription> => {
+  try {
+    const { data } = await wishlistApiClient.post(
+      "/engagement/newsletter/subscribe",
+      {
+        email: params.email,
+        source: params.source,
+      }
+    );
+
+    return data.data;
+  } catch (error: any) {
+    handleError(error, "Subscribe to newsletter");
+    throw new Error(
+      error.response?.data?.error || "Failed to subscribe to newsletter"
+    );
+  }
+};
+
+/**
+ * Unsubscribe from newsletter
+ */
+export const unsubscribeNewsletter = async (
+  params: UnsubscribeNewsletterParams
+): Promise<void> => {
+  try {
+    await wishlistApiClient.post("/engagement/newsletter/unsubscribe", {
+      subscriptionId: params.subscriptionId,
+      email: params.email,
+    });
+  } catch (error: any) {
+    handleError(error, "Unsubscribe from newsletter");
+    throw new Error(
+      error.response?.data?.error || "Failed to unsubscribe from newsletter"
+    );
+  }
+};
+
+/**
+ * Get newsletter subscription by ID or email
+ */
+export const getNewsletterSubscription = async (
+  subscriptionId?: string,
+  email?: string
+): Promise<NewsletterSubscription | null> => {
+  try {
+    const params: any = {};
+    if (subscriptionId) params.subscriptionId = subscriptionId;
+    if (email) params.email = email;
+
+    const { data } = await wishlistApiClient.get(
+      "/engagement/newsletter/subscription",
+      { params }
+    );
+
+    return data.data || null;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      return null;
+    }
+    handleError(error, "Get newsletter subscription");
+    throw new Error(
+      error.response?.data?.error || "Failed to get newsletter subscription"
+    );
   }
 };
