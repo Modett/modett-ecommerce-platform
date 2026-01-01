@@ -29,7 +29,6 @@ export class TrackPurchaseHandler
 
   async handle(command: TrackPurchaseCommand): Promise<CommandResult<void>> {
     try {
-      // Validation
       if (!command.orderId) {
         return CommandResult.failure<void>('Order ID is required', ['orderId']);
       }
@@ -54,7 +53,6 @@ export class TrackPurchaseHandler
         );
       }
 
-      // Track purchase
       await this.analyticsTrackingService.trackPurchase({
         orderId: command.orderId,
         orderItems: command.orderItems,
