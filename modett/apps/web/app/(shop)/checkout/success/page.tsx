@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
 import { useCart } from "@/features/cart/queries";
-import { getStoredCartId, clearCartData } from "@/features/cart/utils";
+import { getStoredCartId, clearCartAfterCheckout } from "@/features/cart/utils";
 import { LoadingState } from "@/features/checkout/components/loading-state";
 import { handleError } from "@/lib/error-handler";
 import * as cartApi from "@/features/cart/api";
@@ -63,13 +63,8 @@ export default function CheckoutSuccessPage() {
 
         let result;
         try {
-          // Try to get existing order first (webhook may have already created it)
           result = await cartApi.getOrderByCheckoutId(checkoutId);
-          console.log("DEBUG: Order already exists (created by webhook):", result);
         } catch (orderFetchError) {
-          console.log("DEBUG: Order doesn't exist yet, creating it...");
-
-          // Build shipping address from cart data
           const shippingAddress = {
             firstName: cart.shippingFirstName || "",
             lastName: cart.shippingLastName || "",
@@ -108,18 +103,9 @@ export default function CheckoutSuccessPage() {
         setOrderId(result.orderId || result.id || checkoutId);
         setStatus("success");
 
-        console.log("DEBUG: Checking Analytics Trigger Condition");
-        console.log("DEBUG: Cart Items Count:", cart.items?.length);
-        console.log("DEBUG: Result Order ID:", result.orderId);
-
-        // Track purchase events for analytics
-        // Use items directly from the order result if available (backend source of truth)
-        // This is robust against cart clearing race conditions.
         const trackingItems = result.items || cart.items;
 
         if (trackingItems?.length > 0 && result.orderId) {
-          console.log("DEBUG: Condition Passed. Preparing Payload...");
-
           const orderItems = trackingItems.map((item: any) => ({
             productId: item.productId || item.productSnapshot?.productId,
             variantId: item.variantId,
@@ -127,10 +113,6 @@ export default function CheckoutSuccessPage() {
             price: item.price || item.productSnapshot?.price || 0,
           }));
 
-          console.log("DEBUG: Order Items:", JSON.stringify(orderItems));
-
-          // Calculate total from items if needed, or use cart.total/result.totalAmount?
-          // result.totalAmount is reliable.
           const totalAmount =
             result.totalAmount ||
             cart.items.reduce(
@@ -139,21 +121,10 @@ export default function CheckoutSuccessPage() {
               0
             );
 
-          console.log("DEBUG: Total Amount:", totalAmount);
-          console.log("DEBUG: Calling trackOrder...");
-
           trackOrder(result.orderId, orderItems, totalAmount);
-        } else {
-          console.log("DEBUG: Analytics Condition FAILED.");
-          if (!trackingItems || trackingItems.length === 0)
-            console.log(
-              "DEBUG: Reason: items are missing/empty in result AND cart"
-            );
-          if (!result.orderId)
-            console.log("DEBUG: Reason: result.orderId is missing");
         }
 
-        clearCartData();
+        clearCartAfterCheckout();
         setCartId(null);
 
         queryClient.clear();
