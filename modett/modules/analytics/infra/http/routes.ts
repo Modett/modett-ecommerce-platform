@@ -1,10 +1,13 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import {
   AnalyticsTrackingController,
   TrackProductViewRequest,
   TrackPurchaseRequest,
-} from './controllers/analytics-tracking.controller';
-import { TrackProductViewHandler, TrackPurchaseHandler } from '../../application/commands';
+} from "./controllers/analytics-tracking.controller";
+import {
+  TrackProductViewHandler,
+  TrackPurchaseHandler,
+} from "../../application/commands";
 
 export async function registerAnalyticsRoutes(
   fastify: FastifyInstance,
@@ -21,106 +24,112 @@ export async function registerAnalyticsRoutes(
 
   // Public tracking endpoints (no auth required)
   fastify.post(
-    '/track/product-view',
+    "/events/capture-view",
     {
       schema: {
-        description: 'Track product view event for analytics',
-        tags: ['Analytics'],
-        summary: 'Track Product View',
+        description: "Track product view event for analytics",
+        tags: ["Analytics"],
+        summary: "Track Product View",
         body: {
-          type: 'object',
-          required: ['productId', 'sessionId'],
+          type: "object",
+          required: ["productId", "sessionId"],
           properties: {
-            productId: { type: 'string', format: 'uuid' },
-            variantId: { type: 'string', format: 'uuid' },
-            sessionId: { type: 'string' },
-            guestToken: { type: 'string' },
-            userId: { type: 'string', format: 'uuid' },
+            productId: { type: "string", format: "uuid" },
+            variantId: { type: "string", format: "uuid" },
+            sessionId: { type: "string" },
+            guestToken: { type: "string" },
+            userId: { type: "string", format: "uuid" },
             context: {
-              type: 'object',
+              type: "object",
               properties: {
                 source: {
-                  type: 'string',
-                  enum: ['search', 'category', 'recommendation', 'direct'],
+                  type: "string",
+                  enum: ["search", "category", "recommendation", "direct"],
                 },
-                searchQuery: { type: 'string' },
-                categoryId: { type: 'string' },
+                searchQuery: { type: "string" },
+                categoryId: { type: "string" },
               },
             },
           },
         },
         response: {
           204: {
-            description: 'Product view tracked successfully',
-            type: 'null',
+            description: "Product view tracked successfully",
+            type: "null",
           },
           400: {
-            description: 'Invalid request',
-            type: 'object',
+            description: "Invalid request",
+            type: "object",
             properties: {
-              success: { type: 'boolean', example: false },
-              error: { type: 'string' },
-              errors: { type: 'array', items: { type: 'string' } },
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+              errors: { type: "array", items: { type: "string" } },
             },
           },
         },
       },
     },
-    async (request: FastifyRequest<{ Body: TrackProductViewRequest }>, reply: FastifyReply) => {
+    async (
+      request: FastifyRequest<{ Body: TrackProductViewRequest }>,
+      reply: FastifyReply
+    ) => {
       return analyticsController.trackProductView(request, reply);
     }
   );
 
   // Internal endpoint (typically called from backend after order creation)
   fastify.post(
-    '/track/purchase',
+    "/events/capture-purchase",
     {
       schema: {
-        description: 'Track purchase event for analytics',
-        tags: ['Analytics'],
-        summary: 'Track Purchase',
+        description: "Track purchase event for analytics",
+        tags: ["Analytics"],
+        summary: "Track Purchase",
         body: {
-          type: 'object',
-          required: ['orderId', 'orderItems', 'sessionId', 'totalAmount'],
+          type: "object",
+          required: ["orderId", "orderItems", "sessionId", "totalAmount"],
           properties: {
-            orderId: { type: 'string', format: 'uuid' },
+            orderId: { type: "string", format: "uuid" },
             orderItems: {
-              type: 'array',
+              type: "array",
               items: {
-                type: 'object',
-                required: ['productId', 'quantity', 'price'],
+                type: "object",
+                required: ["productId", "quantity", "price"],
                 properties: {
-                  productId: { type: 'string', format: 'uuid' },
-                  variantId: { type: 'string', format: 'uuid' },
-                  quantity: { type: 'number', minimum: 1 },
-                  price: { type: 'number', minimum: 0 },
+                  productId: { type: "string", format: "uuid" },
+                  variantId: { type: "string", format: "uuid" },
+                  quantity: { type: "number", minimum: 1 },
+                  price: { type: "number", minimum: 0 },
                 },
               },
             },
-            sessionId: { type: 'string' },
-            totalAmount: { type: 'number', minimum: 0 },
-            guestToken: { type: 'string' },
-            userId: { type: 'string', format: 'uuid' },
+            sessionId: { type: "string" },
+            totalAmount: { type: "number", minimum: 0 },
+            guestToken: { type: "string" },
+            userId: { type: "string", format: "uuid" },
           },
         },
         response: {
           204: {
-            description: 'Purchase tracked successfully',
-            type: 'null',
+            description: "Purchase tracked successfully",
+            type: "null",
           },
           400: {
-            description: 'Invalid request',
-            type: 'object',
+            description: "Invalid request",
+            type: "object",
             properties: {
-              success: { type: 'boolean', example: false },
-              error: { type: 'string' },
-              errors: { type: 'array', items: { type: 'string' } },
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+              errors: { type: "array", items: { type: "string" } },
             },
           },
         },
       },
     },
-    async (request: FastifyRequest<{ Body: TrackPurchaseRequest }>, reply: FastifyReply) => {
+    async (
+      request: FastifyRequest<{ Body: TrackPurchaseRequest }>,
+      reply: FastifyReply
+    ) => {
       return analyticsController.trackPurchase(request, reply);
     }
   );
