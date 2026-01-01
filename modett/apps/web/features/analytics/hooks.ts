@@ -4,16 +4,19 @@
 
 import { useCallback, useEffect } from "react";
 import * as analyticsApi from "./api";
-import { getOrCreateSessionId, getGuestToken } from "@/lib/session-manager";
+import * as cartApi from "@/features/cart/api";
+import { getOrCreateSessionId } from "@/lib/session-manager";
 
 /**
  * Hook to track product view
  * Returns a function that can be called to track a view
  */
 export function useTrackProductView() {
-  return useCallback((productId: string, variantId?: string) => {
+  return useCallback(async (productId: string, variantId?: string) => {
     const sessionId = getOrCreateSessionId();
-    const guestToken = getGuestToken();
+
+    // Ensure guest token exists (creates one via cart API if needed)
+    const guestToken = await cartApi.getGuestToken();
 
     analyticsApi.trackProductView({
       productId,
@@ -51,7 +54,7 @@ export function useAutoTrackProductView(
  */
 export function useTrackOrder() {
   return useCallback(
-    (
+    async (
       orderId: string,
       items: Array<{
         productId: string;
@@ -62,7 +65,9 @@ export function useTrackOrder() {
       totalAmount: number
     ) => {
       const sessionId = getOrCreateSessionId();
-      const guestToken = getGuestToken();
+
+      // Get guest token from cart (already exists by checkout time)
+      const guestToken = await cartApi.getGuestToken();
 
       analyticsApi.trackPurchase({
         orderId,
