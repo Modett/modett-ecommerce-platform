@@ -1,10 +1,10 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyRequest, FastifyReply } from "fastify";
 import {
   TrackProductViewCommand,
   TrackProductViewHandler,
   TrackPurchaseCommand,
   TrackPurchaseHandler,
-} from '../../../application/commands';
+} from "../../../application/commands";
 
 export interface TrackProductViewRequest {
   productId: string;
@@ -13,7 +13,7 @@ export interface TrackProductViewRequest {
   guestToken?: string;
   userId?: string;
   context?: {
-    source?: 'search' | 'category' | 'recommendation' | 'direct';
+    source?: "search" | "category" | "recommendation" | "direct";
     searchQuery?: string;
     categoryId?: string;
   };
@@ -43,10 +43,11 @@ export class AnalyticsTrackingController {
     request: FastifyRequest<{ Body: TrackProductViewRequest }>,
     reply: FastifyReply
   ) {
-    const { productId, variantId, sessionId, guestToken, userId, context } = request.body;
+    const { productId, variantId, sessionId, guestToken, userId, context } =
+      request.body;
 
     // Extract metadata from headers
-    const userAgent = request.headers['user-agent'];
+    const userAgent = request.headers["user-agent"];
     const ipAddress = request.ip;
     const referrer = request.headers.referer;
 
@@ -80,10 +81,15 @@ export class AnalyticsTrackingController {
     request: FastifyRequest<{ Body: TrackPurchaseRequest }>,
     reply: FastifyReply
   ) {
-    const { orderId, orderItems, sessionId, totalAmount, guestToken, userId } = request.body;
+    const { orderId, orderItems, sessionId, totalAmount, guestToken, userId } =
+      request.body;
+    console.log(
+      "[DEBUG] Analytics Controller - Track Purchase Request Received:",
+      JSON.stringify(request.body, null, 2)
+    );
 
     // Extract metadata from headers
-    const userAgent = request.headers['user-agent'];
+    const userAgent = request.headers["user-agent"];
     const ipAddress = request.ip;
 
     const command: TrackPurchaseCommand = {
