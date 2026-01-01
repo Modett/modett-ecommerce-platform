@@ -56,24 +56,25 @@ export function getOrCreateSessionId(): string {
 }
 
 /**
- * Get or create guest token for anonymous users
- * This persists across sessions to track returning guests
+ * Get guest token for anonymous users
+ *
+ * IMPORTANT: This returns the existing guest token from cart system.
+ * It does NOT create a new token - the cart API creates tokens when needed.
+ * This ensures token format consistency (64-char hex required by backend).
+ *
+ * Analytics tracking will use the cart's token if available, or null if not.
+ * The backend analytics service accepts null guest tokens for product views.
  */
-export function getGuestToken(): string {
-  if (typeof window === 'undefined') return '';
+export function getGuestToken(): string | null {
+  if (typeof window === 'undefined') return null;
 
   try {
-    let token = localStorage.getItem(GUEST_TOKEN_KEY);
-
-    if (!token) {
-      token = crypto.randomUUID();
-      localStorage.setItem(GUEST_TOKEN_KEY, token);
-    }
-
+    const token = localStorage.getItem(GUEST_TOKEN_KEY);
+    // Return existing token (created by cart system) or null
     return token;
   } catch (error) {
     console.error('Failed to get guest token:', error);
-    return crypto.randomUUID();
+    return null;
   }
 }
 
