@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
-import { AnalyticsEvent } from '../../../domain/entities/analytics-event.entity';
-import { AnalyticsEventRepository } from '../../../domain/repositories/analytics-event.repository';
+import { PrismaClient } from "@prisma/client";
+import { AnalyticsEvent } from "../../../domain/entities/analytics-event.entity";
+import { AnalyticsEventRepository } from "../../../domain/repositories/analytics-event.repository";
 
 export class AnalyticsEventRepositoryImpl implements AnalyticsEventRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -17,6 +17,7 @@ export class AnalyticsEventRepositoryImpl implements AnalyticsEventRepository {
         sessionId: data.session_id,
         productId: data.product_id,
         variantId: data.variant_id,
+        cartId: data.cart_id,
         eventData: data.event_data,
         userAgent: data.user_agent,
         ipAddress: data.ip_address,
@@ -40,6 +41,7 @@ export class AnalyticsEventRepositoryImpl implements AnalyticsEventRepository {
         sessionId: row.session_id,
         productId: row.product_id,
         variantId: row.variant_id,
+        cartId: row.cart_id,
         eventData: row.event_data,
         userAgent: row.user_agent,
         ipAddress: row.ip_address,
@@ -79,7 +81,7 @@ export class AnalyticsEventRepositoryImpl implements AnalyticsEventRepository {
 
     const rows = await this.prisma.analyticsEvent.findMany({
       where,
-      orderBy: { eventTimestamp: 'asc' },
+      orderBy: { eventTimestamp: "asc" },
     });
 
     return rows.map((row) =>
@@ -89,8 +91,9 @@ export class AnalyticsEventRepositoryImpl implements AnalyticsEventRepository {
         userId: row.userId ?? undefined,
         guestToken: row.guestToken ?? undefined,
         sessionId: row.sessionId,
-        productId: row.productId,
+        productId: row.productId ?? undefined,
         variantId: row.variantId ?? undefined,
+        cartId: row.cartId ?? undefined,
         eventData: row.eventData,
         userAgent: row.userAgent ?? undefined,
         ipAddress: row.ipAddress ?? undefined,
@@ -107,7 +110,7 @@ export class AnalyticsEventRepositoryImpl implements AnalyticsEventRepository {
   ): Promise<AnalyticsEvent[]> {
     const rows = await this.prisma.analyticsEvent.findMany({
       where: { sessionId: sessionId },
-      orderBy: { eventTimestamp: 'asc' },
+      orderBy: { eventTimestamp: "asc" },
       take: limit,
     });
 
@@ -118,8 +121,9 @@ export class AnalyticsEventRepositoryImpl implements AnalyticsEventRepository {
         userId: row.userId ?? undefined,
         guestToken: row.guestToken ?? undefined,
         sessionId: row.sessionId,
-        productId: row.productId,
+        productId: row.productId ?? undefined,
         variantId: row.variantId ?? undefined,
+        cartId: row.cartId ?? undefined,
         eventData: row.eventData,
         userAgent: row.userAgent ?? undefined,
         ipAddress: row.ipAddress ?? undefined,
@@ -147,7 +151,7 @@ export class AnalyticsEventRepositoryImpl implements AnalyticsEventRepository {
 
     const rows = await this.prisma.analyticsEvent.findMany({
       where,
-      orderBy: { eventTimestamp: 'asc' },
+      orderBy: { eventTimestamp: "asc" },
     });
 
     return rows.map((row) =>
@@ -157,8 +161,9 @@ export class AnalyticsEventRepositoryImpl implements AnalyticsEventRepository {
         userId: row.userId ?? undefined,
         guestToken: row.guestToken ?? undefined,
         sessionId: row.sessionId,
-        productId: row.productId,
+        productId: row.productId ?? undefined,
         variantId: row.variantId ?? undefined,
+        cartId: row.cartId ?? undefined,
         eventData: row.eventData,
         userAgent: row.userAgent ?? undefined,
         ipAddress: row.ipAddress ?? undefined,
@@ -186,7 +191,7 @@ export class AnalyticsEventRepositoryImpl implements AnalyticsEventRepository {
 
     const rows = await this.prisma.analyticsEvent.findMany({
       where,
-      orderBy: { eventTimestamp: 'asc' },
+      orderBy: { eventTimestamp: "asc" },
     });
 
     return rows.map((row) =>
@@ -196,8 +201,9 @@ export class AnalyticsEventRepositoryImpl implements AnalyticsEventRepository {
         userId: row.userId ?? undefined,
         guestToken: row.guestToken ?? undefined,
         sessionId: row.sessionId,
-        productId: row.productId,
+        productId: row.productId ?? undefined,
         variantId: row.variantId ?? undefined,
+        cartId: row.cartId ?? undefined,
         eventData: row.eventData,
         userAgent: row.userAgent ?? undefined,
         ipAddress: row.ipAddress ?? undefined,

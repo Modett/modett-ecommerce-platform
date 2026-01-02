@@ -2,6 +2,7 @@
 // ANALYTICS REACT HOOKS
 // ============================================================================
 
+import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect } from "react";
 import * as analyticsApi from "../api";
 import * as cartApi from "@/features/cart/api";
@@ -110,4 +111,82 @@ export function useTrackAddToCart() {
     },
     []
   );
+}
+/**
+ * Hook to track begin checkout
+ */
+export function useTrackBeginCheckout() {
+  return useMutation({
+    mutationFn: async (
+      params: Omit<
+        analyticsApi.TrackBeginCheckoutParams,
+        "sessionId" | "guestToken" | "userId"
+      >
+    ) => {
+      const sessionId = getOrCreateSessionId();
+      const guestToken = await cartApi.getGuestToken();
+      // TODO: Get userId from session/auth context if available, for now rely on guestToken/sessionId
+
+      return analyticsApi.trackBeginCheckout({
+        ...params,
+        sessionId,
+        guestToken,
+      });
+    },
+    onError: (error) => {
+      console.warn("Failed to track begin checkout:", error);
+    },
+  });
+}
+
+/**
+ * Hook to track add shipping info
+ */
+export function useTrackAddShippingInfo() {
+  return useMutation({
+    mutationFn: async (
+      params: Omit<
+        analyticsApi.TrackAddShippingInfoParams,
+        "sessionId" | "guestToken" | "userId"
+      >
+    ) => {
+      const sessionId = getOrCreateSessionId();
+      const guestToken = await cartApi.getGuestToken();
+
+      return analyticsApi.trackAddShippingInfo({
+        ...params,
+        sessionId,
+        guestToken,
+      });
+    },
+    onError: (error) => {
+      console.warn("Failed to track add shipping info:", error);
+    },
+  });
+}
+
+/**
+ * Hook to track add payment info
+ */
+export function useTrackAddPaymentInfo() {
+  return useMutation({
+    mutationFn: async (
+      params: Omit<
+        analyticsApi.TrackAddPaymentInfoParams,
+        "sessionId" | "guestToken" | "userId"
+      >
+    ) => {
+      const sessionId = getOrCreateSessionId();
+      const guestToken = await cartApi.getGuestToken();
+
+      return analyticsApi.trackAddPaymentInfo({
+        ...params,
+        sessionId,
+        guestToken,
+      });
+    },
+    onError: (error) => {
+      console.warn("Failed to track add payment info:", error);
+    },
+  });
 }

@@ -4,7 +4,7 @@ import {
   EventType,
   UserContext,
   ProductReference,
-} from '../value-objects';
+} from "../value-objects";
 
 export interface AnalyticsEventMetadata {
   userAgent?: string;
@@ -16,7 +16,8 @@ export interface CreateAnalyticsEventData {
   eventType: EventType;
   userContext: UserContext;
   sessionId: SessionId;
-  productReference: ProductReference;
+  productReference?: ProductReference;
+  cartId?: string;
   eventData?: Record<string, any>;
   metadata?: AnalyticsEventMetadata;
 }
@@ -27,8 +28,9 @@ export interface ReconstituteAnalyticsEventData {
   userId?: string;
   guestToken?: string;
   sessionId: string;
-  productId: string;
+  productId?: string;
   variantId?: string;
+  cartId?: string;
   eventData?: any;
   userAgent?: string;
   ipAddress?: string;
@@ -43,7 +45,8 @@ export class AnalyticsEvent {
     private readonly eventType: EventType,
     private readonly userContext: UserContext,
     private readonly sessionId: SessionId,
-    private readonly productReference: ProductReference,
+    private readonly productReference: ProductReference | undefined,
+    private readonly cartId: string | undefined,
     private readonly eventData: Record<string, any> | undefined,
     private readonly metadata: AnalyticsEventMetadata,
     private readonly eventTimestamp: Date,
@@ -59,6 +62,7 @@ export class AnalyticsEvent {
       data.userContext,
       data.sessionId,
       data.productReference,
+      data.cartId,
       data.eventData,
       data.metadata || {},
       now,
@@ -71,12 +75,18 @@ export class AnalyticsEvent {
       ? UserContext.forUser(data.userId)
       : UserContext.forGuest(data.guestToken!);
 
+    // Handle optional product reference reconstitution
+    const productReference = data.productId
+      ? ProductReference.create(data.productId, data.variantId)
+      : undefined;
+
     return new AnalyticsEvent(
       EventId.create(data.eventId),
       EventType.create(data.eventType),
       userContext,
       SessionId.create(data.sessionId),
-      ProductReference.create(data.productId, data.variantId),
+      productReference,
+      data.cartId,
       data.eventData,
       {
         userAgent: data.userAgent,
@@ -105,8 +115,12 @@ export class AnalyticsEvent {
     return this.sessionId;
   }
 
-  getProductReference(): ProductReference {
+  getProductReference(): ProductReference | undefined {
     return this.productReference;
+  }
+
+  getCartId(): string | undefined {
+    return this.cartId;
   }
 
   getEventData(): Record<string, any> | undefined {
@@ -150,8 +164,9 @@ export class AnalyticsEvent {
       user_id: this.userContext.getUserId() || null,
       guest_token: this.userContext.getGuestToken() || null,
       session_id: this.sessionId.getValue(),
-      product_id: this.productReference.getProductId(),
-      variant_id: this.productReference.getVariantId() || null,
+      product_id: this.productReference?.getProductId() || null,
+      variant_id: this.productReference?.getVariantId() || null,
+      cart_id: this.cartId || null,
       event_data: this.eventData || null,
       user_agent: this.metadata.userAgent || null,
       ip_address: this.metadata.ipAddress || null,

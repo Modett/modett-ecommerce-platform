@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Package, Undo2 } from "lucide-react";
+import { useTrackBeginCheckout } from "@/features/analytics/hooks/use-analytics-tracking";
 import {
   TEXT_STYLES,
   COMMON_CLASSES,
@@ -16,22 +17,35 @@ interface OrderSummaryProps {
   subtotal: number;
   discount?: number;
   total: number;
+  cartId: string;
+  itemCount: number;
+  currency?: string;
 }
 
 export function OrderSummary({
   subtotal,
   discount = 0,
   total,
+  cartId,
+  itemCount,
+  currency = "LKR",
 }: OrderSummaryProps) {
   const [discountCode, setDiscountCode] = useState("");
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const router = useRouter();
+  const trackBeginCheckout = useTrackBeginCheckout();
 
   const handleApplyDiscount = () => {
     // TODO: Implement discount code logic
   };
 
   const handleProceedToCheckout = () => {
+    trackBeginCheckout.mutate({
+      cartId,
+      cartTotal: total,
+      itemCount,
+      currency,
+    });
     router.push("/checkout");
   };
 
