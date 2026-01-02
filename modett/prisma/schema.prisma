@@ -1429,6 +1429,7 @@ enum EventTypeEnum {
   product_view
   purchase
   add_to_cart
+  begin_checkout
 
   @@map("event_type_enum")
   @@schema("analytics")
