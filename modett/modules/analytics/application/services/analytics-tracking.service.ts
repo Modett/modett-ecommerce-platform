@@ -70,6 +70,37 @@ export interface TrackBeginCheckoutDto {
   };
 }
 
+export interface TrackAddShippingInfoDto {
+  cartId: string;
+  shippingMethod: string;
+  shippingTier: string;
+  cartTotal: number;
+  itemCount: number;
+  currency: string;
+  userId?: string;
+  guestToken?: string;
+  sessionId: string;
+  userAgent?: string;
+  ipAddress?: string;
+  referrer?: string;
+  context?: any;
+}
+
+export interface TrackAddPaymentInfoDto {
+  cartId: string;
+  paymentMethod: string;
+  cartTotal: number;
+  itemCount: number;
+  currency: string;
+  userId?: string;
+  guestToken?: string;
+  sessionId: string;
+  userAgent?: string;
+  ipAddress?: string;
+  referrer?: string;
+  context?: any;
+}
+
 export class AnalyticsTrackingService {
   constructor(
     private readonly analyticsEventRepository: AnalyticsEventRepository
@@ -179,21 +210,74 @@ export class AnalyticsTrackingService {
       eventType: EventType.beginCheckout(),
       userContext,
       sessionId: SessionId.create(dto.sessionId),
-      // For begin checkout, we track the cart as the "product" roughly or just event data
-      // Since ProductReference is mandatory or strongly typed, we might need a dummy or adapt
-      // But looking at existing code, let's see how create works.
-      // Actually, ProductReference.create might throw if empty?
-      // Let's assume we can pass the CartID as productId strictly for tracking purposes
-      // OR we update `create` to allow optional product ref.
-      // Checking EventType.beginCheckout usage in other places...
-      // For now, I'll pass cartId as productId to satisfy the signature if needed,
-      // or check if I can omit it.
-      // Re-reading AnalyticsEvent.create... it takes props.
-      // userContext, sessionId are value objects.
-      // productReference... let's check `analytics-event.entity.ts` if needed.
-      // For safety, I will pass cartId as productId since it's a "checkout of this cart".
-      productReference: ProductReference.create(dto.cartId),
+      cartId: dto.cartId,
+      productReference: undefined,
       eventData: {
+        cartTotal: dto.cartTotal,
+        itemCount: dto.itemCount,
+        currency: dto.currency,
+        context: dto.context,
+      },
+      metadata: {
+        userAgent: dto.userAgent,
+        ipAddress: dto.ipAddress,
+        referrer: dto.referrer,
+      },
+    });
+
+    await this.analyticsEventRepository.save(event);
+  }
+
+  async trackAddShippingInfo(dto: TrackAddShippingInfoDto): Promise<void> {
+    if (!dto.userId && !dto.guestToken) {
+      throw new Error("Either userId or guestToken is required");
+    }
+
+    const userContext = dto.userId
+      ? UserContext.forUser(dto.userId)
+      : UserContext.forGuest(dto.guestToken!);
+
+    const event = AnalyticsEvent.create({
+      eventType: EventType.addShippingInfo(),
+      userContext,
+      sessionId: SessionId.create(dto.sessionId),
+      cartId: dto.cartId,
+      productReference: undefined,
+      eventData: {
+        shippingMethod: dto.shippingMethod,
+        shippingTier: dto.shippingTier,
+        cartTotal: dto.cartTotal,
+        itemCount: dto.itemCount,
+        currency: dto.currency,
+        context: dto.context,
+      },
+      metadata: {
+        userAgent: dto.userAgent,
+        ipAddress: dto.ipAddress,
+        referrer: dto.referrer,
+      },
+    });
+
+    await this.analyticsEventRepository.save(event);
+  }
+
+  async trackAddPaymentInfo(dto: TrackAddPaymentInfoDto): Promise<void> {
+    if (!dto.userId && !dto.guestToken) {
+      throw new Error("Either userId or guestToken is required");
+    }
+
+    const userContext = dto.userId
+      ? UserContext.forUser(dto.userId)
+      : UserContext.forGuest(dto.guestToken!);
+
+    const event = AnalyticsEvent.create({
+      eventType: EventType.addPaymentInfo(),
+      userContext,
+      sessionId: SessionId.create(dto.sessionId),
+      cartId: dto.cartId,
+      productReference: undefined,
+      eventData: {
+        paymentMethod: dto.paymentMethod,
         cartTotal: dto.cartTotal,
         itemCount: dto.itemCount,
         currency: dto.currency,
