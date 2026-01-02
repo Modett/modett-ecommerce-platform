@@ -4,6 +4,8 @@ import {
   TrackProductViewHandler,
   TrackPurchaseCommand,
   TrackPurchaseHandler,
+  TrackAddToCartCommand,
+  TrackAddToCartHandler,
 } from "../../../application/commands";
 
 export interface TrackProductViewRequest {
@@ -33,10 +35,26 @@ export interface TrackPurchaseRequest {
   userId?: string;
 }
 
+export interface TrackAddToCartRequest {
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  price: number;
+  userId?: string;
+  guestToken?: string;
+  sessionId: string;
+  context?: {
+    source?: "search" | "category" | "recommendation" | "direct";
+    searchQuery?: string;
+    categoryId?: string;
+  };
+}
+
 export class AnalyticsTrackingController {
   constructor(
     private readonly trackProductViewHandler: TrackProductViewHandler,
-    private readonly trackPurchaseHandler: TrackPurchaseHandler
+    private readonly trackPurchaseHandler: TrackPurchaseHandler,
+    private readonly trackAddToCartHandler: TrackAddToCartHandler
   ) {}
 
   async trackProductView(
@@ -77,16 +95,58 @@ export class AnalyticsTrackingController {
     return reply.code(204).send();
   }
 
+  async trackAddToCart(
+    request: FastifyRequest<{ Body: TrackAddToCartRequest }>,
+    reply: FastifyReply
+  ) {
+    const {
+      productId,
+      variantId,
+      quantity,
+      price,
+      sessionId,
+      guestToken,
+      userId,
+      context,
+    } = request.body;
+
+    // Extract metadata from headers
+    const userAgent = request.headers["user-agent"];
+    const ipAddress = request.ip;
+    const referrer = request.headers.referer;
+
+    const command: TrackAddToCartCommand = {
+      productId,
+      variantId,
+      quantity,
+      price,
+      userId,
+      guestToken,
+      sessionId,
+      userAgent,
+      ipAddress,
+      referrer,
+    };
+
+    const result = await this.trackAddToCartHandler.handle(command);
+
+    if (!result.success) {
+      return reply.code(400).send({
+        success: false,
+        error: result.error,
+        errors: result.errors,
+      });
+    }
+
+    return reply.code(204).send();
+  }
+
   async trackPurchase(
     request: FastifyRequest<{ Body: TrackPurchaseRequest }>,
     reply: FastifyReply
   ) {
     const { orderId, orderItems, sessionId, totalAmount, guestToken, userId } =
       request.body;
-    console.log(
-      "[DEBUG] Analytics Controller - Track Purchase Request Received:",
-      JSON.stringify(request.body, null, 2)
-    );
 
     // Extract metadata from headers
     const userAgent = request.headers["user-agent"];
