@@ -4,11 +4,13 @@ import {
   TrackProductViewRequest,
   TrackPurchaseRequest,
   TrackAddToCartRequest,
+  TrackBeginCheckoutRequest,
 } from "./controllers/analytics-tracking.controller";
 import {
   TrackProductViewHandler,
   TrackPurchaseHandler,
   TrackAddToCartHandler,
+  TrackBeginCheckoutHandler,
 } from "../../application/commands";
 
 export async function registerAnalyticsRoutes(
@@ -17,13 +19,15 @@ export async function registerAnalyticsRoutes(
     trackProductViewHandler: TrackProductViewHandler;
     trackPurchaseHandler: TrackPurchaseHandler;
     trackAddToCartHandler: TrackAddToCartHandler;
+    trackBeginCheckoutHandler: TrackBeginCheckoutHandler;
   }
 ) {
   // Initialize controller
   const analyticsController = new AnalyticsTrackingController(
     services.trackProductViewHandler,
     services.trackPurchaseHandler,
-    services.trackAddToCartHandler
+    services.trackAddToCartHandler,
+    services.trackBeginCheckoutHandler
   );
 
   // Public tracking endpoints (no auth required)
@@ -191,6 +195,60 @@ export async function registerAnalyticsRoutes(
       reply: FastifyReply
     ) => {
       return analyticsController.trackAddToCart(request, reply);
+    }
+  );
+
+  fastify.post(
+    "/events/capture-begin-checkout",
+    {
+      schema: {
+        description: "Track begin checkout event for analytics",
+        tags: ["Analytics"],
+        summary: "Track Begin Checkout",
+        body: {
+          type: "object",
+          required: [
+            "cartId",
+            "cartTotal",
+            "itemCount",
+            "currency",
+            "sessionId",
+          ],
+          properties: {
+            cartId: { type: "string", format: "uuid" },
+            cartTotal: { type: "number", minimum: 0 },
+            itemCount: { type: "number", minimum: 0 },
+            currency: { type: "string" },
+            sessionId: { type: "string" },
+            guestToken: { type: "string" },
+            userId: { type: "string", format: "uuid" },
+            context: {
+              type: "object",
+            },
+          },
+        },
+        response: {
+          204: {
+            description: "Begin checkout tracked successfully",
+            type: "null",
+          },
+          400: {
+            description: "Invalid request",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+              errors: { type: "array", items: { type: "string" } },
+            },
+          },
+        },
+      },
+    },
+    async (
+      request: FastifyRequest<{ Body: TrackBeginCheckoutRequest }>,
+      reply: FastifyReply
+    ) => {
+      return analyticsController.trackBeginCheckout(request, reply);
     }
   );
 }
