@@ -161,6 +161,7 @@ export async function registerModules(
         trackProductViewHandler: container.trackProductViewHandler,
         trackPurchaseHandler: container.trackPurchaseHandler,
         trackAddToCartHandler: container.trackAddToCartHandler,
+        trackBeginCheckoutHandler: container.trackBeginCheckoutHandler,
       });
     },
     { prefix: "/api/v1/analytics" }
