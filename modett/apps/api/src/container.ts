@@ -161,6 +161,7 @@ import {
   TrackProductViewHandler,
   TrackPurchaseHandler,
   TrackAddToCartHandler,
+  TrackBeginCheckoutHandler,
 } from "../../../modules/analytics/application/commands";
 
 export interface ServiceContainer {
@@ -321,6 +322,7 @@ export interface ServiceContainer {
   trackProductViewHandler: TrackProductViewHandler;
   trackPurchaseHandler: TrackPurchaseHandler;
   trackAddToCartHandler: TrackAddToCartHandler;
+  trackBeginCheckoutHandler: TrackBeginCheckoutHandler;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -684,6 +686,9 @@ export function createServiceContainer(): ServiceContainer {
   const trackAddToCartHandler = new TrackAddToCartHandler(
     analyticsTrackingService
   );
+  const trackBeginCheckoutHandler = new TrackBeginCheckoutHandler(
+    analyticsTrackingService
+  );
 
   return {
     // Infrastructure
@@ -843,6 +848,7 @@ export function createServiceContainer(): ServiceContainer {
     trackProductViewHandler,
     trackPurchaseHandler,
     trackAddToCartHandler,
+    trackBeginCheckoutHandler,
   };
 }
 
