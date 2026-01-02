@@ -138,3 +138,55 @@ export function useTrackBeginCheckout() {
     },
   });
 }
+
+/**
+ * Hook to track add shipping info
+ */
+export function useTrackAddShippingInfo() {
+  return useMutation({
+    mutationFn: async (
+      params: Omit<
+        analyticsApi.TrackAddShippingInfoParams,
+        "sessionId" | "guestToken" | "userId"
+      >
+    ) => {
+      const sessionId = getOrCreateSessionId();
+      const guestToken = await cartApi.getGuestToken();
+
+      return analyticsApi.trackAddShippingInfo({
+        ...params,
+        sessionId,
+        guestToken,
+      });
+    },
+    onError: (error) => {
+      console.warn("Failed to track add shipping info:", error);
+    },
+  });
+}
+
+/**
+ * Hook to track add payment info
+ */
+export function useTrackAddPaymentInfo() {
+  return useMutation({
+    mutationFn: async (
+      params: Omit<
+        analyticsApi.TrackAddPaymentInfoParams,
+        "sessionId" | "guestToken" | "userId"
+      >
+    ) => {
+      const sessionId = getOrCreateSessionId();
+      const guestToken = await cartApi.getGuestToken();
+
+      return analyticsApi.trackAddPaymentInfo({
+        ...params,
+        sessionId,
+        guestToken,
+      });
+    },
+    onError: (error) => {
+      console.warn("Failed to track add payment info:", error);
+    },
+  });
+}
