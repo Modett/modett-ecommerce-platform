@@ -5,12 +5,16 @@ import {
   TrackPurchaseRequest,
   TrackAddToCartRequest,
   TrackBeginCheckoutRequest,
+  TrackAddShippingInfoRequest,
+  TrackAddPaymentInfoRequest,
 } from "./controllers/analytics-tracking.controller";
 import {
   TrackProductViewHandler,
   TrackPurchaseHandler,
   TrackAddToCartHandler,
   TrackBeginCheckoutHandler,
+  TrackAddShippingInfoHandler,
+  TrackAddPaymentInfoHandler,
 } from "../../application/commands";
 
 export async function registerAnalyticsRoutes(
@@ -20,6 +24,8 @@ export async function registerAnalyticsRoutes(
     trackPurchaseHandler: TrackPurchaseHandler;
     trackAddToCartHandler: TrackAddToCartHandler;
     trackBeginCheckoutHandler: TrackBeginCheckoutHandler;
+    trackAddShippingInfoHandler: TrackAddShippingInfoHandler;
+    trackAddPaymentInfoHandler: TrackAddPaymentInfoHandler;
   }
 ) {
   // Initialize controller
@@ -27,7 +33,9 @@ export async function registerAnalyticsRoutes(
     services.trackProductViewHandler,
     services.trackPurchaseHandler,
     services.trackAddToCartHandler,
-    services.trackBeginCheckoutHandler
+    services.trackBeginCheckoutHandler,
+    services.trackAddShippingInfoHandler,
+    services.trackAddPaymentInfoHandler
   );
 
   // Public tracking endpoints (no auth required)
@@ -249,6 +257,118 @@ export async function registerAnalyticsRoutes(
       reply: FastifyReply
     ) => {
       return analyticsController.trackBeginCheckout(request, reply);
+    }
+  );
+
+  fastify.post(
+    "/events/capture-add-shipping-info",
+    {
+      schema: {
+        description: "Track add shipping info event for analytics",
+        tags: ["Analytics"],
+        summary: "Track Add Shipping Info",
+        body: {
+          type: "object",
+          required: [
+            "cartId",
+            "shippingMethod",
+            "shippingTier",
+            "cartTotal",
+            "itemCount",
+            "sessionId",
+          ],
+          properties: {
+            cartId: { type: "string", format: "uuid" },
+            shippingMethod: { type: "string" },
+            shippingTier: { type: "string" },
+            cartTotal: { type: "number", minimum: 0 },
+            itemCount: { type: "number", minimum: 0 },
+            currency: { type: "string" },
+            sessionId: { type: "string" },
+            guestToken: { type: "string" },
+            userId: { type: "string", format: "uuid" },
+            context: {
+              type: "object",
+            },
+          },
+        },
+        response: {
+          204: {
+            description: "Add shipping info tracked successfully",
+            type: "null",
+          },
+          400: {
+            description: "Invalid request",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+              errors: { type: "array", items: { type: "string" } },
+            },
+          },
+        },
+      },
+    },
+    async (
+      request: FastifyRequest<{ Body: TrackAddShippingInfoRequest }>,
+      reply: FastifyReply
+    ) => {
+      return analyticsController.trackAddShippingInfo(request, reply);
+    }
+  );
+
+  fastify.post(
+    "/events/capture-add-payment-info",
+    {
+      schema: {
+        description: "Track add payment info event for analytics",
+        tags: ["Analytics"],
+        summary: "Track Add Payment Info",
+        body: {
+          type: "object",
+          required: [
+            "cartId",
+            "paymentMethod",
+            "cartTotal",
+            "itemCount",
+            "sessionId",
+          ],
+          properties: {
+            cartId: { type: "string", format: "uuid" },
+            paymentMethod: { type: "string" },
+            cartTotal: { type: "number", minimum: 0 },
+            itemCount: { type: "number", minimum: 0 },
+            currency: { type: "string" },
+            sessionId: { type: "string" },
+            guestToken: { type: "string" },
+            userId: { type: "string", format: "uuid" },
+            context: {
+              type: "object",
+            },
+          },
+        },
+        response: {
+          204: {
+            description: "Add payment info tracked successfully",
+            type: "null",
+          },
+          400: {
+            description: "Invalid request",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+              errors: { type: "array", items: { type: "string" } },
+            },
+          },
+        },
+      },
+    },
+    async (
+      request: FastifyRequest<{ Body: TrackAddPaymentInfoRequest }>,
+      reply: FastifyReply
+    ) => {
+      return analyticsController.trackAddPaymentInfo(request, reply);
     }
   );
 }
