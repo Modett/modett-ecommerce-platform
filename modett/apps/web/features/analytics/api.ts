@@ -57,3 +57,31 @@ export const trackPurchase = async (
     console.error("Failed to track purchase:", error);
   }
 };
+
+export interface TrackAddToCartParams {
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  price: number;
+  sessionId: string;
+  userId?: string;
+  guestToken?: string;
+  metadata?: {
+    referrer?: string;
+    userAgent?: string;
+  };
+}
+
+/**
+ * Track add to cart event
+ */
+export const trackAddToCart = async (
+  params: TrackAddToCartParams
+): Promise<void> => {
+  try {
+    await apiClient.post("/analytics/events/capture-add-to-cart", params);
+  } catch (error) {
+    // Silent fail
+    console.error("Failed to track add to cart:", error);
+  }
+};
