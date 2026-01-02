@@ -19,6 +19,7 @@ export interface TrackAddToCartCommand extends ICommand {
   userAgent?: string;
   ipAddress?: string;
   referrer?: string;
+  context?: any;
 }
 
 export class TrackAddToCartHandler
