@@ -1428,6 +1428,7 @@ model AnalyticsEvent {
 enum EventTypeEnum {
   product_view
   purchase
+  add_to_cart
 
   @@map("event_type_enum")
   @@schema("analytics")
