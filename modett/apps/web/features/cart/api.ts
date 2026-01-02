@@ -37,6 +37,9 @@ export const generateGuestToken = async (): Promise<string> => {
   }
 };
 
+// Promise cache to prevent race conditions
+let guestTokenPromise: Promise<string> | null = null;
+
 /**
  * Get or generate guest token
  */
@@ -45,7 +48,19 @@ export const getGuestToken = async (): Promise<string> => {
   if (storedToken) {
     return storedToken;
   }
-  return await generateGuestToken();
+
+  // If a request is already in progress, return that promise
+  if (guestTokenPromise) {
+    return guestTokenPromise;
+  }
+
+  // Start new request and cache the promise
+  guestTokenPromise = generateGuestToken().finally(() => {
+    // Clear cache when done (success or failure)
+    guestTokenPromise = null;
+  });
+
+  return guestTokenPromise;
 };
 
 /**
@@ -402,7 +417,9 @@ export const completeCheckoutWithOrder = async (
 /**
  * Get order by checkout ID (for orders already created by webhook)
  */
-export const getOrderByCheckoutId = async (checkoutId: string): Promise<any> => {
+export const getOrderByCheckoutId = async (
+  checkoutId: string
+): Promise<any> => {
   try {
     const token = await getGuestToken();
     const { data } = await cartApiClient.get(`/checkout/${checkoutId}/order`, {
