@@ -8,6 +8,10 @@ import {
   TrackAddToCartHandler,
   TrackBeginCheckoutCommand,
   TrackBeginCheckoutHandler,
+  TrackAddShippingInfoCommand,
+  TrackAddShippingInfoHandler,
+  TrackAddPaymentInfoCommand,
+  TrackAddPaymentInfoHandler,
 } from "../../../application/commands";
 
 export interface TrackProductViewRequest {
@@ -63,12 +67,39 @@ export interface TrackBeginCheckoutRequest {
   context?: any;
 }
 
+export interface TrackAddShippingInfoRequest {
+  cartId: string;
+  shippingMethod: string;
+  shippingTier: string;
+  cartTotal: number;
+  itemCount: number;
+  currency: string;
+  sessionId: string;
+  guestToken?: string;
+  userId?: string;
+  context?: any;
+}
+
+export interface TrackAddPaymentInfoRequest {
+  cartId: string;
+  paymentMethod: string;
+  cartTotal: number;
+  itemCount: number;
+  currency: string;
+  sessionId: string;
+  guestToken?: string;
+  userId?: string;
+  context?: any;
+}
+
 export class AnalyticsTrackingController {
   constructor(
     private readonly trackProductViewHandler: TrackProductViewHandler,
     private readonly trackPurchaseHandler: TrackPurchaseHandler,
     private readonly trackAddToCartHandler: TrackAddToCartHandler,
-    private readonly trackBeginCheckoutHandler: TrackBeginCheckoutHandler
+    private readonly trackBeginCheckoutHandler: TrackBeginCheckoutHandler,
+    private readonly trackAddShippingInfoHandler: TrackAddShippingInfoHandler,
+    private readonly trackAddPaymentInfoHandler: TrackAddPaymentInfoHandler
   ) {}
 
   async trackProductView(
@@ -199,6 +230,120 @@ export class AnalyticsTrackingController {
       };
 
       const result = await this.trackBeginCheckoutHandler.handle(command);
+
+      if (!result.success) {
+        return reply.status(400).send({
+          success: false,
+          error: result.error,
+          errors: result.errors,
+        });
+      } else {
+        return reply.status(204).send();
+      }
+    } catch (error: any) {
+      return reply.status(500).send({
+        success: false,
+        error: error.message || "Internal server error",
+      });
+    }
+  }
+
+  async trackAddShippingInfo(
+    request: FastifyRequest<{ Body: TrackAddShippingInfoRequest }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const {
+        cartId,
+        shippingMethod,
+        shippingTier,
+        cartTotal,
+        itemCount,
+        currency,
+        sessionId,
+        guestToken,
+        userId,
+        context,
+      } = request.body;
+
+      // Extract metadata from headers
+      const userAgent = request.headers["user-agent"];
+      const ipAddress = request.ip;
+      const referrer = request.headers.referer;
+
+      const command: TrackAddShippingInfoCommand = {
+        cartId,
+        shippingMethod,
+        shippingTier,
+        cartTotal,
+        itemCount,
+        currency,
+        sessionId,
+        guestToken,
+        userId,
+        userAgent,
+        ipAddress,
+        referrer,
+        context,
+      };
+
+      const result = await this.trackAddShippingInfoHandler.handle(command);
+
+      if (!result.success) {
+        return reply.status(400).send({
+          success: false,
+          error: result.error,
+          errors: result.errors,
+        });
+      } else {
+        return reply.status(204).send();
+      }
+    } catch (error: any) {
+      return reply.status(500).send({
+        success: false,
+        error: error.message || "Internal server error",
+      });
+    }
+  }
+
+  async trackAddPaymentInfo(
+    request: FastifyRequest<{ Body: TrackAddPaymentInfoRequest }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const {
+        cartId,
+        paymentMethod,
+        cartTotal,
+        itemCount,
+        currency,
+        sessionId,
+        guestToken,
+        userId,
+        context,
+      } = request.body;
+
+      // Extract metadata from headers
+      const userAgent = request.headers["user-agent"];
+      const ipAddress = request.ip;
+      const referrer = request.headers.referer;
+
+      const command: TrackAddPaymentInfoCommand = {
+        cartId,
+        paymentMethod,
+        cartTotal,
+        itemCount,
+        currency,
+        sessionId,
+        guestToken,
+        userId,
+        userAgent,
+        ipAddress,
+        referrer,
+        context,
+      };
+
+      const result = await this.trackAddPaymentInfoHandler.handle(command);
 
       if (!result.success) {
         return reply.status(400).send({
