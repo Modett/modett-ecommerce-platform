@@ -9,6 +9,7 @@ import {
   useProductWishlist,
   useProductVariant,
 } from "@/features/product-catalog/hooks";
+import { useTrackAddToCart } from "@/features/analytics/hooks";
 import { toast } from "sonner";
 import { TEXT_STYLES, PRODUCT_CLASSES } from "@/features/cart/constants/styles";
 
@@ -40,6 +41,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const addToCartMutation = useAddToCart();
+  const trackAddToCart = useTrackAddToCart();
 
   const variantIds = product.variants?.map((v) => v.id) || [];
 
@@ -80,6 +82,9 @@ export function ProductInfo({ product }: ProductInfoProps) {
       });
 
       toast.success(`${product.title} added to cart!`);
+
+      // Track add to cart event
+      trackAddToCart(product.id, selectedVariant.id, 1, product.price);
     } catch (error: any) {
       toast.error(error.message || "Failed to add to cart");
     } finally {
