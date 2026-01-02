@@ -80,3 +80,34 @@ export function useTrackOrder() {
     []
   );
 }
+
+/**
+ * Hook to track add to cart
+ */
+export function useTrackAddToCart() {
+  return useCallback(
+    async (
+      productId: string,
+      variantId: string | undefined, // explicitly allow undefined
+      quantity: number,
+      price: number
+    ) => {
+      const sessionId = getOrCreateSessionId();
+      const guestToken = await cartApi.getGuestToken();
+
+      analyticsApi.trackAddToCart({
+        productId,
+        variantId,
+        quantity,
+        price,
+        sessionId,
+        guestToken,
+        metadata: {
+          referrer: document.referrer,
+          userAgent: navigator.userAgent,
+        },
+      });
+    },
+    []
+  );
+}
