@@ -3,10 +3,14 @@
 // ============================================================================
 
 import axios from "axios";
-import type { Wishlist, WishlistItem, NewsletterSubscription, SubscribeNewsletterParams, UnsubscribeNewsletterParams } from "./types";
+import type {
+  Wishlist,
+  WishlistItem,
+  NewsletterSubscription,
+  SubscribeNewsletterParams,
+  UnsubscribeNewsletterParams,
+} from "./types";
 import {
-  getStoredGuestToken,
-  persistGuestToken,
   persistWishlistId,
   clearWishlistId,
   extractErrorMessages,
@@ -14,6 +18,7 @@ import {
   dispatchWishlistUpdate,
 } from "./utils";
 import { handleError } from "@/lib/error-handler";
+import { getGuestToken } from "@/features/cart/api";
 
 // Create axios instance for wishlist API
 const wishlistApiClient = axios.create({
@@ -25,40 +30,6 @@ const wishlistApiClient = axios.create({
     "Content-Type": "application/json",
   },
 });
-
-/**
- * Generate a guest token
- */
-export const generateGuestToken = async (): Promise<string> => {
-  try {
-    const { data } = await wishlistApiClient.get("/cart/generate-guest-token");
-    const token = data.data.guestToken;
-
-    // Store in localStorage
-    persistGuestToken(token);
-    // Drop any cached wishlist that belonged to an older token
-    clearWishlistId();
-
-    return token;
-  } catch (error: any) {
-    handleError(error, "Generate guest token");
-    throw new Error(
-      error.response?.data?.error || "Failed to generate guest token"
-    );
-  }
-};
-
-/**
- * Get the guest token from localStorage or generate one
- */
-export const getGuestToken = async (): Promise<string> => {
-  const existingToken = getStoredGuestToken();
-  if (existingToken) {
-    return existingToken;
-  }
-
-  return await generateGuestToken();
-};
 
 /**
  * Create a default wishlist for guest user
@@ -82,9 +53,7 @@ export const createDefaultWishlist = async (): Promise<Wishlist> => {
     return wishlist;
   } catch (error: any) {
     handleError(error, "Create wishlist");
-    throw new Error(
-      error.response?.data?.error || "Failed to create wishlist"
-    );
+    throw new Error(error.response?.data?.error || "Failed to create wishlist");
   }
 };
 
@@ -116,7 +85,8 @@ export const addToWishlistInternal = async (
   } catch (error: any) {
     const responseData = error?.response?.data;
     const errorMessages = extractErrorMessages(responseData);
-    const shouldRetry = !hasRetried && shouldRetryOnError(responseData, errorMessages);
+    const shouldRetry =
+      !hasRetried && shouldRetryOnError(responseData, errorMessages);
 
     if (shouldRetry) {
       console.log("= Wishlist not found, retrying with fresh wishlist...");
@@ -234,7 +204,9 @@ export const getWishlistedVariantId = async (
 ): Promise<string | null> => {
   try {
     const items = await getWishlistItems(wishlistId);
-    const wishlistedItem = items.find((item) => variantIds.includes(item.variantId));
+    const wishlistedItem = items.find((item) =>
+      variantIds.includes(item.variantId)
+    );
     return wishlistedItem?.variantId || null;
   } catch (error) {
     return null;
