@@ -1,1 +1,1 @@
-export { useTrackProductView, useAutoTrackProductView, useTrackOrder } from './use-analytics-tracking';
+export * from "./use-analytics-tracking";
