@@ -89,8 +89,16 @@ export class NodemailerEmailService implements IEmailService {
         </div>
         <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #888888;">
             <p>&copy; ${new Date().getFullYear()} Modett Fashion. All rights reserved.</p>
-            <p>If you didn't subscribe, you can ignore this email.</p>
-        </div>
+            <p>If you have any questions, feel free to reply to this email.</p>
+        
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+        
+        <p style="font-size: 12px; color: #888; text-align: center;">
+          You received this email because you subscribed to the Modett newsletter.
+          <br>
+          <a href="${process.env.API_URL || "http://localhost:3001"}/api/v1/engagement/newsletter/unsubscribe?email=${to}" style="color: #888; text-decoration: underline;">Unsubscribe</a>
+        </p>
+      </div>
       </div>
     `;
 
