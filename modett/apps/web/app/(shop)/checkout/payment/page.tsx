@@ -18,6 +18,7 @@ import { usePayableIPG } from "@/features/checkout/hooks/use-payable-ipg";
 import { Alert } from "@/components/ui/alert";
 import { handleError } from "@/lib/error-handler";
 import * as cartApi from "@/features/cart/api";
+import { useTrackAddPaymentInfo } from "@/features/analytics/hooks/use-analytics-tracking";
 
 export default function CheckoutPaymentPage() {
   const [cartId, setCartId] = useState<string | null>(null);
@@ -27,6 +28,8 @@ export default function CheckoutPaymentPage() {
   const [processing, setProcessing] = useState(false);
   const [checkoutId, setCheckoutId] = useState<string | null>(null);
   const router = useRouter();
+
+  const trackAddPaymentInfo = useTrackAddPaymentInfo();
 
   const { createPayment, loading: paymentLoading } = usePayableIPG();
 
@@ -62,9 +65,16 @@ export default function CheckoutPaymentPage() {
 
         // Safety net: Prevent reusing completed checkout sessions
         try {
-          const detailedCheckout = await cartApi.getCheckout(checkout.checkoutId);
-          if (detailedCheckout.status === "completed" || detailedCheckout.status === "paid") {
-            console.warn("[Checkout] Detected completed checkout session, redirecting to success");
+          const detailedCheckout = await cartApi.getCheckout(
+            checkout.checkoutId
+          );
+          if (
+            detailedCheckout.status === "completed" ||
+            detailedCheckout.status === "paid"
+          ) {
+            console.warn(
+              "[Checkout] Detected completed checkout session, redirecting to success"
+            );
             clearCartData();
             window.location.href = `/checkout/success?checkoutId=${checkout.checkoutId}`;
             return;
@@ -77,9 +87,13 @@ export default function CheckoutPaymentPage() {
 
         // If cart has a completed order, clear cart data and redirect to cart page
         if (errorMessage.includes("completed order")) {
-          console.warn("[Checkout] Cart has completed order, clearing cart data");
+          console.warn(
+            "[Checkout] Cart has completed order, clearing cart data"
+          );
           clearCartData();
-          setError("Your previous order is complete. Please add items to your cart to place a new order.");
+          setError(
+            "Your previous order is complete. Please add items to your cart to place a new order."
+          );
           setTimeout(() => {
             window.location.href = "/cart";
           }, 2000);
@@ -130,7 +144,19 @@ export default function CheckoutPaymentPage() {
     setError(null);
 
     try {
-      const customerName = `${cart.shippingFirstName || ""} ${cart.shippingLastName || ""}`.trim();
+      const customerName =
+        `${cart.shippingFirstName || ""} ${cart.shippingLastName || ""}`.trim();
+
+      // Track analytics event
+      if (cart && cart.summary) {
+        await trackAddPaymentInfo.mutateAsync({
+          cartId: cartId,
+          paymentMethod: paymentMethod,
+          cartTotal: cart.summary.total,
+          itemCount: cart.summary.itemCount,
+          currency: "LKR",
+        });
+      }
 
       const paymentResult = await createPayment({
         orderId: checkoutId,
