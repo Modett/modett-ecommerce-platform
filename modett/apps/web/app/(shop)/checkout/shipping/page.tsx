@@ -15,6 +15,7 @@ import { LoadingState } from "@/features/checkout/components/loading-state";
 import { Alert } from "@/components/ui/alert";
 import { handleError } from "@/lib/error-handler";
 import { useRouter } from "next/navigation";
+import { useTrackAddShippingInfo } from "@/features/analytics/hooks/use-analytics-tracking";
 
 export default function CheckoutShippingPage() {
   const [cartId, setCartId] = useState<string | null>(null);
@@ -27,6 +28,8 @@ export default function CheckoutShippingPage() {
   const [isGift, setIsGift] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  const trackAddShippingInfo = useTrackAddShippingInfo();
 
   useEffect(() => {
     const storedCartId = getStoredCartId();
@@ -70,6 +73,18 @@ export default function CheckoutShippingPage() {
           isGift,
         },
       });
+
+      // Track analytics event
+      if (cart && cart.summary) {
+        await trackAddShippingInfo.mutateAsync({
+          cartId,
+          shippingMethod: shippingMethod,
+          shippingTier: shippingMethod === "home" ? shippingOption : "boutique",
+          cartTotal: cart.summary.total || 0,
+          itemCount: cart.summary.itemCount || 0,
+          currency: "LKR", // Assuming LKR as default based on previous context
+        });
+      }
 
       router.push("/checkout/information");
     } catch (err) {
@@ -240,10 +255,7 @@ export default function CheckoutShippingPage() {
                       </div>
 
                       {error && (
-                        <Alert
-                          variant="error"
-                          onClose={() => setError(null)}
-                        >
+                        <Alert variant="error" onClose={() => setError(null)}>
                           {error}
                         </Alert>
                       )}
