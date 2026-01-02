@@ -143,13 +143,17 @@ export class CheckoutOrderService {
       // 5. Calculate order totals from cart
       const cartSnapshot = cart.toSnapshot();
       const subtotal = cart.getSubtotal();
-      const total = cart.getTotal();
+      // Use checkout total which includes shipping
+      const total = checkout.getTotalAmount();
+      const cartItemTotal = cart.getTotal(); // Total of items (subtotal - discounts)
+
+      const shipping = total - cartItemTotal;
 
       const totals = {
         subtotal,
         tax: 0,
-        shipping: 0,
-        discount: 0,
+        shipping,
+        discount: subtotal - cartItemTotal,
         total,
       };
 
