@@ -28,6 +28,15 @@ export class NewsletterService {
       if (existing.isUnsubscribed()) {
         existing.activate();
         await this.subscriptionRepository.update(existing);
+
+        // Send welcome email on re-subscription too
+        this.emailService.sendWelcomeEmail(email).catch((err: unknown) => {
+          console.error(
+            `[NEWSLETTER] Failed to send welcome email to ${email}`,
+            err
+          );
+        });
+
         return existing;
       }
 
