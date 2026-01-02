@@ -72,6 +72,20 @@ export interface TrackAddToCartParams {
   };
 }
 
+export interface TrackBeginCheckoutParams {
+  cartId: string;
+  cartTotal: number;
+  itemCount: number;
+  currency: string;
+  sessionId: string;
+  userId?: string;
+  guestToken?: string;
+  metadata?: {
+    referrer?: string;
+    userAgent?: string;
+  };
+}
+
 /**
  * Track add to cart event
  */
@@ -83,5 +97,19 @@ export const trackAddToCart = async (
   } catch (error) {
     // Silent fail
     console.error("Failed to track add to cart:", error);
+  }
+};
+
+/**
+ * Track begin checkout event
+ */
+export const trackBeginCheckout = async (
+  params: TrackBeginCheckoutParams
+): Promise<void> => {
+  try {
+    await apiClient.post("/analytics/events/capture-begin-checkout", params);
+  } catch (error) {
+    // Silent fail - don't break user experience if analytics fails
+    console.error("Failed to track begin checkout:", error);
   }
 };
