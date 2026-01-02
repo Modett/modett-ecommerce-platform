@@ -202,6 +202,9 @@ export default function CartPage() {
                   subtotal={cart.summary.subtotal}
                   discount={cart.summary.discount}
                   total={cart.summary.total}
+                  cartId={cartId || ""}
+                  itemCount={cart.items.length}
+                  currency="LKR"
                 />
               </div>
             </div>
