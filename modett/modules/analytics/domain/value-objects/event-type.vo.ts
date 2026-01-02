@@ -3,6 +3,7 @@ export class EventType {
     "product_view",
     "purchase",
     "add_to_cart",
+    "begin_checkout",
   ] as const;
   private readonly value: (typeof EventType.VALID_TYPES)[number];
 
@@ -20,6 +21,10 @@ export class EventType {
 
   static addToCart(): EventType {
     return new EventType("add_to_cart");
+  }
+
+  static beginCheckout(): EventType {
+    return new EventType("begin_checkout");
   }
 
   static create(type: string): EventType {
@@ -45,6 +50,10 @@ export class EventType {
 
   isAddToCart(): boolean {
     return this.value === "add_to_cart";
+  }
+
+  isBeginCheckout(): boolean {
+    return this.value === "begin_checkout";
   }
 
   equals(other: EventType): boolean {
