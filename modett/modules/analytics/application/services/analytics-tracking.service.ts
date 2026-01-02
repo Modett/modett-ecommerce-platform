@@ -1,6 +1,11 @@
-import { AnalyticsEventRepository } from '../../domain/repositories/analytics-event.repository';
-import { AnalyticsEvent } from '../../domain/entities/analytics-event.entity';
-import { EventType, UserContext, SessionId, ProductReference } from '../../domain/value-objects';
+import { AnalyticsEventRepository } from "../../domain/repositories/analytics-event.repository";
+import { AnalyticsEvent } from "../../domain/entities/analytics-event.entity";
+import {
+  EventType,
+  UserContext,
+  SessionId,
+  ProductReference,
+} from "../../domain/value-objects";
 
 export interface TrackProductViewDto {
   productId: string;
@@ -12,7 +17,7 @@ export interface TrackProductViewDto {
   ipAddress?: string;
   referrer?: string;
   context?: {
-    source?: 'search' | 'category' | 'recommendation' | 'direct';
+    source?: "search" | "category" | "recommendation" | "direct";
     searchQuery?: string;
     categoryId?: string;
   };
@@ -34,6 +39,19 @@ export interface TrackPurchaseDto {
   totalAmount: number;
 }
 
+export interface TrackAddToCartDto {
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  price: number;
+  userId?: string;
+  guestToken?: string;
+  sessionId: string;
+  userAgent?: string;
+  ipAddress?: string;
+  referrer?: string;
+}
+
 export class AnalyticsTrackingService {
   constructor(
     private readonly analyticsEventRepository: AnalyticsEventRepository
@@ -42,7 +60,7 @@ export class AnalyticsTrackingService {
   async trackProductView(dto: TrackProductViewDto): Promise<void> {
     // Validate user context
     if (!dto.userId && !dto.guestToken) {
-      throw new Error('Either userId or guestToken is required');
+      throw new Error("Either userId or guestToken is required");
     }
 
     // Create user context
@@ -70,7 +88,7 @@ export class AnalyticsTrackingService {
 
   async trackPurchase(dto: TrackPurchaseDto): Promise<void> {
     if (!dto.userId && !dto.guestToken) {
-      throw new Error('Either userId or guestToken is required');
+      throw new Error("Either userId or guestToken is required");
     }
 
     const userContext = dto.userId
@@ -82,7 +100,10 @@ export class AnalyticsTrackingService {
         eventType: EventType.purchase(),
         userContext,
         sessionId: SessionId.create(dto.sessionId),
-        productReference: ProductReference.create(item.productId, item.variantId),
+        productReference: ProductReference.create(
+          item.productId,
+          item.variantId
+        ),
         eventData: {
           orderId: dto.orderId,
           quantity: item.quantity,
@@ -97,5 +118,33 @@ export class AnalyticsTrackingService {
     );
 
     await this.analyticsEventRepository.saveMany(events);
+  }
+
+  async trackAddToCart(dto: TrackAddToCartDto): Promise<void> {
+    if (!dto.userId && !dto.guestToken) {
+      throw new Error("Either userId or guestToken is required");
+    }
+
+    const userContext = dto.userId
+      ? UserContext.forUser(dto.userId)
+      : UserContext.forGuest(dto.guestToken!);
+
+    const event = AnalyticsEvent.create({
+      eventType: EventType.addToCart(),
+      userContext,
+      sessionId: SessionId.create(dto.sessionId),
+      productReference: ProductReference.create(dto.productId, dto.variantId),
+      eventData: {
+        quantity: dto.quantity,
+        price: dto.price,
+      },
+      metadata: {
+        userAgent: dto.userAgent,
+        ipAddress: dto.ipAddress,
+        referrer: dto.referrer,
+      },
+    });
+
+    await this.analyticsEventRepository.save(event);
   }
 }
