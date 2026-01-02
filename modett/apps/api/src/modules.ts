@@ -160,6 +160,7 @@ export async function registerModules(
       await registerAnalyticsRoutes(fastify, {
         trackProductViewHandler: container.trackProductViewHandler,
         trackPurchaseHandler: container.trackPurchaseHandler,
+        trackAddToCartHandler: container.trackAddToCartHandler,
       });
     },
     { prefix: "/api/v1/analytics" }
