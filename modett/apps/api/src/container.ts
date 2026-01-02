@@ -144,6 +144,7 @@ import {
   ProductReviewRepositoryImpl,
   NewsletterSubscriptionRepositoryImpl,
 } from "../../../modules/engagement/infra/persistence/repositories";
+import { NodemailerEmailService } from "../../../modules/shared/infra/email/nodemailer-email.service";
 import {
   WishlistManagementService,
   ReminderManagementService,
@@ -642,6 +643,9 @@ export function createServiceContainer(): ServiceContainer {
   const newsletterSubscriptionRepository =
     new NewsletterSubscriptionRepositoryImpl(prisma);
 
+  // Initialize Shared Services
+  const emailService = new NodemailerEmailService();
+
   // Initialize Engagement services
   const wishlistManagementService = new WishlistManagementService(
     wishlistRepository,
@@ -656,7 +660,8 @@ export function createServiceContainer(): ServiceContainer {
     productReviewRepository
   );
   const newsletterService = new NewsletterService(
-    newsletterSubscriptionRepository
+    newsletterSubscriptionRepository,
+    emailService
   );
 
   // Initialize Analytics repository
