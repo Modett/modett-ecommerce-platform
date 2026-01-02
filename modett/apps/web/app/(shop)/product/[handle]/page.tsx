@@ -11,6 +11,7 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { COMMON_CLASSES, RESPONSIVE } from "@/features/cart/constants/styles";
 import { ViewMoreSection } from "@/features/product-catalog/components/view-more-section";
 import { ProductDetailSkeleton } from "@/components/ui/skeleton";
+import { useAutoTrackProductView } from "@/features/analytics/hooks";
 
 interface ProductPageProps {
   params: Promise<{
@@ -23,6 +24,9 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { handle } = use(params);
 
   const { data: product, isLoading } = useProductBySlug(handle);
+
+  // Track product view for analytics
+  useAutoTrackProductView(product?.id);
 
   if (isLoading) {
     return <ProductDetailSkeleton />;

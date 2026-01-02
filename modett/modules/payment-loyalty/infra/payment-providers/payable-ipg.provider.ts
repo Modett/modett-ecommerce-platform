@@ -77,7 +77,8 @@ export class PayableIPGProvider {
   }
 
   async createPayment(params: {
-    orderId: string;
+    checkoutId?: string; // Added checkoutId to params
+    orderId: string; // This is actually the Intent ID
     amount: number;
     customerEmail: string;
     customerName: string;
@@ -107,6 +108,8 @@ export class PayableIPGProvider {
         customerPhone,
         billingAddress,
         shippingAddress,
+        checkoutId,
+        orderId, // This is the payment intent ID
       } = params;
       const [firstName, ...lastNameParts] = customerName.split(" ");
       const lastName = lastNameParts.join(" ") || firstName;
@@ -123,14 +126,31 @@ export class PayableIPGProvider {
       let webhookUrl: string;
       let refererUrl: string;
 
+      // Construct query params to append
+      const queryParams = new URLSearchParams();
+      if (checkoutId) queryParams.append("checkoutId", checkoutId);
+      queryParams.append("intentId", orderId);
+
+      const queryString = queryParams.toString();
+
       if (ngrokUrl) {
-        returnUrl = `${ngrokUrl}/checkout/success`;
+        // Use backend redirection endpoint to bridge HTTPS -> HTTP (localhost:3000)
+        returnUrl = `${ngrokUrl}/api/v1/payments/payable-ipg/return?${queryString}`;
+
+        // Webhook always goes to backend (Ngrok in dev)
         webhookUrl = `${ngrokUrl}/api/v1/payments/payable-ipg/webhook`;
         refererUrl = "https://modett.com";
       } else {
         const baseUrl =
           params.returnUrl?.split("/checkout")[0] || "https://modett.com";
-        returnUrl = params.returnUrl || `${baseUrl}/checkout/success`;
+
+        if (params.returnUrl) {
+          const hasQuery = params.returnUrl.includes("?");
+          returnUrl = `${params.returnUrl}${hasQuery ? "&" : "?"}${queryString}`;
+        } else {
+          returnUrl = `${baseUrl}/checkout/success?${queryString}`;
+        }
+
         webhookUrl =
           params.webhookUrl || `${baseUrl}/api/v1/payments/payable-ipg/webhook`;
         refererUrl = baseUrl;
@@ -178,6 +198,13 @@ export class PayableIPGProvider {
         custom1: params.orderId,
         orderDescription: "Order " + shortInvoiceId,
       };
+
+      console.log("[DEBUG] Generated Return URL:", returnUrl);
+      console.log("[DEBUG] Using Ngrok URL:", ngrokUrl || "undefined");
+      console.log(
+        "[DEBUG] Full Payment Payload:",
+        JSON.stringify(payload, null, 2)
+      );
 
       const response = await fetch(this.apiUrl, {
         method: "POST",

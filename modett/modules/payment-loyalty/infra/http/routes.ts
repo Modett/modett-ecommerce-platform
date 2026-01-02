@@ -1611,6 +1611,34 @@ export async function registerPaymentLoyaltyRoutes(
     );
 
     fastify.log.info("PayableIPG payment routes registered successfully");
+
+    // Handle return from gateway (redirection)
+    // GET /api/v1/payments/payable-ipg/return
+    fastify.get(
+      "/payments/payable-ipg/return",
+      {
+        schema: {
+          description: "Handle return redirect from PayableIPG",
+          tags: ["Payments"],
+          summary: "PayableIPG Return",
+          querystring: {
+            type: "object",
+            properties: {
+              checkoutId: { type: "string" },
+              intentId: { type: "string" },
+            },
+          },
+          response: {
+            302: {
+              description: "Redirect to frontend",
+              type: "null",
+            },
+          },
+        },
+      },
+      async (req: any, reply: any) =>
+        payableIPGController.handleReturn(req, reply)
+    );
   } else {
     fastify.log.warn(
       "PayableIPG not configured - skipping PayableIPG routes registration"

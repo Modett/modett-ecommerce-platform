@@ -11,6 +11,7 @@ import { registerPaymentLoyaltyRoutes } from "../../../modules/payment-loyalty/i
 import { registerCustomerCareRoutes } from "../../../modules/customer-care/infra/http/routes";
 import { registerEngagementRoutes } from "../../../modules/engagement/infra/http/routes";
 import { registerFulfillmentRoutes } from "../../../modules/fulfillment/infra/http/routes";
+import { registerAnalyticsRoutes } from "../../../modules/analytics/infra/http/routes";
 
 export async function registerModules(
   server: FastifyInstance,
@@ -151,5 +152,17 @@ export async function registerModules(
       });
     },
     { prefix: "/api/v1/fulfillment" }
+  );
+
+  // Register Analytics Routes (Prefix: /api/v1/analytics)
+  await server.register(
+    async (fastify) => {
+      await registerAnalyticsRoutes(fastify, {
+        trackProductViewHandler: container.trackProductViewHandler,
+        trackPurchaseHandler: container.trackPurchaseHandler,
+        trackAddToCartHandler: container.trackAddToCartHandler,
+      });
+    },
+    { prefix: "/api/v1/analytics" }
   );
 }

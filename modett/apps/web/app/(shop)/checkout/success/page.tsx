@@ -5,16 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
 import { useCart } from "@/features/cart/queries";
-import { getStoredCartId, clearCartData } from "@/features/cart/utils";
+import { getStoredCartId, clearCartAfterCheckout } from "@/features/cart/utils";
 import { LoadingState } from "@/features/checkout/components/loading-state";
 import { handleError } from "@/lib/error-handler";
 import * as cartApi from "@/features/cart/api";
 import { Check, X } from "lucide-react";
+import { useTrackOrder } from "@/features/analytics/hooks";
 
 export default function CheckoutSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const trackOrder = useTrackOrder();
   // Extract checkoutId and ensure it doesn't contain query parameters
   const rawCheckoutId = searchParams?.get("checkoutId");
   const checkoutId = rawCheckoutId?.split("?")[0] || rawCheckoutId;
@@ -59,45 +61,70 @@ export default function CheckoutSuccessPage() {
       try {
         setStatus("loading");
 
-        // Build shipping address from cart data
-        const shippingAddress = {
-          firstName: cart.shippingFirstName || "",
-          lastName: cart.shippingLastName || "",
-          addressLine1: cart.shippingAddress1 || "",
-          addressLine2: cart.shippingAddress2,
-          city: cart.shippingCity || "",
-          state: cart.shippingProvince,
-          postalCode: cart.shippingPostalCode,
-          country: cart.shippingCountryCode || "LK",
-          phone: cart.shippingPhone,
-        };
+        let result;
+        try {
+          result = await cartApi.getOrderByCheckoutId(checkoutId);
+        } catch (orderFetchError) {
+          const shippingAddress = {
+            firstName: cart.shippingFirstName || "",
+            lastName: cart.shippingLastName || "",
+            addressLine1: cart.shippingAddress1 || "",
+            addressLine2: cart.shippingAddress2,
+            city: cart.shippingCity || "",
+            state: cart.shippingProvince,
+            postalCode: cart.shippingPostalCode,
+            country: cart.shippingCountryCode || "LK",
+            phone: cart.shippingPhone,
+          };
 
-        // Build billing address (use shipping if same address)
-        const billingAddress = cart.sameAddressForBilling
-          ? shippingAddress
-          : {
-              firstName: cart.billingFirstName || "",
-              lastName: cart.billingLastName || "",
-              addressLine1: cart.billingAddress1 || "",
-              addressLine2: cart.billingAddress2,
-              city: cart.billingCity || "",
-              state: cart.billingProvince,
-              postalCode: cart.billingPostalCode,
-              country: cart.billingCountryCode || "LK",
-              phone: cart.billingPhone,
-            };
+          // Build billing address (use shipping if same address)
+          const billingAddress = cart.sameAddressForBilling
+            ? shippingAddress
+            : {
+                firstName: cart.billingFirstName || "",
+                lastName: cart.billingLastName || "",
+                addressLine1: cart.billingAddress1 || "",
+                addressLine2: cart.billingAddress2,
+                city: cart.billingCity || "",
+                state: cart.billingProvince,
+                postalCode: cart.billingPostalCode,
+                country: cart.billingCountryCode || "LK",
+                phone: cart.billingPhone,
+              };
 
-        const result = await cartApi.completeCheckoutWithOrder(
-          checkoutId,
-          intentId || checkoutId,
-          shippingAddress,
-          billingAddress
-        );
+          result = await cartApi.completeCheckoutWithOrder(
+            checkoutId,
+            intentId || checkoutId,
+            shippingAddress,
+            billingAddress
+          );
+        }
 
-        setOrderId(result.order?.id || checkoutId);
+        setOrderId(result.orderId || result.id || checkoutId);
         setStatus("success");
 
-        clearCartData();
+        const trackingItems = result.items || cart.items;
+
+        if (trackingItems?.length > 0 && result.orderId) {
+          const orderItems = trackingItems.map((item: any) => ({
+            productId: item.productId || item.productSnapshot?.productId,
+            variantId: item.variantId,
+            quantity: item.quantity || item.qty || 1,
+            price: item.price || item.productSnapshot?.price || 0,
+          }));
+
+          const totalAmount =
+            result.totalAmount ||
+            cart.items.reduce(
+              (sum: number, item: any) =>
+                sum + (item.price || 0) * (item.quantity || 1),
+              0
+            );
+
+          trackOrder(result.orderId, orderItems, totalAmount);
+        }
+
+        clearCartAfterCheckout();
         setCartId(null);
 
         queryClient.clear();

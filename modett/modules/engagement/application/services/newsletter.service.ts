@@ -8,13 +8,18 @@ import {
   SubscriptionId,
   SubscriptionStatus,
 } from "../../domain/value-objects/index.js";
+import { IEmailService } from "../../../shared/domain/ports/email.service.port.js";
 
 export class NewsletterService {
   constructor(
-    private readonly subscriptionRepository: INewsletterSubscriptionRepository
+    private readonly subscriptionRepository: INewsletterSubscriptionRepository,
+    private readonly emailService: IEmailService
   ) {}
 
-  async subscribe(email: string, source?: string): Promise<NewsletterSubscription> {
+  async subscribe(
+    email: string,
+    source?: string
+  ): Promise<NewsletterSubscription> {
     // Check if email is already subscribed
     const existing = await this.subscriptionRepository.findByEmail(email);
 
@@ -23,6 +28,15 @@ export class NewsletterService {
       if (existing.isUnsubscribed()) {
         existing.activate();
         await this.subscriptionRepository.update(existing);
+
+        // Send welcome email on re-subscription too
+        this.emailService.sendWelcomeEmail(email).catch((err: unknown) => {
+          console.error(
+            `[NEWSLETTER] Failed to send welcome email to ${email}`,
+            err
+          );
+        });
+
         return existing;
       }
 
@@ -32,7 +46,9 @@ export class NewsletterService {
       }
 
       // For bounced or spam, create new subscription
-      throw new Error("Email address has been marked as bounced or spam. Please contact support.");
+      throw new Error(
+        "Email address has been marked as bounced or spam. Please contact support."
+      );
     }
 
     const subscription = NewsletterSubscription.create({
@@ -41,6 +57,15 @@ export class NewsletterService {
     });
 
     await this.subscriptionRepository.save(subscription);
+
+    // Send welcome email asynchronously (fire and forget)
+    this.emailService.sendWelcomeEmail(email).catch((err: unknown) => {
+      console.error(
+        `[NEWSLETTER] Failed to send welcome email to ${email}`,
+        err
+      );
+    });
+
     return subscription;
   }
 

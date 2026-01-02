@@ -60,6 +60,7 @@ export interface Cart {
     subtotal: number;
     discount: number;
     total: number;
+    shippingAmount?: number;
   };
   email?: string;
   shipping_address?: Address;

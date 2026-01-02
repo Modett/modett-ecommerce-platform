@@ -144,6 +144,7 @@ import {
   ProductReviewRepositoryImpl,
   NewsletterSubscriptionRepositoryImpl,
 } from "../../../modules/engagement/infra/persistence/repositories";
+import { NodemailerEmailService } from "../../../modules/shared/infra/email/nodemailer-email.service";
 import {
   WishlistManagementService,
   ReminderManagementService,
@@ -152,6 +153,15 @@ import {
   ProductReviewService,
   NewsletterService,
 } from "../../../modules/engagement/application/services";
+
+// Analytics imports
+import { AnalyticsEventRepositoryImpl } from "../../../modules/analytics/infra/persistence/repositories/analytics-event.repository.impl";
+import { AnalyticsTrackingService } from "../../../modules/analytics/application/services/analytics-tracking.service";
+import {
+  TrackProductViewHandler,
+  TrackPurchaseHandler,
+  TrackAddToCartHandler,
+} from "../../../modules/analytics/application/commands";
 
 export interface ServiceContainer {
   // Infrastructure
@@ -302,6 +312,15 @@ export interface ServiceContainer {
   appointmentService: AppointmentService;
   productReviewService: ProductReviewService;
   newsletterService: NewsletterService;
+
+  // Analytics Repository
+  analyticsEventRepository: AnalyticsEventRepositoryImpl;
+
+  // Analytics Service & Handlers
+  analyticsTrackingService: AnalyticsTrackingService;
+  trackProductViewHandler: TrackProductViewHandler;
+  trackPurchaseHandler: TrackPurchaseHandler;
+  trackAddToCartHandler: TrackAddToCartHandler;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -626,6 +645,9 @@ export function createServiceContainer(): ServiceContainer {
   const newsletterSubscriptionRepository =
     new NewsletterSubscriptionRepositoryImpl(prisma);
 
+  // Initialize Shared Services
+  const emailService = new NodemailerEmailService();
+
   // Initialize Engagement services
   const wishlistManagementService = new WishlistManagementService(
     wishlistRepository,
@@ -640,7 +662,27 @@ export function createServiceContainer(): ServiceContainer {
     productReviewRepository
   );
   const newsletterService = new NewsletterService(
-    newsletterSubscriptionRepository
+    newsletterSubscriptionRepository,
+    emailService
+  );
+
+  // Initialize Analytics repository
+  const analyticsEventRepository = new AnalyticsEventRepositoryImpl(prisma);
+
+  // Initialize Analytics service
+  const analyticsTrackingService = new AnalyticsTrackingService(
+    analyticsEventRepository
+  );
+
+  // Initialize Analytics command handlers
+  const trackProductViewHandler = new TrackProductViewHandler(
+    analyticsTrackingService
+  );
+  const trackPurchaseHandler = new TrackPurchaseHandler(
+    analyticsTrackingService
+  );
+  const trackAddToCartHandler = new TrackAddToCartHandler(
+    analyticsTrackingService
   );
 
   return {
@@ -792,6 +834,15 @@ export function createServiceContainer(): ServiceContainer {
     appointmentService,
     productReviewService,
     newsletterService,
+
+    // Analytics Repository
+    analyticsEventRepository,
+
+    // Analytics Service & Handlers
+    analyticsTrackingService,
+    trackProductViewHandler,
+    trackPurchaseHandler,
+    trackAddToCartHandler,
   };
 }
 

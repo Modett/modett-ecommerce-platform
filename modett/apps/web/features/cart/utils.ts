@@ -54,7 +54,20 @@ export const clearCartId = (): void => {
 };
 
 /**
+ * Clear cart after successful checkout
+ * Keeps guest token to maintain user identity across sessions
+ */
+export const clearCartAfterCheckout = (): void => {
+  clearCartId();
+  // Clear checkout session data
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem("checkout_email");
+  }
+};
+
+/**
  * Clear all cart-related data from localStorage
+ * Use this on logout or account creation
  */
 export const clearCartData = (): void => {
   clearGuestToken();

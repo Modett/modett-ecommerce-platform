@@ -143,7 +143,10 @@ export async function registerCartRoutes(
                         subtotal: { type: "number", example: 59.98 },
                         discountAmount: { type: "number", example: 0 },
                         totalPrice: { type: "number", example: 59.98 },
-                        appliedPromos: { type: "array", items: { type: "object" } },
+                        appliedPromos: {
+                          type: "array",
+                          items: { type: "object" },
+                        },
                         isGift: { type: "boolean", example: false },
                         giftMessage: { type: "string", nullable: true },
                         hasPromosApplied: { type: "boolean", example: false },
@@ -153,8 +156,14 @@ export async function registerCartRoutes(
                           nullable: true,
                           properties: {
                             productId: { type: "string", format: "uuid" },
-                            title: { type: "string", example: "V-Neck Knit Vest" },
-                            slug: { type: "string", example: "v-neck-knit-vest" },
+                            title: {
+                              type: "string",
+                              example: "V-Neck Knit Vest",
+                            },
+                            slug: {
+                              type: "string",
+                              example: "v-neck-knit-vest",
+                            },
                             images: {
                               type: "array",
                               items: {
@@ -838,7 +847,8 @@ export async function registerCartRoutes(
     {
       preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Update cart email address. Requires either Authorization header (for authenticated users) or X-Guest-Token header (for guest users).",
+        description:
+          "Update cart email address. Requires either Authorization header (for authenticated users) or X-Guest-Token header (for guest users).",
         tags: ["Cart"],
         summary: "Update Cart Email",
         security: [{ bearerAuth: [] }],
@@ -847,7 +857,8 @@ export async function registerCartRoutes(
           properties: {
             "X-Guest-Token": {
               type: "string",
-              description: "Guest token for unauthenticated users (64-character hexadecimal string)",
+              description:
+                "Guest token for unauthenticated users (64-character hexadecimal string)",
               pattern: "^[a-f0-9]{64}$",
             },
           },
@@ -889,7 +900,8 @@ export async function registerCartRoutes(
     {
       preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Update cart shipping information. Requires either Authorization header (for authenticated users) or X-Guest-Token header (for guest users).",
+        description:
+          "Update cart shipping information. Requires either Authorization header (for authenticated users) or X-Guest-Token header (for guest users).",
         tags: ["Cart"],
         summary: "Update Cart Shipping Info",
         security: [{ bearerAuth: [] }],
@@ -898,7 +910,8 @@ export async function registerCartRoutes(
           properties: {
             "X-Guest-Token": {
               type: "string",
-              description: "Guest token for unauthenticated users (64-character hexadecimal string)",
+              description:
+                "Guest token for unauthenticated users (64-character hexadecimal string)",
               pattern: "^[a-f0-9]{64}$",
             },
           },
@@ -941,7 +954,8 @@ export async function registerCartRoutes(
     {
       preHandler: [optionalAuth, extractGuestToken],
       schema: {
-        description: "Update cart shipping and billing addresses. Requires either Authorization header (for authenticated users) or X-Guest-Token header (for guest users).",
+        description:
+          "Update cart shipping and billing addresses. Requires either Authorization header (for authenticated users) or X-Guest-Token header (for guest users).",
         tags: ["Cart"],
         summary: "Update Cart Addresses",
         security: [{ bearerAuth: [] }],
@@ -950,7 +964,8 @@ export async function registerCartRoutes(
           properties: {
             "X-Guest-Token": {
               type: "string",
-              description: "Guest token for unauthenticated users (64-character hexadecimal string)",
+              description:
+                "Guest token for unauthenticated users (64-character hexadecimal string)",
               pattern: "^[a-f0-9]{64}$",
             },
           },
@@ -1098,7 +1113,8 @@ export async function registerCartRoutes(
     {
       preHandler: [optionalAuth, extractGuestToken, requireCartAuth],
       schema: {
-        description: "Complete checkout with payment intent. Requires authentication.",
+        description:
+          "Complete checkout with payment intent. Requires authentication.",
         tags: ["Checkout"],
         summary: "Complete Checkout",
         security: [{ bearerAuth: [] }],
@@ -1235,8 +1251,7 @@ export async function registerCartRoutes(
         },
         response: {
           200: {
-            description:
-              "Checkout completed and order created successfully",
+            description: "Checkout completed and order created successfully",
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
@@ -1251,6 +1266,10 @@ export async function registerCartRoutes(
                   currency: { type: "string" },
                   status: { type: "string", example: "paid" },
                   createdAt: { type: "string", format: "date-time" },
+                  items: {
+                    type: "array",
+                    items: { type: "object", additionalProperties: true },
+                  },
                 },
               },
               message: { type: "string" },
@@ -1269,6 +1288,64 @@ export async function registerCartRoutes(
     },
     async (request: any, reply: any) =>
       checkoutController.completeWithOrder(request, reply)
+  );
+
+  // Get order by checkout ID (for already completed checkouts)
+  fastify.get(
+    "/checkout/:checkoutId/order",
+    {
+      preHandler: [optionalAuth, extractGuestToken, requireCartAuth],
+      schema: {
+        description:
+          "Get order details for a checkout that has already been completed (e.g., by webhook). Use this when the success page needs to fetch an already-created order.",
+        tags: ["Checkout"],
+        summary: "Get Order by Checkout ID",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          required: ["checkoutId"],
+          properties: {
+            checkoutId: { type: "string", format: "uuid" },
+          },
+        },
+        response: {
+          200: {
+            description: "Order found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  orderId: { type: "string", format: "uuid" },
+                  orderNo: { type: "string" },
+                  checkoutId: { type: "string", format: "uuid" },
+                  paymentIntentId: { type: "string" },
+                  totalAmount: { type: "number" },
+                  currency: { type: "string" },
+                  status: { type: "string" },
+                  createdAt: { type: "string", format: "date-time" },
+                  items: {
+                    type: "array",
+                    items: { type: "object", additionalProperties: true },
+                  },
+                },
+              },
+            },
+          },
+          404: {
+            description: "Order not found",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+    async (request: any, reply: any) =>
+      checkoutController.getOrderByCheckoutId(request, reply)
   );
 
   // =============================================================================
@@ -1392,7 +1469,8 @@ export async function registerCartRoutes(
     {
       preHandler: authenticateUser,
       schema: {
-        description: "Get all reservations for a cart (requires authentication)",
+        description:
+          "Get all reservations for a cart (requires authentication)",
         tags: ["Reservations"],
         summary: "Get Cart Reservations",
         security: [{ bearerAuth: [] }],

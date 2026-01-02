@@ -256,4 +256,48 @@ export class CheckoutController {
       });
     }
   }
+
+  async getOrderByCheckoutId(
+    request: FastifyRequest<{ Params: { checkoutId: string } }>,
+    reply: FastifyReply
+  ) {
+    try {
+      if (!this.checkoutOrderService) {
+        return reply.code(500).send({
+          success: false,
+          error: "Checkout order service not initialized",
+        });
+      }
+
+      const userId = (request as any).user?.userId;
+      const guestToken = (request as any).guestToken;
+      const { checkoutId } = request.params;
+
+      if (!userId && !guestToken) {
+        return reply.code(401).send({
+          success: false,
+          error: "Authentication required",
+        });
+      }
+
+      const order = await this.checkoutOrderService.getOrderByCheckoutId(checkoutId, userId, guestToken);
+
+      if (!order) {
+        return reply.code(404).send({
+          success: false,
+          error: "Order not found for this checkout",
+        });
+      }
+
+      return reply.code(200).send({
+        success: true,
+        data: order,
+      });
+    } catch (error: any) {
+      return reply.code(400).send({
+        success: false,
+        error: error.message || "Failed to get order",
+      });
+    }
+  }
 }

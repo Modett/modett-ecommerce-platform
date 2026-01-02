@@ -48,6 +48,7 @@ export interface OrderResult {
   currency: string;
   status: string;
   createdAt: Date;
+  items: any[];
 }
 
 export class CheckoutOrderService {
@@ -142,18 +143,23 @@ export class CheckoutOrderService {
       // 5. Calculate order totals from cart
       const cartSnapshot = cart.toSnapshot();
       const subtotal = cart.getSubtotal();
-      const total = cart.getTotal();
+      // Use checkout total which includes shipping
+      const total = checkout.getTotalAmount();
+      const cartItemTotal = cart.getTotal(); // Total of items (subtotal - discounts)
+
+      const shipping = total - cartItemTotal;
 
       const totals = {
         subtotal,
         tax: 0,
-        shipping: 0,
-        discount: 0,
+        shipping,
+        discount: subtotal - cartItemTotal,
         total,
       };
 
       const existingOrder = await tx.order.findFirst({
         where: { checkoutId: dto.checkoutId },
+        include: { items: true },
       });
 
       if (existingOrder) {
@@ -166,6 +172,7 @@ export class CheckoutOrderService {
           currency: checkout.getCurrency().toString(),
           status: existingOrder.status,
           createdAt: existingOrder.createdAt,
+          items: existingOrder.items,
         };
       }
 
@@ -360,8 +367,53 @@ export class CheckoutOrderService {
         currency: checkout.getCurrency().toString(),
         status: "paid",
         createdAt: order.createdAt,
+        items: orderItems,
       };
     });
+  }
+
+  async getOrderByCheckoutId(
+    checkoutId: string,
+    userId?: string,
+    guestToken?: string
+  ): Promise<OrderResult | null> {
+    // Find the order associated with this checkout
+    const order = await this.prisma.order.findFirst({
+      where: {
+        checkoutId: checkoutId,
+        ...(userId ? { userId } : { guestToken }),
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!order) {
+      return null;
+    }
+
+    // Extract totals from JSONB field
+    const totals = order.totals as any;
+    const totalAmount = totals?.total || 0;
+
+    // Transform to OrderResult format
+    return {
+      orderId: order.id,
+      orderNo: order.orderNo,
+      checkoutId: order.checkoutId!,
+      paymentIntentId: order.paymentIntentId || "",
+      totalAmount: Number(totalAmount) || 0,
+      currency: order.currency,
+      status: order.status,
+      createdAt: order.createdAt,
+      items: order.items.map((item: any) => ({
+        id: item.id,
+        productId: item.productSnapshot?.productId || item.productId,
+        variantId: item.variantId,
+        quantity: item.qty,
+        price: Number(item.productSnapshot?.price || item.price) || 0,
+      })),
+    };
   }
 
   private async selectWarehouseForOrder(

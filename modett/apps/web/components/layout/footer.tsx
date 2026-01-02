@@ -7,7 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
+import {
+  useNewsletterSubscribe,
+  useNewsletterForm,
+} from "@/features/engagement";
+
 export function Footer() {
+  const subscribe = useNewsletterSubscribe();
+  const { email, setEmail, isLoading, message, handleSubmit } =
+    useNewsletterForm(async (email) => {
+      await subscribe(email, "footer");
+    });
+
   const [openSections, setOpenSections] = useState({
     customerCare: false,
     philosophy: false,
@@ -46,20 +57,42 @@ export function Footer() {
             </div>
 
             <div className="flex flex-col gap-[12px] w-full md:w-full lg:w-[459px]">
-              <div className="flex flex-col sm:flex-row">
+              <form
+                onSubmit={handleSubmit}
+                className="flex flex-col sm:flex-row"
+              >
                 <Input
                   type="email"
                   placeholder="Enter e-mail"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
                   className="w-full sm:flex-1 h-[48px] bg-transparent border border-white/40 text-white placeholder:text-white/60 rounded-none focus:border-white"
                 />
                 <Button
+                  type="submit"
+                  disabled={isLoading}
                   variant="default"
                   className="h-[48px] px-6 bg-white text-[#3E5460] hover:bg-white/90 rounded-none flex items-center justify-center gap-2 text-[14px] tracking-[2px] uppercase"
                 >
-                  <Mail className="h-4 w-4" />
-                  SUBSCRIBE
+                  {isLoading ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-[#3E5460] border-t-transparent rounded-full" />
+                  ) : (
+                    <Mail className="h-4 w-4" />
+                  )}
+                  {isLoading ? "JOINING..." : "SUBSCRIBE"}
                 </Button>
-              </div>
+              </form>
+
+              {/* Status Message */}
+              {message && (
+                <p
+                  className={`text-[12px] leading-[16px] ${message.type === "error" ? "text-red-300" : "text-green-300"}`}
+                >
+                  {message.text}
+                </p>
+              )}
+
               <p className="text-[12px] leading-[16px] text-white/60">
                 By subscribing, you agree to our privacy policy and terms of
                 service

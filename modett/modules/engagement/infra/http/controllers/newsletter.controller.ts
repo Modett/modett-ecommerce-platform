@@ -110,6 +110,58 @@ export class NewsletterController {
     }
   }
 
+  async unsubscribeViaLink(
+    request: FastifyRequest<{ Querystring: { email: string } }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { email } = request.query;
+
+      if (!email) {
+        return reply.code(400).type("text/html").send(`
+          <div style="font-family: sans-serif; text-align: center; padding: 40px;">
+            <h1 style="color: #e53e3e;">Invalid Request</h1>
+            <p>Email address is missing.</p>
+          </div>
+        `);
+      }
+
+      const command: UnsubscribeNewsletterCommand = {
+        email,
+      };
+
+      const result = await this.unsubscribeNewsletterHandler.handle(command);
+
+      if (result.success) {
+        return reply.code(200).type("text/html").send(`
+          <div style="font-family: sans-serif; text-align: center; padding: 40px;">
+            <h1 style="color: #232D35;">Unsubscribed Successfully</h1>
+            <p>You have been removed from our newsletter (${email}).</p>
+            <p><a href="${process.env.FRONTEND_URL || "http://localhost:3000"}" style="color: #232D35;">Return to Shop</a></p>
+          </div>
+        `);
+      } else {
+        return reply.code(400).type("text/html").send(`
+          <div style="font-family: sans-serif; text-align: center; padding: 40px;">
+            <h1 style="color: #e53e3e;">Unsubscription Failed</h1>
+            <p>${result.error || "Could not unsubscribe."}</p>
+          </div>
+        `);
+      }
+    } catch (error) {
+      request.log.error(
+        error,
+        "Failed to unsubscribe from newsletter via link"
+      );
+      return reply.code(500).type("text/html").send(`
+        <div style="font-family: sans-serif; text-align: center; padding: 40px;">
+          <h1 style="color: #e53e3e;">Error</h1>
+          <p>An internal error occurred.</p>
+        </div>
+      `);
+    }
+  }
+
   async getSubscription(
     request: FastifyRequest<{
       Querystring: { subscriptionId?: string; email?: string };

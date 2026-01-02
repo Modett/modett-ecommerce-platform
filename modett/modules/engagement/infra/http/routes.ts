@@ -367,7 +367,10 @@ export async function registerEngagementRoutes(
             variantId: { type: "string", description: "Product variant ID" },
             priority: { type: "number", description: "Item priority (1-5)" },
             notes: { type: "string", description: "Optional notes" },
-            guestToken: { type: "string", description: "Guest token for guest wishlists" },
+            guestToken: {
+              type: "string",
+              description: "Guest token for guest wishlists",
+            },
           },
         },
         response: {
@@ -1775,6 +1778,35 @@ export async function registerEngagementRoutes(
       },
     },
     newsletterController.unsubscribe.bind(newsletterController) as any
+  );
+
+  // Unsubscribe from Newsletter (Link)
+  fastify.get(
+    "/engagement/newsletter/unsubscribe",
+    {
+      schema: {
+        description: "Unsubscribe from newsletter via link",
+        tags: ["Engagement - Newsletter"],
+        querystring: {
+          type: "object",
+          required: ["email"],
+          properties: {
+            email: {
+              type: "string",
+              format: "email",
+              description: "Email address",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "HTML confirmation page",
+            type: "string",
+          },
+        },
+      },
+    },
+    newsletterController.unsubscribeViaLink.bind(newsletterController) as any
   );
 
   // Get Newsletter Subscription

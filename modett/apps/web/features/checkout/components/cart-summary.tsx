@@ -15,6 +15,13 @@ export const CartSummary = memo(function CartSummary({
   const subtotal = cart?.summary.subtotal || 0;
   const total = cart?.summary.total || 0;
 
+  // Try to get explicit shipping amount, otherwise derive it from total - subtotal
+  const explicitShipping = Number(cart?.summary.shippingAmount) || 0;
+  const derivedShipping = total > subtotal ? total - subtotal : 0;
+  // Use derived shipping only if explicit is 0 and derived is positive (and likely the shipping cost)
+  const shippingAmount =
+    explicitShipping > 0 ? explicitShipping : derivedShipping;
+
   return (
     <div className={`${COMMON_CLASSES.pageBg} sticky top-4`}>
       {!hideTitle && (
@@ -155,7 +162,9 @@ export const CartSummary = memo(function CartSummary({
                   color: "#232D35",
                 }}
               >
-                free
+                {shippingAmount > 0
+                  ? `Rs ${shippingAmount.toFixed(2)}`
+                  : "free"}
               </span>
             </div>
             <p

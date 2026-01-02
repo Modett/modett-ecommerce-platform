@@ -582,6 +582,10 @@ export async function createServer(): Promise<FastifyInstance> {
           description: "Newsletter subscription management",
         },
         {
+          name: "Analytics",
+          description: "Customer analytics tracking for product views and purchases",
+        },
+        {
           name: "System",
           description: "System health, monitoring, and information endpoints",
         },

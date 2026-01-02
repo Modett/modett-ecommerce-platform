@@ -76,9 +76,22 @@ export class CheckoutService {
       }
     }
 
-    // Calculate total amount
-    const totalAmount = cart.getTotal();
+    // Calculate total amount with shipping
+    let totalAmount = cart.getTotal();
     const currency = cart.getCurrency().toString();
+
+    // Get checkout info to calculate shipping
+    // We need to fetch this from the repo directly as it's not on the domain entity
+    const cartWithCheckoutInfo =
+      await this.cartRepository.getCartWithCheckoutInfo(cartId.getValue());
+
+    if (
+      cartWithCheckoutInfo?.shippingMethod === "home" &&
+      (cartWithCheckoutInfo?.shippingOption === "colombo" ||
+        cartWithCheckoutInfo?.shippingOption === "suburbs")
+    ) {
+      totalAmount += 250.0;
+    }
 
     const checkoutData: CreateCheckoutData = {
       cartId: dto.cartId,
