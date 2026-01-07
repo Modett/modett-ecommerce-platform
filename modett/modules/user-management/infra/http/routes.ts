@@ -217,6 +217,206 @@ export async function registerUserManagementRoutes(
     authController.refreshToken.bind(authController)
   );
 
+  // 2FA Routes
+  fastify.get(
+    "/auth/2fa/generate",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Generate 2FA secret and QR code",
+        tags: ["Authentication", "2FA"],
+        summary: "Generate 2FA Secret",
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            description: "2FA secret generated",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  secret: { type: "string" },
+                  otpauthUrl: { type: "string" },
+                  qrCode: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    authController.generateTwoFactorSecret.bind(authController) as any
+  );
+
+  fastify.post(
+    "/auth/2fa/enable",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Enable 2FA with verification code",
+        tags: ["Authentication", "2FA"],
+        summary: "Enable 2FA",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          required: ["token", "secret"],
+          properties: {
+            token: {
+              type: "string",
+              description: "Verification code",
+              example: "123456",
+            },
+            secret: {
+              type: "string",
+              description: "Secret from generate step",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "2FA enabled successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  backupCodes: {
+                    type: "array",
+                    items: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    authController.enableTwoFactor.bind(authController) as any
+  );
+
+  fastify.post(
+    "/auth/2fa/verify",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Verify 2FA code",
+        tags: ["Authentication", "2FA"],
+        summary: "Verify 2FA",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          required: ["token"],
+          properties: {
+            token: {
+              type: "string",
+              description: "Verification code",
+              example: "123456",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "2FA verified",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string", example: "2FA code verified" },
+            },
+          },
+        },
+      },
+    },
+    authController.verifyTwoFactor.bind(authController) as any
+  );
+
+  fastify.post(
+    "/auth/login/2fa",
+    {
+      schema: {
+        description: "Complete login with 2FA code",
+        tags: ["Authentication", "2FA"],
+        summary: "Login with 2FA",
+        body: {
+          type: "object",
+          required: ["tempToken", "token"],
+          properties: {
+            tempToken: {
+              type: "string",
+              description: "Temporary token from login step 1",
+            },
+            token: {
+              type: "string",
+              description: "Verification code",
+              example: "123456",
+            },
+          },
+        },
+        response: {
+          // Same as login response
+          200: {
+            description: "Login successful",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  accessToken: { type: "string" },
+                  refreshToken: { type: "string" },
+                  user: {
+                    type: "object",
+                    properties: {
+                      id: { type: "string" },
+                      email: { type: "string" },
+                      role: { type: "string" },
+                      status: { type: "string" },
+                    },
+                  },
+                  expiresIn: { type: "number" },
+                  tokenType: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    authController.loginWith2fa.bind(authController) as any
+  );
+
+  fastify.post(
+    "/auth/2fa/disable",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        description: "Disable 2FA",
+        tags: ["Authentication", "2FA"],
+        summary: "Disable 2FA",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          required: ["password"],
+          properties: {
+            password: { type: "string" },
+          },
+        },
+        response: {
+          200: {
+            description: "2FA disabled",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string", example: "2FA disabled successfully" },
+            },
+          },
+        },
+      },
+    },
+    authController.disableTwoFactor.bind(authController) as any
+  );
+
   fastify.post(
     "/auth/forgot-password",
     {
@@ -810,7 +1010,8 @@ export async function registerUserManagementRoutes(
     {
       preHandler: authenticateAdmin,
       schema: {
-        description: "Update profile information for a specific user (Admin only)",
+        description:
+          "Update profile information for a specific user (Admin only)",
         tags: ["Profiles"],
         summary: "Update User Profile by ID",
         security: [{ bearerAuth: [] }],
