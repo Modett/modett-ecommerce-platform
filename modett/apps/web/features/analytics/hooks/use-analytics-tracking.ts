@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useMutation } from "@tanstack/react-query";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import * as analyticsApi from "../api";
 import * as cartApi from "@/features/cart/api";
 import { getOrCreateSessionId } from "@/lib/session-manager";
@@ -41,10 +41,12 @@ export function useAutoTrackProductView(
   variantId?: string
 ) {
   const trackProductView = useTrackProductView();
+  const trackedProductIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (productId) {
+    if (productId && trackedProductIdRef.current !== productId) {
       trackProductView(productId, variantId);
+      trackedProductIdRef.current = productId;
     }
   }, [productId, variantId, trackProductView]);
 }
