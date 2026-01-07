@@ -4,11 +4,11 @@ import { Phone } from "../value-objects/phone.vo";
 import { Password } from "../value-objects/password.vo";
 
 export enum UserRole {
-  GUEST = 'GUEST',
-  CUSTOMER = 'CUSTOMER',
-  STAFF = 'STAFF',
-  VENDOR = 'VENDOR',
-  ADMIN = 'ADMIN',
+  GUEST = "GUEST",
+  CUSTOMER = "CUSTOMER",
+  STAFF = "STAFF",
+  VENDOR = "VENDOR",
+  ADMIN = "ADMIN",
 }
 
 export class User {
@@ -23,7 +23,10 @@ export class User {
     private phoneVerified: boolean,
     private isGuest: boolean,
     private readonly createdAt: Date,
-    private updatedAt: Date
+    private updatedAt: Date,
+    private twoFactorEnabled: boolean,
+    private twoFactorSecret: string | null,
+    private twoFactorBackupCodes: string[]
   ) {}
 
   // Factory methods for creation
@@ -44,7 +47,10 @@ export class User {
       false, // Phone not verified initially
       data.isGuest || false,
       now,
-      now
+      now,
+      false, // twoFactorEnabled
+      null, // twoFactorSecret
+      [] // twoFactorBackupCodes
     );
   }
 
@@ -64,7 +70,10 @@ export class User {
       false,
       true, // Is guest
       now,
-      now
+      now,
+      false, // twoFactorEnabled
+      null, // twoFactorSecret
+      [] // twoFactorBackupCodes
     );
   }
 
@@ -80,7 +89,10 @@ export class User {
       data.phoneVerified,
       data.isGuest,
       data.createdAt,
-      data.updatedAt
+      data.updatedAt,
+      data.twoFactorEnabled,
+      data.twoFactorSecret,
+      data.twoFactorBackupCodes
     );
   }
 
@@ -97,7 +109,10 @@ export class User {
       row.phone_verified,
       row.is_guest,
       row.created_at,
-      row.updated_at
+      row.updated_at,
+      row.two_factor_enabled,
+      row.two_factor_secret,
+      row.two_factor_backup_codes
     );
   }
 
@@ -134,6 +149,15 @@ export class User {
   }
   getUpdatedAt(): Date {
     return this.updatedAt;
+  }
+  isTwoFactorEnabled(): boolean {
+    return this.twoFactorEnabled;
+  }
+  getTwoFactorSecret(): string | null {
+    return this.twoFactorSecret;
+  }
+  getTwoFactorBackupCodes(): string[] {
+    return this.twoFactorBackupCodes;
   }
 
   // Business logic methods
@@ -265,6 +289,20 @@ export class User {
     this.touch();
   }
 
+  enableTwoFactor(secret: string, backupCodes: string[]): void {
+    this.twoFactorEnabled = true;
+    this.twoFactorSecret = secret;
+    this.twoFactorBackupCodes = backupCodes;
+    this.touch();
+  }
+
+  disableTwoFactor(): void {
+    this.twoFactorEnabled = false;
+    this.twoFactorSecret = null;
+    this.twoFactorBackupCodes = [];
+    this.touch();
+  }
+
   // Validation methods
   canLogin(): boolean {
     return this.status === UserStatus.ACTIVE && !this.isGuest;
@@ -305,6 +343,9 @@ export class User {
       isGuest: this.isGuest,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
+      twoFactorEnabled: this.twoFactorEnabled,
+      twoFactorSecret: this.twoFactorSecret,
+      twoFactorBackupCodes: this.twoFactorBackupCodes,
     };
   }
 
@@ -322,6 +363,9 @@ export class User {
       is_guest: this.isGuest,
       created_at: this.createdAt,
       updated_at: this.updatedAt,
+      two_factor_enabled: this.twoFactorEnabled,
+      two_factor_secret: this.twoFactorSecret,
+      two_factor_backup_codes: this.twoFactorBackupCodes,
     };
   }
 
@@ -357,6 +401,9 @@ export interface UserData {
   isGuest: boolean;
   createdAt: Date;
   updatedAt: Date;
+  twoFactorEnabled: boolean;
+  twoFactorSecret: string | null;
+  twoFactorBackupCodes: string[];
 }
 
 // Database row interface matching PostgreSQL schema
@@ -372,4 +419,7 @@ export interface UserRow {
   is_guest: boolean;
   created_at: Date;
   updated_at: Date;
+  two_factor_enabled: boolean;
+  two_factor_secret: string | null;
+  two_factor_backup_codes: string[];
 }
