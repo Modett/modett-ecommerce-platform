@@ -63,6 +63,14 @@ export function ProductInfo({ product }: ProductInfoProps) {
     handleColorSelect,
   } = useProductVariant({ variants: product.variants || [] });
 
+  const effectiveColor = selectedColor || availableColors[0];
+
+  const getVariantForSize = (size: string) => {
+    return product.variants?.find(
+      (v) => v.size === size && v.color === effectiveColor
+    );
+  };
+
   const handleAddToCart = async () => {
     if (!selectedSize) {
       toast.error("Please select a size");
@@ -86,7 +94,18 @@ export function ProductInfo({ product }: ProductInfoProps) {
       // Track add to cart event
       trackAddToCart(product.id, selectedVariant.id, 1, product.price);
     } catch (error: any) {
-      toast.error(error.message || "Failed to add to cart");
+      // Customize error messages
+      let errorMessage = error.message;
+
+      if (errorMessage === "Failed to add item to cart") {
+        errorMessage =
+          "We apologize, but we are unable to add this item to the cart right now. Please try again or contact support if the issue persists.";
+      } else if (errorMessage.toLowerCase().includes("inventory")) {
+        errorMessage =
+          "This item is currently out of stock. Please select a different size or color.";
+      }
+
+      toast.error(errorMessage);
     } finally {
       setIsAddingToCart(false);
     }
@@ -163,25 +182,31 @@ export function ProductInfo({ product }: ProductInfoProps) {
           </button>
         </div>
         <div className="flex flex-wrap justify-between gap-y-4 w-full">
-          {availableSizes.map((size) => (
-            <button
-              key={size}
-              onClick={() => handleSizeSelect(size!)}
-              className={`w-[46px] h-[36px] md:w-auto md:min-w-[24px] md:h-[30px] flex items-center justify-center transition-all relative ${
-                selectedSize === size
-                  ? "font-semibold text-[#232D35] after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[1px] after:bg-[#232D35]"
-                  : "font-normal text-[#232D35]/70 hover:text-[#232D35]"
-              }`}
-              style={{
-                fontFamily: "Raleway, sans-serif",
-                fontSize: "14px",
-                lineHeight: "24px",
-                letterSpacing: "2px",
-              }}
-            >
-              {size}
-            </button>
-          ))}
+          {availableSizes.map((size) => {
+            const variantForSize = getVariantForSize(size!);
+            const isOutOfStock = (variantForSize?.inventory || 0) <= 0;
+
+            return (
+              <button
+                key={size}
+                disabled={isOutOfStock}
+                onClick={() => handleSizeSelect(size!)}
+                className={`w-[46px] h-[36px] md:w-auto md:min-w-[24px] md:h-[30px] flex items-center justify-center transition-all relative ${
+                  selectedSize === size
+                    ? "font-semibold text-[#232D35] after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-full after:h-[1px] after:bg-[#232D35]"
+                    : "font-normal text-[#232D35]/70 hover:text-[#232D35]"
+                } ${isOutOfStock ? "opacity-30 cursor-not-allowed decoration-slice line-through" : ""}`}
+                style={{
+                  fontFamily: "Raleway, sans-serif",
+                  fontSize: "14px",
+                  lineHeight: "24px",
+                  letterSpacing: "2px",
+                }}
+              >
+                {size}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -189,11 +214,18 @@ export function ProductInfo({ product }: ProductInfoProps) {
       <div className="flex w-full max-w-full md:max-w-[290px] lg:max-w-[300px] pt-[16px] md:pt-[15px] lg:pt-[16px] gap-[1px]">
         <Button
           onClick={handleAddToCart}
-          disabled={isAddingToCart}
-          className={`flex-1 max-w-full md:max-w-[245px] lg:max-w-[254px] h-[46px] md:h-[48px] lg:h-[50px] ${PRODUCT_CLASSES.addToCartButton} text-[15px] md:text-[15.5px] lg:text-[16px] border border-[#232D35] pt-[14px] md:pt-[14.5px] lg:pt-[15.5px] pr-[28px] md:pr-[29px] lg:pr-[31px] pb-[15px] md:pb-[15.5px] lg:pb-[16.5px] pl-[28px] md:pl-[29px] lg:pl-[31px] disabled:opacity-50`}
+          disabled={
+            isAddingToCart ||
+            (selectedVariant ? selectedVariant.inventory <= 0 : false)
+          }
+          className={`flex-1 max-w-full md:max-w-[245px] lg:max-w-[254px] h-[46px] md:h-[48px] lg:h-[50px] ${PRODUCT_CLASSES.addToCartButton} text-[15px] md:text-[15.5px] lg:text-[16px] border border-[#232D35] pt-[14px] md:pt-[14.5px] lg:pt-[15.5px] pr-[28px] md:pr-[29px] lg:pr-[31px] pb-[15px] md:pb-[15.5px] lg:pb-[16.5px] pl-[28px] md:pl-[29px] lg:pl-[31px] disabled:opacity-50 disabled:cursor-not-allowed`}
           style={TEXT_STYLES.button}
         >
-          {isAddingToCart ? "ADDING..." : "ADD TO CART"}
+          {isAddingToCart
+            ? "ADDING..."
+            : selectedVariant && selectedVariant.inventory <= 0
+              ? "OUT OF STOCK"
+              : "ADD TO CART"}
         </Button>
         <Button
           onClick={handleWishlist}

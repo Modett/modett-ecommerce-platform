@@ -91,9 +91,11 @@ export const addToCart = async (params: AddToCartParams): Promise<Cart> => {
 
     return data.data;
   } catch (error: any) {
-    throw new Error(
-      error.response?.data?.error || "Failed to add item to cart"
-    );
+    const message =
+      error.response?.data?.errors?.[0] ||
+      error.response?.data?.error ||
+      "Failed to add item to cart";
+    throw new Error(message);
   }
 };
 
