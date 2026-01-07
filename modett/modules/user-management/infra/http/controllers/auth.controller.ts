@@ -123,6 +123,25 @@ export interface ChangePasswordRequest {
   confirmPassword: string;
 }
 
+// 2FA Request DTOs
+export interface EnableTwoFactorRequest {
+  token: string;
+  secret: string;
+}
+
+export interface VerifyTwoFactorRequest {
+  token: string;
+}
+
+export interface LoginWith2faRequest {
+  tempToken: string;
+  token: string;
+}
+
+export interface DisableTwoFactorRequest {
+  password: string;
+}
+
 // Response DTOs
 export interface AuthResponse {
   success: boolean;
@@ -472,10 +491,28 @@ export class AuthController {
       const result = await this.loginHandler.handle(command);
 
       if (result.success && result.data) {
+        // Check if 2FA is required (Check if result.data has require2fa property)
+        // We cast because the standard handler interface might not expose the specific union type yet without update
+        // But the service does return it.
+        const authData = result.data as any;
+
+        if (authData.require2fa) {
+          reply.status(HTTP_STATUS.OK).send({
+            success: true,
+            data: {
+              requires2fa: true,
+              tempToken: authData.tempToken,
+              userId: authData.userId,
+              message: "2FA verification required",
+            },
+          });
+          return;
+        }
+
         // Clear failed attempts on successful login
         TokenBlacklistService.clearFailedAttempts(email);
 
-        // Generate tokens
+        // Generate tokens (Standard flow)
         const tokens = generateAuthTokens({
           userId: result.data.user.id,
           email: result.data.user.email,
@@ -541,6 +578,155 @@ export class AuthController {
       reply.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
         success: false,
         error: `${ERROR_MESSAGES.INTERNAL_ERROR} during login`,
+      });
+    }
+  }
+
+  async generateTwoFactorSecret(
+    request: FastifyRequest,
+    reply: FastifyReply
+  ): Promise<void> {
+    try {
+      const userId = (request as any).user.userId;
+      const result = await this.authService.generateTwoFactorSecret(userId);
+
+      reply.status(HTTP_STATUS.OK).send({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      this.logError("generateTwoFactorSecret", error);
+      reply.status(HTTP_STATUS.BAD_REQUEST).send({
+        success: false,
+        error: error.message || "Failed to generate 2FA secret",
+      });
+    }
+  }
+
+  async enableTwoFactor(
+    request: FastifyRequest<{ Body: EnableTwoFactorRequest }>,
+    reply: FastifyReply
+  ): Promise<void> {
+    try {
+      const userId = (request as any).user.userId;
+      const { token, secret } = request.body;
+
+      const result = await this.authService.enableTwoFactor(
+        userId,
+        token,
+        secret
+      );
+
+      this.logSecurityEvent("2FA_ENABLED", { userId }, request);
+
+      reply.status(HTTP_STATUS.OK).send({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      this.logError("enableTwoFactor", error);
+      reply.status(HTTP_STATUS.BAD_REQUEST).send({
+        success: false,
+        error: error.message || "Failed to enable 2FA",
+      });
+    }
+  }
+
+  async verifyTwoFactor(
+    request: FastifyRequest<{ Body: VerifyTwoFactorRequest }>,
+    reply: FastifyReply
+  ): Promise<void> {
+    try {
+      const userId = (request as any).user.userId;
+      const { token } = request.body;
+
+      const isValid = await this.authService.verifyTwoFactor(userId, token);
+
+      if (!isValid) {
+        reply.status(HTTP_STATUS.UNAUTHORIZED).send({
+          success: false,
+          error: "Invalid 2FA code",
+        });
+        return;
+      }
+
+      reply.status(HTTP_STATUS.OK).send({
+        success: true,
+        message: "2FA code verified",
+      });
+    } catch (error: any) {
+      this.logError("verifyTwoFactor", error);
+      reply.status(HTTP_STATUS.BAD_REQUEST).send({
+        success: false,
+        error: error.message || "Failed to verify 2FA",
+      });
+    }
+  }
+
+  async loginWith2fa(
+    request: FastifyRequest<{ Body: LoginWith2faRequest }>,
+    reply: FastifyReply
+  ): Promise<void> {
+    try {
+      const { tempToken, token } = request.body;
+      const deviceInfo = AuthValidation.extractDeviceInfo(request);
+
+      const result = await this.authService.loginWith2fa(tempToken, token);
+
+      // Log successful login
+      this.logSecurityEvent(
+        "USER_LOGIN_2FA_SUCCESS",
+        {
+          userId: result.user.id,
+          email: result.user.email,
+          deviceInfo,
+        },
+        request
+      );
+
+      reply.status(HTTP_STATUS.OK).send({
+        success: true,
+        data: {
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          user: {
+            ...result.user,
+            status: "active",
+          },
+          expiresIn: result.expiresIn,
+          tokenType: "Bearer",
+        },
+      });
+    } catch (error: any) {
+      this.logError("loginWith2fa", error);
+      reply.status(HTTP_STATUS.UNAUTHORIZED).send({
+        success: false,
+        error: error.message || "Invalid 2FA code or session expired",
+      });
+    }
+  }
+
+  async disableTwoFactor(
+    request: FastifyRequest<{ Body: DisableTwoFactorRequest }>,
+    reply: FastifyReply
+  ): Promise<void> {
+    try {
+      const userId = (request as any).user.userId;
+      const { password } = request.body;
+
+      await this.authService.disableTwoFactor(userId, password);
+
+      this.logSecurityEvent("2FA_DISABLED", { userId }, request);
+
+      reply.status(HTTP_STATUS.OK).send({
+        success: true,
+        message: "2FA disabled successfully",
+      });
+    } catch (error: any) {
+      this.logError("disableTwoFactor", error);
+      reply.status(HTTP_STATUS.BAD_REQUEST).send({
+        success: false,
+        error: error.message || "Failed to disable 2FA",
       });
     }
   }
