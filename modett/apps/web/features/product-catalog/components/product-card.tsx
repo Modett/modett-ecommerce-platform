@@ -16,6 +16,7 @@ import {
   PRODUCT_CLASSES,
   COMMON_CLASSES,
 } from "@/features/cart/constants/styles";
+import { useTrackAddToCart } from "@/features/analytics/hooks";
 
 interface Variant {
   id: string;
@@ -57,6 +58,7 @@ export function ProductCard({
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const addToCartMutation = useAddToCart();
+  const trackAddToCart = useTrackAddToCart();
 
   const variantIds = variants.map((v) => v.id);
 
@@ -87,6 +89,9 @@ export function ProductCard({
         variantId: selectedVariant.id,
         quantity: 1,
       });
+
+      // Track Add to Cart
+      trackAddToCart(productId, selectedVariant.id, 1, price);
 
       toast.success(`${title} added to cart!`);
 
