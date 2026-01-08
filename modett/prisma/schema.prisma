@@ -1105,9 +1105,11 @@ enum UserStatus {
 enum UserRole {
   GUEST
   CUSTOMER
-  STAFF
-  VENDOR
   ADMIN
+  INVENTORY_STAFF
+  CUSTOMER_SERVICE
+  ANALYST
+  VENDOR
 
   @@map("user_role_enum")
   @@schema("user_management")
