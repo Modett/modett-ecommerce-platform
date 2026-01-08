@@ -166,6 +166,10 @@ import {
   TrackAddPaymentInfoHandler,
 } from "../../../modules/analytics/application/commands";
 
+// Admin Dashboard imports
+import { IDashboardRepository } from "../../../modules/admin/domain/repositories/dashboard.repository.interface";
+import { DashboardRepositoryImpl } from "../../../modules/admin/infra/persistence/repositories/dashboard.repository";
+
 export interface ServiceContainer {
   // Infrastructure
   prisma: PrismaClient;
@@ -327,6 +331,9 @@ export interface ServiceContainer {
   trackBeginCheckoutHandler: TrackBeginCheckoutHandler;
   trackAddShippingInfoHandler: TrackAddShippingInfoHandler;
   trackAddPaymentInfoHandler: TrackAddPaymentInfoHandler;
+
+  // Admin
+  dashboardRepository: IDashboardRepository;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -675,6 +682,9 @@ export function createServiceContainer(): ServiceContainer {
   // Initialize Analytics repository
   const analyticsEventRepository = new AnalyticsEventRepositoryImpl(prisma);
 
+  // Initialize Admin repository
+  const dashboardRepository = new DashboardRepositoryImpl(prisma);
+
   // Initialize Analytics service
   const analyticsTrackingService = new AnalyticsTrackingService(
     analyticsEventRepository
@@ -799,6 +809,9 @@ export function createServiceContainer(): ServiceContainer {
     // Fulfillment Services
     shipmentService,
     shipmentItemService,
+
+    // Admin Repositories
+    dashboardRepository,
 
     // Payment & Loyalty Services
     paymentService,
