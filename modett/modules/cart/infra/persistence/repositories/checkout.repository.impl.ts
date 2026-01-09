@@ -209,7 +209,8 @@ export class CheckoutRepositoryImpl implements CheckoutRepository {
       checkoutId: prismaData.id,
       cartId: prismaData.cartId,
       userId: prismaData.userId,
-      guestToken: prismaData.guestToken,
+      // If both userId and guestToken exist (invalid state), prioritize userId
+      guestToken: prismaData.userId ? null : prismaData.guestToken,
       status: prismaData.status,
       totalAmount: parseFloat(prismaData.totalAmount.toString()),
       currency: prismaData.currency,
