@@ -92,11 +92,14 @@ export default function CheckoutSuccessPage() {
                 phone: cart.billingPhone,
               };
 
+          const token = localStorage.getItem("authToken");
+
           result = await cartApi.completeCheckoutWithOrder(
             checkoutId,
             intentId || checkoutId,
             shippingAddress,
-            billingAddress
+            billingAddress,
+            token || undefined
           );
         }
 
