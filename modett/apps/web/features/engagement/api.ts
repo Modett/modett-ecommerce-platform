@@ -20,6 +20,25 @@ import {
 import { handleError } from "@/lib/error-handler";
 import { getGuestToken } from "@/features/cart/api";
 
+/**
+ * Get authentication headers based on login state
+ * - If authenticated: returns Bearer token
+ * - If guest: returns guest token
+ */
+const getAuthHeaders = async (): Promise<Record<string, string>> => {
+  const authToken =
+    typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+
+  if (authToken) {
+    // Authenticated user - use Bearer token
+    return { Authorization: `Bearer ${authToken}` };
+  }
+
+  // Guest user - use guest token
+  const guestToken = await getGuestToken();
+  return { "X-Guest-Token": guestToken };
+};
+
 // Create axios instance for wishlist API
 const wishlistApiClient = axios.create({
   baseURL:
@@ -36,14 +55,17 @@ const wishlistApiClient = axios.create({
  */
 export const createDefaultWishlist = async (): Promise<Wishlist> => {
   try {
-    const guestToken = await getGuestToken();
+    const headers = await getAuthHeaders();
 
-    const { data } = await wishlistApiClient.post("/engagement/wishlists", {
-      guestToken,
-      name: "My Wishlist",
-      isDefault: true,
-      isPublic: false,
-    });
+    const { data } = await wishlistApiClient.post(
+      "/engagement/wishlists",
+      {
+        name: "My Wishlist",
+        isDefault: true,
+        isPublic: false,
+      },
+      { headers }
+    );
 
     const wishlist = data.data;
 
@@ -66,7 +88,7 @@ export const addToWishlistInternal = async (
   hasRetried = false
 ): Promise<WishlistItem> => {
   try {
-    const guestToken = await getGuestToken();
+    const headers = await getAuthHeaders();
 
     const { data } = await wishlistApiClient.post(
       `/engagement/wishlists/${wishlistId}/items`,
@@ -74,11 +96,7 @@ export const addToWishlistInternal = async (
         variantId,
         priority: 3,
       },
-      {
-        headers: {
-          "X-Guest-Token": guestToken,
-        },
-      }
+      { headers }
     );
 
     return data.data;
@@ -127,13 +145,11 @@ export const removeFromWishlist = async (
   productId?: string
 ): Promise<void> => {
   try {
-    const guestToken = await getGuestToken();
+    const headers = await getAuthHeaders();
 
     await wishlistApiClient.delete(
       `/engagement/wishlists/${wishlistId}/items/${variantId}`,
-      {
-        headers: { "X-Guest-Token": guestToken },
-      }
+      { headers }
     );
 
     // Dispatch custom event to notify all components
@@ -153,8 +169,11 @@ export const getWishlistItems = async (
   wishlistId: string
 ): Promise<WishlistItem[]> => {
   try {
+    const headers = await getAuthHeaders();
+
     const { data } = await wishlistApiClient.get(
-      `/engagement/wishlists/${wishlistId}/items`
+      `/engagement/wishlists/${wishlistId}/items`,
+      { headers }
     );
 
     return data.data || [];
