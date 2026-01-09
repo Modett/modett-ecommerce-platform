@@ -185,6 +185,25 @@ export const getWishlistItems = async (
 };
 
 /**
+ * Get all wishlists for a user
+ */
+export const getUserWishlists = async (userId: string): Promise<Wishlist[]> => {
+  try {
+    const headers = await getAuthHeaders();
+
+    const { data } = await wishlistApiClient.get(
+      `/engagement/users/${userId}/wishlists`,
+      { headers, params: { limit: 1 } } // We currently only support 1 active wishlist per user in UI
+    );
+
+    return data.data || [];
+  } catch (error: any) {
+    handleError(error, "Get user wishlists");
+    return [];
+  }
+};
+
+/**
  * Check if a variant is in the wishlist
  */
 export const isInWishlist = async (
