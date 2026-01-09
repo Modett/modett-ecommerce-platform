@@ -50,7 +50,31 @@ export async function handleCartTransfer(
     }
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
+    const errorMessage = error.message || "";
+    const statusCode = error.statusCode;
+
+    // Ignore benign errors (404, 400) - cart doesn't exist or already transferred
+    // This happens if the guest cart expired, doesn't exist, or was already transferred
+    const isBenignError =
+      statusCode === 404 ||
+      statusCode === 400 ||
+      errorMessage.includes("Not Found") ||
+      errorMessage.includes("not found") ||
+      errorMessage.includes("No active cart") ||
+      errorMessage.includes("Guest cart not found") ||
+      errorMessage.includes("Bad Request") ||
+      errorMessage.includes("404") ||
+      errorMessage.includes("400");
+
+    if (isBenignError) {
+      console.log(
+        "[Cart Transfer] Guest cart not found or expired - clearing token"
+      );
+      localStorage.removeItem("guestToken");
+      return true;
+    }
+
     handleError(error, "Cart Transfer");
 
     // Call error callback if provided
