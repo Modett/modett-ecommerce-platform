@@ -25,8 +25,8 @@ export const useCart = (cartId: string | null) => {
       return result;
     },
     enabled: !!cartId,
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: 30000, // 30 seconds - data is fresh for 30s
+    gcTime: 300000, // 5 minutes - keep in cache for 5 min
   });
 };
 

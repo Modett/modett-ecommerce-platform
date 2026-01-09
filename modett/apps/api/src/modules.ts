@@ -12,6 +12,7 @@ import { registerCustomerCareRoutes } from "../../../modules/customer-care/infra
 import { registerEngagementRoutes } from "../../../modules/engagement/infra/http/routes";
 import { registerFulfillmentRoutes } from "../../../modules/fulfillment/infra/http/routes";
 import { registerAnalyticsRoutes } from "../../../modules/analytics/infra/http/routes";
+import { registerAdminRoutes } from "../../../modules/admin/infra/http/routes";
 
 export async function registerModules(
   server: FastifyInstance,
@@ -167,5 +168,15 @@ export async function registerModules(
       });
     },
     { prefix: "/api/v1/analytics" }
+  );
+
+  // Register Admin Routes (Prefix: /api/v1)
+  await server.register(
+    async (fastify) => {
+      await registerAdminRoutes(fastify, {
+        dashboardRepository: container.dashboardRepository,
+      });
+    },
+    { prefix: "/api/v1" }
   );
 }

@@ -2,55 +2,58 @@
 // CART UTILITIES
 // ============================================================================
 
+import Cookies from "js-cookie";
+
 const GUEST_TOKEN_KEY = "modett_guest_token";
 const CART_ID_KEY = "modett_cart_id";
+const COOKIE_EXPIRY_DAYS = 30;
 
 /**
- * Get the stored guest token from localStorage
+ * Get the stored guest token from Cookies
  */
 export const getStoredGuestToken = (): string | null => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(GUEST_TOKEN_KEY);
+  return Cookies.get(GUEST_TOKEN_KEY) || null;
 };
 
 /**
- * Store guest token in localStorage
+ * Store guest token in Cookies
  */
 export const persistGuestToken = (token: string): void => {
   if (typeof window === "undefined") return;
-  localStorage.setItem(GUEST_TOKEN_KEY, token);
+  Cookies.set(GUEST_TOKEN_KEY, token, { expires: COOKIE_EXPIRY_DAYS });
 };
 
 /**
- * Get the stored cart ID from localStorage
+ * Get the stored cart ID from Cookies
  */
 export const getStoredCartId = (): string | null => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(CART_ID_KEY);
+  return Cookies.get(CART_ID_KEY) || null;
 };
 
 /**
- * Store cart ID in localStorage
+ * Store cart ID in Cookies
  */
 export const persistCartId = (cartId: string): void => {
   if (typeof window === "undefined") return;
-  localStorage.setItem(CART_ID_KEY, cartId);
+  Cookies.set(CART_ID_KEY, cartId, { expires: COOKIE_EXPIRY_DAYS });
 };
 
 /**
- * Clear guest token from localStorage
+ * Clear guest token from Cookies
  */
 export const clearGuestToken = (): void => {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(GUEST_TOKEN_KEY);
+  Cookies.remove(GUEST_TOKEN_KEY);
 };
 
 /**
- * Clear cart ID from localStorage
+ * Clear cart ID from Cookies
  */
 export const clearCartId = (): void => {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(CART_ID_KEY);
+  Cookies.remove(CART_ID_KEY);
 };
 
 /**
@@ -66,7 +69,7 @@ export const clearCartAfterCheckout = (): void => {
 };
 
 /**
- * Clear all cart-related data from localStorage
+ * Clear all cart-related data from Cookies
  * Use this on logout or account creation
  */
 export const clearCartData = (): void => {

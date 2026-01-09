@@ -64,9 +64,25 @@ export class CheckoutService {
     }
 
     // Check if checkout already exists for this cart
+    // Check if checkout already exists for this cart
     const existingCheckout = await this.checkoutRepository.findByCartId(cartId);
     if (existingCheckout) {
       if (existingCheckout.isPending()) {
+        // Check if we need to transfer the checkout ownership
+        // This validates if the cart has been transferred to a user but the checkout is still guest
+        if (
+          dto.userId &&
+          !existingCheckout.getUserId() &&
+          existingCheckout.getGuestToken()
+        ) {
+          console.log(
+            `[CheckoutService] Transferring checkout ${existingCheckout.getCheckoutId().toString()} to user ${dto.userId}`
+          );
+          const updatedCheckout = existingCheckout.transferToUser(dto.userId);
+          await this.checkoutRepository.update(updatedCheckout);
+          return this.mapCheckoutToDto(updatedCheckout);
+        }
+
         return this.mapCheckoutToDto(existingCheckout);
       } else {
         // If checkout exists but is not pending (e.g. Completed, Cancelled, Expired),

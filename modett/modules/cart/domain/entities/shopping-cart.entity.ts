@@ -2,7 +2,11 @@ import { CartId } from "../value-objects/cart-id.vo";
 import { UserId } from "../../../user-management/domain/value-objects/user-id.vo";
 import { GuestToken } from "../value-objects/guest-token.vo";
 import { Currency } from "../value-objects/currency.vo";
-import { CartItem, CreateCartItemData, CartItemEntityData } from "./cart-item.entity";
+import {
+  CartItem,
+  CreateCartItemData,
+  CartItemEntityData,
+} from "./cart-item.entity";
 import { VariantId } from "../value-objects/variant-id.vo";
 
 export interface CreateShoppingCartData {
@@ -36,6 +40,9 @@ export class ShoppingCart {
   ) {
     // Business rule: Cart must belong to either user or guest, not both
     if (userId && guestToken) {
+      console.error(
+        `[ShoppingCart] Critical Error: Cart cannot belong to both. UserId: ${userId.getValue()}, GuestToken: ${guestToken.getValue()}`
+      );
       throw new Error("Cart cannot belong to both user and guest");
     }
     if (!userId && !guestToken) {
@@ -44,7 +51,9 @@ export class ShoppingCart {
   }
 
   // Factory methods
-  static createForUser(data: CreateShoppingCartData & { userId: string }): ShoppingCart {
+  static createForUser(
+    data: CreateShoppingCartData & { userId: string }
+  ): ShoppingCart {
     const cartId = CartId.create();
     const userId = UserId.fromString(data.userId);
     const currency = Currency.fromString(data.currency);
@@ -62,7 +71,9 @@ export class ShoppingCart {
     );
   }
 
-  static createForGuest(data: CreateShoppingCartData & { guestToken: string }): ShoppingCart {
+  static createForGuest(
+    data: CreateShoppingCartData & { guestToken: string }
+  ): ShoppingCart {
     const cartId = CartId.create();
     const guestToken = GuestToken.fromString(data.guestToken);
     const currency = Currency.fromString(data.currency);
@@ -83,9 +94,11 @@ export class ShoppingCart {
   static reconstitute(data: ShoppingCartEntityData): ShoppingCart {
     const cartId = CartId.fromString(data.cartId);
     const userId = data.userId ? UserId.fromString(data.userId) : null;
-    const guestToken = data.guestToken ? GuestToken.fromString(data.guestToken) : null;
+    const guestToken = data.guestToken
+      ? GuestToken.fromString(data.guestToken)
+      : null;
     const currency = Currency.fromString(data.currency);
-    const items = data.items.map(itemData => CartItem.reconstitute(itemData));
+    const items = data.items.map((itemData) => CartItem.reconstitute(itemData));
 
     return new ShoppingCart(
       cartId,
@@ -147,7 +160,10 @@ export class ShoppingCart {
   }
 
   getItemCount(): number {
-    return this.items.reduce((total, item) => total + item.getQuantity().getValue(), 0);
+    return this.items.reduce(
+      (total, item) => total + item.getQuantity().getValue(),
+      0
+    );
   }
 
   getUniqueItemCount(): number {
@@ -155,7 +171,7 @@ export class ShoppingCart {
   }
 
   // Item management
-  addItem(itemData: Omit<CreateCartItemData, 'cartId'>): void {
+  addItem(itemData: Omit<CreateCartItemData, "cartId">): void {
     const createData: CreateCartItemData = {
       ...itemData,
       cartId: this.cartId.getValue(),
@@ -165,7 +181,8 @@ export class ShoppingCart {
 
     if (existingItem) {
       // Update existing item quantity
-      const newQuantity = existingItem.getQuantity().getValue() + itemData.quantity;
+      const newQuantity =
+        existingItem.getQuantity().getValue() + itemData.quantity;
       existingItem.updateQuantity(newQuantity);
     } else {
       // Add new item
@@ -192,7 +209,7 @@ export class ShoppingCart {
 
   removeItem(variantId: string): void {
     const itemIndex = this.items.findIndex(
-      item => item.getVariantId().getValue() === variantId
+      (item) => item.getVariantId().getValue() === variantId
     );
 
     if (itemIndex === -1) {
@@ -211,7 +228,7 @@ export class ShoppingCart {
   // Item lookup
   findItemByVariantId(variantId: string): CartItem | undefined {
     return this.items.find(
-      item => item.getVariantId().getValue() === variantId
+      (item) => item.getVariantId().getValue() === variantId
     );
   }
 
@@ -225,7 +242,10 @@ export class ShoppingCart {
   }
 
   getTotalDiscount(): number {
-    return this.items.reduce((total, item) => total + item.getDiscountAmount(), 0);
+    return this.items.reduce(
+      (total, item) => total + item.getDiscountAmount(),
+      0
+    );
   }
 
   getTotal(): number {
@@ -234,16 +254,16 @@ export class ShoppingCart {
 
   // Shipping calculations
   hasItemsWithFreeShipping(): boolean {
-    return this.items.some(item => item.hasFreeShipping());
+    return this.items.some((item) => item.hasFreeShipping());
   }
 
   getItemsRequiringShipping(): CartItem[] {
-    return this.items.filter(item => !item.hasFreeShipping());
+    return this.items.filter((item) => !item.hasFreeShipping());
   }
 
   // Gift functionality
   getGiftItems(): CartItem[] {
-    return this.items.filter(item => item.isGiftItem());
+    return this.items.filter((item) => item.isGiftItem());
   }
 
   hasGiftItems(): boolean {
@@ -271,7 +291,9 @@ export class ShoppingCart {
 
   extendReservation(hours: number = 2): void {
     const now = new Date();
-    this.reservationExpiresAt = new Date(now.getTime() + hours * 60 * 60 * 1000);
+    this.reservationExpiresAt = new Date(
+      now.getTime() + hours * 60 * 60 * 1000
+    );
     this.touch();
   }
 
@@ -303,12 +325,15 @@ export class ShoppingCart {
     }
 
     for (const otherItem of otherCart.items) {
-      const existingItem = this.findItemByVariantId(otherItem.getVariantId().getValue());
+      const existingItem = this.findItemByVariantId(
+        otherItem.getVariantId().getValue()
+      );
 
       if (existingItem) {
         // Merge quantities
-        const combinedQuantity = existingItem.getQuantity().getValue() +
-                                otherItem.getQuantity().getValue();
+        const combinedQuantity =
+          existingItem.getQuantity().getValue() +
+          otherItem.getQuantity().getValue();
         existingItem.updateQuantity(combinedQuantity);
       } else {
         // Add the item with new cart ID
@@ -348,7 +373,7 @@ export class ShoppingCart {
       reservationExpiresAt: this.reservationExpiresAt || undefined,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
-      items: this.items.map(item => item.toSnapshot()),
+      items: this.items.map((item) => item.toSnapshot()),
     };
   }
 

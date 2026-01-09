@@ -211,4 +211,25 @@ export class Checkout {
       updatedAt: this.updatedAt,
     };
   }
+  transferToUser(userId: string): Checkout {
+    if (this.userId) {
+      throw new Error("Checkout already belongs to a user");
+    }
+
+    const newUserId = UserId.fromString(userId);
+
+    return new Checkout(
+      this.checkoutId,
+      this.cartId,
+      newUserId,
+      null,
+      this.status,
+      this.totalAmount,
+      this.currency,
+      this.expiresAt,
+      this.completedAt,
+      this.createdAt,
+      new Date()
+    );
+  }
 }

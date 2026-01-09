@@ -1,6 +1,14 @@
-import { PrismaClient, UserStatus as PrismaUserStatus, UserRole as PrismaUserRole } from "@prisma/client";
+import {
+  PrismaClient,
+  UserStatus as PrismaUserStatus,
+  UserRole as PrismaUserRole,
+} from "@prisma/client";
 import { IUserRepository } from "../../../domain/repositories/iuser.repository";
-import { User, UserStatus, UserRole } from "../../../domain/entities/user.entity";
+import {
+  User,
+  UserStatus,
+  UserRole,
+} from "../../../domain/entities/user.entity";
 import { UserId } from "../../../domain/value-objects/user-id.vo";
 import { Email } from "../../../domain/value-objects/email.vo";
 
@@ -22,6 +30,9 @@ export class UserRepository implements IUserRepository {
         isGuest: data.is_guest,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
+        twoFactorSecret: data.two_factor_secret,
+        twoFactorEnabled: data.two_factor_enabled,
+        twoFactorBackupCodes: data.two_factor_backup_codes,
       },
     });
   }
@@ -47,6 +58,9 @@ export class UserRepository implements IUserRepository {
       is_guest: userData.isGuest,
       created_at: userData.createdAt,
       updated_at: userData.updatedAt,
+      two_factor_enabled: userData.twoFactorEnabled,
+      two_factor_secret: userData.twoFactorSecret,
+      two_factor_backup_codes: userData.twoFactorBackupCodes,
     });
   }
 
@@ -71,6 +85,9 @@ export class UserRepository implements IUserRepository {
       is_guest: userData.isGuest,
       created_at: userData.createdAt,
       updated_at: userData.updatedAt,
+      two_factor_enabled: userData.twoFactorEnabled,
+      two_factor_secret: userData.twoFactorSecret,
+      two_factor_backup_codes: userData.twoFactorBackupCodes,
     });
   }
 
@@ -88,6 +105,9 @@ export class UserRepository implements IUserRepository {
         phoneVerified: data.phone_verified,
         isGuest: data.is_guest,
         updatedAt: data.updated_at,
+        twoFactorSecret: data.two_factor_secret,
+        twoFactorEnabled: data.two_factor_enabled,
+        twoFactorBackupCodes: data.two_factor_backup_codes,
       },
     });
   }
@@ -119,6 +139,9 @@ export class UserRepository implements IUserRepository {
       is_guest: userData.isGuest,
       created_at: userData.createdAt,
       updated_at: userData.updatedAt,
+      two_factor_enabled: userData.twoFactorEnabled,
+      two_factor_secret: userData.twoFactorSecret,
+      two_factor_backup_codes: userData.twoFactorBackupCodes,
     });
   }
 
@@ -146,6 +169,9 @@ export class UserRepository implements IUserRepository {
         is_guest: userData.isGuest,
         created_at: userData.createdAt,
         updated_at: userData.updatedAt,
+        two_factor_enabled: userData.twoFactorEnabled,
+        two_factor_secret: userData.twoFactorSecret,
+        two_factor_backup_codes: userData.twoFactorBackupCodes,
       })
     );
   }
@@ -171,6 +197,9 @@ export class UserRepository implements IUserRepository {
         is_guest: userData.isGuest,
         created_at: userData.createdAt,
         updated_at: userData.updatedAt,
+        two_factor_enabled: userData.twoFactorEnabled,
+        two_factor_secret: userData.twoFactorSecret,
+        two_factor_backup_codes: userData.twoFactorBackupCodes,
       })
     );
   }
@@ -199,6 +228,9 @@ export class UserRepository implements IUserRepository {
         is_guest: userData.isGuest,
         created_at: userData.createdAt,
         updated_at: userData.updatedAt,
+        two_factor_enabled: userData.twoFactorEnabled,
+        two_factor_secret: userData.twoFactorSecret,
+        two_factor_backup_codes: userData.twoFactorBackupCodes,
       })
     );
   }
@@ -252,6 +284,9 @@ export class UserRepository implements IUserRepository {
         is_guest: userData.isGuest,
         created_at: userData.createdAt,
         updated_at: userData.updatedAt,
+        two_factor_enabled: userData.twoFactorEnabled,
+        two_factor_secret: userData.twoFactorSecret,
+        two_factor_backup_codes: userData.twoFactorBackupCodes,
       })
     );
   }

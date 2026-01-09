@@ -46,7 +46,7 @@ export default function CheckoutPaymentPage() {
     }
   }, []);
 
-  const { data: cart, isLoading, refetch } = useCart(cartId);
+  const { data: cart, isLoading } = useCart(cartId);
 
   useEffect(() => {
     if (cart && (!cart.items || cart.items.length === 0)) {
@@ -59,8 +59,13 @@ export default function CheckoutPaymentPage() {
       if (!cartId || !cart || checkoutId) return;
       if (!cart.items || cart.items.length === 0) return;
 
+      const token = localStorage.getItem("authToken");
+
       try {
-        const checkout = await cartApi.initializeCheckout(cartId);
+        const checkout = await cartApi.initializeCheckout(
+          cartId,
+          token || undefined
+        );
         setCheckoutId(checkout.checkoutId);
 
         // Safety net: Prevent reusing completed checkout sessions
@@ -105,12 +110,6 @@ export default function CheckoutPaymentPage() {
 
     initCheckout();
   }, [cartId, cart, checkoutId]);
-
-  useEffect(() => {
-    if (cartId) {
-      refetch();
-    }
-  }, [cartId, refetch]);
 
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();

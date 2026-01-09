@@ -72,6 +72,12 @@ export function usePayableIPG() {
           headers["X-Guest-Token"] = guestToken;
         }
 
+        // Add auth token if available
+        const authToken = localStorage.getItem("authToken");
+        if (authToken) {
+          headers["Authorization"] = `Bearer ${authToken}`;
+        }
+
         const response = await fetch(
           `${API_BASE_URL}/payments/payable-ipg/create`,
           {

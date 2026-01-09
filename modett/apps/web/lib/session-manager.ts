@@ -2,78 +2,54 @@
 // SESSION MANAGEMENT FOR ANALYTICS
 // ============================================================================
 
-const SESSION_KEY = 'modett_analytics_session';
-const GUEST_TOKEN_KEY = 'modett_guest_token';
-const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes
+import Cookies from "js-cookie";
 
-interface SessionData {
-  sessionId: string;
-  timestamp: number;
-}
+const SESSION_KEY = "modett_analytics_session";
+const GUEST_TOKEN_KEY = "modett_guest_token";
+const SESSION_DURATION_MINUTES = 30;
 
 /**
  * Get existing session or create new one
  * Session expires after 30 minutes of inactivity
  */
 export function getOrCreateSessionId(): string {
-  if (typeof window === 'undefined') return '';
+  if (typeof window === "undefined") return "";
 
   try {
-    const stored = localStorage.getItem(SESSION_KEY);
+    const sessionId = Cookies.get(SESSION_KEY);
 
-    if (stored) {
-      const data: SessionData = JSON.parse(stored);
-
-      // Check if session expired (30 min of inactivity)
-      if (Date.now() - data.timestamp < SESSION_DURATION) {
-        // Update timestamp to extend session
-        localStorage.setItem(
-          SESSION_KEY,
-          JSON.stringify({
-            sessionId: data.sessionId,
-            timestamp: Date.now(),
-          })
-        );
-        return data.sessionId;
-      }
+    if (sessionId) {
+      // Update expiry (sliding window)
+      Cookies.set(SESSION_KEY, sessionId, {
+        expires: SESSION_DURATION_MINUTES / (24 * 60),
+      }); // Expires accepts days
+      return sessionId;
     }
 
     // Create new session
-    const sessionId = crypto.randomUUID();
-    localStorage.setItem(
-      SESSION_KEY,
-      JSON.stringify({
-        sessionId,
-        timestamp: Date.now(),
-      })
-    );
+    const newSessionId = crypto.randomUUID();
+    Cookies.set(SESSION_KEY, newSessionId, {
+      expires: SESSION_DURATION_MINUTES / (24 * 60),
+    });
 
-    return sessionId;
+    return newSessionId;
   } catch (error) {
-    console.error('Failed to manage session:', error);
+    console.error("Failed to manage session:", error);
     return crypto.randomUUID();
   }
 }
 
 /**
  * Get guest token for anonymous users
- *
- * IMPORTANT: This returns the existing guest token from cart system.
- * It does NOT create a new token - the cart API creates tokens when needed.
- * This ensures token format consistency (64-char hex required by backend).
- *
- * Analytics tracking will use the cart's token if available, or null if not.
- * The backend analytics service accepts null guest tokens for product views.
  */
 export function getGuestToken(): string | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
 
   try {
-    const token = localStorage.getItem(GUEST_TOKEN_KEY);
-    // Return existing token (created by cart system) or null
-    return token;
+    const token = Cookies.get(GUEST_TOKEN_KEY);
+    return token || null;
   } catch (error) {
-    console.error('Failed to get guest token:', error);
+    console.error("Failed to get guest token:", error);
     return null;
   }
 }
@@ -82,12 +58,12 @@ export function getGuestToken(): string | null {
  * Clear session (used on logout or session expiry)
  */
 export function clearSession(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
   try {
-    localStorage.removeItem(SESSION_KEY);
+    Cookies.remove(SESSION_KEY);
   } catch (error) {
-    console.error('Failed to clear session:', error);
+    console.error("Failed to clear session:", error);
   }
 }
 
@@ -95,12 +71,12 @@ export function clearSession(): void {
  * Clear guest token (used when user creates account)
  */
 export function clearGuestToken(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
   try {
-    localStorage.removeItem(GUEST_TOKEN_KEY);
+    Cookies.remove(GUEST_TOKEN_KEY);
   } catch (error) {
-    console.error('Failed to clear guest token:', error);
+    console.error("Failed to clear guest token:", error);
   }
 }
 
@@ -108,21 +84,12 @@ export function clearGuestToken(): void {
  * Get current session ID without creating new one
  */
 export function getCurrentSessionId(): string | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
 
   try {
-    const stored = localStorage.getItem(SESSION_KEY);
-    if (stored) {
-      const data: SessionData = JSON.parse(stored);
-
-      // Check if session expired
-      if (Date.now() - data.timestamp < SESSION_DURATION) {
-        return data.sessionId;
-      }
-    }
-    return null;
+    return Cookies.get(SESSION_KEY) || null;
   } catch (error) {
-    console.error('Failed to get session:', error);
+    console.error("Failed to get session:", error);
     return null;
   }
 }
