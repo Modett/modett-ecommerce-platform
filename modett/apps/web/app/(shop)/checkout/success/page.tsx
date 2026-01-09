@@ -11,6 +11,7 @@ import { handleError } from "@/lib/error-handler";
 import * as cartApi from "@/features/cart/api";
 import { Check, X } from "lucide-react";
 import { useTrackOrder } from "@/features/analytics/hooks";
+import { useAuth } from "@/providers/AuthProvider";
 
 export default function CheckoutSuccessPage() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function CheckoutSuccessPage() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [hasProcessed, setHasProcessed] = useState(false);
 
+  const { isLoading: isAuthLoading, user } = useAuth(); // Wait for auth restoration
   const { data: cart } = useCart(cartId);
 
   useEffect(() => {
@@ -40,6 +42,18 @@ export default function CheckoutSuccessPage() {
   }, []);
 
   useEffect(() => {
+    // Wait for auth to finish loading so we have the userId for tracking
+    if (isAuthLoading) {
+      console.log("[Checkout Success] Waiting for auth to load...");
+      return;
+    }
+
+    console.log("[Checkout Success] Auth loaded, user:", {
+      userId: user?.id,
+      email: user?.email,
+      hasUser: !!user,
+    });
+
     // Skip if already processed
     if (hasProcessed) return;
 
@@ -92,14 +106,11 @@ export default function CheckoutSuccessPage() {
                 phone: cart.billingPhone,
               };
 
-          const token = localStorage.getItem("authToken");
-
           result = await cartApi.completeCheckoutWithOrder(
             checkoutId,
             intentId || checkoutId,
             shippingAddress,
-            billingAddress,
-            token || undefined
+            billingAddress
           );
         }
 
@@ -124,6 +135,14 @@ export default function CheckoutSuccessPage() {
               0
             );
 
+          console.log("[Checkout Success] About to track order:", {
+            orderId: result.orderId,
+            userId: user?.id,
+            userExists: !!user,
+            isAuthLoading,
+            itemCount: orderItems.length,
+          });
+
           trackOrder(result.orderId, orderItems, totalAmount);
         }
 
@@ -145,7 +164,17 @@ export default function CheckoutSuccessPage() {
     };
 
     completeOrder();
-  }, [checkoutId, cart, router, hasProcessed, intentId, queryClient]);
+  }, [
+    checkoutId,
+    cart,
+    router,
+    hasProcessed,
+    intentId,
+    queryClient,
+    isAuthLoading,
+    trackOrder,
+    user,
+  ]);
 
   // Ensure component only renders after hydration to avoid mismatches
   const [isMounted, setIsMounted] = useState(false);
