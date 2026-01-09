@@ -4,7 +4,11 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { handleCartTransfer } from "@/lib/cart-transfer";
-import { clearWishlistData } from "@/features/engagement/utils";
+import {
+  clearWishlistData,
+  persistWishlistId,
+} from "@/features/engagement/utils";
+import { getUserWishlists } from "@/features/engagement/api";
 
 interface User {
   id: string;
@@ -78,7 +82,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const { user, accessToken } = authData.data;
+      const { user: apiUser, accessToken } = authData.data;
+
+      // Map API response to User interface (ensure we have 'id' field)
+      const user = {
+        id: apiUser.userId || apiUser.id,
+        email: apiUser.email,
+        name: apiUser.name || `${apiUser.firstName || ''} ${apiUser.lastName || ''}`.trim() || undefined,
+      };
 
       localStorage.setItem("authToken", accessToken);
 
@@ -93,6 +104,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 🛒 Transfer guest cart to user
       await handleCartTransfer(user.id, accessToken);
+
+      // RESTORE USER WISHLIST
+      try {
+        const wishlists = await getUserWishlists(user.id);
+        if (wishlists.length > 0) {
+          persistWishlistId(wishlists[0].wishlistId);
+        }
+      } catch (err) {
+        console.warn("Failed to restore user wishlist", err);
+      }
 
       // Invalidate queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ["wishlist"] });
@@ -124,7 +145,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(authData.error || "2FA verification failed");
       }
 
-      const { user, accessToken } = authData.data;
+      const { user: apiUser, accessToken } = authData.data;
+
+      // Map API response to User interface (ensure we have 'id' field)
+      const user = {
+        id: apiUser.userId || apiUser.id,
+        email: apiUser.email,
+        name: apiUser.name || `${apiUser.firstName || ''} ${apiUser.lastName || ''}`.trim() || undefined,
+      };
 
       localStorage.setItem("authToken", accessToken);
 
@@ -137,6 +165,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 🛒 Transfer guest cart to user
       await handleCartTransfer(user.id, accessToken);
+
+      // RESTORE USER WISHLIST
+      try {
+        const wishlists = await getUserWishlists(user.id);
+        if (wishlists.length > 0) {
+          persistWishlistId(wishlists[0].wishlistId);
+        }
+      } catch (err) {
+        console.warn("Failed to restore user wishlist", err);
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ["wishlist"] });
     } catch (error) {
       // Do not reset challenge on error, allow retry
       throw error;
@@ -170,7 +210,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Handle both response formats for backward compatibility
-      const { user, accessToken, refreshToken } = authData.data;
+      const { user: apiUser, accessToken, refreshToken } = authData.data;
+
+      // Map API response to User interface (ensure we have 'id' field)
+      const user = {
+        id: apiUser.userId || apiUser.id,
+        email: apiUser.email,
+        name: apiUser.name || `${apiUser.firstName || ''} ${apiUser.lastName || ''}`.trim() || undefined,
+      };
 
       localStorage.setItem("authToken", accessToken);
 
@@ -247,8 +294,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
 
         if (data.success && data.data) {
+          // Map API response to User interface (API uses 'userId', we use 'id')
+          const userData = {
+            id: data.data.userId || data.data.id,
+            email: data.data.email,
+            name: data.data.name || `${data.data.firstName || ''} ${data.data.lastName || ''}`.trim() || undefined,
+          };
+
           setAuthState({
-            user: data.data,
+            user: userData,
             isLoading: false,
             isAuthenticated: true,
           });
