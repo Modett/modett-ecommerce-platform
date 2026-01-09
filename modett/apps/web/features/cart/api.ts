@@ -21,6 +21,27 @@ const cartApiClient = axios.create({
 });
 
 /**
+ * Get authentication headers (either Bearer token or Guest token)
+ */
+const getAuthHeaders = async (): Promise<Record<string, string>> => {
+  // Check if user is authenticated
+  const authToken = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+
+  if (authToken) {
+    // Authenticated user - use Bearer token
+    return {
+      Authorization: `Bearer ${authToken}`,
+    };
+  }
+
+  // Guest user - use guest token
+  const guestToken = await getGuestToken();
+  return {
+    "X-Guest-Token": guestToken,
+  };
+};
+
+/**
  * Generate a guest token for cart operations
  */
 export const generateGuestToken = async (): Promise<string> => {
@@ -68,7 +89,7 @@ export const getGuestToken = async (): Promise<string> => {
  */
 export const addToCart = async (params: AddToCartParams): Promise<Cart> => {
   try {
-    const token = await getGuestToken();
+    const headers = await getAuthHeaders();
 
     const { data } = await cartApiClient.post(
       "/cart/items",
@@ -78,11 +99,7 @@ export const addToCart = async (params: AddToCartParams): Promise<Cart> => {
         isGift: params.isGift || false,
         giftMessage: params.giftMessage,
       },
-      {
-        headers: {
-          "X-Guest-Token": token,
-        },
-      }
+      { headers }
     );
 
     if (data?.data?.cartId) {
@@ -104,13 +121,9 @@ export const addToCart = async (params: AddToCartParams): Promise<Cart> => {
  */
 export const getCart = async (cartId: string): Promise<Cart> => {
   try {
-    const token = await getGuestToken();
+    const headers = await getAuthHeaders();
 
-    const { data } = await cartApiClient.get(`/carts/${cartId}`, {
-      headers: {
-        "X-Guest-Token": token,
-      },
-    });
+    const { data } = await cartApiClient.get(`/carts/${cartId}`, { headers });
 
     if (data?.data?.cartId) {
       persistCartId(data.data.cartId);
@@ -131,16 +144,12 @@ export const updateCartQuantity = async (
   quantity: number
 ): Promise<Cart> => {
   try {
-    const token = await getGuestToken();
+    const headers = await getAuthHeaders();
 
     const { data } = await cartApiClient.put(
       `/carts/${cartId}/items/${variantId}`,
       { quantity },
-      {
-        headers: {
-          "X-Guest-Token": token,
-        },
-      }
+      { headers }
     );
 
     return data.data;
@@ -159,15 +168,11 @@ export const removeCartItem = async (
   variantId: string
 ): Promise<Cart> => {
   try {
-    const token = await getGuestToken();
+    const headers = await getAuthHeaders();
 
     const { data } = await cartApiClient.delete(
       `/carts/${cartId}/items/${variantId}`,
-      {
-        headers: {
-          "X-Guest-Token": token,
-        },
-      }
+      { headers }
     );
 
     return data.data;
@@ -189,7 +194,7 @@ export const transferGuestCartToUser = async (
 ): Promise<Cart> => {
   try {
     const { data } = await cartApiClient.post(
-      `/guest/${guestToken}/transfer`,
+      `/guests/${guestToken}/cart/transfer`,
       {
         userId,
         mergeWithExisting,
@@ -203,7 +208,12 @@ export const transferGuestCartToUser = async (
 
     return data.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.error || "Failed to transfer cart");
+    // Preserve the original error message for proper error handling downstream
+    const errorMessage = error.response?.data?.error || error.message || "Failed to transfer cart";
+    const newError = new Error(errorMessage);
+    // Preserve status code for better error handling
+    (newError as any).statusCode = error.response?.status;
+    throw newError;
   }
 };
 
@@ -215,16 +225,12 @@ export const updateCartEmail = async (
   email: string
 ): Promise<Cart> => {
   try {
-    const token = await getGuestToken();
+    const headers = await getAuthHeaders();
 
     const { data } = await cartApiClient.patch(
       `/carts/${cartId}/email`,
       { email },
-      {
-        headers: {
-          "X-Guest-Token": token,
-        },
-      }
+      { headers }
     );
 
     return data.data;
@@ -247,16 +253,12 @@ export const updateCartShipping = async (
   }
 ): Promise<Cart> => {
   try {
-    const token = await getGuestToken();
+    const headers = await getAuthHeaders();
 
     const { data } = await cartApiClient.patch(
       `/carts/${cartId}/shipping`,
       shippingData,
-      {
-        headers: {
-          "X-Guest-Token": token,
-        },
-      }
+      { headers }
     );
 
     return data.data;
@@ -295,16 +297,12 @@ export const updateCartAddresses = async (
   }
 ): Promise<Cart> => {
   try {
-    const token = await getGuestToken();
+    const headers = await getAuthHeaders();
 
     const { data } = await cartApiClient.patch(
       `/carts/${cartId}/addresses`,
       addressData,
-      {
-        headers: {
-          "X-Guest-Token": token,
-        },
-      }
+      { headers }
     );
 
     return data.data;
@@ -326,15 +324,12 @@ export const initializeCheckout = async (
   cartId: string
 ): Promise<{ checkoutId: string; expiresAt: string }> => {
   try {
-    const token = await getGuestToken();
+    const headers = await getAuthHeaders();
+
     const { data } = await cartApiClient.post(
       `/checkout/initialize`,
       { cartId, expiresInMinutes: 120 }, // Extended to 2 hours for development
-      {
-        headers: {
-          "X-Guest-Token": token,
-        },
-      }
+      { headers }
     );
 
     return data.data;
@@ -350,12 +345,8 @@ export const initializeCheckout = async (
  */
 export const getCheckout = async (checkoutId: string): Promise<any> => {
   try {
-    const token = await getGuestToken();
-    const { data } = await cartApiClient.get(`/checkout/${checkoutId}`, {
-      headers: {
-        "X-Guest-Token": token,
-      },
-    });
+    const headers = await getAuthHeaders();
+    const { data } = await cartApiClient.get(`/checkout/${checkoutId}`, { headers });
 
     return data.data;
   } catch (error: any) {
@@ -393,7 +384,8 @@ export const completeCheckoutWithOrder = async (
   }
 ): Promise<any> => {
   try {
-    const token = await getGuestToken();
+    const headers = await getAuthHeaders();
+
     const { data } = await cartApiClient.post(
       `/checkout/${checkoutId}/complete-with-order`,
       {
@@ -401,11 +393,7 @@ export const completeCheckoutWithOrder = async (
         shippingAddress,
         billingAddress,
       },
-      {
-        headers: {
-          "X-Guest-Token": token,
-        },
-      }
+      { headers }
     );
 
     return data.data;
@@ -423,12 +411,8 @@ export const getOrderByCheckoutId = async (
   checkoutId: string
 ): Promise<any> => {
   try {
-    const token = await getGuestToken();
-    const { data } = await cartApiClient.get(`/checkout/${checkoutId}/order`, {
-      headers: {
-        "X-Guest-Token": token,
-      },
-    });
+    const headers = await getAuthHeaders();
+    const { data } = await cartApiClient.get(`/checkout/${checkoutId}/order`, { headers });
 
     return data.data;
   } catch (error: any) {
