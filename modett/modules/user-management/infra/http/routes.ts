@@ -100,12 +100,27 @@ export async function registerUserManagementRoutes(
               data: {
                 type: "object",
                 properties: {
-                  userId: { type: "string", format: "uuid" },
-                  email: { type: "string", format: "email" },
+                  accessToken: { type: "string", description: "JWT access token" },
+                  refreshToken: { type: "string", description: "JWT refresh token" },
+                  user: {
+                    type: "object",
+                    properties: {
+                      id: { type: "string", format: "uuid" },
+                      email: { type: "string", format: "email" },
+                      role: { type: "string", example: "CUSTOMER" },
+                      isGuest: { type: "boolean" },
+                      emailVerified: { type: "boolean" },
+                      phoneVerified: { type: "boolean" },
+                      status: { type: "string", example: "active" },
+                    },
+                  },
+                  expiresIn: { type: "number", example: 900 },
+                  tokenType: { type: "string", example: "Bearer" },
                   message: {
                     type: "string",
                     example: "Registration successful",
                   },
+                  verificationToken: { type: "string", description: "Email verification token (dev only)" },
                 },
               },
             },
@@ -140,7 +155,7 @@ export async function registerUserManagementRoutes(
     {
       config: {
         rateLimit: {
-          max: 5, // 5 attempts
+          max: 20, // 20 attempts
           timeWindow: "15 minutes", // per 15 minutes
         },
       },
