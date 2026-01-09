@@ -114,6 +114,12 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
           algorithms: [JWT_ALGORITHM],
         });
       } catch (jwtError: any) {
+        // Log JWT errors for debugging (even in optional mode)
+        console.log("[Auth Middleware] JWT verification failed:", {
+          error: jwtError.message,
+          optional,
+          tokenPrefix: token.substring(0, 20) + "...",
+        });
         if (optional) return;
 
         const errorMessage =
