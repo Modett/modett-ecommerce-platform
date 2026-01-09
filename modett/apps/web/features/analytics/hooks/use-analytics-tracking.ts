@@ -7,29 +7,39 @@ import { useCallback, useEffect, useRef } from "react";
 import * as analyticsApi from "../api";
 import * as cartApi from "@/features/cart/api";
 import { getOrCreateSessionId } from "@/lib/session-manager";
+import { useAuth } from "@/providers/AuthProvider";
 
 /**
  * Hook to track product view
  * Returns a function that can be called to track a view
  */
 export function useTrackProductView() {
-  return useCallback(async (productId: string, variantId?: string) => {
-    const sessionId = getOrCreateSessionId();
+  const { user, isLoading } = useAuth();
 
-    // Ensure guest token exists (creates one via cart API if needed)
-    const guestToken = await cartApi.getGuestToken();
+  const track = useCallback(
+    async (productId: string, variantId?: string) => {
+      const sessionId = getOrCreateSessionId();
 
-    analyticsApi.trackProductView({
-      productId,
-      variantId,
-      sessionId,
-      guestToken,
-      metadata: {
-        referrer: document.referrer,
-        userAgent: navigator.userAgent,
-      },
-    });
-  }, []);
+      // Only get guest token if user ID is not available
+      // This ensures we always have either userId or guestToken for the backend
+      const guestToken = user?.id ? undefined : await cartApi.getGuestToken();
+
+      analyticsApi.trackProductView({
+        productId,
+        variantId,
+        sessionId,
+        guestToken,
+        userId: user?.id,
+        metadata: {
+          referrer: document.referrer,
+          userAgent: navigator.userAgent,
+        },
+      });
+    },
+    [user]
+  );
+
+  return { track, isLoading };
 }
 
 /**
@@ -40,15 +50,27 @@ export function useAutoTrackProductView(
   productId?: string,
   variantId?: string
 ) {
-  const trackProductView = useTrackProductView();
+  const { track: trackProductView, isLoading } = useTrackProductView();
+  const { user } = useAuth();
   const trackedProductIdRef = useRef<string | null>(null);
+  const hasTrackedRef = useRef(false);
 
   useEffect(() => {
-    if (productId && trackedProductIdRef.current !== productId) {
+    // Wait for auth to initialize so we have the userId
+    if (isLoading) return;
+
+    // Only track once we have either a user or confirmed there's no user
+    // This prevents tracking with guest token when user is still loading
+    if (
+      !hasTrackedRef.current &&
+      productId &&
+      trackedProductIdRef.current !== productId
+    ) {
       trackProductView(productId, variantId);
       trackedProductIdRef.current = productId;
+      hasTrackedRef.current = true;
     }
-  }, [productId, variantId, trackProductView]);
+  }, [productId, variantId, trackProductView, isLoading, user]);
 }
 
 /**
@@ -56,6 +78,8 @@ export function useAutoTrackProductView(
  * Use this in checkout success page
  */
 export function useTrackOrder() {
+  const { user, isLoading } = useAuth();
+
   return useCallback(
     async (
       orderId: string,
@@ -69,8 +93,9 @@ export function useTrackOrder() {
     ) => {
       const sessionId = getOrCreateSessionId();
 
-      // Get guest token from cart (already exists by checkout time)
-      const guestToken = await cartApi.getGuestToken();
+      // Only get guest token if user ID is not available
+      // This ensures we always have either userId or guestToken for the backend
+      const guestToken = user?.id ? undefined : await cartApi.getGuestToken();
 
       analyticsApi.trackPurchase({
         orderId,
@@ -78,9 +103,10 @@ export function useTrackOrder() {
         sessionId,
         totalAmount,
         guestToken,
+        userId: user?.id,
       });
     },
-    []
+    [user, isLoading]
   );
 }
 
@@ -88,6 +114,8 @@ export function useTrackOrder() {
  * Hook to track add to cart
  */
 export function useTrackAddToCart() {
+  const { user } = useAuth();
+
   return useCallback(
     async (
       productId: string,
@@ -96,7 +124,10 @@ export function useTrackAddToCart() {
       price: number
     ) => {
       const sessionId = getOrCreateSessionId();
-      const guestToken = await cartApi.getGuestToken();
+
+      // Only get guest token if user ID is not available
+      // This ensures we always have either userId or guestToken for the backend
+      const guestToken = user?.id ? undefined : await cartApi.getGuestToken();
 
       analyticsApi.trackAddToCart({
         productId,
@@ -105,19 +136,22 @@ export function useTrackAddToCart() {
         price,
         sessionId,
         guestToken,
+        userId: user?.id,
         metadata: {
           referrer: document.referrer,
           userAgent: navigator.userAgent,
         },
       });
     },
-    []
+    [user]
   );
 }
 /**
  * Hook to track begin checkout
  */
 export function useTrackBeginCheckout() {
+  const { user } = useAuth();
+
   return useMutation({
     mutationFn: async (
       params: Omit<
@@ -126,13 +160,16 @@ export function useTrackBeginCheckout() {
       >
     ) => {
       const sessionId = getOrCreateSessionId();
-      const guestToken = await cartApi.getGuestToken();
-      // TODO: Get userId from session/auth context if available, for now rely on guestToken/sessionId
+
+      // Only get guest token if user ID is not available
+      // This ensures we always have either userId or guestToken for the backend
+      const guestToken = user?.id ? undefined : await cartApi.getGuestToken();
 
       return analyticsApi.trackBeginCheckout({
         ...params,
         sessionId,
         guestToken,
+        userId: user?.id,
       });
     },
     onError: (error) => {
@@ -145,6 +182,8 @@ export function useTrackBeginCheckout() {
  * Hook to track add shipping info
  */
 export function useTrackAddShippingInfo() {
+  const { user } = useAuth();
+
   return useMutation({
     mutationFn: async (
       params: Omit<
@@ -153,12 +192,16 @@ export function useTrackAddShippingInfo() {
       >
     ) => {
       const sessionId = getOrCreateSessionId();
-      const guestToken = await cartApi.getGuestToken();
+
+      // Only get guest token if user ID is not available
+      // This ensures we always have either userId or guestToken for the backend
+      const guestToken = user?.id ? undefined : await cartApi.getGuestToken();
 
       return analyticsApi.trackAddShippingInfo({
         ...params,
         sessionId,
         guestToken,
+        userId: user?.id,
       });
     },
     onError: (error) => {
@@ -171,6 +214,8 @@ export function useTrackAddShippingInfo() {
  * Hook to track add payment info
  */
 export function useTrackAddPaymentInfo() {
+  const { user } = useAuth();
+
   return useMutation({
     mutationFn: async (
       params: Omit<
@@ -179,12 +224,16 @@ export function useTrackAddPaymentInfo() {
       >
     ) => {
       const sessionId = getOrCreateSessionId();
-      const guestToken = await cartApi.getGuestToken();
+
+      // Only get guest token if user ID is not available
+      // This ensures we always have either userId or guestToken for the backend
+      const guestToken = user?.id ? undefined : await cartApi.getGuestToken();
 
       return analyticsApi.trackAddPaymentInfo({
         ...params,
         sessionId,
         guestToken,
+        userId: user?.id,
       });
     },
     onError: (error) => {
