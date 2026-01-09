@@ -35,6 +35,31 @@ export class WishlistManagementService {
       description: data.description,
     });
 
+    // Check for existing default wishlist to prevent duplicates
+    if (data.isDefault) {
+      if (data.userId) {
+        const existingDefault =
+          await this.wishlistRepository.findDefaultByUserId(data.userId);
+        if (existingDefault) {
+          console.log(
+            `[WishlistService] Returning existing default wishlist for user ${data.userId}`
+          );
+          return existingDefault;
+        }
+      } else if (data.guestToken) {
+        const existingDefaults = await this.wishlistRepository.findWithFilters({
+          guestToken: data.guestToken,
+          isDefault: true,
+        });
+        if (existingDefaults.length > 0) {
+          console.log(
+            `[WishlistService] Returning existing default wishlist for guest ${data.guestToken}`
+          );
+          return existingDefaults[0];
+        }
+      }
+    }
+
     await this.wishlistRepository.save(wishlist);
     return wishlist;
   }
@@ -45,10 +70,7 @@ export class WishlistManagementService {
     );
   }
 
-  async updateWishlistName(
-    wishlistId: string,
-    newName: string
-  ): Promise<void> {
+  async updateWishlistName(wishlistId: string, newName: string): Promise<void> {
     const wishlist = await this.wishlistRepository.findById(
       WishlistId.fromString(wishlistId)
     );
@@ -216,21 +238,21 @@ export class WishlistManagementService {
     variantId: string,
     context?: { userId?: string; guestToken?: string }
   ): Promise<WishlistItem> {
-    console.log('Adding to wishlist:', { wishlistId, variantId, context });
+    console.log("Adding to wishlist:", { wishlistId, variantId, context });
 
     const wishlist = await this.wishlistRepository.findById(
       WishlistId.fromString(wishlistId)
     );
 
     if (!wishlist) {
-      console.error('Wishlist not found:', wishlistId);
+      console.error("Wishlist not found:", wishlistId);
       throw new Error(`Wishlist with ID ${wishlistId} not found`);
     }
 
-    console.log('Wishlist found:', {
+    console.log("Wishlist found:", {
       wishlistId: wishlist.getWishlistId(),
       userId: wishlist.getUserId(),
-      guestToken: wishlist.getGuestToken()?.substring(0, 8) + '...',
+      guestToken: wishlist.getGuestToken()?.substring(0, 8) + "...",
     });
 
     // Verify ownership
@@ -239,21 +261,24 @@ export class WishlistManagementService {
       const wishlistGuestToken = wishlist.getGuestToken();
 
       if (wishlistUserId && context.userId !== wishlistUserId) {
-        console.error('User ID mismatch:', { expected: wishlistUserId, got: context.userId });
+        console.error("User ID mismatch:", {
+          expected: wishlistUserId,
+          got: context.userId,
+        });
         throw new Error(`Unauthorized: Wishlist belongs to a different user`);
       }
 
       if (wishlistGuestToken) {
         if (!context.guestToken) {
-          console.error('Missing guest token in context');
+          console.error("Missing guest token in context");
           throw new Error(
             `Unauthorized: X-Guest-Token header is required for guest wishlists`
           );
         }
         if (context.guestToken !== wishlistGuestToken) {
-          console.error('Guest token mismatch:', {
-            expected: wishlistGuestToken.substring(0, 8) + '...',
-            got: context.guestToken.substring(0, 8) + '...',
+          console.error("Guest token mismatch:", {
+            expected: wishlistGuestToken.substring(0, 8) + "...",
+            got: context.guestToken.substring(0, 8) + "...",
           });
           throw new Error(
             `Unauthorized: Guest token mismatch. Expected: ${wishlistGuestToken.substring(
@@ -265,23 +290,23 @@ export class WishlistManagementService {
       }
 
       if (!wishlistUserId && !wishlistGuestToken) {
-        console.error('No owner information in wishlist');
+        console.error("No owner information in wishlist");
         throw new Error(`Invalid wishlist: No owner information`);
       }
     }
 
-    console.log('Creating wishlist item...');
+    console.log("Creating wishlist item...");
     const item = WishlistItem.create({
       wishlistId,
       variantId,
     });
 
-    console.log('Saving wishlist item...', {
+    console.log("Saving wishlist item...", {
       wishlistId: item.getWishlistId(),
       variantId: item.getVariantId(),
     });
     await this.wishlistItemRepository.save(item);
-    console.log('Wishlist item saved successfully');
+    console.log("Wishlist item saved successfully");
     return item;
   }
 
