@@ -1,7 +1,10 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { handleCartTransfer } from "@/lib/cart-transfer";
+import { clearWishlistData } from "@/features/engagement/utils";
 
 interface User {
   id: string;
@@ -17,6 +20,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>;
   loginWith2FA: (code: string) => Promise<void>;
   logout: () => Promise<void>;
   twoFactorChallenge: { userId: string; tempToken: string } | null;
@@ -58,6 +62,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const authData = await response.json();
 
+      if (!response.ok || !authData.success) {
+        throw new Error(authData.error || "Login failed");
+      }
+
+      if (!authData.data) {
+        throw new Error("Invalid response from server");
+      }
+
       if (authData.data.requires2fa) {
         setTwoFactorChallenge({
           userId: authData.data.userId,
@@ -70,6 +82,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       localStorage.setItem("authToken", accessToken);
 
+      // Clear guest wishlist data on login (user will get their saved wishlist)
+      localStorage.removeItem("wishlistId");
+
       setAuthState({
         user,
         isLoading: false,
@@ -78,6 +93,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 🛒 Transfer guest cart to user
       await handleCartTransfer(user.id, accessToken);
+
+      // Invalidate queries to ensure fresh data
+      await queryClient.invalidateQueries({ queryKey: ["wishlist"] });
     } catch (error) {
       setAuthState({ user: null, isLoading: false, isAuthenticated: false });
       throw error;
@@ -125,20 +143,139 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const register = async (email: string, password: string, name: string) => {
+    try {
+      // Split name into firstName and lastName
+      const nameParts = name.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, firstName, lastName }),
+        }
+      );
+
+      const authData = await response.json();
+
+      if (!response.ok || !authData.success) {
+        throw new Error(authData.error || "Registration failed");
+      }
+
+      if (!authData.data) {
+        throw new Error("Invalid response from server");
+      }
+
+      // Handle both response formats for backward compatibility
+      const { user, accessToken, refreshToken } = authData.data;
+
+      localStorage.setItem("authToken", accessToken);
+
+      // Clear guest wishlist data on registration (user will get a new wishlist with user_id)
+      localStorage.removeItem("wishlistId");
+
+      setAuthState({
+        user,
+        isLoading: false,
+        isAuthenticated: true,
+      });
+
+      // 🛒 Transfer guest cart to user
+      await handleCartTransfer(user.id, accessToken);
+
+      // Invalidate queries to ensure fresh data
+      await queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+    } catch (error) {
+      setAuthState({ user: null, isLoading: false, isAuthenticated: false });
+      throw error;
+    }
+  };
+
   const reset2FAChallenge = () => {
     setTwoFactorChallenge(null);
   };
 
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
   const logout = async () => {
     localStorage.removeItem("authToken");
+    clearWishlistData();
     setAuthState({ user: null, isLoading: false, isAuthenticated: false });
+
+    // Clear React Query cache to remove stale data (including wishlist)
+    queryClient.clear();
+
+    router.push("/login");
   };
+
+  // Restore authentication state from localStorage on mount
+  useEffect(() => {
+    const restoreAuth = async () => {
+      const token = localStorage.getItem("authToken");
+
+      if (!token) {
+        setAuthState({ user: null, isLoading: false, isAuthenticated: false });
+        return;
+      }
+
+      try {
+        // Verify token with backend
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/users/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          // Token is invalid, clear it
+          localStorage.removeItem("authToken");
+          setAuthState({
+            user: null,
+            isLoading: false,
+            isAuthenticated: false,
+          });
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          setAuthState({
+            user: data.data,
+            isLoading: false,
+            isAuthenticated: true,
+          });
+        } else {
+          localStorage.removeItem("authToken");
+          setAuthState({
+            user: null,
+            isLoading: false,
+            isAuthenticated: false,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to restore auth:", error);
+        localStorage.removeItem("authToken");
+        setAuthState({ user: null, isLoading: false, isAuthenticated: false });
+      }
+    };
+
+    restoreAuth();
+  }, []);
 
   return (
     <AuthContext.Provider
       value={{
         ...authState,
         login,
+        register,
         loginWith2FA,
         logout,
         twoFactorChallenge,
