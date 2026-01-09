@@ -263,9 +263,6 @@ export class User {
 
     this.status = UserStatus.BLOCKED;
     this.touch();
-
-    // Could emit domain event here for audit logging
-    // this.addDomainEvent(new UserBlockedEvent(this.id, reason));
   }
 
   unblock(): void {
