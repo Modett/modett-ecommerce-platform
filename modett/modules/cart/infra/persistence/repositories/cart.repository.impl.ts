@@ -20,13 +20,13 @@ export class CartRepositoryImpl implements CartRepository {
   async save(cart: ShoppingCart): Promise<void> {
     try {
       const data = cart.toSnapshot();
-      console.log('Saving cart to database:', JSON.stringify(data, null, 2));
+      console.log("Saving cart to database:", JSON.stringify(data, null, 2));
 
       const result = await this.prisma.shoppingCart.create({
         data: {
           id: data.cartId,
-          userId: data.userId,
-          guestToken: data.guestToken,
+          userId: data.userId ?? null,
+          guestToken: data.guestToken ?? null,
           currency: data.currency,
           reservationExpiresAt: data.reservationExpiresAt,
           createdAt: data.createdAt,
@@ -46,9 +46,9 @@ export class CartRepositoryImpl implements CartRepository {
         },
       });
 
-      console.log('Cart saved successfully:', result.id);
+      console.log("Cart saved successfully:", result.id);
     } catch (error) {
-      console.error('Error saving cart to database:', error);
+      console.error("Error saving cart to database:", error);
       throw error;
     }
   }
@@ -73,8 +73,8 @@ export class CartRepositoryImpl implements CartRepository {
       await tx.shoppingCart.update({
         where: { id: data.cartId },
         data: {
-          userId: data.userId,
-          guestToken: data.guestToken,
+          userId: data.userId ?? null,
+          guestToken: data.guestToken ?? null,
           currency: data.currency,
           reservationExpiresAt: data.reservationExpiresAt,
           updatedAt: data.updatedAt,
@@ -833,8 +833,8 @@ export class CartRepositoryImpl implements CartRepository {
     await prismaClient.shoppingCart.create({
       data: {
         id: data.cartId,
-        userId: data.userId,
-        guestToken: data.guestToken,
+        userId: data.userId ?? null,
+        guestToken: data.guestToken ?? null,
         currency: data.currency,
         reservationExpiresAt: data.reservationExpiresAt,
         createdAt: data.createdAt,
@@ -921,10 +921,18 @@ export class CartRepositoryImpl implements CartRepository {
   }
 
   private mapPrismaToEntity(cartData: any): ShoppingCart {
+    // Debug invalid state
+    if (cartData.userId && cartData.guestToken) {
+      console.warn(
+        `[CartRepository] DETECTED CORRUPTED CART: ${cartData.id}. Has BOTH userId (${cartData.userId}) AND guestToken (${cartData.guestToken}). Auto-correcting by ignoring guestToken.`
+      );
+    }
+
     const entityData: ShoppingCartEntityData = {
       cartId: cartData.id,
       userId: cartData.userId,
-      guestToken: cartData.guestToken,
+      // If both userId and guestToken exist (invalid state), prioritize userId
+      guestToken: cartData.userId ? null : cartData.guestToken,
       currency: cartData.currency,
       reservationExpiresAt: cartData.reservationExpiresAt,
       createdAt: cartData.createdAt,
