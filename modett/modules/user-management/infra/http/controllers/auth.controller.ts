@@ -400,12 +400,33 @@ export class AuthController {
           `Email verification token for ${email}: ${verificationToken}`
         );
 
+        // Generate tokens for auto-login
+        const tokens = generateAuthTokens({
+          userId: result.data.user.id,
+          email: result.data.user.email,
+          role: result.data.user.role as UserRole,
+          status: "active",
+          isGuest: false,
+          emailVerified: false,
+          phoneVerified: false,
+        });
+
         reply.status(HTTP_STATUS.CREATED).send({
           success: true,
           data: {
-            userId: result.data.user.id,
-            email: email,
-            role: result.data.user.role,
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            user: {
+              id: result.data.user.id,
+              email: email,
+              role: result.data.user.role,
+              isGuest: false,
+              emailVerified: false,
+              phoneVerified: false,
+              status: "active",
+            },
+            expiresIn: 15 * 60, // 15 minutes
+            tokenType: "Bearer",
             message: "Registration successful",
             ...(process.env.NODE_ENV === "development" && {
               verificationToken,
