@@ -6,9 +6,11 @@ import { Password } from "../value-objects/password.vo";
 export enum UserRole {
   GUEST = "GUEST",
   CUSTOMER = "CUSTOMER",
-  STAFF = "STAFF",
-  VENDOR = "VENDOR",
   ADMIN = "ADMIN",
+  INVENTORY_STAFF = "INVENTORY_STAFF",
+  CUSTOMER_SERVICE = "CUSTOMER_SERVICE",
+  ANALYST = "ANALYST",
+  VENDOR = "VENDOR",
 }
 
 export class User {
