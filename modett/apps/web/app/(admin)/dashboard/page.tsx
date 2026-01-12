@@ -2,17 +2,20 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/utils";
-import {
-  AlertCircle,
-  ArrowUpRight,
-  DollarSign,
-  Package,
-  ShoppingBag,
-  Users,
-} from "lucide-react";
+import { DollarSign, Package, ShoppingBag } from "lucide-react";
 import axios from "axios";
+import {
+  StatCard,
+  AlertCard,
+  ActivityCard,
+  QuickStats,
+} from "@/features/admin/components";
+import { DashboardHeader } from "@/features/admin/components/dashboard-header";
 
-// Define strict types matching backend
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
 interface DashboardSummary {
   revenue: number;
   orders: number;
@@ -40,213 +43,176 @@ interface DashboardAlerts {
   pendingOrders: number;
 }
 
+// ============================================================================
+// MAIN DASHBOARD COMPONENT
+// ============================================================================
+
 export default function DashboardPage() {
-  // 1. Fetch Summary Stats
+  // Fetch Summary Stats with refetch interval
   const { data: summary, isLoading: isLoadingSummary } = useQuery({
     queryKey: ["admin-summary"],
     queryFn: async () => {
       const { data } = await axios.get("/api/v1/admin/dashboard/summary");
       return data.data as DashboardSummary;
     },
+    refetchInterval: 60000, // Refresh every minute
   });
 
-  // 2. Fetch Alerts
+  // Fetch Alerts with refetch interval
   const { data: alerts, isLoading: isLoadingAlerts } = useQuery({
     queryKey: ["admin-alerts"],
     queryFn: async () => {
       const { data } = await axios.get("/api/v1/admin/dashboard/alerts");
       return data.data as DashboardAlerts;
     },
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  // 3. Fetch Activity
+  // Fetch Activity with refetch interval
   const { data: activity, isLoading: isLoadingActivity } = useQuery({
     queryKey: ["admin-activity"],
     queryFn: async () => {
       const { data } = await axios.get("/api/v1/admin/dashboard/activity");
       return data.data as ActivityItem[];
     },
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  if (isLoadingSummary || isLoadingAlerts || isLoadingActivity) {
+  const isLoading = isLoadingSummary || isLoadingAlerts || isLoadingActivity;
+
+  if (isLoading) {
     return (
-      <div className="p-8 text-center text-gray-500">
-        Loading dashboard data...
+      <div className="space-y-8">
+        <DashboardSkeleton />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Stats Grid */}
+    <div className="space-y-6 max-w-[1400px]">
+      {/* Header Section */}
+      <DashboardHeader />
+
+      {/* Today's Sales Summary - 3 Column Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatsCard
+        <StatCard
           title="Today's Revenue"
           value={formatCurrency(summary?.revenue || 0)}
-          icon={<DollarSign className="w-6 h-6 text-green-600" />}
-          trend="+12% from yesterday"
+          icon={<DollarSign className="w-5 h-5" />}
+          iconBg="bg-green-50"
+          iconColor="text-green-600"
+          trend={{
+            value: "+12.5%",
+            isPositive: true,
+            label: "from yesterday",
+          }}
         />
-        <StatsCard
-          title="Orders Today"
+        <StatCard
+          title="Number of Orders"
           value={summary?.orders.toString() || "0"}
-          icon={<ShoppingBag className="w-6 h-6 text-blue-600" />}
-          trend="+8% from yesterday"
+          icon={<ShoppingBag className="w-5 h-5" />}
+          iconBg="bg-blue-50"
+          iconColor="text-blue-600"
+          trend={{
+            value: "+8.2%",
+            isPositive: true,
+            label: "from yesterday",
+          }}
         />
-        <StatsCard
-          title="Avg. Order Value"
+        <StatCard
+          title="Average Order Value"
           value={formatCurrency(summary?.averageOrderValue || 0)}
-          icon={<Package className="w-6 h-6 text-purple-600" />}
-          trend="-2% from yesterday"
+          icon={<Package className="w-5 h-5" />}
+          iconBg="bg-purple-50"
+          iconColor="text-purple-600"
+          trend={{
+            value: "-2.1%",
+            isPositive: false,
+            label: "from yesterday",
+          }}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Action Needed / Alerts */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Attention Needed</h2>
-            {alerts && alerts.pendingOrders > 0 && (
-              <span className="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded-full font-medium">
-                {alerts.pendingOrders} Pending Orders
-              </span>
-            )}
-          </div>
-          <div className="p-6 space-y-4">
-            {alerts?.pendingOrders ? (
-              <div className="flex items-center gap-4 p-4 bg-amber-50 rounded-lg border border-amber-100">
-                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-amber-900">
-                    {alerts.pendingOrders} orders need processing
-                  </p>
-                  <p className="text-xs text-amber-700 mt-0.5">
-                    Review and fulfill these orders to avoid delays.
-                  </p>
-                </div>
-                <button className="ml-auto text-sm font-medium text-amber-700 hover:text-amber-800">
-                  View
-                </button>
-              </div>
-            ) : null}
-
-            <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mt-6 mb-3">
-              Low Stock Alerts
-            </h3>
-            <div className="space-y-3">
-              {alerts?.lowStock.map((item) => (
-                <div
-                  key={item.variantId}
-                  className="flex items-center justify-between group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-red-500" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {item.productTitle}
-                      </p>
-                      <p className="text-xs text-gray-500">SKU: {item.sku}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-red-600">
-                      {item.onHand} left
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Threshold: {item.threshold}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {(!alerts?.lowStock || alerts.lowStock.length === 0) && (
-                <p className="text-sm text-gray-500 italic">
-                  No low stock items.
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Recent Activity</h2>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {activity?.map((item) => (
-              <div
-                key={item.id}
-                className="p-4 flex items-start gap-4 hover:bg-gray-50 transition-colors"
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                    item.type === "order"
-                      ? "bg-blue-100 text-blue-600"
-                      : "bg-green-100 text-green-600"
-                  }`}
-                >
-                  {item.type === "order" ? (
-                    <ShoppingBag className="w-4 h-4" />
-                  ) : (
-                    <Users className="w-4 h-4" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900">{item.description}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {new Date(item.timestamp).toLocaleString()}
-                  </p>
-                </div>
-                <ArrowUpRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100" />
-              </div>
-            ))}
-            {(!activity || activity.length === 0) && (
-              <div className="p-6 text-center text-sm text-gray-500 italic">
-                No recent activity.
-              </div>
-            )}
-          </div>
-        </div>
+      {/* Alerts & Recent Activity - 2 Column Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AlertCard
+          pendingOrders={alerts?.pendingOrders || 0}
+          lowStockItems={alerts?.lowStock || []}
+        />
+        <ActivityCard activities={activity || []} />
       </div>
+
+      {/* Quick Stats Section */}
+      <QuickStats
+        lowStockCount={alerts?.lowStock?.length || 0}
+        pendingActionsCount={alerts?.pendingOrders || 0}
+      />
     </div>
   );
 }
 
-function StatsCard({
-  title,
-  value,
-  icon,
-  trend,
-}: {
-  title: string;
-  value: string;
-  icon: React.ReactNode;
-  trend?: string;
-}) {
+// ============================================================================
+// LOADING SKELETON
+// ============================================================================
+
+function DashboardSkeleton() {
   return (
-    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-        <div className="p-2 bg-gray-50 rounded-lg">{icon}</div>
+    <div className="space-y-8 max-w-[1400px] animate-pulse">
+      {/* Header skeleton */}
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="h-8 w-64 bg-[#BBA496]/20 rounded" />
+          <div className="h-4 w-96 bg-[#BBA496]/20 rounded mt-2" />
+        </div>
+        <div className="h-10 w-32 bg-[#BBA496]/20 rounded" />
       </div>
-      <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-bold text-gray-900">{value}</span>
+
+      {/* Stats grid skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="border border-[#BBA496]/30 rounded-xl p-6 bg-white"
+          >
+            <div className="h-4 w-32 bg-[#BBA496]/20 rounded mb-4" />
+            <div className="h-8 w-40 bg-[#BBA496]/20 rounded mb-4" />
+            <div className="h-3 w-28 bg-[#BBA496]/20 rounded" />
+          </div>
+        ))}
       </div>
-      {trend && (
-        <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-          {trend.includes("+") ? (
-            <span className="text-green-600 font-medium">
-              {trend.split(" ")[0]}
-            </span>
-          ) : (
-            <span className="text-red-600 font-medium">
-              {trend.split(" ")[0]}
-            </span>
-          )}
-          <span className="text-gray-400">
-            {trend.split(" ").slice(1).join(" ")}
-          </span>
-        </p>
-      )}
+
+      {/* Cards grid skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {[1, 2].map((i) => (
+          <div
+            key={i}
+            className="border border-[#BBA496]/30 rounded-xl bg-white"
+          >
+            <div className="p-6 border-b border-[#BBA496]/20">
+              <div className="h-6 w-48 bg-[#BBA496]/20 rounded" />
+            </div>
+            <div className="p-6 space-y-4">
+              {[1, 2, 3].map((j) => (
+                <div key={j} className="h-16 bg-[#BBA496]/20 rounded" />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick stats skeleton */}
+      <div className="border border-[#BBA496]/30 rounded-xl bg-white">
+        <div className="p-6 border-b border-[#BBA496]/20">
+          <div className="h-6 w-32 bg-[#BBA496]/20 rounded" />
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-24 bg-[#BBA496]/20 rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
