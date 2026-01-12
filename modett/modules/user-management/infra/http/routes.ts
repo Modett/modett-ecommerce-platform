@@ -88,6 +88,12 @@ export async function registerUserManagementRoutes(
               type: "string",
               example: "Doe",
             },
+            role: {
+              type: "string",
+              enum: ["CUSTOMER", "ADMIN", "INVENTORY_STAFF", "CUSTOMER_SERVICE", "ANALYST", "VENDOR"],
+              description: "User role (defaults to CUSTOMER if not provided, backend only)",
+              example: "CUSTOMER",
+            },
           },
         },
         response: {
