@@ -55,6 +55,7 @@ export interface RegisterUserData {
   email: string;
   password: string;
   phone?: string;
+  role?: UserRole; // Optional role assignment (defaults to CUSTOMER)
 }
 
 export class AuthenticationService {
@@ -120,7 +121,10 @@ export class AuthenticationService {
     // Admin/Staff MUST use 2FA
     // Customers use 2FA if enabled
     const isMandatory2FA =
-      user.getRole() === UserRole.ADMIN || user.getRole() === UserRole.STAFF;
+      user.getRole() === UserRole.ADMIN ||
+      user.getRole() === UserRole.INVENTORY_STAFF ||
+      user.getRole() === UserRole.CUSTOMER_SERVICE ||
+      user.getRole() === UserRole.ANALYST;
 
     if (isMandatory2FA || user.isTwoFactorEnabled()) {
       // If mandatory but not enabled, we still let them proceed to setup (handled in frontend or verify flow)
@@ -354,11 +358,13 @@ export class AuthenticationService {
     // Create or convert user
     let user: User;
     if (existingUser && existingUser.getIsGuest()) {
-      // Convert guest to regular user
+      // Convert guest to regular user (role will be CUSTOMER by default after conversion)
       existingUser.convertFromGuest(userData.email, passwordHash);
       if (userData.phone) {
         existingUser.updatePhone(userData.phone);
       }
+      // Note: Role assignment not supported for guest conversion
+      // If you need a specific role (ADMIN, STAFF, etc.), create a new account instead
       user = existingUser;
       await this.userRepository.update(user);
     } else {
@@ -367,6 +373,7 @@ export class AuthenticationService {
         email: userData.email,
         passwordHash,
         phone: userData.phone,
+        role: userData.role || UserRole.CUSTOMER, // Use provided role or default to CUSTOMER
         isGuest: false,
       });
       await this.userRepository.save(user);
@@ -586,10 +593,12 @@ export class AuthenticationService {
     );
     if (!isPasswordValid) throw new Error("Invalid password");
 
-    // Admins cannot disable 2FA
+    // Admins and Staff cannot disable 2FA
     if (
       user.getRole() === UserRole.ADMIN ||
-      user.getRole() === UserRole.STAFF
+      user.getRole() === UserRole.INVENTORY_STAFF ||
+      user.getRole() === UserRole.CUSTOMER_SERVICE ||
+      user.getRole() === UserRole.ANALYST
     ) {
       throw new Error("Administrators and Staff cannot disable 2FA");
     }
