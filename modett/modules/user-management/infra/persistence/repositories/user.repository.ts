@@ -334,12 +334,16 @@ export class UserRepository implements IUserRepository {
         return UserRole.GUEST;
       case PrismaUserRole.CUSTOMER:
         return UserRole.CUSTOMER;
-      case PrismaUserRole.STAFF:
-        return UserRole.STAFF;
-      case PrismaUserRole.VENDOR:
-        return UserRole.VENDOR;
       case PrismaUserRole.ADMIN:
         return UserRole.ADMIN;
+      case PrismaUserRole.INVENTORY_STAFF:
+        return UserRole.INVENTORY_STAFF;
+      case PrismaUserRole.CUSTOMER_SERVICE:
+        return UserRole.CUSTOMER_SERVICE;
+      case PrismaUserRole.ANALYST:
+        return UserRole.ANALYST;
+      case PrismaUserRole.VENDOR:
+        return UserRole.VENDOR;
       default:
         throw new Error(`Unknown Prisma user role: ${role}`);
     }
