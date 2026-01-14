@@ -53,8 +53,18 @@ export class OrderController {
       const result = await this.getOrderHandler.handle(query);
 
       if (result.success && result.data) {
-        const requesterId = (request as any).user?.userId;
+        const user = (request as any).user;
+        const requesterId = user?.userId;
+        const userRole = user?.role;
+        const isAdminOrStaff = [
+          "ADMIN",
+          "INVENTORY_STAFF",
+          "CUSTOMER_SERVICE",
+          "ANALYST",
+        ].includes(userRole);
+
         if (
+          !isAdminOrStaff &&
           result.data.userId &&
           requesterId &&
           result.data.userId !== requesterId
@@ -110,8 +120,18 @@ export class OrderController {
       const result = await this.getOrderHandler.handle(query);
 
       if (result.success && result.data) {
-        const requesterId = (request as any).user?.userId;
+        const user = (request as any).user;
+        const requesterId = user?.userId;
+        const userRole = user?.role;
+        const isAdminOrStaff = [
+          "ADMIN",
+          "INVENTORY_STAFF",
+          "CUSTOMER_SERVICE",
+          "ANALYST",
+        ].includes(userRole);
+
         if (
+          !isAdminOrStaff &&
           result.data.userId &&
           requesterId &&
           result.data.userId !== requesterId
@@ -240,21 +260,35 @@ export class OrderController {
         endDate,
         sortBy = "createdAt",
         sortOrder = "desc",
+        search,
       } = request.query;
 
-      // Get userId from authenticated user (JWT token)
-      const authenticatedUserId = request.user?.userId;
+      // Get userId and role from authenticated user
+      const user = request.user;
+      const authenticatedUserId = user?.userId;
+      const userRole = user?.role;
 
-      // Always filter by authenticated user's ID for security
+      const isAdminOrStaff = [
+        "ADMIN",
+        "INVENTORY_STAFF",
+        "CUSTOMER_SERVICE",
+        "ANALYST",
+      ].includes(userRole);
+
+      // Only filter by authenticated user's ID if proper customer (not admin/staff)
+      const filterUserId = isAdminOrStaff ? undefined : authenticatedUserId;
+
+      // Always filter by authenticated user's ID for security (unless admin)
       const result = await this.orderManagementService.getAllOrders({
         page,
         limit,
-        userId: authenticatedUserId, // Always use authenticated user's ID
+        userId: filterUserId, // Conditionally use authenticated user's ID
         status,
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined,
         sortBy: sortBy as any,
         sortOrder: sortOrder as any,
+        search,
       });
 
       // Handle empty or undefined results
@@ -273,26 +307,59 @@ export class OrderController {
         });
       }
 
-      const orders = result.items.map((order) => ({
-        orderId: order.getOrderId()?.toString() || "",
-        orderNumber: order.getOrderNumber()?.toString() || "",
-        userId: order.getUserId() || null,
-        guestToken: order.getGuestToken() || null,
-        items: order.getItems().map((item) => ({
-          orderItemId: item.getOrderItemId(),
-          variantId: item.getVariantId(),
-          quantity: item.getQuantity(),
-          productSnapshot: item.getProductSnapshot().toJSON(),
-          isGift: item.isGiftItem(),
-          giftMessage: item.getGiftMessage(),
-        })),
-        totals: order.getTotals()?.toJSON() || {},
-        status: order.getStatus()?.toString() || "",
-        source: order.getSource()?.toString() || "",
-        currency: order.getCurrency()?.toString() || "",
-        createdAt: order.getCreatedAt() || null,
-        updatedAt: order.getUpdatedAt() || null,
-      }));
+      // Fetch addresses and map orders
+      const orders = await Promise.all(
+        result.items.map(async (order) => {
+          // Fetch address for customer details
+          const orderAddress =
+            await this.orderManagementService.getOrderAddress(
+              order.getOrderId().toString()
+            );
+          const billing = orderAddress?.getBillingAddress()?.toJSON();
+
+          let customerName = "Guest Customer";
+          let customerEmail = billing?.email || "";
+
+          if (billing) {
+            customerName = `${billing.firstName} ${billing.lastName}`;
+          } else if (order.getUserId()) {
+            // Fallback to fetching user profile details for authenticated users without address
+            const userDetails = await this.orderManagementService.getUserName(
+              order.getUserId()!
+            );
+            if (userDetails) {
+              customerName = userDetails.name;
+              customerEmail = userDetails.email || customerEmail;
+            }
+          }
+
+          return {
+            orderId: order.getOrderId()?.toString() || "",
+            orderNumber: order.getOrderNumber()?.toString() || "",
+            userId: order.getUserId() || null,
+            guestToken: order.getGuestToken() || null,
+            customerName,
+            customerEmail,
+            billingAddress: billing,
+            shippingAddress: orderAddress?.getShippingAddress()?.toJSON(),
+
+            items: order.getItems().map((item) => ({
+              orderItemId: item.getOrderItemId(),
+              variantId: item.getVariantId(),
+              quantity: item.getQuantity(),
+              productSnapshot: item.getProductSnapshot().toJSON(),
+              isGift: item.isGiftItem(),
+              giftMessage: item.getGiftMessage(),
+            })),
+            totals: order.getTotals()?.toJSON() || {},
+            status: order.getStatus()?.toString() || "",
+            source: order.getSource()?.toString() || "",
+            currency: order.getCurrency()?.toString() || "",
+            createdAt: order.getCreatedAt() || null,
+            updatedAt: order.getUpdatedAt() || null,
+          };
+        })
+      );
 
       return reply.code(200).send({
         success: true,
