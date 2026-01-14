@@ -77,6 +77,7 @@ export interface RegisterUserRequest {
   firstName?: string;
   lastName?: string;
   acceptTerms: boolean;
+  role?: UserRole; // Optional role assignment for creating admin/staff users
   deviceInfo?: {
     userAgent?: string;
     ip?: string;
@@ -369,6 +370,7 @@ export class AuthController {
         phone,
         firstName,
         lastName,
+        role: rawData.role, // Pass role (defaults to CUSTOMER if not provided)
         timestamp: new Date(),
       };
 
