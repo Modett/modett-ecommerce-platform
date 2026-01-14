@@ -297,6 +297,17 @@ export class Order {
     this.changeStatus(OrderStatus.refunded());
   }
 
+  updateStatus(newStatus: OrderStatus): void {
+    if (!this.status.canTransitionTo(newStatus)) {
+      throw new Error(
+        `Cannot transition from ${this.status.getValue()} to ${newStatus.getValue()}`
+      );
+    }
+
+    this.status = newStatus;
+    this.touch();
+  }
+
   private changeStatus(newStatus: OrderStatus): void {
     if (!this.status.canTransitionTo(newStatus)) {
       throw new Error(
