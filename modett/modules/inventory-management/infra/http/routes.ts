@@ -118,6 +118,40 @@ export async function registerInventoryManagementRoutes(
     stockController.listStocks.bind(stockController) as any
   );
 
+  // Get stock stats
+  fastify.get(
+    "/stocks/stats",
+    {
+      preHandler: authenticateStaff,
+      schema: {
+        description: "Get inventory statistics (Staff/Admin only)",
+        tags: ["Stock Management"],
+        summary: "Get Stock Stats",
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            description: "Inventory statistics",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  totalItems: { type: "integer" },
+                  lowStockCount: { type: "integer" },
+                  outOfStockCount: { type: "integer" },
+                  totalValue: { type: "number" },
+                },
+              },
+            },
+          },
+          ...errorResponses,
+        },
+      },
+    },
+    stockController.getStats.bind(stockController) as any
+  );
+
   // Get stock by variant and location
   fastify.get(
     "/stocks/:variantId/:locationId",

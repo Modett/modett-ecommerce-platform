@@ -16,6 +16,8 @@ import {
   GetStockQueryHandler,
   GetStockByVariantQuery,
   GetStockByVariantQueryHandler,
+  GetStockStatsQuery,
+  GetStockStatsQueryHandler,
   GetTotalAvailableStockQuery,
   GetTotalAvailableStockQueryHandler,
   ListStocksQuery,
@@ -33,6 +35,7 @@ export class StockController {
   private setStockThresholdsHandler: SetStockThresholdsCommandHandler;
   private getStockHandler: GetStockQueryHandler;
   private getStockByVariantHandler: GetStockByVariantQueryHandler;
+  private getStockStatsHandler: GetStockStatsQueryHandler;
   private getTotalAvailableStockHandler: GetTotalAvailableStockQueryHandler;
   private listStocksHandler: ListStocksQueryHandler;
 
@@ -57,10 +60,30 @@ export class StockController {
     this.getStockByVariantHandler = new GetStockByVariantQueryHandler(
       stockService
     );
+    this.getStockStatsHandler = new GetStockStatsQueryHandler(stockService);
     this.getTotalAvailableStockHandler = new GetTotalAvailableStockQueryHandler(
       stockService
     );
     this.listStocksHandler = new ListStocksQueryHandler(stockService);
+  }
+
+  async getStats(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const query: GetStockStatsQuery = {};
+
+      const result = await this.getStockStatsHandler.handle(query);
+
+      return reply.code(200).send({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      request.log.error(error, "Failed to get stock stats");
+      return reply.code(500).send({
+        success: false,
+        error: "Internal server error",
+      });
+    }
   }
 
   async getStock(
@@ -175,16 +198,22 @@ export class StockController {
 
   async listStocks(
     request: FastifyRequest<{
-      Querystring: { limit?: number; offset?: number };
+      Querystring: {
+        limit?: number;
+        offset?: number;
+        q?: string;
+        search?: string;
+      };
     }>,
     reply: FastifyReply
   ) {
     try {
-      const { limit, offset } = request.query;
+      const { limit, offset, q, search } = request.query;
 
       const query: ListStocksQuery = {
         limit: limit ? Number(limit) : undefined,
         offset: offset ? Number(offset) : undefined,
+        search: search || q,
       };
 
       const result = await this.listStocksHandler.handle(query);

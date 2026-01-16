@@ -5,6 +5,8 @@ export interface StockProps {
   variantId: string;
   locationId: string;
   stockLevel: StockLevel;
+  variant?: any;
+  location?: any;
 }
 
 export class Stock {
@@ -32,6 +34,14 @@ export class Stock {
 
   getStockLevel(): StockLevel {
     return this.props.stockLevel;
+  }
+
+  getVariant(): any | undefined {
+    return this.props.variant;
+  }
+
+  getLocation(): any | undefined {
+    return this.props.location;
   }
 
   addStock(quantity: number): Stock {

@@ -6,6 +6,7 @@ import { StockResult } from "./get-stock.query";
 export interface ListStocksQuery extends IQuery {
   limit?: number;
   offset?: number;
+  search?: string;
 }
 
 export interface ListStocksResult {
@@ -25,11 +26,13 @@ export class ListStocksQueryHandler
       const result = await this.stockService.listStocks({
         limit: query.limit,
         offset: query.offset,
+        search: query.search,
       });
 
       const stocks: StockResult[] = result.stocks.map((stock) => {
         const stockLevel = stock.getStockLevel();
         return {
+          stockId: `${stock.getVariantId()}-${stock.getLocationId()}`,
           variantId: stock.getVariantId(),
           locationId: stock.getLocationId(),
           onHand: stockLevel.getOnHand(),
@@ -39,6 +42,12 @@ export class ListStocksQueryHandler
           safetyStock: stockLevel.getSafetyStock() ?? undefined,
           isLowStock: stockLevel.isLowStock(),
           isOutOfStock: stockLevel.isOutOfStock(),
+          variant: {
+            ...stock.getVariant(),
+            size: stock.getVariant()?.size,
+            color: stock.getVariant()?.color,
+          },
+          location: stock.getLocation(),
         };
       });
 

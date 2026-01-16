@@ -47,7 +47,7 @@ export const getProducts = async (
         brand: filters.brand,
         sortBy: filters.sortBy || "createdAt",
         sortOrder: filters.sortOrder || "desc",
-        // search: filters.search // backend might not support it yet
+        search: filters.search,
       },
     });
 

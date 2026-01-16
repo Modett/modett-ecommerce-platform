@@ -50,14 +50,8 @@ export function ProductsTable({
   onFilterChange,
   onEditProduct,
 }: ProductsTableProps) {
-  const [searchInput, setSearchInput] = useState(filters.search || "");
   const [showFilters, setShowFilters] = useState(false);
   const totalPages = Math.ceil(pagination.total / pagination.limit);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    onFilterChange({ ...filters, search: searchInput, page: 1 });
-  };
 
   const handleStatusFilter = (status: ProductStatus | undefined) => {
     onFilterChange({ ...filters, status, page: 1 });
@@ -123,20 +117,8 @@ export function ProductsTable({
       {/* Header with Search and Filters */}
       <div className="p-6 border-b border-[#BBA496]/20 bg-gradient-to-r from-white/50 to-transparent">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-          {/* Search */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-md w-full">
-            <div className="relative group">
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search products..."
-                className="w-full h-11 pl-11 pr-4 bg-white/50 border border-[#BBA496]/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#BBA496]/20 focus:border-[#BBA496] transition-all"
-                style={{ fontFamily: "Raleway, sans-serif" }}
-              />
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A09B93] group-focus-within:text-[#232D35] transition-colors" />
-            </div>
-          </form>
+          {/* Search - Removed as we have global search */}
+          <div className="flex-1"></div>
 
           {/* Filter Toggle */}
           <button
@@ -343,11 +325,10 @@ export function ProductsTable({
                         >
                           {product.title}
                         </span>
-                        <div className="flex items-center gap-2 text-xs text-[#8B7355]">
-                          {product.brand && <span>{product.brand}</span>}
-                          {product.variants?.[0]?.sku && (
-                            <span className="font-mono">
-                              {product.variants[0].sku}
+                        <div className="flex items-center gap-2 text-xs text-[#8B7355] truncate max-w-full">
+                          {product.brand && (
+                            <span className="flex-shrink-0">
+                              {product.brand}
                             </span>
                           )}
                         </div>

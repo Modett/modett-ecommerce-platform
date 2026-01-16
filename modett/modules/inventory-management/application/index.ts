@@ -1,6 +1,7 @@
 // Stock Commands and Queries
 export * from "./commands/stock";
 export * from "./queries/stock/get-stock.query";
+export * from "./queries/stock/get-stock-stats.query";
 export * from "./queries/stock/get-stock-by-variant.query";
 export * from "./queries/stock/get-total-available-stock.query";
 export * from "./queries/stock/list-stocks.query";

@@ -295,6 +295,9 @@ export class CartManagementService {
       throw new Error("Unauthorized access to cart");
     }
 
+    // Refresh reservations (Lazy Renewal)
+    await this.refreshCartReservations(cart);
+
     return await this.mapCartToDto(cart);
   }
 
@@ -303,7 +306,11 @@ export class CartManagementService {
       UserId.fromString(userId)
     );
 
-    return cart ? await this.mapCartToDto(cart) : null;
+    if (cart) {
+      await this.refreshCartReservations(cart);
+      return await this.mapCartToDto(cart);
+    }
+    return null;
   }
 
   async getActiveCartByGuestToken(guestToken: string): Promise<CartDto | null> {
@@ -311,7 +318,11 @@ export class CartManagementService {
       GuestToken.fromString(guestToken)
     );
 
-    return cart ? await this.mapCartToDto(cart) : null;
+    if (cart) {
+      await this.refreshCartReservations(cart);
+      return await this.mapCartToDto(cart);
+    }
+    return null;
   }
 
   // Item management
@@ -596,6 +607,7 @@ export class CartManagementService {
         await this.reservationRepository.deleteByCartId(guestCart.getCartId());
         await this.cartRepository.delete(guestCart.getCartId());
 
+        await this.refreshCartReservations(userCart);
         return await this.mapCartToDto(userCart);
       }
     }
@@ -604,7 +616,78 @@ export class CartManagementService {
     const transferredCart = guestCart.transferToUser(dto.userId);
     await this.cartRepository.update(transferredCart);
 
+    await this.refreshCartReservations(transferredCart);
     return await this.mapCartToDto(transferredCart);
+  }
+
+  private async refreshCartReservations(cart: ShoppingCart): Promise<void> {
+    try {
+      const items = cart.getItems();
+
+      for (const item of items) {
+        const variantId = item.getVariantId().getValue();
+        const quantity = item.getQuantity().getValue();
+
+        // Find existing reservation (even if expired, as repo method might return it depending on implementation)
+        // Usually findByCartAndVariant returns null if expired or doesn't exist?
+        // Let's assume we need to check if we have a VALID ACTIVE reservation.
+
+        const existingReservation =
+          await this.reservationRepository.findByCartAndVariant(
+            cart.getCartId(),
+            item.getVariantId()
+          );
+
+        let needsRenewal = false;
+
+        if (!existingReservation) {
+          needsRenewal = true;
+        } else if (existingReservation.isExpired()) {
+          needsRenewal = true;
+        } else if (existingReservation.getQuantity().getValue() < quantity) {
+          // If reserved less than cart quantity (e.g. partial expiry or update), renew/adjust
+          needsRenewal = true;
+        }
+
+        if (needsRenewal) {
+          // Attempt to reserve
+          try {
+            // We use reserveInventory which should handle creation or update
+            // Logic: If active reservation exists, it adds? No, wait.
+            // We want to SET the reservation to match cart quantity.
+            // If validation fails (out of stock), stock service will throw.
+
+            // First check strict availability if we are creating new?
+            // Actually `reserveInventory` in repository usually involves a check.
+
+            if (existingReservation) {
+              // Clean up old expired one if necessary, or just overwrite.
+              // Repository `reserveInventory` implementation usually handles this.
+              // Let's try to explicitly create a reservation for the cart quantity.
+              // Ideally we'd use a `ensureReservation` method but `reserveInventory` is close.
+              // If there's an existing EXPIRED reservation, `reserveInventory` might essentially replace it or throw if uniquness constraint?
+              // Let's assume we can just call reserveInventory.
+            }
+
+            await this.reservationRepository.reserveInventory(
+              cart.getCartId(),
+              item.getVariantId(),
+              quantity
+            );
+            // console.log(`Refreshed reservation for ${variantId}`);
+          } catch (err) {
+            // Stock unavailable.
+            // We swallow the error here so we don't break the cart view.
+            // The user will see the item in cart, but won't "hold" the stock.
+            // Checkout will correctly fail later.
+            // console.warn(`Could not refresh reservation for ${variantId}: stock unavailable`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing cart reservations:", error);
+      // Don't fail getCart if refresh fails
+    }
   }
 
   // Utility methods

@@ -5,3 +5,5 @@ export { QuickStats } from "./quick-stats";
 export { DashboardHeader } from "./dashboard-header";
 export { OrdersTable } from "./orders-table";
 export { OrderDetailsModal } from "./order-details-modal";
+export { ProductsTable } from "./products-table";
+export { ProductFormModal } from "./product-form-modal";

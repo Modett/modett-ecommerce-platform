@@ -7,10 +7,14 @@ export function DashboardHeader({
   title,
   subtitle,
   children,
+  searchTerm,
+  onSearchChange,
 }: {
   title?: string;
   subtitle?: string;
   children?: React.ReactNode;
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
 }) {
   const [currentDate, setCurrentDate] = useState("");
 
@@ -58,6 +62,8 @@ export function DashboardHeader({
             type="text"
             placeholder="Global Search..."
             className="bg-transparent border-none outline-none text-sm w-full placeholder:text-[#BBA496]/70"
+            value={searchTerm || ""}
+            onChange={(e) => onSearchChange?.(e.target.value)}
           />
         </div>
 

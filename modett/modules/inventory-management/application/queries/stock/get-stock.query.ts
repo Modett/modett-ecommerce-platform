@@ -17,6 +17,7 @@ export interface GetStockQuery extends IQuery {
 }
 
 export interface StockResult {
+  stockId?: string;
   variantId: string;
   locationId: string;
   onHand: number;
@@ -26,6 +27,8 @@ export interface StockResult {
   safetyStock?: number;
   isLowStock: boolean;
   isOutOfStock: boolean;
+  variant?: any;
+  location?: any;
 }
 
 export class GetStockQueryHandler

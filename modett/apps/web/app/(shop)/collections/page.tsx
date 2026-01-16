@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ProductCard } from "@/features/product-catalog/components/product-card";
 import {
   useProducts,
@@ -44,8 +44,10 @@ export default function CollectionsPage() {
   const [filterKey, setFilterKey] = useState(0);
   const [sortBy, setSortBy] = useState("newest");
   const [sortOpen, setSortOpen] = useState(false);
+  const [desktopSortOpen, setDesktopSortOpen] = useState(false);
   const [displayCount, setDisplayCount] = useState(12);
   const pageSize = 12;
+  const desktopSortRef = useRef<HTMLDivElement>(null);
 
   const { data: productsData, isLoading } = useProducts({
     sort: sortBy,
@@ -115,6 +117,20 @@ export default function CollectionsPage() {
   const { data: sizeCounts = [] } = useSizeCounts();
 
   const { data: colorCounts = [] } = useColorCounts();
+
+  // Close desktop sort dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (desktopSortRef.current && !desktopSortRef.current.contains(event.target as Node)) {
+        setDesktopSortOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const toggleSize = (size: string) => {
     setSelectedSizes((prev) =>
@@ -300,74 +316,68 @@ export default function CollectionsPage() {
                   )}
                 </div>
 
-                {/* Desktop Sort Interface */}
+                {/* Desktop Sort Interface - Custom Dropdown */}
                 <div className="hidden md:flex items-center gap-2 h-[33px]">
                   <Text.Secondary className="text-[14px] font-medium uppercase leading-[24px] tracking-[3px] whitespace-nowrap">
                     SORT BY:
                   </Text.Secondary>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className={`w-full max-w-[180px] h-[33px] text-[14px] font-medium ${COMMON_CLASSES.pageBg} border-none outline-none cursor-pointer uppercase pr-2 tracking-[3px]`}
-                    style={{ ...TEXT_STYLES.secondary }}
-                  >
-                    <option
-                      value="newest"
-                      style={{
-                        backgroundColor: COLORS.linen,
-                        color: COLORS.graphite,
-                        padding: "8px 12px",
-                        fontFamily: FONTS.reddit,
-                        letterSpacing: "3px",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
+                  <div className="relative" ref={desktopSortRef}>
+                    <button
+                      onClick={() => setDesktopSortOpen(!desktopSortOpen)}
+                      className={`min-w-[220px] h-[33px] text-[14px] font-medium uppercase ${COMMON_CLASSES.pageBg} outline-none cursor-pointer flex items-center justify-between gap-2 pr-1 tracking-[3px]`}
+                      style={{ ...TEXT_STYLES.secondary }}
                     >
-                      Select...
-                    </option>
-                    <option
-                      value="newest"
-                      style={{
-                        backgroundColor: COLORS.linen,
-                        color: COLORS.graphite,
-                        padding: "8px 12px",
-                        fontFamily: FONTS.reddit,
-                        letterSpacing: "3px",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      Newest
-                    </option>
-                    <option
-                      value="price_asc"
-                      style={{
-                        backgroundColor: COLORS.linen,
-                        color: COLORS.graphite,
-                        padding: "8px 12px",
-                        fontFamily: FONTS.reddit,
-                        letterSpacing: "3px",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      Price: Low to High
-                    </option>
-                    <option
-                      value="price_desc"
-                      style={{
-                        backgroundColor: COLORS.linen,
-                        color: COLORS.graphite,
-                        padding: "8px 12px",
-                        fontFamily: FONTS.reddit,
-                        letterSpacing: "3px",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      Price: High to Low
-                    </option>
-                  </select>
+                      <span className="truncate">
+                        {sortBy === "newest" && "Select..."}
+                        {sortBy === "price_asc" && "Price: Low to High"}
+                        {sortBy === "price_desc" && "Price: High to Low"}
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform flex-shrink-0 ${desktopSortOpen ? 'rotate-180' : ''}`}
+                        style={{ color: COLORS.slateGray }}
+                      />
+                    </button>
+
+                    {/* Backdrop */}
+                    {desktopSortOpen && (
+                      <div
+                        className="fixed inset-0 z-40 bg-transparent"
+                        onClick={() => setDesktopSortOpen(false)}
+                      />
+                    )}
+
+                    {/* Dropdown Menu */}
+                    {desktopSortOpen && (
+                      <div className="absolute top-full right-0 mt-2 z-50 min-w-[180px] bg-[#EFECE5] shadow-lg border border-[#E5E0D6] py-2">
+                        {[
+                          { label: "Select...", value: "placeholder" },
+                          { label: "Newest", value: "newest" },
+                          { label: "Price: Low to High", value: "price_asc" },
+                          { label: "Price: High to Low", value: "price_desc" },
+                        ].map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={() => {
+                              setSortBy(
+                                option.value === "placeholder"
+                                  ? "newest"
+                                  : option.value
+                              );
+                              setDesktopSortOpen(false);
+                            }}
+                            className={`w-full text-left px-4 py-3 text-[14px] hover:bg-[#E5E0D6] transition-colors ${
+                              sortBy === option.value
+                                ? "font-normal text-[#232D35]"
+                                : "font-normal text-[#3E5460]"
+                            }`}
+                            style={{ fontFamily: FONTS.raleway }}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

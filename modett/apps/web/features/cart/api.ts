@@ -25,7 +25,8 @@ const cartApiClient = axios.create({
  */
 const getAuthHeaders = async (): Promise<Record<string, string>> => {
   // Check if user is authenticated
-  const authToken = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+  const authToken =
+    typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
 
   if (authToken) {
     // Authenticated user - use Bearer token
@@ -206,10 +207,15 @@ export const transferGuestCartToUser = async (
       }
     );
 
+    if (data?.data?.cartId) {
+      persistCartId(data.data.cartId);
+    }
+
     return data.data;
   } catch (error: any) {
     // Preserve the original error message for proper error handling downstream
-    const errorMessage = error.response?.data?.error || error.message || "Failed to transfer cart";
+    const errorMessage =
+      error.response?.data?.error || error.message || "Failed to transfer cart";
     const newError = new Error(errorMessage);
     // Preserve status code for better error handling
     (newError as any).statusCode = error.response?.status;
@@ -346,7 +352,9 @@ export const initializeCheckout = async (
 export const getCheckout = async (checkoutId: string): Promise<any> => {
   try {
     const headers = await getAuthHeaders();
-    const { data } = await cartApiClient.get(`/checkout/${checkoutId}`, { headers });
+    const { data } = await cartApiClient.get(`/checkout/${checkoutId}`, {
+      headers,
+    });
 
     return data.data;
   } catch (error: any) {
@@ -412,12 +420,39 @@ export const getOrderByCheckoutId = async (
 ): Promise<any> => {
   try {
     const headers = await getAuthHeaders();
-    const { data } = await cartApiClient.get(`/checkout/${checkoutId}/order`, { headers });
+    const { data } = await cartApiClient.get(`/checkout/${checkoutId}/order`, {
+      headers,
+    });
 
     return data.data;
   } catch (error: any) {
     throw new Error(
       error.response?.data?.error || "Order not found for this checkout"
     );
+  }
+};
+
+/**
+ * Get active cart by user ID
+ */
+export const getActiveCartByUser = async (
+  userId: string
+): Promise<Cart | null> => {
+  try {
+    const headers = await getAuthHeaders();
+    const { data } = await cartApiClient.get(`/users/${userId}/cart`, {
+      headers,
+    });
+
+    if (data?.data?.cartId) {
+      persistCartId(data.data.cartId);
+    }
+
+    return data.data;
+  } catch (error: any) {
+    if (error.response?.status === 404) {
+      return null;
+    }
+    throw new Error(error.response?.data?.error || "Failed to get user cart");
   }
 };

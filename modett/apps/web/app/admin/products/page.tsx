@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ProductsTable } from "@/features/admin/components/products-table";
+import { ProductFormModal } from "@/features/admin/components/product-form-modal";
 import { DashboardHeader } from "@/features/admin/components";
 import { getProducts, getCategories } from "@/features/admin/api/products.api";
 import type {
@@ -53,17 +54,11 @@ export default function ProductsPage() {
   const handleEditProduct = (product: AdminProduct) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
-    // TODO: Implement Edit Modal
-    console.log("Edit product", product);
-    alert("Edit product functionality coming soon!");
   };
 
   const handleAddProduct = () => {
     setSelectedProduct(null);
     setIsModalOpen(true);
-    // TODO: Implement Add Modal
-    console.log("Add product");
-    alert("Add product functionality coming soon!");
   };
 
   const handleProductUpdated = () => {
@@ -75,6 +70,10 @@ export default function ProductsPage() {
       <DashboardHeader
         title="Product Management"
         subtitle="Manage your product catalog, inventory, and collections"
+        searchTerm={filters.search}
+        onSearchChange={(term) =>
+          handleFilterChange({ ...filters, search: term, page: 1 })
+        }
       >
         <button
           onClick={handleAddProduct}
@@ -101,15 +100,14 @@ export default function ProductsPage() {
         onEditProduct={handleEditProduct}
       />
 
-      {/* Product Details/Edit Modal (To be implemented) */}
-      {/* 
-      <ProductDetailsModal
+      {/* Product Add/Edit Modal */}
+      <ProductFormModal
         product={selectedProduct}
         isOpen={isModalOpen}
+        categories={categoriesData?.data || []}
         onClose={() => setIsModalOpen(false)}
-        onSave={handleProductUpdated}
-      /> 
-      */}
+        onSaved={handleProductUpdated}
+      />
     </div>
   );
 }

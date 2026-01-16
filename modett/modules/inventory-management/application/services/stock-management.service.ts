@@ -294,4 +294,13 @@ export class StockManagementService {
     }
     return this.transactionRepository.findByVariant(variantId, options);
   }
+
+  async getStats(): Promise<{
+    totalItems: number;
+    lowStockCount: number;
+    outOfStockCount: number;
+    totalValue: number;
+  }> {
+    return this.stockRepository.getStats();
+  }
 }
