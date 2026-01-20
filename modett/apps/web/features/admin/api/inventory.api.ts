@@ -42,6 +42,10 @@ export const getStocks = async (
         limit: filters.limit || 20,
         offset: filters.offset || 0,
         search: filters.search,
+        status: filters.status,
+        locationId: filters.locationId,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
       },
     });
 
