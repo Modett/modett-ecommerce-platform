@@ -6,7 +6,7 @@ import { DashboardHeader } from "@/features/admin/components";
 import { InventoryTable } from "@/features/admin/components/inventory-table";
 import { ReceivingModal } from "@/features/admin/components/receiving-modal";
 import { StockAdjustmentModal } from "@/features/admin/components/stock-adjustment-modal";
-import { getStocks } from "@/features/admin/api/inventory.api";
+import { getStocks, getLocations } from "@/features/admin/api/inventory.api";
 import { PackagePlus, TrendingUp, AlertTriangle } from "lucide-react";
 import type {
   InventoryFilters,
@@ -17,6 +17,8 @@ export default function InventoryPage() {
   const [filters, setFilters] = useState<InventoryFilters>({
     limit: 20,
     offset: 0,
+    sortBy: "product",
+    sortOrder: "asc",
   });
   const [isReceivingOpen, setIsReceivingOpen] = useState(false);
   const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
@@ -32,6 +34,12 @@ export default function InventoryPage() {
     queryKey: ["admin-stocks", filters],
     queryFn: () => getStocks(filters),
     placeholderData: (previousData) => previousData,
+  });
+
+  // Fetch locations for filter dropdown
+  const { data: locationsData } = useQuery({
+    queryKey: ["admin-locations"],
+    queryFn: () => getLocations(),
   });
 
   const handleFilterChange = (newFilters: InventoryFilters) => {
@@ -60,10 +68,6 @@ export default function InventoryPage() {
       <DashboardHeader
         title="Inventory Management"
         subtitle="Track stock levels, multiple locations, and supply chain"
-        searchTerm={filters.search}
-        onSearchChange={(term) =>
-          handleFilterChange({ ...filters, search: term, offset: 0 })
-        }
       >
         <button
           onClick={() => setIsReceivingOpen(true)}
@@ -104,6 +108,7 @@ export default function InventoryPage() {
 
       <InventoryTable
         stocks={stocksData?.data?.stocks || []}
+        locations={locationsData?.data?.locations || []}
         isLoading={isLoading}
         pagination={{
           total: stocksData?.data?.total || 0,
