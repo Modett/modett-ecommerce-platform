@@ -92,12 +92,17 @@ export class ProductController {
         sortOrder = "desc",
       } = request.query;
 
+      let products: any[] = [];
+      let totalCount = 0;
+      let currentPage = Math.max(1, page);
+      let currentLimit = Math.min(100, Math.max(1, limit));
+
       // Handle search separately
       if (search) {
         const searchQuery: SearchProductsQuery = {
           searchTerm: search,
-          page: Math.max(1, page),
-          limit: Math.min(100, Math.max(1, limit)),
+          page: currentPage,
+          limit: currentLimit,
           categoryId,
           brand,
           status,
@@ -110,72 +115,106 @@ export class ProductController {
           sortOrder,
         };
 
-        const searchResult = await this.searchProductsHandler.handle(searchQuery);
+        const searchResult =
+          await this.searchProductsHandler.handle(searchQuery);
         if (searchResult.success && searchResult.data) {
-          return reply.code(200).send({
-            success: true,
-            data: searchResult.data,
-          });
+          products = searchResult.data.products;
+          totalCount = searchResult.data.totalCount;
         } else {
           return reply.code(500).send({
             success: false,
             error: searchResult.error || "Search failed",
           });
         }
+      } else {
+        // Create list products query
+        const query: ListProductsQuery = {
+          page: currentPage,
+          limit: currentLimit,
+          status,
+          brand,
+          categoryId,
+          sortBy,
+          sortOrder,
+        };
+
+        // Execute query using handler
+        const result = await this.listProductsHandler.handle(query);
+
+        if (result.success && result.data) {
+          products = result.data.products;
+          totalCount = result.data.totalCount;
+        } else {
+          return reply.code(500).send({
+            success: false,
+            error: result.error || "Failed to list products",
+          });
+        }
       }
 
-      // Create list products query
-      const query: ListProductsQuery = {
-        page: Math.max(1, page),
-        limit: Math.min(100, Math.max(1, limit)),
-        status,
-        brand,
-        categoryId,
-        sortBy,
-        sortOrder,
-      };
+      // Enrich products with variants and media from Prisma
+      // Use toData() if it's an entity (has getId method), otherwise treat as DTO
+      const normalizedProducts = products.map((p) => {
+        if (typeof p.getId === "function") {
+          return p.toData(); // Convert Entity to DTO
+        }
+        return p; // Already DTO
+      });
 
-      // Execute query using handler
-      const result = await this.listProductsHandler.handle(query);
+      const productIds = normalizedProducts.map(
+        (p) => p.id || p.productId || p.product_id
+      );
 
-      if (result.success && result.data) {
-        // Enrich products with variants and media from Prisma
-        const productIds = result.data.products.map(p => p.productId);
-
-        const enrichedProducts = await this.prisma.product.findMany({
-          where: { id: { in: productIds } },
-          include: {
-            variants: {
-              orderBy: { price: 'asc' },
-              take: 10,
-              include: {
-                inventoryStocks: true,
-              },
-            },
-            media: {
-              include: {
-                asset: true,
-              },
-              orderBy: { position: 'asc' },
-            },
-            categories: {
-              include: {
-                category: true,
-              },
+      const enrichedProducts = await this.prisma.product.findMany({
+        where: { id: { in: productIds } },
+        include: {
+          variants: {
+            orderBy: { price: "asc" },
+            take: 10,
+            include: {
+              inventoryStocks: true,
             },
           },
-        });
+          media: {
+            include: {
+              asset: true,
+            },
+            orderBy: { position: "asc" },
+          },
+          categories: {
+            include: {
+              category: true,
+            },
+          },
+        },
+      });
 
-        // Map enriched data back to products
-        const productsWithDetails = result.data.products.map(product => {
-          const enriched = enrichedProducts.find(p => p.id === product.productId);
-          return {
-            ...product,
-            variants: enriched?.variants?.map(v => {
+      // Map enriched data back to products
+      const productsWithDetails = normalizedProducts.map((product) => {
+        const pId = product.id || product.productId || product.product_id;
+        const enriched = enrichedProducts.find((p) => p.id === pId);
+
+        return {
+          productId: pId, // Ensure consistent ID field
+          title: product.title,
+          slug: product.slug,
+          brand: product.brand,
+          shortDesc: product.shortDesc || product.short_desc,
+          longDescHtml: product.longDescHtml || product.long_desc_html,
+          status: product.status,
+          publishAt: product.publishAt || product.publish_at,
+          countryOfOrigin: product.countryOfOrigin || product.country_of_origin,
+          seoTitle: product.seoTitle || product.seo_title,
+          seoDescription: product.seoDescription || product.seo_description,
+          createdAt: product.createdAt || product.created_at,
+          updatedAt: product.updatedAt || product.updated_at,
+          variants:
+            enriched?.variants?.map((v) => {
               // Calculate total inventory across all locations
-              const totalInventory = v.inventoryStocks?.reduce((sum, stock) => {
-                return sum + (stock.onHand - stock.reserved);
-              }, 0) || 0;
+              const totalInventory =
+                v.inventoryStocks?.reduce((sum, stock) => {
+                  return sum + (stock.onHand - stock.reserved);
+                }, 0) || 0;
 
               return {
                 id: v.id,
@@ -187,38 +226,34 @@ export class ProductController {
                 inventory: totalInventory,
               };
             }) || [],
-            images: enriched?.media?.map(m => ({
+          images:
+            enriched?.media?.map((m) => ({
               url: m.asset.storageKey,
               alt: m.asset.altText,
               width: m.asset.width,
               height: m.asset.height,
             })) || [],
-            categories: enriched?.categories?.map(pc => ({
+          categories:
+            enriched?.categories?.map((pc) => ({
               id: pc.category.id,
               name: pc.category.name,
               slug: pc.category.slug,
               position: pc.category.position,
             })) || [],
-          };
-        });
+        };
+      });
 
-        return reply.code(200).send({
-          success: true,
-          data: {
-            products: productsWithDetails,
-            total: result.data.totalCount,
-            page: result.data.page,
-            limit: result.data.limit,
-          },
-        });
-      } else {
-        return reply.code(500).send({
-          success: false,
-          error: result.error || "Failed to list products",
-        });
-      }
+      return reply.code(200).send({
+        success: true,
+        data: {
+          products: productsWithDetails,
+          total: totalCount,
+          page: currentPage,
+          limit: currentLimit,
+        },
+      });
     } catch (error) {
-      request.log.error(error, "Failed to list products");
+      request.log.error(error, "Failed to list/search products");
       return reply.code(500).send({
         success: false,
         error: "Internal server error",
@@ -300,7 +335,7 @@ export class ProductController {
           where: { id: result.data.productId },
           include: {
             variants: {
-              orderBy: { price: 'asc' },
+              orderBy: { price: "asc" },
               include: {
                 inventoryStocks: true,
               },
@@ -309,7 +344,7 @@ export class ProductController {
               include: {
                 asset: true,
               },
-              orderBy: { position: 'asc' },
+              orderBy: { position: "asc" },
             },
             categories: {
               include: {
@@ -320,38 +355,42 @@ export class ProductController {
         });
 
         // Map enriched data to response
-        const mappedImages = enrichedProduct?.media?.map(m => ({
-          url: m.asset.storageKey,
-          alt: m.asset.altText,
-          width: m.asset.width,
-          height: m.asset.height,
-        })) || [];
+        const mappedImages =
+          enrichedProduct?.media?.map((m) => ({
+            url: m.asset.storageKey,
+            alt: m.asset.altText,
+            width: m.asset.width,
+            height: m.asset.height,
+          })) || [];
 
         const productWithDetails = {
           ...result.data,
-          variants: enrichedProduct?.variants?.map(v => {
-            // Calculate total inventory across all locations
-            const totalInventory = v.inventoryStocks?.reduce((sum, stock) => {
-              return sum + (stock.onHand - stock.reserved);
-            }, 0) || 0;
+          variants:
+            enrichedProduct?.variants?.map((v) => {
+              // Calculate total inventory across all locations
+              const totalInventory =
+                v.inventoryStocks?.reduce((sum, stock) => {
+                  return sum + (stock.onHand - stock.reserved);
+                }, 0) || 0;
 
-            return {
-              id: v.id,
-              sku: v.sku,
-              size: v.size,
-              color: v.color,
-              price: v.price.toString(),
-              compareAtPrice: v.compareAtPrice?.toString(),
-              inventory: totalInventory,
-            };
-          }) || [],
+              return {
+                id: v.id,
+                sku: v.sku,
+                size: v.size,
+                color: v.color,
+                price: v.price.toString(),
+                compareAtPrice: v.compareAtPrice?.toString(),
+                inventory: totalInventory,
+              };
+            }) || [],
           images: mappedImages,
-          categories: enrichedProduct?.categories?.map(pc => ({
-            id: pc.category.id,
-            name: pc.category.name,
-            slug: pc.category.slug,
-            position: pc.category.position,
-          })) || [],
+          categories:
+            enrichedProduct?.categories?.map((pc) => ({
+              id: pc.category.id,
+              name: pc.category.name,
+              slug: pc.category.slug,
+              position: pc.category.position,
+            })) || [],
         };
 
         return reply.code(200).send({

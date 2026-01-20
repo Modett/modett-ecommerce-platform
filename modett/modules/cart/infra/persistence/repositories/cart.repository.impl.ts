@@ -128,10 +128,6 @@ export class CartRepositoryImpl implements CartRepository {
     const cartData = await this.prisma.shoppingCart.findFirst({
       where: {
         userId: userId.getValue(),
-        OR: [
-          { reservationExpiresAt: null },
-          { reservationExpiresAt: { gt: new Date() } },
-        ],
       },
       include: { items: true },
       orderBy: { updatedAt: "desc" },
@@ -172,10 +168,6 @@ export class CartRepositoryImpl implements CartRepository {
     const cartData = await this.prisma.shoppingCart.findFirst({
       where: {
         guestToken: guestToken.getValue(),
-        OR: [
-          { reservationExpiresAt: null },
-          { reservationExpiresAt: { gt: new Date() } },
-        ],
       },
       include: { items: true },
       orderBy: { updatedAt: "desc" },

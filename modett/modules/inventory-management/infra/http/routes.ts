@@ -94,6 +94,25 @@ export async function registerInventoryManagementRoutes(
           properties: {
             limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
             offset: { type: "integer", minimum: 0, default: 0 },
+            search: { type: "string", description: "Search by product name, SKU, or brand" },
+            status: {
+              type: "string",
+              enum: ["low_stock", "out_of_stock", "in_stock"],
+              description: "Filter by stock status"
+            },
+            locationId: { type: "string", description: "Filter by location ID" },
+            sortBy: {
+              type: "string",
+              enum: ["available", "onHand", "location", "product"],
+              default: "product",
+              description: "Sort by field"
+            },
+            sortOrder: {
+              type: "string",
+              enum: ["asc", "desc"],
+              default: "asc",
+              description: "Sort order"
+            },
           },
         },
         response: {
@@ -116,6 +135,40 @@ export async function registerInventoryManagementRoutes(
       },
     },
     stockController.listStocks.bind(stockController) as any
+  );
+
+  // Get stock stats
+  fastify.get(
+    "/stocks/stats",
+    {
+      preHandler: authenticateStaff,
+      schema: {
+        description: "Get inventory statistics (Staff/Admin only)",
+        tags: ["Stock Management"],
+        summary: "Get Stock Stats",
+        security: [{ bearerAuth: [] }],
+        response: {
+          200: {
+            description: "Inventory statistics",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  totalItems: { type: "integer" },
+                  lowStockCount: { type: "integer" },
+                  outOfStockCount: { type: "integer" },
+                  totalValue: { type: "number" },
+                },
+              },
+            },
+          },
+          ...errorResponses,
+        },
+      },
+    },
+    stockController.getStats.bind(stockController) as any
   );
 
   // Get stock by variant and location

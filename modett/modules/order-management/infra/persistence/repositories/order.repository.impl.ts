@@ -78,9 +78,7 @@ export class OrderRepositoryImpl implements IOrderRepository {
         address = OrderAddress.reconstitute({
           orderId: row.id,
           billingAddress: AddressSnapshot.create(addressData.billingSnapshot),
-          shippingAddress: AddressSnapshot.create(
-            addressData.shippingSnapshot
-          ),
+          shippingAddress: AddressSnapshot.create(addressData.shippingSnapshot),
         });
       }
     }
@@ -443,6 +441,15 @@ export class OrderRepositoryImpl implements IOrderRepository {
       if (filters.endDate) {
         whereClause.createdAt.lte = filters.endDate;
       }
+      if (filters.endDate) {
+        whereClause.createdAt.lte = filters.endDate;
+      }
+    }
+
+    if (filters.search) {
+      whereClause.OR = [
+        { orderNo: { contains: filters.search, mode: "insensitive" } },
+      ];
     }
 
     const orders = await this.prisma.order.findMany({
@@ -499,6 +506,15 @@ export class OrderRepositoryImpl implements IOrderRepository {
       if (filters.endDate) {
         whereClause.createdAt.lte = filters.endDate;
       }
+      if (filters.endDate) {
+        whereClause.createdAt.lte = filters.endDate;
+      }
+    }
+
+    if (filters.search) {
+      whereClause.OR = [
+        { orderNo: { contains: filters.search, mode: "insensitive" } },
+      ];
     }
 
     return await this.prisma.order.count({

@@ -276,6 +276,11 @@ export class StockManagementService {
   async listStocks(options?: {
     limit?: number;
     offset?: number;
+    search?: string;
+    status?: "low_stock" | "out_of_stock" | "in_stock";
+    locationId?: string;
+    sortBy?: "available" | "onHand" | "location" | "product";
+    sortOrder?: "asc" | "desc";
   }): Promise<{ stocks: Stock[]; total: number }> {
     return this.stockRepository.findAll(options);
   }
@@ -293,5 +298,14 @@ export class StockManagementService {
       );
     }
     return this.transactionRepository.findByVariant(variantId, options);
+  }
+
+  async getStats(): Promise<{
+    totalItems: number;
+    lowStockCount: number;
+    outOfStockCount: number;
+    totalValue: number;
+  }> {
+    return this.stockRepository.getStats();
   }
 }

@@ -77,7 +77,9 @@ export class PayableIPGController {
         customerEmail,
         customerName,
         customerPhone,
-        returnUrl: returnUrl || `${baseUrl}/payment/success`,
+        returnUrl:
+          returnUrl ||
+          `${baseUrl}/api/v1/payments/payable-ipg/return?checkoutId=${orderId}&intentId=${paymentIntent.intentId}`,
         cancelUrl: cancelUrl || `${baseUrl}/payment/cancel`,
         webhookUrl,
         description,

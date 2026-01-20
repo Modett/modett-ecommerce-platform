@@ -33,11 +33,12 @@ export const getStoredCartId = (): string | null => {
 };
 
 /**
- * Store cart ID in Cookies
+ * Store cart ID in Cookies and dispatch event
  */
 export const persistCartId = (cartId: string): void => {
   if (typeof window === "undefined") return;
   Cookies.set(CART_ID_KEY, cartId, { expires: COOKIE_EXPIRY_DAYS });
+  window.dispatchEvent(new CustomEvent("cart-id-changed", { detail: cartId }));
 };
 
 /**
@@ -49,11 +50,12 @@ export const clearGuestToken = (): void => {
 };
 
 /**
- * Clear cart ID from Cookies
+ * Clear cart ID from Cookies and dispatch event
  */
 export const clearCartId = (): void => {
   if (typeof window === "undefined") return;
   Cookies.remove(CART_ID_KEY);
+  window.dispatchEvent(new CustomEvent("cart-id-changed", { detail: null }));
 };
 
 /**

@@ -1,10 +1,15 @@
 export enum OrderStatusEnum {
-  CREATED = 'created',
-  PAID = 'paid',
-  FULFILLED = 'fulfilled',
-  PARTIALLY_RETURNED = 'partially_returned',
-  REFUNDED = 'refunded',
-  CANCELLED = 'cancelled'
+  CREATED = "created",
+  PENDING = "pending",
+  CONFIRMED = "confirmed",
+  PAID = "paid",
+  PROCESSING = "processing",
+  SHIPPED = "shipped",
+  DELIVERED = "delivered",
+  FULFILLED = "fulfilled", // Deprecating in favor of SHIPPED/DELIVERED
+  PARTIALLY_RETURNED = "partially_returned",
+  REFUNDED = "refunded",
+  CANCELLED = "cancelled",
 }
 
 export class OrderStatus {
@@ -17,7 +22,11 @@ export class OrderStatus {
   static create(value: string): OrderStatus {
     const normalizedValue = value.toLowerCase();
 
-    if (!Object.values(OrderStatusEnum).includes(normalizedValue as OrderStatusEnum)) {
+    if (
+      !Object.values(OrderStatusEnum).includes(
+        normalizedValue as OrderStatusEnum
+      )
+    ) {
       throw new Error(`Invalid order status: ${value}`);
     }
 
@@ -78,12 +87,63 @@ export class OrderStatus {
 
   canTransitionTo(newStatus: OrderStatus): boolean {
     const transitions: Record<OrderStatusEnum, OrderStatusEnum[]> = {
-      [OrderStatusEnum.CREATED]: [OrderStatusEnum.PAID, OrderStatusEnum.CANCELLED],
-      [OrderStatusEnum.PAID]: [OrderStatusEnum.FULFILLED, OrderStatusEnum.REFUNDED, OrderStatusEnum.CANCELLED],
-      [OrderStatusEnum.FULFILLED]: [OrderStatusEnum.PARTIALLY_RETURNED, OrderStatusEnum.REFUNDED],
+      [OrderStatusEnum.CREATED]: [
+        OrderStatusEnum.PENDING,
+        OrderStatusEnum.CONFIRMED,
+        OrderStatusEnum.PAID,
+        OrderStatusEnum.CANCELLED,
+      ],
+      [OrderStatusEnum.PENDING]: [
+        OrderStatusEnum.CREATED, // Correction
+        OrderStatusEnum.CONFIRMED,
+        OrderStatusEnum.PAID,
+        OrderStatusEnum.CANCELLED,
+      ],
+      [OrderStatusEnum.CONFIRMED]: [
+        OrderStatusEnum.PENDING, // Correction
+        OrderStatusEnum.PAID,
+        OrderStatusEnum.PROCESSING,
+        OrderStatusEnum.CANCELLED,
+      ],
+      [OrderStatusEnum.PAID]: [
+        OrderStatusEnum.CONFIRMED, // Correction
+        OrderStatusEnum.PROCESSING,
+        OrderStatusEnum.SHIPPED,
+        OrderStatusEnum.FULFILLED,
+        OrderStatusEnum.REFUNDED,
+        OrderStatusEnum.CANCELLED,
+      ],
+      [OrderStatusEnum.PROCESSING]: [
+        OrderStatusEnum.PAID, // Correction
+        OrderStatusEnum.SHIPPED,
+        OrderStatusEnum.FULFILLED,
+        OrderStatusEnum.REFUNDED,
+        OrderStatusEnum.CANCELLED,
+      ],
+      [OrderStatusEnum.SHIPPED]: [
+        OrderStatusEnum.PROCESSING, // Correction
+        OrderStatusEnum.DELIVERED,
+        OrderStatusEnum.PARTIALLY_RETURNED,
+        OrderStatusEnum.REFUNDED,
+      ],
+      [OrderStatusEnum.DELIVERED]: [
+        OrderStatusEnum.PARTIALLY_RETURNED,
+        OrderStatusEnum.REFUNDED,
+      ],
+      [OrderStatusEnum.FULFILLED]: [
+        OrderStatusEnum.DELIVERED,
+        OrderStatusEnum.PARTIALLY_RETURNED,
+        OrderStatusEnum.REFUNDED,
+      ],
       [OrderStatusEnum.PARTIALLY_RETURNED]: [OrderStatusEnum.REFUNDED],
       [OrderStatusEnum.REFUNDED]: [],
-      [OrderStatusEnum.CANCELLED]: []
+      [OrderStatusEnum.CANCELLED]: [
+        OrderStatusEnum.CREATED,
+        OrderStatusEnum.PENDING,
+        OrderStatusEnum.CONFIRMED,
+        OrderStatusEnum.PAID,
+        OrderStatusEnum.PROCESSING,
+      ],
     };
 
     return transitions[this.value].includes(newStatus.value);

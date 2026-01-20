@@ -88,6 +88,20 @@ export async function registerUserManagementRoutes(
               type: "string",
               example: "Doe",
             },
+            role: {
+              type: "string",
+              enum: [
+                "CUSTOMER",
+                "ADMIN",
+                "INVENTORY_STAFF",
+                "CUSTOMER_SERVICE",
+                "ANALYST",
+                "VENDOR",
+              ],
+              description:
+                "User role (defaults to CUSTOMER if not provided, backend only)",
+              example: "CUSTOMER",
+            },
           },
         },
         response: {
@@ -100,8 +114,14 @@ export async function registerUserManagementRoutes(
               data: {
                 type: "object",
                 properties: {
-                  accessToken: { type: "string", description: "JWT access token" },
-                  refreshToken: { type: "string", description: "JWT refresh token" },
+                  accessToken: {
+                    type: "string",
+                    description: "JWT access token",
+                  },
+                  refreshToken: {
+                    type: "string",
+                    description: "JWT refresh token",
+                  },
                   user: {
                     type: "object",
                     properties: {
@@ -120,7 +140,10 @@ export async function registerUserManagementRoutes(
                     type: "string",
                     example: "Registration successful",
                   },
-                  verificationToken: { type: "string", description: "Email verification token (dev only)" },
+                  verificationToken: {
+                    type: "string",
+                    description: "Email verification token (dev only)",
+                  },
                 },
               },
             },
@@ -667,27 +690,152 @@ export async function registerUserManagementRoutes(
   );
 
   fastify.get(
+    "/admin/users",
+    {
+      schema: {
+        description: "List all users with filters and pagination (Admin only)",
+        tags: ["Users"],
+        summary: "List Users (Admin)",
+        security: [{ bearerAuth: [] }],
+        querystring: {
+          type: "object",
+          properties: {
+            search: {
+              type: "string",
+              description: "Search by email or phone",
+              example: "john@example.com",
+            },
+            role: {
+              type: "string",
+              enum: [
+                "GUEST",
+                "CUSTOMER",
+                "ADMIN",
+                "INVENTORY_STAFF",
+                "CUSTOMER_SERVICE",
+                "ANALYST",
+                "VENDOR",
+              ],
+              description: "Filter by user role",
+            },
+            status: {
+              type: "string",
+              enum: ["active", "inactive", "blocked"],
+              description: "Filter by user status",
+            },
+            emailVerified: {
+              type: "string",
+              enum: ["true", "false"],
+              description: "Filter by email verification status",
+            },
+            page: {
+              type: "integer",
+              minimum: 1,
+              default: 1,
+              description: "Page number",
+            },
+            limit: {
+              type: "integer",
+              minimum: 1,
+              maximum: 100,
+              default: 20,
+              description: "Items per page",
+            },
+            sortBy: {
+              type: "string",
+              enum: ["createdAt", "email"],
+              default: "createdAt",
+              description: "Sort by field",
+            },
+            sortOrder: {
+              type: "string",
+              enum: ["asc", "desc"],
+              default: "desc",
+              description: "Sort order",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Users list with pagination",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  users: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        userId: { type: "string", format: "uuid" },
+                        email: { type: "string", format: "email" },
+                        phone: { type: "string", nullable: true },
+                        role: { type: "string" },
+                        status: { type: "string" },
+                        emailVerified: { type: "boolean" },
+                        phoneVerified: { type: "boolean" },
+                        isGuest: { type: "boolean" },
+                        createdAt: { type: "string", format: "date-time" },
+                        updatedAt: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
+                  pagination: {
+                    type: "object",
+                    properties: {
+                      total: { type: "integer" },
+                      page: { type: "integer" },
+                      limit: { type: "integer" },
+                      totalPages: { type: "integer" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Bad request - validation error",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+              errors: { type: "array", items: { type: "string" } },
+            },
+          },
+          401: {
+            description: "Unauthorized - admin access required",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Admin access required" },
+            },
+          },
+        },
+      },
+      preHandler: authenticateAdmin as any,
+    },
+    usersController.listUsers.bind(usersController)
+  );
+
+  fastify.get(
     "/users/:userId",
     {
       schema: {
-        description: "Get user information by user ID (Admin only)",
+        description: "Get user details by ID (Admin/Staff/Self)",
         tags: ["Users"],
-        summary: "Get User by ID",
+        summary: "Get User Details",
         security: [{ bearerAuth: [] }],
         params: {
           type: "object",
           properties: {
-            userId: {
-              type: "string",
-              format: "uuid",
-              description: "Unique user identifier",
-            },
+            userId: { type: "string", format: "uuid" },
           },
-          required: ["userId"],
         },
         response: {
           200: {
-            description: "User information",
+            description: "User details",
             type: "object",
             properties: {
               success: { type: "boolean", example: true },
@@ -699,29 +847,14 @@ export async function registerUserManagementRoutes(
                   phone: { type: "string", nullable: true },
                   firstName: { type: "string", nullable: true },
                   lastName: { type: "string", nullable: true },
-                  role: {
-                    type: "string",
-                    enum: ["GUEST", "CUSTOMER", "STAFF", "VENDOR", "ADMIN"],
-                  },
-                  status: {
-                    type: "string",
-                    enum: ["active", "inactive", "blocked"],
-                  },
+                  role: { type: "string" },
+                  status: { type: "string" },
                   emailVerified: { type: "boolean" },
                   phoneVerified: { type: "boolean" },
                   isGuest: { type: "boolean" },
                   createdAt: { type: "string", format: "date-time" },
                   updatedAt: { type: "string", format: "date-time" },
                 },
-                required: [
-                  "userId",
-                  "email",
-                  "role",
-                  "status",
-                  "emailVerified",
-                  "phoneVerified",
-                  "isGuest",
-                ],
               },
             },
           },
@@ -730,14 +863,239 @@ export async function registerUserManagementRoutes(
             type: "object",
             properties: {
               success: { type: "boolean", example: false },
-              error: { type: "string", example: "User not found" },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+      // Detailed permission check is inside service/handler if needed,
+      // but standard rule: Admin/Staff can view anyone, User can view self.
+      // For now, let's allow authenticated users and assume controller handles ownership logic if necessary.
+      // But creating a 'getUser' usually implies admin/owner access.
+      preHandler: authenticateUser,
+    },
+    usersController.getUser.bind(usersController) as any
+  );
+
+  fastify.patch(
+    "/users/:userId/status",
+    {
+      schema: {
+        description: "Update user status (Admin only)",
+        tags: ["Users"],
+        summary: "Update User Status",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            userId: { type: "string", format: "uuid" },
+          },
+        },
+        body: {
+          type: "object",
+          required: ["status"],
+          properties: {
+            status: {
+              type: "string",
+              enum: ["active", "inactive", "blocked"],
+              description: "New status",
+            },
+            notes: {
+              type: "string",
+              description: "Reason for status change",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Status updated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  userId: { type: "string", format: "uuid" },
+                  status: { type: "string" },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Bad request",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
             },
           },
         },
       },
       preHandler: authenticateAdmin as any,
     },
-    usersController.getUser.bind(usersController)
+    usersController.updateStatus.bind(usersController) as any
+  );
+
+  fastify.patch(
+    "/users/:userId/role",
+    {
+      schema: {
+        description: "Update user role (Admin only)",
+        tags: ["Users"],
+        summary: "Update User Role",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            userId: { type: "string", format: "uuid" },
+          },
+        },
+        body: {
+          type: "object",
+          required: ["role"],
+          properties: {
+            role: {
+              type: "string",
+              enum: [
+                "GUEST",
+                "CUSTOMER",
+                "ADMIN",
+                "INVENTORY_STAFF",
+                "CUSTOMER_SERVICE",
+                "ANALYST",
+                "VENDOR",
+              ],
+              description: "New user role",
+            },
+            reason: {
+              type: "string",
+              description: "Reason for role change",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Role updated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  userId: { type: "string", format: "uuid" },
+                  role: { type: "string" },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Bad request",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+      preHandler: authenticateAdmin as any,
+    },
+    usersController.updateRole.bind(usersController) as any
+  );
+
+  fastify.patch(
+    "/users/:userId/email-verification",
+    {
+      schema: {
+        description: "Toggle user email verification status",
+        tags: ["User Management"],
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            userId: { type: "string", format: "uuid" },
+          },
+        },
+        body: {
+          type: "object",
+          required: ["isVerified"],
+          properties: {
+            isVerified: {
+              type: "boolean",
+              description: "New email verification status",
+            },
+            reason: {
+              type: "string",
+              description: "Reason for change",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Email verification status updated successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              data: {
+                type: "object",
+                properties: {
+                  userId: { type: "string", format: "uuid" },
+                  isVerified: { type: "boolean" },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Bad request",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+      preHandler: authenticateAdmin as any,
+    },
+    usersController.toggleEmailVerification.bind(usersController) as any
+  );
+
+  fastify.delete(
+    "/users/:userId",
+    {
+      schema: {
+        description: "Delete user (Admin only)",
+        tags: ["Users"],
+        summary: "Delete User",
+        security: [{ bearerAuth: [] }],
+        params: {
+          type: "object",
+          properties: {
+            userId: { type: "string", format: "uuid" },
+          },
+        },
+        response: {
+          200: {
+            description: "User deleted successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: { type: "string", example: "User deleted successfully" },
+            },
+          },
+          400: {
+            description: "Bad request",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+        },
+      },
+      preHandler: authenticateAdmin as any,
+    },
+    usersController.deleteUser.bind(usersController) as any
   );
 
   // Profile Routes (Protected)

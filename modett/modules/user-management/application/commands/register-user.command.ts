@@ -1,4 +1,5 @@
 import { AuthenticationService, RegisterUserData, AuthResult } from '../services/authentication.service';
+import { UserRole } from '../../domain/entities/user.entity';
 
 // Base interfaces
 export interface ICommand {
@@ -33,6 +34,7 @@ export interface RegisterUserCommand extends ICommand {
   phone?: string;
   firstName?: string;
   lastName?: string;
+  role?: UserRole; // Optional role assignment for creating admin/staff users
 }
 
 export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand, CommandResult<AuthResult>> {
@@ -54,7 +56,8 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand,
       const registerData: RegisterUserData = {
         email: command.email,
         password: command.password,
-        phone: command.phone
+        phone: command.phone,
+        role: command.role // Pass role to service (defaults to CUSTOMER if not provided)
       };
 
       // Register user through authentication service

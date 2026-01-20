@@ -5,9 +5,11 @@ import jwt from "jsonwebtoken";
 export enum UserRole {
   GUEST = "GUEST",
   CUSTOMER = "CUSTOMER",
-  STAFF = "STAFF",
-  VENDOR = "VENDOR",
   ADMIN = "ADMIN",
+  INVENTORY_STAFF = "INVENTORY_STAFF",
+  CUSTOMER_SERVICE = "CUSTOMER_SERVICE",
+  ANALYST = "ANALYST",
+  VENDOR = "VENDOR",
 }
 
 // User interface for type safety
@@ -284,7 +286,12 @@ export const authenticateAdmin = [
  */
 export const authenticateStaff = [
   authenticateUser,
-  requireRole([UserRole.STAFF, UserRole.ADMIN]),
+  requireRole([
+    UserRole.INVENTORY_STAFF,
+    UserRole.CUSTOMER_SERVICE,
+    UserRole.ANALYST,
+    UserRole.ADMIN,
+  ]),
 ];
 
 /**

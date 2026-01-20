@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { handleCartTransfer } from "@/lib/cart-transfer";
+import { getActiveCartByUser } from "@/features/cart/api";
+import { getStoredCartId } from "@/features/cart/utils";
 import {
   clearWishlistData,
   persistWishlistId,
@@ -88,7 +90,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const user = {
         id: apiUser.userId || apiUser.id,
         email: apiUser.email,
-        name: apiUser.name || `${apiUser.firstName || ''} ${apiUser.lastName || ''}`.trim() || undefined,
+        name:
+          apiUser.name ||
+          `${apiUser.firstName || ""} ${apiUser.lastName || ""}`.trim() ||
+          undefined,
       };
 
       localStorage.setItem("authToken", accessToken);
@@ -103,7 +108,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       // 🛒 Transfer guest cart to user
+      console.log("🛒 [AuthProvider] Attempting cart transfer...");
       await handleCartTransfer(user.id, accessToken);
+
+      // If no cart ID is stored (transfer failed or skipped), try to restore active user cart
+      const storedCartId = getStoredCartId();
+      console.log(
+        "🛒 [AuthProvider] Stored Cart ID after transfer:",
+        storedCartId
+      );
+
+      if (!storedCartId) {
+        try {
+          console.log(
+            "🛒 [AuthProvider] No local cart found. Fetching active cart from backend..."
+          );
+          const restoredCart = await getActiveCartByUser(user.id);
+          console.log("🛒 [AuthProvider] Restored cart result:", restoredCart);
+        } catch (err) {
+          console.warn("🛒 [AuthProvider] Failed to restore active cart:", err);
+        }
+      }
 
       // RESTORE USER WISHLIST
       try {
@@ -151,7 +176,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const user = {
         id: apiUser.userId || apiUser.id,
         email: apiUser.email,
-        name: apiUser.name || `${apiUser.firstName || ''} ${apiUser.lastName || ''}`.trim() || undefined,
+        name:
+          apiUser.name ||
+          `${apiUser.firstName || ""} ${apiUser.lastName || ""}`.trim() ||
+          undefined,
       };
 
       localStorage.setItem("authToken", accessToken);
@@ -165,6 +193,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 🛒 Transfer guest cart to user
       await handleCartTransfer(user.id, accessToken);
+
+      // If no cart ID is stored (transfer failed or skipped), try to restore active user cart
+      if (!getStoredCartId()) {
+        try {
+          await getActiveCartByUser(user.id);
+        } catch (err) {
+          // No active cart found or error - ignore
+        }
+      }
 
       // RESTORE USER WISHLIST
       try {
@@ -216,7 +253,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const user = {
         id: apiUser.userId || apiUser.id,
         email: apiUser.email,
-        name: apiUser.name || `${apiUser.firstName || ''} ${apiUser.lastName || ''}`.trim() || undefined,
+        name:
+          apiUser.name ||
+          `${apiUser.firstName || ""} ${apiUser.lastName || ""}`.trim() ||
+          undefined,
       };
 
       localStorage.setItem("authToken", accessToken);
@@ -232,6 +272,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 🛒 Transfer guest cart to user
       await handleCartTransfer(user.id, accessToken);
+
+      // If no cart ID is stored (transfer failed or skipped), try to restore active user cart
+      if (!getStoredCartId()) {
+        try {
+          await getActiveCartByUser(user.id);
+        } catch (err) {
+          // No active cart found or error - ignore
+        }
+      }
 
       // Invalidate queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ["wishlist"] });
@@ -298,7 +347,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const userData = {
             id: data.data.userId || data.data.id,
             email: data.data.email,
-            name: data.data.name || `${data.data.firstName || ''} ${data.data.lastName || ''}`.trim() || undefined,
+            name:
+              data.data.name ||
+              `${data.data.firstName || ""} ${data.data.lastName || ""}`.trim() ||
+              undefined,
           };
 
           setAuthState({
