@@ -44,13 +44,15 @@ interface QuickStatsProps {
   conversionRate?: string;
   lowStockCount?: number;
   pendingActionsCount?: number;
+  newCustomersCount?: number;
 }
 
 export function QuickStats({
-  totalCustomers = "2,847",
+  totalCustomers = "0",
   conversionRate = "3.24%",
   lowStockCount = 0,
   pendingActionsCount = 0,
+  newCustomersCount = 0,
 }: QuickStatsProps) {
   return (
     <Card className="border-[#BBA496]/30">
@@ -67,8 +69,8 @@ export function QuickStats({
           <QuickStatItem
             label="Total Customers"
             value={totalCustomers}
-            change="+156 this week"
-            isPositive={true}
+            change={`+${newCustomersCount} today`}
+            isPositive={newCustomersCount > 0}
           />
           <QuickStatItem
             label="Conversion Rate"
