@@ -16,6 +16,10 @@ export interface IStockRepository {
     limit?: number;
     offset?: number;
     search?: string;
+    status?: "low_stock" | "out_of_stock" | "in_stock";
+    locationId?: string;
+    sortBy?: "available" | "onHand" | "location" | "product";
+    sortOrder?: "asc" | "desc";
   }): Promise<{ stocks: Stock[]; total: number }>;
 
   // Stock level queries
