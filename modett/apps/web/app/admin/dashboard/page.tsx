@@ -20,6 +20,8 @@ interface DashboardSummary {
   revenue: number;
   orders: number;
   averageOrderValue: number;
+  totalCustomers: number;
+  newCustomersToday: number;
 }
 
 interface StockAlertItem {
@@ -144,8 +146,11 @@ export default function DashboardPage() {
 
       {/* Quick Stats Section */}
       <QuickStats
+        totalCustomers={summary?.totalCustomers?.toLocaleString() || "0"}
+        conversionRate="3.24%" // Hardcoded for now until analytics module is ready
         lowStockCount={alerts?.lowStock?.length || 0}
         pendingActionsCount={alerts?.pendingOrders || 0}
+        newCustomersCount={summary?.newCustomersToday || 0}
       />
     </div>
   );
