@@ -94,6 +94,25 @@ export async function registerInventoryManagementRoutes(
           properties: {
             limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
             offset: { type: "integer", minimum: 0, default: 0 },
+            search: { type: "string", description: "Search by product name, SKU, or brand" },
+            status: {
+              type: "string",
+              enum: ["low_stock", "out_of_stock", "in_stock"],
+              description: "Filter by stock status"
+            },
+            locationId: { type: "string", description: "Filter by location ID" },
+            sortBy: {
+              type: "string",
+              enum: ["available", "onHand", "location", "product"],
+              default: "product",
+              description: "Sort by field"
+            },
+            sortOrder: {
+              type: "string",
+              enum: ["asc", "desc"],
+              default: "asc",
+              description: "Sort order"
+            },
           },
         },
         response: {
