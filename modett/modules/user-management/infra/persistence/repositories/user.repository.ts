@@ -3,7 +3,11 @@ import {
   UserStatus as PrismaUserStatus,
   UserRole as PrismaUserRole,
 } from "@prisma/client";
-import { IUserRepository } from "../../../domain/repositories/iuser.repository";
+import {
+  IUserRepository,
+  FindAllWithFiltersOptions,
+  FindAllWithFiltersResult,
+} from "../../../domain/repositories/iuser.repository";
 import {
   User,
   UserStatus,
@@ -100,6 +104,7 @@ export class UserRepository implements IUserRepository {
         email: data.email,
         passwordHash: data.password_hash,
         phone: data.phone,
+        role: this.mapRoleToPrisma(data.role),
         status: this.mapStatusToPrisma(data.status),
         emailVerified: data.email_verified,
         phoneVerified: data.phone_verified,
@@ -115,6 +120,22 @@ export class UserRepository implements IUserRepository {
   async delete(id: UserId): Promise<void> {
     await this.prisma.user.delete({
       where: { id: id.getValue() },
+    });
+  }
+
+  async count(): Promise<number> {
+    return this.prisma.user.count();
+  }
+
+  async countByRole(role: UserRole): Promise<number> {
+    return this.prisma.user.count({
+      where: { role: this.mapRoleToPrisma(role) },
+    });
+  }
+
+  async countNewUsers(since: Date): Promise<number> {
+    return this.prisma.user.count({
+      where: { createdAt: { gte: since } },
     });
   }
 
@@ -301,6 +322,83 @@ export class UserRepository implements IUserRepository {
     return result.count;
   }
 
+  async findAllWithFilters(
+    options: FindAllWithFiltersOptions
+  ): Promise<FindAllWithFiltersResult> {
+    const {
+      search,
+      role,
+      status,
+      emailVerified,
+      page,
+      limit,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = options;
+
+    // Build where clause
+    const where: any = {};
+
+    // Search filter (email or phone contains search term)
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: "insensitive" } },
+        { phone: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    // Role filter
+    if (role) {
+      where.role = this.mapRoleToPrisma(role);
+    }
+
+    // Status filter
+    if (status) {
+      where.status = this.mapStatusToPrisma(status);
+    }
+
+    // Email verified filter
+    if (emailVerified !== undefined) {
+      where.emailVerified = emailVerified;
+    }
+
+    // Calculate pagination
+    const offset = (page - 1) * limit;
+
+    // Execute query with pagination and count in parallel
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        take: limit,
+        skip: offset,
+        orderBy: { [sortBy]: sortOrder },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    // Map to domain entities
+    const domainUsers = users.map((userData) =>
+      User.fromDatabaseRow({
+        user_id: userData.id,
+        email: userData.email,
+        password_hash: userData.passwordHash,
+        phone: userData.phone,
+        role: this.mapRoleFromPrisma(userData.role),
+        status: this.mapStatusFromPrisma(userData.status),
+        email_verified: userData.emailVerified,
+        phone_verified: userData.phoneVerified,
+        is_guest: userData.isGuest,
+        created_at: userData.createdAt,
+        updated_at: userData.updatedAt,
+        two_factor_enabled: userData.twoFactorEnabled,
+        two_factor_secret: userData.twoFactorSecret,
+        two_factor_backup_codes: userData.twoFactorBackupCodes,
+      })
+    );
+
+    return { users: domainUsers, total };
+  }
+
   // Helper methods to map between domain and Prisma enums
   private mapStatusToPrisma(status: UserStatus): PrismaUserStatus {
     switch (status) {
@@ -325,6 +423,27 @@ export class UserRepository implements IUserRepository {
         return UserStatus.BLOCKED;
       default:
         throw new Error(`Unknown Prisma user status: ${status}`);
+    }
+  }
+
+  private mapRoleToPrisma(role: UserRole): PrismaUserRole {
+    switch (role) {
+      case UserRole.GUEST:
+        return PrismaUserRole.GUEST;
+      case UserRole.CUSTOMER:
+        return PrismaUserRole.CUSTOMER;
+      case UserRole.ADMIN:
+        return PrismaUserRole.ADMIN;
+      case UserRole.INVENTORY_STAFF:
+        return PrismaUserRole.INVENTORY_STAFF;
+      case UserRole.CUSTOMER_SERVICE:
+        return PrismaUserRole.CUSTOMER_SERVICE;
+      case UserRole.ANALYST:
+        return PrismaUserRole.ANALYST;
+      case UserRole.VENDOR:
+        return PrismaUserRole.VENDOR;
+      default:
+        throw new Error(`Unknown user role: ${role}`);
     }
   }
 
