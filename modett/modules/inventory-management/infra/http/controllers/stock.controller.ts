@@ -203,17 +203,26 @@ export class StockController {
         offset?: number;
         q?: string;
         search?: string;
+        status?: "low_stock" | "out_of_stock" | "in_stock";
+        locationId?: string;
+        sortBy?: "available" | "onHand" | "location" | "product";
+        sortOrder?: "asc" | "desc";
       };
     }>,
     reply: FastifyReply
   ) {
     try {
-      const { limit, offset, q, search } = request.query;
+      const { limit, offset, q, search, status, locationId, sortBy, sortOrder } =
+        request.query;
 
       const query: ListStocksQuery = {
         limit: limit ? Number(limit) : undefined,
         offset: offset ? Number(offset) : undefined,
         search: search || q,
+        status,
+        locationId,
+        sortBy,
+        sortOrder,
       };
 
       const result = await this.listStocksHandler.handle(query);
