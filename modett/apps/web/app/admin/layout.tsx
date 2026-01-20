@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -70,14 +70,26 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const handleSignOut = () => {
+    // Clear authentication token
+    localStorage.removeItem("authToken");
+    // Clear any other session data
+    localStorage.removeItem("user");
+    // Redirect to login page
+    router.push("/login");
+    // Force a hard reload to clear any cached state
+    window.location.href = "/login";
+  };
+
   return (
-    <div className="flex min-h-screen bg-[#F8F5F2]">
+    <div className="flex h-screen overflow-hidden bg-[#F8F5F2]">
       {/* Desktop Sidebar */}
-      <aside className="w-64 bg-white border-r border-[#BBA496]/30 hidden md:flex flex-col">
+      <aside className="w-64 bg-white border-r border-[#BBA496]/30 hidden md:flex flex-col fixed inset-y-0 left-0">
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center px-6 border-b border-[#BBA496]/30">
+        <div className="h-16 flex items-center px-6 border-b border-[#BBA496]/30 flex-shrink-0">
           <Link
             href="/"
             className="flex items-center gap-2 text-[#232D35] hover:opacity-80 transition-opacity"
@@ -145,6 +157,7 @@ export default function AdminLayout({
             </div>
           </div>
           <button
+            onClick={handleSignOut}
             className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-[#8B7355] hover:text-[#232D35] hover:bg-[#F8F5F2] rounded-lg transition-colors"
             style={{ fontFamily: "Raleway, sans-serif" }}
           >
@@ -245,6 +258,7 @@ export default function AdminLayout({
             </div>
           </div>
           <button
+            onClick={handleSignOut}
             className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-[#8B7355] hover:text-[#232D35] hover:bg-[#F8F5F2] rounded-lg transition-colors"
             style={{ fontFamily: "Raleway, sans-serif" }}
           >
@@ -255,9 +269,9 @@ export default function AdminLayout({
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 md:ml-64 overflow-hidden">
         {/* Header */}
-        <header className="h-16 bg-white border-b border-[#BBA496]/30 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+        <header className="h-16 bg-white border-b border-[#BBA496]/30 flex items-center justify-between px-4 md:px-8 flex-shrink-0">
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(true)}
@@ -302,7 +316,7 @@ export default function AdminLayout({
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 p-4 md:p-8 overflow-auto">{children}</div>
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto">{children}</div>
       </main>
     </div>
   );
