@@ -209,6 +209,14 @@ export class User {
     this.touch();
   }
 
+  updateRole(newRole: UserRole): void {
+    if (this.role === newRole) {
+      return;
+    }
+    this.role = newRole;
+    this.touch();
+  }
+
   updatePassword(newPasswordHash: string): void {
     if (!newPasswordHash) {
       throw new Error("Password hash is required");
@@ -224,6 +232,14 @@ export class User {
     }
 
     this.emailVerified = true;
+    this.touch();
+  }
+
+  setEmailVerified(verified: boolean): void {
+    if (this.emailVerified === verified) {
+      return;
+    }
+    this.emailVerified = verified;
     this.touch();
   }
 
