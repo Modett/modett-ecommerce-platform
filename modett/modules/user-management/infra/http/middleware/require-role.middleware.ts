@@ -39,7 +39,7 @@ export function requireAdmin() {
  * Staff or admin routes
  */
 export function requireStaffOrAdmin() {
-  return requireRole([UserRole.STAFF, UserRole.ADMIN]);
+  return requireRole([UserRole.INVENTORY_STAFF, UserRole.CUSTOMER_SERVICE, UserRole.ANALYST, UserRole.ADMIN]);
 }
 
 /**
@@ -101,9 +101,10 @@ export function requireOwnershipOrStaff(
 
     const resourceUserId = await getUserIdFromRequest(request);
 
+    const staffRoles = [UserRole.ADMIN, UserRole.INVENTORY_STAFF, UserRole.CUSTOMER_SERVICE, UserRole.ANALYST];
+
     if (
-      request.user.role === UserRole.ADMIN ||
-      request.user.role === UserRole.STAFF ||
+      staffRoles.includes(request.user.role) ||
       request.user.userId === resourceUserId
     ) {
       return;
