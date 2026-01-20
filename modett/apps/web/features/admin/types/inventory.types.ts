@@ -61,6 +61,9 @@ export interface InventoryFilters {
   variantId?: string;
   locationId?: string;
   search?: string;
+  status?: "low_stock" | "out_of_stock" | "in_stock";
+  sortBy?: "available" | "onHand" | "location" | "product";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface StocksListResponse {
