@@ -7,6 +7,10 @@ export interface ListStocksQuery extends IQuery {
   limit?: number;
   offset?: number;
   search?: string;
+  status?: "low_stock" | "out_of_stock" | "in_stock";
+  locationId?: string;
+  sortBy?: "available" | "onHand" | "location" | "product";
+  sortOrder?: "asc" | "desc";
 }
 
 export interface ListStocksResult {
@@ -27,6 +31,10 @@ export class ListStocksQueryHandler
         limit: query.limit,
         offset: query.offset,
         search: query.search,
+        status: query.status,
+        locationId: query.locationId,
+        sortBy: query.sortBy,
+        sortOrder: query.sortOrder,
       });
 
       const stocks: StockResult[] = result.stocks.map((stock) => {
