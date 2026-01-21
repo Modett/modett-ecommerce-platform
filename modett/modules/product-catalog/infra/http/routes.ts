@@ -74,7 +74,7 @@ export async function registerProductCatalogRoutes(
     services.prisma
   );
   const categoryController = new CategoryController(services.categoryService);
-  const variantController = new VariantController(services.variantService);
+  const variantController = new VariantController(services.variantService, services.prisma);
   const searchController = new SearchController(services.productSearchService);
   const mediaController = new MediaController(services.mediaService);
   const productTagController = new ProductTagController(
