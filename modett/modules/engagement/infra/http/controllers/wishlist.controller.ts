@@ -22,6 +22,7 @@ import {
   GetWishlistItemsHandler,
 } from "../../../application/queries/index.js";
 import { WishlistManagementService } from "../../../application/services/index.js";
+import { PrismaClient } from "@prisma/client";
 
 interface CreateWishlistRequest {
   userId?: string;
@@ -56,25 +57,31 @@ export class WishlistController {
   private getPublicWishlistsHandler: GetPublicWishlistsHandler;
   private getWishlistItemsHandler: GetWishlistItemsHandler;
 
-  constructor(private readonly wishlistService: WishlistManagementService) {
+  constructor(
+    private readonly wishlistService: WishlistManagementService,
+    private readonly prisma: PrismaClient,
+  ) {
+    console.log(
+      `[WishlistController] Initialized. Prisma available: ${!!prisma}`,
+    );
     this.createWishlistHandler = new CreateWishlistHandler(wishlistService);
     this.addToWishlistHandler = new AddToWishlistHandler(wishlistService);
     this.removeFromWishlistHandler = new RemoveFromWishlistHandler(
-      wishlistService
+      wishlistService,
     );
     this.updateWishlistHandler = new UpdateWishlistHandler(wishlistService);
     this.deleteWishlistHandler = new DeleteWishlistHandler(wishlistService);
     this.getWishlistHandler = new GetWishlistHandler(wishlistService);
     this.getUserWishlistsHandler = new GetUserWishlistsHandler(wishlistService);
     this.getPublicWishlistsHandler = new GetPublicWishlistsHandler(
-      wishlistService
+      wishlistService,
     );
     this.getWishlistItemsHandler = new GetWishlistItemsHandler(wishlistService);
   }
 
   async createWishlist(
     request: FastifyRequest<{ Body: CreateWishlistRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { userId, guestToken, name, isDefault, isPublic, description } =
@@ -121,7 +128,7 @@ export class WishlistController {
 
   async getWishlist(
     request: FastifyRequest<{ Params: { wishlistId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { wishlistId } = request.params;
@@ -169,7 +176,7 @@ export class WishlistController {
       Params: { userId: string };
       Querystring: { limit?: string; offset?: string };
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { userId } = request.params;
@@ -218,7 +225,7 @@ export class WishlistController {
     request: FastifyRequest<{
       Querystring: { limit?: string; offset?: string };
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { limit, offset } = request.query;
@@ -258,7 +265,7 @@ export class WishlistController {
       Params: { wishlistId: string };
       Querystring: { limit?: string; offset?: string };
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { wishlistId } = request.params;
@@ -281,10 +288,131 @@ export class WishlistController {
       const result = await this.getWishlistItemsHandler.handle(query);
 
       if (result.success && result.data) {
+        // Enrich wishlist items with product and variant data
+        let enrichedItems: any = result.data;
+
+        // Debug log to check prisma availability
+        console.log(
+          `[WishlistController] Enrichment - Prisma available: ${!!this.prisma}`,
+        );
+        console.log(
+          `[WishlistController] Enrichment - Items to enrich: ${result.data.length}`,
+        );
+
+        if (this.prisma && result.data.length > 0) {
+          const variantIds = result.data.map((item) => item.variantId);
+
+          try {
+            // Fetch variants with product and media
+            const variants = await this.prisma.productVariant.findMany({
+              where: { id: { in: variantIds } },
+              include: {
+                product: {
+                  include: {
+                    media: {
+                      include: {
+                        asset: true,
+                      },
+                      orderBy: { position: "asc" },
+                    },
+                  },
+                },
+                inventoryStocks: true,
+              },
+            });
+
+            console.log(
+              `[WishlistController] Enrichment - Variants found: ${variants.length}`,
+            );
+
+            enrichedItems = result.data.map((item) => {
+              const variant = variants.find((v) => v.id === item.variantId);
+
+              if (!variant) {
+                console.warn(
+                  `[WishlistController] Variant not found for item: ${item.variantId}`,
+                );
+                return item;
+              }
+
+              // Calculate total inventory
+              const totalInventory =
+                variant.inventoryStocks?.reduce((sum, stock) => {
+                  return sum + (stock.onHand - stock.reserved);
+                }, 0) || 0;
+
+              // Convert media array to handle BigInt values and match frontend structure
+              const media = variant.product.media.map((m: any) => ({
+                id: m.id,
+                productId: m.productId,
+                assetId: m.assetId,
+                position: m.position,
+                isCover: m.isCover,
+                createdAt: m.createdAt,
+                updatedAt: m.updatedAt,
+                asset: m.asset
+                  ? {
+                      id: m.asset.id,
+                      storageKey: m.asset.storageKey,
+                      mimeType: m.asset.mime, // Model says 'mime', not 'mimeType'
+                      bytes: m.asset.bytes ? m.asset.bytes.toString() : null, // Correct field 'bytes'
+                      width: m.asset.width,
+                      height: m.asset.height,
+                      altText: m.asset.altText,
+                      createdAt: m.asset.createdAt,
+                      updatedAt: m.asset.updatedAt, // Model says 'createdAt' generic timestamp? Check schema.
+                    }
+                  : null,
+              }));
+
+              const images = media.map((m) => ({
+                url: m.asset?.storageKey,
+                alt: m.asset?.altText,
+                width: m.asset?.width,
+                height: m.asset?.height,
+              }));
+
+              return {
+                wishlistId: item.wishlistId,
+                variantId: item.variantId,
+                variant: {
+                  id: variant.id,
+                  sku: variant.sku,
+                  size: variant.size,
+                  color: variant.color,
+                  barcode: variant.barcode,
+                  price: variant.price, // Decimal is usually serializable to string/number by Fastify serialization, but might need Number() if problematic
+                  compareAtPrice: variant.compareAtPrice,
+                  onHand: totalInventory,
+                },
+                product: {
+                  id: variant.product.id,
+                  title: variant.product.title,
+                  slug: variant.product.slug,
+                  shortDesc: variant.product.shortDesc,
+                  brand: variant.product.brand,
+                  media: media,
+                  images: images,
+                },
+              };
+            });
+          } catch (err) {
+            console.error("[WishlistController] Enrichment Error:", err);
+            // Fallback to original items if enrichment fails
+          }
+        }
+
+        // Log first item to verify enrichment
+        if (enrichedItems.length > 0) {
+          request.log.info(
+            `Sending enriched data. First item has product: ${!!enrichedItems[0].product}, variant: ${!!enrichedItems[0].variant}`,
+          );
+        }
+
         return reply.code(200).send({
           success: true,
-          data: result.data,
-          total: result.data.length,
+          data: enrichedItems,
+          total: enrichedItems.length,
         });
       } else {
         return reply.code(400).send({
@@ -308,7 +436,7 @@ export class WishlistController {
       Params: { wishlistId: string };
       Body: AddToWishlistRequest;
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { wishlistId } = request.params;
@@ -351,7 +479,7 @@ export class WishlistController {
     request: FastifyRequest<{
       Params: { wishlistId: string; wishlistItemId: string };
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { wishlistId, wishlistItemId } = request.params;
@@ -430,7 +558,7 @@ export class WishlistController {
       Params: { wishlistId: string };
       Body: UpdateWishlistRequest;
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { wishlistId } = request.params;
@@ -469,7 +597,7 @@ export class WishlistController {
 
   async deleteWishlist(
     request: FastifyRequest<{ Params: { wishlistId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { wishlistId } = request.params;
