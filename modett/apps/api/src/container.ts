@@ -169,10 +169,14 @@ import {
 // Admin Dashboard imports
 import { IDashboardRepository } from "../../../modules/admin/domain/repositories/dashboard.repository.interface";
 import { DashboardRepositoryImpl } from "../../../modules/admin/infra/persistence/repositories/dashboard.repository";
+import { SettingsRepository } from "../../../modules/admin/infra/persistence/repositories/settings.repository";
+import { SettingsService } from "../../../modules/admin/application/services/settings.service";
 
 export interface ServiceContainer {
   // Infrastructure
   prisma: PrismaClient;
+
+  // ... (existing repositories)
 
   // User Management Repositories
   userRepository: UserRepository;
@@ -334,6 +338,8 @@ export interface ServiceContainer {
 
   // Admin
   dashboardRepository: IDashboardRepository;
+  settingsRepository: SettingsRepository;
+  settingsService: SettingsService;
 }
 
 export function createServiceContainer(): ServiceContainer {
@@ -371,7 +377,7 @@ export function createServiceContainer(): ServiceContainer {
   const orderItemRepository = new OrderItemRepositoryImpl(prisma);
   const orderShipmentRepository = new OrderShipmentRepositoryImpl(prisma);
   const orderStatusHistoryRepository = new OrderStatusHistoryRepositoryImpl(
-    prisma
+    prisma,
   );
   const orderEventRepository = new OrderEventRepositoryImpl(prisma);
   const preorderRepository = new PreorderRepositoryImpl(prisma);
@@ -383,14 +389,14 @@ export function createServiceContainer(): ServiceContainer {
   const supplierRepository = new SupplierRepositoryImpl(prisma);
   const purchaseOrderRepository = new PurchaseOrderRepositoryImpl(prisma);
   const purchaseOrderItemRepository = new PurchaseOrderItemRepositoryImpl(
-    prisma
+    prisma,
   );
   const stockAlertRepository = new StockAlertRepositoryImpl(prisma);
   const pickupReservationRepository = new PickupReservationRepositoryImpl(
-    prisma
+    prisma,
   );
   const inventoryTransactionRepository = new InventoryTransactionRepositoryImpl(
-    prisma
+    prisma,
   );
 
   // Initialize Fulfillment repositories
@@ -403,7 +409,7 @@ export function createServiceContainer(): ServiceContainer {
   const bnplTransactionRepository = new BnplTransactionRepository(prisma);
   const giftCardRepository = new GiftCardRepository(prisma);
   const giftCardTransactionRepository = new GiftCardTransactionRepository(
-    prisma
+    prisma,
   );
   const promotionRepository = new PromotionRepository(prisma);
   const promotionUsageRepository = new PromotionUsageRepository(prisma);
@@ -411,7 +417,7 @@ export function createServiceContainer(): ServiceContainer {
   const loyaltyAccountRepository = new LoyaltyAccountRepository(prisma);
   const loyaltyTransactionRepository = new LoyaltyTransactionRepository(prisma);
   const paymentWebhookEventRepository = new PaymentWebhookEventRepository(
-    prisma
+    prisma,
   );
 
   // Initialize core services
@@ -429,7 +435,7 @@ export function createServiceContainer(): ServiceContainer {
         process.env.JWT_SECRET || "fallback-secret-change-in-production",
       accessTokenExpiresIn: process.env.JWT_EXPIRES_IN || "6h",
       refreshTokenExpiresIn: "7d",
-    }
+    },
   );
 
   // Initialize address service
@@ -440,62 +446,69 @@ export function createServiceContainer(): ServiceContainer {
     userRepository,
     userProfileRepository,
     addressRepository,
-    paymentMethodRepository
+    paymentMethodRepository,
   );
   const paymentMethodService = new PaymentMethodService(
     paymentMethodRepository,
     userRepository,
-    addressRepository
+    addressRepository,
   );
 
   // Initialize Product Catalog services
   const productManagementService = new ProductManagementService(
-    productRepository
+    productRepository,
   );
   const categoryManagementService = new CategoryManagementService(
     categoryRepository,
-    slugGeneratorService
+    slugGeneratorService,
   );
   const mediaManagementService = new MediaManagementService(
-    mediaAssetRepository
+    mediaAssetRepository,
   );
   const variantManagementService = new VariantManagementService(
     productVariantRepository,
-    productRepository
+    productRepository,
   );
   const productSearchService = new ProductSearchService(
     productRepository,
-    categoryRepository
+    categoryRepository,
   );
   const productTagManagementService = new ProductTagManagementService(
-    productTagRepository
+    productTagRepository,
   );
   const sizeGuideManagementService = new SizeGuideManagementService(
-    sizeGuideRepository
+    sizeGuideRepository,
   );
   const editorialLookManagementService = new EditorialLookManagementService(
     editorialLookRepository,
     mediaAssetRepository,
-    productRepository
+    productRepository,
   );
   const productMediaManagementService = new ProductMediaManagementService(
     productMediaRepository,
     mediaAssetRepository,
-    productRepository
+    productRepository,
   );
 
   // Initialize Inventory Management services first (needed by dependencies)
   const stockManagementService = new StockManagementService(
     stockRepository,
-    inventoryTransactionRepository
+    inventoryTransactionRepository,
   );
 
   // Initialize Cart repositories that depend on inventory service
   const reservationRepository = new ReservationRepositoryImpl(
     prisma,
-    stockManagementService
+    stockManagementService,
   );
   const checkoutRepository = new CheckoutRepositoryImpl(prisma);
+
+  // Initialize Admin repository
+  const dashboardRepository = new DashboardRepositoryImpl(prisma);
+  const settingsRepository = new SettingsRepository(prisma);
+
+  // Initialize Admin Services
+  const settingsService = new SettingsService(settingsRepository);
 
   // Initialize Cart services
   const cartManagementService = new CartManagementService(
@@ -505,15 +518,17 @@ export function createServiceContainer(): ServiceContainer {
     productVariantRepository,
     productRepository,
     productMediaRepository,
-    mediaAssetRepository
+    mediaAssetRepository,
+    settingsService,
   );
   const reservationService = new ReservationService(
     reservationRepository,
-    cartRepository
+    cartRepository,
   );
   const checkoutService = new CheckoutService(
     checkoutRepository,
-    cartRepository
+    cartRepository,
+    settingsService,
   );
   const checkoutOrderService = new CheckoutOrderService(
     prisma,
@@ -522,16 +537,18 @@ export function createServiceContainer(): ServiceContainer {
     reservationRepository,
     stockManagementService,
     productRepository,
-    productVariantRepository
+    productVariantRepository,
   );
+
+  // ...
 
   // Initialize Order Management services
   const orderEventService = new OrderEventService(orderEventRepository);
   const preorderManagementService = new PreorderManagementService(
-    preorderRepository
+    preorderRepository,
   );
   const backorderManagementService = new BackorderManagementService(
-    backorderRepository
+    backorderRepository,
   );
 
   const orderManagementService = new OrderManagementService(
@@ -544,34 +561,34 @@ export function createServiceContainer(): ServiceContainer {
     variantManagementService,
     productManagementService,
     stockManagementService,
-    orderEventService
+    orderEventService,
   );
 
   // Continue with other Inventory Management services
   const locationManagementService = new LocationManagementService(
-    locationRepository
+    locationRepository,
   );
   const supplierManagementService = new SupplierManagementService(
-    supplierRepository
+    supplierRepository,
   );
   const purchaseOrderManagementService = new PurchaseOrderManagementService(
     purchaseOrderRepository,
     purchaseOrderItemRepository,
-    stockManagementService
+    stockManagementService,
   );
   const stockAlertService = new StockAlertService(
     stockAlertRepository,
-    stockRepository
+    stockRepository,
   );
   const pickupReservationService = new PickupReservationService(
     pickupReservationRepository,
-    stockManagementService
+    stockManagementService,
   );
 
   // Initialize Fulfillment services
   const shipmentService = new ShipmentService(
     shipmentRepository,
-    shipmentItemRepository
+    shipmentItemRepository,
   );
   const shipmentItemService = new ShipmentItemService(shipmentItemRepository);
 
@@ -579,33 +596,33 @@ export function createServiceContainer(): ServiceContainer {
   const paymentService = new PaymentService(
     prisma,
     paymentIntentRepository,
-    paymentTransactionRepository
+    paymentTransactionRepository,
   );
   const bnplTransactionService = new BnplTransactionService(
     prisma,
-    bnplTransactionRepository
+    bnplTransactionRepository,
   );
   const giftCardService = new GiftCardService(
     prisma,
     giftCardRepository,
-    giftCardTransactionRepository
+    giftCardTransactionRepository,
   );
   const promotionService = new PromotionService(
     prisma,
     promotionRepository,
-    promotionUsageRepository
+    promotionUsageRepository,
   );
   const paymentWebhookService = new PaymentWebhookService(
-    paymentWebhookEventRepository
+    paymentWebhookEventRepository,
   );
   const loyaltyService = new LoyaltyService(
     prisma,
     loyaltyAccountRepository,
     loyaltyProgramRepository,
-    loyaltyTransactionRepository
+    loyaltyTransactionRepository,
   );
   const loyaltyTransactionService = new LoyaltyTransactionService(
-    loyaltyTransactionRepository
+    loyaltyTransactionRepository,
   );
 
   // Initialize Customer Care repositories
@@ -622,30 +639,30 @@ export function createServiceContainer(): ServiceContainer {
 
   // Initialize Customer Care services
   const supportTicketService = new SupportTicketService(
-    supportTicketRepository
+    supportTicketRepository,
   );
   const ticketMessageService = new TicketMessageService(
-    ticketMessageRepository
+    ticketMessageRepository,
   );
   const supportAgentService = new SupportAgentService(supportAgentRepository);
   const chatSessionService = new ChatSessionService(chatSessionRepository);
   const chatMessageService = new ChatMessageService(chatMessageRepository);
   const returnRequestService = new ReturnRequestService(
-    returnRequestRepository
+    returnRequestRepository,
   );
   const returnItemService = new ReturnItemService(
     returnItemRepository,
     returnRequestRepository,
-    orderManagementService
+    orderManagementService,
   );
   const repairService = new RepairService(repairRepository);
   const goodwillRecordService = new GoodwillRecordService(
-    goodwillRecordRepository
+    goodwillRecordRepository,
   );
   const customerFeedbackService = new CustomerFeedbackService(
     customerFeedbackRepository,
     supportTicketService,
-    orderManagementService
+    orderManagementService,
   );
 
   // Initialize Engagement repositories
@@ -664,50 +681,47 @@ export function createServiceContainer(): ServiceContainer {
   // Initialize Engagement services
   const wishlistManagementService = new WishlistManagementService(
     wishlistRepository,
-    wishlistItemRepository
+    wishlistItemRepository,
   );
   const reminderManagementService = new ReminderManagementService(
-    reminderRepository
+    reminderRepository,
   );
   const notificationService = new NotificationService(notificationRepository);
   const appointmentService = new AppointmentService(appointmentRepository);
   const productReviewService = new ProductReviewService(
-    productReviewRepository
+    productReviewRepository,
   );
   const newsletterService = new NewsletterService(
     newsletterSubscriptionRepository,
-    emailService
+    emailService,
   );
 
   // Initialize Analytics repository
   const analyticsEventRepository = new AnalyticsEventRepositoryImpl(prisma);
 
-  // Initialize Admin repository
-  const dashboardRepository = new DashboardRepositoryImpl(prisma);
-
   // Initialize Analytics service
   const analyticsTrackingService = new AnalyticsTrackingService(
-    analyticsEventRepository
+    analyticsEventRepository,
   );
 
   // Initialize Analytics command handlers
   const trackProductViewHandler = new TrackProductViewHandler(
-    analyticsTrackingService
+    analyticsTrackingService,
   );
   const trackPurchaseHandler = new TrackPurchaseHandler(
-    analyticsTrackingService
+    analyticsTrackingService,
   );
   const trackAddToCartHandler = new TrackAddToCartHandler(
-    analyticsTrackingService
+    analyticsTrackingService,
   );
   const trackBeginCheckoutHandler = new TrackBeginCheckoutHandler(
-    analyticsTrackingService
+    analyticsTrackingService,
   );
   const trackAddShippingInfoHandler = new TrackAddShippingInfoHandler(
-    analyticsTrackingService
+    analyticsTrackingService,
   );
   const trackAddPaymentInfoHandler = new TrackAddPaymentInfoHandler(
-    analyticsTrackingService
+    analyticsTrackingService,
   );
 
   return {
@@ -812,6 +826,8 @@ export function createServiceContainer(): ServiceContainer {
 
     // Admin Repositories
     dashboardRepository,
+    settingsRepository,
+    settingsService,
 
     // Payment & Loyalty Services
     paymentService,
@@ -878,7 +894,7 @@ export function createServiceContainer(): ServiceContainer {
 }
 
 export async function closeServiceContainer(
-  container: ServiceContainer
+  container: ServiceContainer,
 ): Promise<void> {
   await container.prisma.$disconnect();
 }
