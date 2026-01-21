@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { VariantManagementService } from "../../../application/services/variant-management.service";
+import { PrismaClient } from "@prisma/client";
 
 interface CreateVariantRequest {
   sku: string;
@@ -32,7 +33,8 @@ interface VariantQueryParams {
 
 export class VariantController {
   constructor(
-    private readonly variantManagementService: VariantManagementService
+    private readonly variantManagementService: VariantManagementService,
+    private readonly prisma?: PrismaClient,
   ) {}
 
   async getVariants(
@@ -40,7 +42,7 @@ export class VariantController {
       Params: { productId: string };
       Querystring: VariantQueryParams;
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { productId } = request.params;
@@ -78,12 +80,45 @@ export class VariantController {
 
       const variants = await this.variantManagementService.getVariantsByProduct(
         productId,
-        options
+        options,
       );
+
+      // Enrich variants with inventory if prisma is available
+      let enrichedVariants = variants.map((v) => v.toData());
+
+      if (this.prisma) {
+        const variantIds = variants.map((v) => v.getId().getValue());
+        const variantsWithInventory = await this.prisma.productVariant.findMany(
+          {
+            where: { id: { in: variantIds } },
+            include: {
+              inventoryStocks: true,
+            },
+          },
+        );
+
+        enrichedVariants = variants.map((v) => {
+          const data = v.toData();
+          const dbVariant = variantsWithInventory.find(
+            (dbV) => dbV.id === data.id,
+          );
+
+          // Calculate total inventory
+          const totalInventory =
+            dbVariant?.inventoryStocks?.reduce((sum, stock) => {
+              return sum + (stock.onHand - stock.reserved);
+            }, 0) || 0;
+
+          return {
+            ...data,
+            onHand: totalInventory,
+          };
+        });
+      }
 
       return reply.code(200).send({
         success: true,
-        data: variants,
+        data: enrichedVariants,
         meta: {
           productId,
           page: options.page,
@@ -109,7 +144,7 @@ export class VariantController {
 
   async getVariant(
     request: FastifyRequest<{ Params: { id: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { id } = request.params;
@@ -132,9 +167,32 @@ export class VariantController {
         });
       }
 
+      // Enrich variant with inventory if prisma is available
+      let enrichedVariant = variant.toData();
+
+      if (this.prisma) {
+        const dbVariant = await this.prisma.productVariant.findUnique({
+          where: { id },
+          include: {
+            inventoryStocks: true,
+          },
+        });
+
+        // Calculate total inventory
+        const totalInventory =
+          dbVariant?.inventoryStocks?.reduce((sum, stock) => {
+            return sum + (stock.onHand - stock.reserved);
+          }, 0) || 0;
+
+        enrichedVariant = {
+          ...enrichedVariant,
+          onHand: totalInventory,
+        };
+      }
+
       return reply.code(200).send({
         success: true,
-        data: variant,
+        data: enrichedVariant,
       });
     } catch (error) {
       request.log.error(error, "Failed to get variant");
@@ -151,7 +209,7 @@ export class VariantController {
       Params: { productId: string };
       Body: CreateVariantRequest;
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { productId } = request.params;
@@ -188,12 +246,14 @@ export class VariantController {
 
       const createData = {
         ...variantData,
-        restockEta: variantData.restockEta ? new Date(variantData.restockEta) : undefined,
+        restockEta: variantData.restockEta
+          ? new Date(variantData.restockEta)
+          : undefined,
       };
 
       const variant = await this.variantManagementService.createVariant(
         productId,
-        createData
+        createData,
       );
 
       return reply.code(201).send({
@@ -229,7 +289,7 @@ export class VariantController {
       Params: { id: string };
       Body: UpdateVariantRequest;
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { id } = request.params;
@@ -245,12 +305,14 @@ export class VariantController {
 
       const updatePayload = {
         ...updateData,
-        restockEta: updateData.restockEta ? new Date(updateData.restockEta) : undefined,
+        restockEta: updateData.restockEta
+          ? new Date(updateData.restockEta)
+          : undefined,
       };
 
       const variant = await this.variantManagementService.updateVariant(
         id,
-        updatePayload
+        updatePayload,
       );
 
       if (!variant) {
@@ -278,7 +340,7 @@ export class VariantController {
 
   async deleteVariant(
     request: FastifyRequest<{ Params: { id: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { id } = request.params;
