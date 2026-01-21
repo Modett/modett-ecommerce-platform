@@ -6,7 +6,21 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["analytics", "cart", "customer_care", "engagement", "fulfillment", "inventory_management", "order_management", "payment_loyalty", "product_catalog", "public", "user_management"]
+  schemas  = ["admin", "analytics", "cart", "customer_care", "engagement", "fulfillment", "inventory_management", "order_management", "payment_loyalty", "product_catalog", "public", "user_management"]
+}
+
+model SystemSetting {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @map("setting_id") @db.Uuid
+  group       String   // "general", "appearance", "shipping", "social"
+  key         String   @unique // e.g., "announcement_text"
+  value       String   // JSON stringified value
+  type        String   // "string", "number", "boolean", "json"
+  description String?
+  isPublic    Boolean  @default(false) @map("is_public") // Exposed to storefront API
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("system_settings")
+  @@schema("admin")
 }
 
 model User {

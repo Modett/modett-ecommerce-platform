@@ -66,7 +66,7 @@ export function AlertCard({ pendingOrders, lowStockItems }: AlertCardProps) {
                   These orders need your attention to avoid shipping delays
                 </p>
                 <button
-                  className="text-xs font-semibold text-amber-800 hover:text-amber-900 underline"
+                  className="text-xs font-semibold text-amber-800 hover:text-amber-900"
                   style={{ fontFamily: "Raleway, sans-serif" }}
                 >
                   View Orders →

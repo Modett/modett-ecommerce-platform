@@ -6,6 +6,7 @@ import {
 } from "../../domain/entities/checkout.entity";
 import { CheckoutId } from "../../domain/value-objects/checkout-id.vo";
 import { CartId } from "../../domain/value-objects/cart-id.vo";
+import { SettingsService } from "../../../admin/application/services/settings.service";
 
 export interface InitializeCheckoutDto {
   cartId: string;
@@ -37,11 +38,12 @@ export interface CheckoutDto {
 export class CheckoutService {
   constructor(
     private readonly checkoutRepository: CheckoutRepository,
-    private readonly cartRepository: CartRepository
+    private readonly cartRepository: CartRepository,
+    private readonly settingsService: SettingsService,
   ) {}
 
   async initializeCheckout(dto: InitializeCheckoutDto): Promise<CheckoutDto> {
-    // Validate cart exists and belongs to user/guest
+    // Validate cart exists
     const cartId = CartId.fromString(dto.cartId);
     const cart = await this.cartRepository.findById(cartId);
 
@@ -49,7 +51,7 @@ export class CheckoutService {
       throw new Error("Cart not found");
     }
 
-    // Validate ownership
+    // Validate cart belongs to user or guest
     if (dto.userId && cart.getUserId()?.toString() !== dto.userId) {
       throw new Error("Cart does not belong to user");
     }
@@ -58,55 +60,22 @@ export class CheckoutService {
       throw new Error("Cart does not belong to guest");
     }
 
-    // Validate cart is not empty
-    if (cart.isEmpty()) {
-      throw new Error("Cannot checkout an empty cart");
-    }
-
-    // Check if checkout already exists for this cart
-    // Check if checkout already exists for this cart
-    const existingCheckout = await this.checkoutRepository.findByCartId(cartId);
-    if (existingCheckout) {
-      if (existingCheckout.isPending()) {
-        // Check if we need to transfer the checkout ownership
-        // This validates if the cart has been transferred to a user but the checkout is still guest
-        if (
-          dto.userId &&
-          !existingCheckout.getUserId() &&
-          existingCheckout.getGuestToken()
-        ) {
-          console.log(
-            `[CheckoutService] Transferring checkout ${existingCheckout.getCheckoutId().toString()} to user ${dto.userId}`
-          );
-          const updatedCheckout = existingCheckout.transferToUser(dto.userId);
-          await this.checkoutRepository.update(updatedCheckout);
-          return this.mapCheckoutToDto(updatedCheckout);
-        }
-
-        return this.mapCheckoutToDto(existingCheckout);
-      } else {
-        // If checkout exists but is not pending (e.g. Completed, Cancelled, Expired),
-        // we must DELETE it to allow creating a new one because CartId is unique in Checkouts table.
-        // This ensures the new checkout gets a FRESH ID, avoiding "Duplicate Order" issues in Webhook.
-        await this.checkoutRepository.delete(existingCheckout.getCheckoutId());
-      }
-    }
-
     // Calculate total amount with shipping
     let totalAmount = cart.getTotal();
     const currency = cart.getCurrency().toString();
 
     // Get checkout info to calculate shipping
-    // We need to fetch this from the repo directly as it's not on the domain entity
     const cartWithCheckoutInfo =
       await this.cartRepository.getCartWithCheckoutInfo(cartId.getValue());
 
-    if (
-      cartWithCheckoutInfo?.shippingMethod === "home" &&
-      (cartWithCheckoutInfo?.shippingOption === "colombo" ||
-        cartWithCheckoutInfo?.shippingOption === "suburbs")
-    ) {
-      totalAmount += 250.0;
+    if (cartWithCheckoutInfo?.shippingMethod === "home") {
+      const shippingRates = await this.settingsService.getShippingRates();
+
+      if (cartWithCheckoutInfo.shippingOption === "colombo") {
+        totalAmount += shippingRates.colombo;
+      } else if (cartWithCheckoutInfo.shippingOption === "suburbs") {
+        totalAmount += shippingRates.suburbs;
+      }
     }
 
     const checkoutData: CreateCheckoutData = {
@@ -133,7 +102,7 @@ export class CheckoutService {
   async getCheckout(
     checkoutId: string,
     userId?: string,
-    guestToken?: string
+    guestToken?: string,
   ): Promise<CheckoutDto | null> {
     const id = CheckoutId.fromString(checkoutId);
     const checkout = await this.checkoutRepository.findById(id);
@@ -194,7 +163,7 @@ export class CheckoutService {
   async cancelCheckout(
     checkoutId: string,
     userId?: string,
-    guestToken?: string
+    guestToken?: string,
   ): Promise<CheckoutDto> {
     const id = CheckoutId.fromString(checkoutId);
     const checkout = await this.checkoutRepository.findById(id);

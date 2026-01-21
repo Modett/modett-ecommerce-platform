@@ -20,14 +20,18 @@ export class ProductVariant {
     private allowPreorder: boolean,
     private restockEta: Date | null,
     private readonly createdAt: Date,
-    private updatedAt: Date
+    private updatedAt: Date,
   ) {}
 
   static create(data: CreateVariantData): ProductVariant {
     const variantId = VariantId.create();
-    const sku = data.sku ? SKU.fromString(data.sku) : SKU.create(data.autoSkuValue || '');
+    const sku = data.sku
+      ? SKU.fromString(data.sku)
+      : SKU.create(data.autoSkuValue || "");
     const price = Price.create(data.price);
-    const compareAtPrice = data.compareAtPrice ? Price.create(data.compareAtPrice) : null;
+    const compareAtPrice = data.compareAtPrice
+      ? Price.create(data.compareAtPrice)
+      : null;
     const now = new Date();
 
     return new ProductVariant(
@@ -46,7 +50,7 @@ export class ProductVariant {
       data.allowPreorder || false,
       data.restockEta || null,
       now,
-      now
+      now,
     );
   }
 
@@ -67,7 +71,7 @@ export class ProductVariant {
       data.allowPreorder,
       data.restockEta,
       data.createdAt,
-      data.updatedAt
+      data.updatedAt,
     );
   }
 
@@ -80,7 +84,9 @@ export class ProductVariant {
       row.color,
       row.barcode,
       Price.create(parseFloat(row.price)),
-      row.compare_at_price ? Price.create(parseFloat(row.compare_at_price)) : null,
+      row.compare_at_price
+        ? Price.create(parseFloat(row.compare_at_price))
+        : null,
       row.weight_g,
       row.dims,
       row.tax_class,
@@ -88,7 +94,7 @@ export class ProductVariant {
       row.allow_preorder,
       row.restock_eta,
       row.created_at,
-      row.updated_at
+      row.updated_at,
     );
   }
 
@@ -234,7 +240,10 @@ export class ProductVariant {
 
   // Validation methods
   hasDiscount(): boolean {
-    return this.compareAtPrice !== null && this.compareAtPrice.isGreaterThan(this.price);
+    return (
+      this.compareAtPrice !== null &&
+      this.compareAtPrice.isGreaterThan(this.price)
+    );
   }
 
   getDiscountPercentage(): number {
@@ -350,6 +359,7 @@ export interface VariantData {
   restockEta: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  onHand?: number;
 }
 
 export interface VariantRow {

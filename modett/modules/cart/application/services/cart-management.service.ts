@@ -23,6 +23,7 @@ import { IProductMediaRepository } from "../../../product-catalog/domain/reposit
 import { IMediaAssetRepository } from "../../../product-catalog/domain/repositories/media-asset.repository";
 import { ProductId } from "../../../product-catalog/domain/value-objects/product-id.vo";
 import { MediaAssetId } from "../../../product-catalog/domain/entities/media-asset.entity";
+import { SettingsService } from "../../../admin/application/services/settings.service";
 
 // DTOs for service operations
 export interface CreateCartDto {
@@ -156,31 +157,32 @@ export class CartManagementService {
     private readonly productVariantRepository: IProductVariantRepository,
     private readonly productRepository: IProductRepository,
     private readonly productMediaRepository: IProductMediaRepository,
-    private readonly mediaAssetRepository: IMediaAssetRepository
+    private readonly mediaAssetRepository: IMediaAssetRepository,
+    private readonly settingsService: SettingsService,
   ) {}
 
   // Cart creation
   async createUserCart(
-    dto: CreateCartDto & { userId: string }
+    dto: CreateCartDto & { userId: string },
   ): Promise<CartDto> {
     try {
       console.log("Creating user cart with data:", dto);
 
       // Check if user already has an active cart
       const existingCart = await this.cartRepository.findActiveCartByUserId(
-        UserId.fromString(dto.userId)
+        UserId.fromString(dto.userId),
       );
 
       if (existingCart) {
         console.log(
           "Existing cart found:",
-          existingCart.getCartId().getValue()
+          existingCart.getCartId().getValue(),
         );
 
         // Update existing cart with new reservation settings if provided
         if (dto.reservationDurationMinutes) {
           const newExpiryTime = new Date(
-            Date.now() + dto.reservationDurationMinutes * 60 * 1000
+            Date.now() + dto.reservationDurationMinutes * 60 * 1000,
           );
           existingCart.updateReservationExpiry(newExpiryTime);
           await this.cartRepository.update(existingCart);
@@ -195,7 +197,7 @@ export class CartManagementService {
         userId: dto.userId,
         currency: dto.currency,
         reservationExpiresAt: new Date(
-          Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000
+          Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000,
         ), // Always create with reservation expiry
       };
 
@@ -214,32 +216,32 @@ export class CartManagementService {
   }
 
   async createGuestCart(
-    dto: CreateCartDto & { guestToken: string }
+    dto: CreateCartDto & { guestToken: string },
   ): Promise<CartDto> {
     try {
       console.log("Creating guest cart with data:", dto);
 
       // Check if a cart already exists for this guest token (active or not)
       const existingCart = await this.cartRepository.findByGuestToken(
-        GuestToken.fromString(dto.guestToken)
+        GuestToken.fromString(dto.guestToken),
       );
 
       if (existingCart) {
         console.log(
           "Existing cart found:",
-          existingCart.getCartId().getValue()
+          existingCart.getCartId().getValue(),
         );
 
         // CRITICAL: Check if this cart has a completed checkout
         // If so, don't reuse it - create a fresh cart instead
         const existingCheckout = await this.checkoutRepository.findByCartId(
-          existingCart.getCartId()
+          existingCart.getCartId(),
         );
 
         if (!existingCheckout || !existingCheckout.isCompleted()) {
           // Safe to reuse - update reservation expiry and return existing cart
           const newExpiryTime = new Date(
-            Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000
+            Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000,
           );
           existingCart.updateReservationExpiry(newExpiryTime);
           await this.cartRepository.update(existingCart);
@@ -248,7 +250,7 @@ export class CartManagementService {
           return await this.mapCartToDto(existingCart);
         } else {
           console.log(
-            "Existing cart has completed checkout - creating new cart"
+            "Existing cart has completed checkout - creating new cart",
           );
           // Fall through to create new cart
         }
@@ -259,7 +261,7 @@ export class CartManagementService {
         guestToken: dto.guestToken,
         currency: dto.currency,
         reservationExpiresAt: new Date(
-          Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000
+          Date.now() + (dto.reservationDurationMinutes || 30) * 60 * 1000,
         ), // Always create with reservation expiry
       };
 
@@ -281,7 +283,7 @@ export class CartManagementService {
   async getCart(
     cartId: string,
     userId?: string,
-    guestToken?: string
+    guestToken?: string,
   ): Promise<CartDto | null> {
     const cart = await this.cartRepository.findById(CartId.fromString(cartId));
 
@@ -303,7 +305,7 @@ export class CartManagementService {
 
   async getActiveCartByUser(userId: string): Promise<CartDto | null> {
     const cart = await this.cartRepository.findActiveCartByUserId(
-      UserId.fromString(userId)
+      UserId.fromString(userId),
     );
 
     if (cart) {
@@ -315,7 +317,7 @@ export class CartManagementService {
 
   async getActiveCartByGuestToken(guestToken: string): Promise<CartDto | null> {
     const cart = await this.cartRepository.findActiveCartByGuestToken(
-      GuestToken.fromString(guestToken)
+      GuestToken.fromString(guestToken),
     );
 
     if (cart) {
@@ -331,7 +333,7 @@ export class CartManagementService {
 
     // Fetch product variant to get the price
     const productVariant = await this.productVariantRepository.findById(
-      ProductVariantId.fromString(dto.variantId)
+      ProductVariantId.fromString(dto.variantId),
     );
 
     if (!productVariant) {
@@ -351,7 +353,7 @@ export class CartManagementService {
       // CRITICAL: Check if this cart has a completed checkout
       // If so, we should NOT add items to it - create a new cart instead
       const existingCheckout = await this.checkoutRepository.findByCartId(
-        CartId.fromString(dto.cartId)
+        CartId.fromString(dto.cartId),
       );
       if (existingCheckout && existingCheckout.isCompleted()) {
         // Cart has a completed order - create a new cart instead
@@ -361,7 +363,7 @@ export class CartManagementService {
             currency: cart.getCurrency().toString(),
           });
           cart = await this.cartRepository.findById(
-            CartId.fromString(newCartDto.cartId)
+            CartId.fromString(newCartDto.cartId),
           );
         } else if (dto.userId) {
           const newCartDto = await this.createUserCart({
@@ -369,7 +371,7 @@ export class CartManagementService {
             currency: cart.getCurrency().toString(),
           });
           cart = await this.cartRepository.findById(
-            CartId.fromString(newCartDto.cartId)
+            CartId.fromString(newCartDto.cartId),
           );
         } else {
           throw new Error("Cannot add items to a cart with a completed order");
@@ -377,7 +379,7 @@ export class CartManagementService {
       }
     } else if (dto.userId) {
       cart = await this.cartRepository.findActiveCartByUserId(
-        UserId.fromString(dto.userId)
+        UserId.fromString(dto.userId),
       );
       if (!cart) {
         // Create new user cart
@@ -386,12 +388,12 @@ export class CartManagementService {
           currency: "USD", // Default currency - could be passed in
         });
         cart = await this.cartRepository.findById(
-          CartId.fromString(newCartDto.cartId)
+          CartId.fromString(newCartDto.cartId),
         );
       }
     } else if (dto.guestToken) {
       cart = await this.cartRepository.findActiveCartByGuestToken(
-        GuestToken.fromString(dto.guestToken)
+        GuestToken.fromString(dto.guestToken),
       );
       if (!cart) {
         // Create new guest cart
@@ -400,7 +402,7 @@ export class CartManagementService {
           currency: "USD", // Default currency - could be passed in
         });
         cart = await this.cartRepository.findById(
-          CartId.fromString(newCartDto.cartId)
+          CartId.fromString(newCartDto.cartId),
         );
       }
     }
@@ -413,7 +415,7 @@ export class CartManagementService {
     const isOwner = await this.validateCartOwnership(
       cart,
       dto.userId,
-      dto.guestToken
+      dto.guestToken,
     );
     if (!isOwner) {
       throw new Error("Unauthorized access to cart");
@@ -423,7 +425,7 @@ export class CartManagementService {
     const existingReservation =
       await this.reservationRepository.findByCartAndVariant(
         cart.getCartId(),
-        VariantId.fromString(dto.variantId)
+        VariantId.fromString(dto.variantId),
       );
 
     if (existingReservation) {
@@ -440,7 +442,7 @@ export class CartManagementService {
         await this.reservationRepository.adjustReservation(
           cart.getCartId(),
           VariantId.fromString(dto.variantId),
-          newTotalQty
+          newTotalQty,
         );
       }
     } else {
@@ -448,7 +450,7 @@ export class CartManagementService {
       await this.reservationRepository.reserveInventory(
         cart.getCartId(),
         VariantId.fromString(dto.variantId),
-        dto.quantity
+        dto.quantity,
       );
     }
 
@@ -470,7 +472,7 @@ export class CartManagementService {
 
   async updateCartItem(dto: UpdateCartItemDto): Promise<CartDto> {
     const cart = await this.cartRepository.findById(
-      CartId.fromString(dto.cartId)
+      CartId.fromString(dto.cartId),
     );
 
     if (!cart) {
@@ -481,7 +483,7 @@ export class CartManagementService {
     const isOwner = await this.validateCartOwnership(
       cart,
       dto.userId,
-      dto.guestToken
+      dto.guestToken,
     );
     if (!isOwner) {
       throw new Error("Unauthorized access to cart");
@@ -490,7 +492,7 @@ export class CartManagementService {
     // Update reservation if exists
     const reservation = await this.reservationRepository.findByCartAndVariant(
       cart.getCartId(),
-      VariantId.fromString(dto.variantId)
+      VariantId.fromString(dto.variantId),
     );
 
     if (reservation) {
@@ -511,7 +513,7 @@ export class CartManagementService {
 
   async removeFromCart(dto: RemoveFromCartDto): Promise<CartDto> {
     const cart = await this.cartRepository.findById(
-      CartId.fromString(dto.cartId)
+      CartId.fromString(dto.cartId),
     );
 
     if (!cart) {
@@ -522,7 +524,7 @@ export class CartManagementService {
     const isOwner = await this.validateCartOwnership(
       cart,
       dto.userId,
-      dto.guestToken
+      dto.guestToken,
     );
     if (!isOwner) {
       throw new Error("Unauthorized access to cart");
@@ -531,7 +533,7 @@ export class CartManagementService {
     // Remove reservation if exists
     await this.reservationRepository.deleteByCartAndVariant(
       cart.getCartId(),
-      VariantId.fromString(dto.variantId)
+      VariantId.fromString(dto.variantId),
     );
 
     // Remove from cart
@@ -544,7 +546,7 @@ export class CartManagementService {
   async clearCart(
     cartId: string,
     userId?: string,
-    guestToken?: string
+    guestToken?: string,
   ): Promise<CartDto> {
     const cart = await this.cartRepository.findById(CartId.fromString(cartId));
 
@@ -571,7 +573,7 @@ export class CartManagementService {
   // Cart transfer and merging
   async transferGuestCartToUser(dto: TransferCartDto): Promise<CartDto> {
     const guestCart = await this.cartRepository.findActiveCartByGuestToken(
-      GuestToken.fromString(dto.guestToken)
+      GuestToken.fromString(dto.guestToken),
     );
 
     if (!guestCart) {
@@ -581,7 +583,7 @@ export class CartManagementService {
     if (dto.mergeWithExisting) {
       // Check if user has existing cart
       const userCart = await this.cartRepository.findActiveCartByUserId(
-        UserId.fromString(dto.userId)
+        UserId.fromString(dto.userId),
       );
 
       if (userCart) {
@@ -592,14 +594,14 @@ export class CartManagementService {
         // Transfer reservations
         const guestReservations =
           await this.reservationRepository.findActiveByCartId(
-            guestCart.getCartId()
+            guestCart.getCartId(),
           );
         for (const reservation of guestReservations) {
           // Create new reservations for user cart
           await this.reservationRepository.createReservation(
             userCart.getCartId(),
             reservation.getVariantId(),
-            reservation.getQuantity()
+            reservation.getQuantity(),
           );
         }
 
@@ -635,7 +637,7 @@ export class CartManagementService {
         const existingReservation =
           await this.reservationRepository.findByCartAndVariant(
             cart.getCartId(),
-            item.getVariantId()
+            item.getVariantId(),
           );
 
         let needsRenewal = false;
@@ -672,7 +674,7 @@ export class CartManagementService {
             await this.reservationRepository.reserveInventory(
               cart.getCartId(),
               item.getVariantId(),
-              quantity
+              quantity,
             );
             // console.log(`Refreshed reservation for ${variantId}`);
           } catch (err) {
@@ -694,7 +696,7 @@ export class CartManagementService {
   private async validateCartOwnership(
     cart: ShoppingCart,
     userId?: string,
-    guestToken?: string
+    guestToken?: string,
   ): Promise<boolean> {
     if (cart.isUserCart() && userId) {
       return cart.getUserId()?.getValue() === userId;
@@ -712,13 +714,13 @@ export class CartManagementService {
 
     // Map all cart items with product details
     const items = await Promise.all(
-      cart.getItems().map((item) => this.mapCartItemToDto(item))
+      cart.getItems().map((item) => this.mapCartItemToDto(item)),
     );
 
     // Fetch checkout fields from database (they're not in the domain entity)
     const cartWithCheckoutInfo =
       await this.cartRepository.getCartWithCheckoutInfo(
-        cart.getCartId().getValue()
+        cart.getCartId().getValue(),
       );
 
     console.log("=== DEBUG: Cart Checkout Info ===");
@@ -728,9 +730,9 @@ export class CartManagementService {
     console.log("=================================");
 
     // Calculate shipping
-    const shippingCost = this.calculateShippingCost(
+    const shippingCost = await this.calculateShippingCost(
       cartWithCheckoutInfo?.shippingMethod,
-      cartWithCheckoutInfo?.shippingOption
+      cartWithCheckoutInfo?.shippingOption,
     );
 
     // Update total with shipping
@@ -781,13 +783,18 @@ export class CartManagementService {
     };
   }
 
-  private calculateShippingCost(
+  private async calculateShippingCost(
     shippingMethod?: string,
-    shippingOption?: string
-  ): number {
+    shippingOption?: string,
+  ): Promise<number> {
     if (shippingMethod === "home") {
-      if (shippingOption === "colombo" || shippingOption === "suburbs") {
-        return 250.0;
+      // Get shipping rates from settings service (dynamic)
+      const shippingRates = await this.settingsService.getShippingRates();
+
+      if (shippingOption === "colombo") {
+        return shippingRates.colombo;
+      } else if (shippingOption === "suburbs") {
+        return shippingRates.suburbs;
       }
     }
     return 0.0;
@@ -798,7 +805,7 @@ export class CartManagementService {
 
     // Fetch variant details
     const variant = await this.productVariantRepository.findById(
-      ProductVariantId.fromString(variantId)
+      ProductVariantId.fromString(variantId),
     );
 
     let productDetails = undefined;
@@ -828,14 +835,14 @@ export class CartManagementService {
           productMediaList.map(async (media) => {
             // Convert value-objects MediaAssetId to entity MediaAssetId
             const assetId = MediaAssetId.fromString(
-              media.getAssetId().getValue()
+              media.getAssetId().getValue(),
             );
             const asset = await this.mediaAssetRepository.findById(assetId);
             return {
               url: asset?.getStorageKey() || "",
               alt: asset?.getAltText() || undefined,
             };
-          })
+          }),
         );
 
         productDetails = {
@@ -879,7 +886,7 @@ export class CartManagementService {
     cartId: string,
     email: string,
     userId?: string,
-    guestToken?: string
+    guestToken?: string,
   ): Promise<void> {
     const cart = await this.cartRepository.findById(CartId.fromString(cartId));
     if (!cart) {
@@ -918,7 +925,7 @@ export class CartManagementService {
       isGift?: boolean;
     },
     userId?: string,
-    guestToken?: string
+    guestToken?: string,
   ): Promise<void> {
     const cart = await this.cartRepository.findById(CartId.fromString(cartId));
     if (!cart) {
@@ -948,7 +955,7 @@ export class CartManagementService {
 
     await this.cartRepository.updateShippingInfo(
       CartId.fromString(cartId),
-      data
+      data,
     );
   }
 
@@ -976,7 +983,7 @@ export class CartManagementService {
       sameAddressForBilling?: boolean;
     },
     userId?: string,
-    guestToken?: string
+    guestToken?: string,
   ): Promise<void> {
     const cart = await this.cartRepository.findById(CartId.fromString(cartId));
     if (!cart) {
@@ -1010,7 +1017,7 @@ export class CartManagementService {
   async getCartWithCheckoutInfo(
     cartId: string,
     userId?: string,
-    guestToken?: string
+    guestToken?: string,
   ): Promise<any> {
     const cart = await this.cartRepository.findById(CartId.fromString(cartId));
     if (!cart) {

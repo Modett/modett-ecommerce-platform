@@ -59,14 +59,14 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
 
   return async function authMiddleware(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       let authHeader = request.headers.authorization;
 
       if (!authHeader && request.headers.cookie) {
         const cookieMatch = request.headers.cookie.match(
-          /(?:^|;\s*)token=([^;]+)/
+          /(?:^|;\s*)token=([^;]+)/,
         );
         if (cookieMatch) {
           authHeader = `Bearer ${cookieMatch[1]}`;
@@ -249,7 +249,7 @@ export const authenticateWithGuests = createAuthMiddleware({
 export function requireRole(allowedRoles: UserRole[]) {
   return async function roleMiddleware(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     if (!request.user) {
       reply.status(401).send({
@@ -335,7 +335,7 @@ export function generateAuthTokens(user: Partial<AuthenticatedUser>): {
     {
       algorithm: JWT_ALGORITHM,
       expiresIn: "7d",
-    }
+    },
   );
 
   return { accessToken, refreshToken };
@@ -345,7 +345,7 @@ export function generateAuthTokens(user: Partial<AuthenticatedUser>): {
  * Utility function to verify refresh tokens
  */
 export function verifyRefreshToken(
-  token: string
+  token: string,
 ): { userId: string; email: string; role: UserRole } | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET, {

@@ -28,6 +28,7 @@ export class UserRepository implements IUserRepository {
         email: data.email,
         passwordHash: data.password_hash,
         phone: data.phone,
+        role: this.mapRoleToPrisma(data.role),
         status: this.mapStatusToPrisma(data.status),
         emailVerified: data.email_verified,
         phoneVerified: data.phone_verified,
@@ -193,7 +194,7 @@ export class UserRepository implements IUserRepository {
         two_factor_enabled: userData.twoFactorEnabled,
         two_factor_secret: userData.twoFactorSecret,
         two_factor_backup_codes: userData.twoFactorBackupCodes,
-      })
+      }),
     );
   }
 
@@ -221,7 +222,7 @@ export class UserRepository implements IUserRepository {
         two_factor_enabled: userData.twoFactorEnabled,
         two_factor_secret: userData.twoFactorSecret,
         two_factor_backup_codes: userData.twoFactorBackupCodes,
-      })
+      }),
     );
   }
 
@@ -252,7 +253,7 @@ export class UserRepository implements IUserRepository {
         two_factor_enabled: userData.twoFactorEnabled,
         two_factor_secret: userData.twoFactorSecret,
         two_factor_backup_codes: userData.twoFactorBackupCodes,
-      })
+      }),
     );
   }
 
@@ -308,7 +309,7 @@ export class UserRepository implements IUserRepository {
         two_factor_enabled: userData.twoFactorEnabled,
         two_factor_secret: userData.twoFactorSecret,
         two_factor_backup_codes: userData.twoFactorBackupCodes,
-      })
+      }),
     );
   }
 
@@ -323,7 +324,7 @@ export class UserRepository implements IUserRepository {
   }
 
   async findAllWithFilters(
-    options: FindAllWithFiltersOptions
+    options: FindAllWithFiltersOptions,
   ): Promise<FindAllWithFiltersResult> {
     const {
       search,
@@ -393,7 +394,7 @@ export class UserRepository implements IUserRepository {
         two_factor_enabled: userData.twoFactorEnabled,
         two_factor_secret: userData.twoFactorSecret,
         two_factor_backup_codes: userData.twoFactorBackupCodes,
-      })
+      }),
     );
 
     return { users: domainUsers, total };

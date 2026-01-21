@@ -15,11 +15,13 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/providers/AuthProvider";
+import { useStore } from "@/providers/StoreProvider";
 import { useRouter } from "next/navigation";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
+  const { settings } = useStore();
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -29,6 +31,25 @@ export function Header() {
 
   return (
     <header className="w-full bg-[#EFECE5] sticky top-0 z-50 overflow-x-hidden">
+      {/* Announcement Bar */}
+      {settings.announcement_enabled && (
+        <div
+          className="w-full py-2 text-center text-xs font-medium tracking-wide"
+          style={{
+            backgroundColor: settings.announcement_bg_color || "#000000",
+            color: settings.announcement_text_color || "#FFFFFF",
+          }}
+        >
+          {settings.announcement_link ? (
+            <Link href={settings.announcement_link} className="hover:underline">
+              {settings.announcement_text}
+            </Link>
+          ) : (
+            <span>{settings.announcement_text}</span>
+          )}
+        </div>
+      )}
+
       <div className="hidden md:block w-full">
         <div className="w-full max-w-[1440px] mx-auto pt-[8px] pb-[16px] px-[64px]">
           <div className="flex flex-col gap-[24px]">

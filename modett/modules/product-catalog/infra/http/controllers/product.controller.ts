@@ -55,30 +55,30 @@ export class ProductController {
   constructor(
     private readonly productManagementService: ProductManagementService,
     private readonly productSearchService: ProductSearchService,
-    private readonly prisma: PrismaClient
+    private readonly prisma: PrismaClient,
   ) {
     // Initialize CQRS handlers
     this.createProductHandler = new CreateProductHandler(
-      productManagementService
+      productManagementService,
     );
     this.updateProductHandler = new UpdateProductHandler(
-      productManagementService
+      productManagementService,
     );
     this.deleteProductHandler = new DeleteProductHandler(
-      productManagementService
+      productManagementService,
     );
     this.getProductHandler = new GetProductHandler(productManagementService);
     this.listProductsHandler = new ListProductsHandler(
-      productManagementService
+      productManagementService,
     );
     this.searchProductsHandler = new SearchProductsHandler(
-      productSearchService
+      productSearchService,
     );
   }
 
   async listProducts(
     request: FastifyRequest<{ Querystring: ProductQueryParams }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const {
@@ -162,7 +162,7 @@ export class ProductController {
       });
 
       const productIds = normalizedProducts.map(
-        (p) => p.id || p.productId || p.product_id
+        (p) => p.id || p.productId || p.product_id,
       );
 
       const enrichedProducts = await this.prisma.product.findMany({
@@ -264,7 +264,7 @@ export class ProductController {
 
   async getProduct(
     request: FastifyRequest<{ Params: { productId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { productId } = request.params;
@@ -286,9 +286,51 @@ export class ProductController {
       const result = await this.getProductHandler.handle(query);
 
       if (result.success && result.data) {
+        // Enrich product with media from Prisma
+        const enrichedProduct = await this.prisma.product.findUnique({
+          where: { id: productId },
+          include: {
+            media: {
+              include: {
+                asset: true,
+              },
+              orderBy: { position: "asc" },
+            },
+          },
+        });
+
+        // Map enriched data to response (safely handling BigInts)
+        const mappedImages =
+          enrichedProduct?.media?.map((m) => ({
+            url: m.asset.storageKey,
+            alt: m.asset.altText,
+            width: m.asset.width,
+            height: m.asset.height,
+          })) || [];
+
+        const productWithDetails = {
+          ...result.data,
+          images: mappedImages,
+          // If the frontend expects 'media' array with full objects, we must map them safely:
+          media:
+            enrichedProduct?.media?.map((m) => ({
+              ...m,
+              asset: {
+                ...m.asset,
+                bytes: m.asset.bytes ? m.asset.bytes.toString() : null,
+              },
+            })) || [],
+        };
+
+        // Safe debug log
+        console.log(`[Backend Debug] Product ID: ${productId}`);
+        console.log(
+          `[Backend Debug] Media found: ${productWithDetails.media.length}`,
+        );
+
         return reply.code(200).send({
           success: true,
-          data: result.data,
+          data: productWithDetails,
         });
       } else {
         return reply.code(404).send({
@@ -308,7 +350,7 @@ export class ProductController {
 
   async getProductBySlug(
     request: FastifyRequest<{ Params: { slug: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { slug } = request.params;
@@ -415,7 +457,7 @@ export class ProductController {
 
   async createProduct(
     request: FastifyRequest<{ Body: CreateProductRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const productData = request.body;
@@ -489,7 +531,7 @@ export class ProductController {
       Params: { productId: string };
       Body: UpdateProductRequest;
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { productId: id } = request.params;
@@ -610,7 +652,7 @@ export class ProductController {
 
   async deleteProduct(
     request: FastifyRequest<{ Params: { productId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { productId: id } = request.params;
