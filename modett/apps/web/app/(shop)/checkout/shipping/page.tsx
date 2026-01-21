@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { TEXT_STYLES, COMMON_CLASSES } from "@/features/cart/constants/styles";
+import { SHIPPING_PRICES, SHIPPING_OPTIONS } from "@/constants/shipping";
 import { useCart, useUpdateCartShipping } from "@/features/cart/queries";
 import { getStoredCartId } from "@/features/cart/utils";
 import { CheckoutProgressBar } from "@/features/checkout/components/checkout-progress-bar";
@@ -16,20 +17,28 @@ import { Alert } from "@/components/ui/alert";
 import { handleError } from "@/lib/error-handler";
 import { useRouter } from "next/navigation";
 import { useTrackAddShippingInfo } from "@/features/analytics/hooks/use-analytics-tracking";
+import { useStore } from "@/providers/StoreProvider";
 
 export default function CheckoutShippingPage() {
   const [cartId, setCartId] = useState<string | null>(null);
   const [shippingMethod, setShippingMethod] = useState<"home" | "boutique">(
-    "home"
+    "home",
   );
   const [shippingOption, setShippingOption] = useState<"colombo" | "suburbs">(
-    "colombo"
+    "colombo",
   );
   const [isGift, setIsGift] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const trackAddShippingInfo = useTrackAddShippingInfo();
+  const { settings } = useStore();
+
+  // Get shipping prices from settings or fallback to constants
+  const shippingPrices = {
+    colombo: settings.shipping_rate_colombo ?? SHIPPING_PRICES[SHIPPING_OPTIONS.COLOMBO],
+    suburbs: settings.shipping_rate_suburbs ?? SHIPPING_PRICES[SHIPPING_OPTIONS.SUBURBS],
+  };
 
   useEffect(() => {
     const storedCartId = getStoredCartId();
@@ -198,7 +207,8 @@ export default function CheckoutShippingPage() {
                             className="text-[11px] md:text-[12px] lg:text-[12.3px] text-[#3E5460] font-light leading-[16px] md:leading-[18px] whitespace-nowrap"
                             style={TEXT_STYLES.bodyTeal}
                           >
-                            Rs 250.00
+                            Rs{" "}
+                            {shippingPrices.colombo.toFixed(2)}
                           </span>
                         </div>
                       </label>
@@ -229,7 +239,8 @@ export default function CheckoutShippingPage() {
                             className="text-[11px] md:text-[12px] lg:text-[12.3px] text-[#3E5460] font-light leading-[16px] md:leading-[18px] whitespace-nowrap"
                             style={TEXT_STYLES.bodyTeal}
                           >
-                            Rs 250.00
+                            Rs{" "}
+                            {shippingPrices.suburbs.toFixed(2)}
                           </span>
                         </div>
                       </label>
