@@ -16,7 +16,7 @@ import { registerAdminRoutes } from "../../../modules/admin/infra/http/routes";
 
 export async function registerModules(
   server: FastifyInstance,
-  container: ServiceContainer
+  container: ServiceContainer,
 ) {
   // Register Product Catalog Routes (Prefix: /api/v1/catalog)
   await server.register(
@@ -34,7 +34,7 @@ export async function registerModules(
         prisma: container.prisma,
       });
     },
-    { prefix: "/api/v1/catalog" }
+    { prefix: "/api/v1/catalog" },
   );
 
   // Register User Management Routes (Prefix: /api/v1)
@@ -49,7 +49,7 @@ export async function registerModules(
         addressRepository: container.addressRepository,
       });
     },
-    { prefix: "/api/v1" }
+    { prefix: "/api/v1" },
   );
 
   // Register Cart Routes (Prefix: /api/v1/cart)
@@ -62,7 +62,7 @@ export async function registerModules(
         checkoutOrderService: container.checkoutOrderService,
       });
     },
-    { prefix: "/api/v1/cart" }
+    { prefix: "/api/v1/cart" },
   );
 
   // Register Order Management Routes (Prefix: /api/v1)
@@ -75,7 +75,7 @@ export async function registerModules(
         backorderService: container.backorderManagementService,
       });
     },
-    { prefix: "/api/v1" }
+    { prefix: "/api/v1" },
   );
 
   // Register Inventory Management Routes (Prefix: /api/v1/inventory)
@@ -90,7 +90,7 @@ export async function registerModules(
         reservationService: container.pickupReservationService,
       });
     },
-    { prefix: "/api/v1/inventory" }
+    { prefix: "/api/v1/inventory" },
   );
 
   // Register Payment & Loyalty Routes (Prefix: /api/v1)
@@ -107,7 +107,7 @@ export async function registerModules(
         checkoutOrderService: container.checkoutOrderService,
       });
     },
-    { prefix: "/api/v1" }
+    { prefix: "/api/v1" },
   );
 
   // Register Customer Care Routes (Prefix: /api/v1)
@@ -126,7 +126,7 @@ export async function registerModules(
         customerFeedbackService: container.customerFeedbackService,
       });
     },
-    { prefix: "/api/v1" }
+    { prefix: "/api/v1" },
   );
 
   // Register Engagement Routes (Prefix: /api/v1)
@@ -139,9 +139,10 @@ export async function registerModules(
         appointmentService: container.appointmentService,
         productReviewService: container.productReviewService,
         newsletterService: container.newsletterService,
+        prisma: container.prisma,
       });
     },
-    { prefix: "/api/v1" }
+    { prefix: "/api/v1" },
   );
 
   // Register Fulfillment Routes (Prefix: /api/v1/fulfillment)
@@ -152,7 +153,7 @@ export async function registerModules(
         shipmentItemService: container.shipmentItemService,
       });
     },
-    { prefix: "/api/v1/fulfillment" }
+    { prefix: "/api/v1/fulfillment" },
   );
 
   // Register Analytics Routes (Prefix: /api/v1/analytics)
@@ -167,7 +168,7 @@ export async function registerModules(
         trackAddPaymentInfoHandler: container.trackAddPaymentInfoHandler,
       });
     },
-    { prefix: "/api/v1/analytics" }
+    { prefix: "/api/v1/analytics" },
   );
 
   // Register Admin Routes (Prefix: /api/v1)
@@ -175,8 +176,9 @@ export async function registerModules(
     async (fastify) => {
       await registerAdminRoutes(fastify, {
         dashboardRepository: container.dashboardRepository,
+        settingsService: container.settingsService,
       });
     },
-    { prefix: "/api/v1" }
+    { prefix: "/api/v1" },
   );
 }
