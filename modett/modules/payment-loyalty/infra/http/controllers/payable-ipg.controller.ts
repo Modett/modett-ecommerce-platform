@@ -136,6 +136,13 @@ export class PayableIPGController {
       const payload = req.body as any;
       const signature = req.headers["x-payable-signature"] as string;
 
+      // Enhanced logging
+      req.log.info("========================================");
+      req.log.info("PAYABLE IPG WEBHOOK RECEIVED");
+      req.log.info(`Payload: ${JSON.stringify(payload, null, 2)}`);
+      req.log.info(`Signature: ${signature}`);
+      req.log.info("========================================");
+
       // Validate webhook signature (if secret key is configured)
       const hasSecretKey =
         process.env.PAYABLE_IPG_SECRET_KEY &&
