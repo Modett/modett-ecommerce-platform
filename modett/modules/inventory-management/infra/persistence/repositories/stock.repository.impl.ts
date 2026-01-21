@@ -112,8 +112,20 @@ export class StockRepositoryImpl implements IStockRepository {
     limit?: number;
     offset?: number;
     search?: string;
+    status?: "low_stock" | "out_of_stock" | "in_stock";
+    locationId?: string;
+    sortBy?: "available" | "onHand" | "location" | "product";
+    sortOrder?: "asc" | "desc";
   }): Promise<{ stocks: Stock[]; total: number }> {
-    const { limit = 50, offset = 0, search } = options || {};
+    const {
+      limit = 50,
+      offset = 0,
+      search,
+      status,
+      locationId,
+      sortBy = "product",
+      sortOrder = "asc",
+    } = options || {};
 
     const where: any = {};
 
@@ -146,12 +158,31 @@ export class StockRepositoryImpl implements IStockRepository {
       };
     }
 
+    if (locationId) {
+      where.locationId = locationId;
+    }
+
+    // Build orderBy clause
+    let orderBy: any = { variantId: "asc" };
+    if (sortBy === "onHand") {
+      orderBy = { onHand: sortOrder };
+    } else if (sortBy === "location") {
+      orderBy = { locationId: sortOrder };
+    } else if (sortBy === "product") {
+      orderBy = { variant: { product: { title: sortOrder } } };
+    }
+    // Note: 'available' sorting requires post-processing since it's calculated
+
+    // When status filter is applied, we need to fetch ALL records first
+    // because filtering happens after entity creation
+    const shouldFetchAll = status || sortBy === "available";
+
     const [stocks, total] = await Promise.all([
       (this.prisma as any).inventoryStock.findMany({
-        take: limit,
-        skip: offset,
+        take: shouldFetchAll ? undefined : limit,
+        skip: shouldFetchAll ? undefined : offset,
         where,
-        orderBy: { variantId: "asc" },
+        orderBy,
         include: {
           location: true,
           variant: {
@@ -212,19 +243,53 @@ export class StockRepositoryImpl implements IStockRepository {
       }
     });
 
+    let stockEntities = stocks.map((stock: StockDatabaseRow) => {
+      const reservedInCart = reservationMap.get(stock.variantId) || 0;
+
+      // Create a modified row with updated reserved count
+      const modifiedRow = {
+        ...stock,
+        reserved: stock.reserved + reservedInCart,
+      };
+
+      return this.toEntity(modifiedRow);
+    });
+
+    // Apply status filter (post-processing since it requires entity logic)
+    if (status) {
+      stockEntities = stockEntities.filter((stock: Stock) => {
+        const stockLevel = stock.getStockLevel();
+        if (status === "out_of_stock") {
+          return stockLevel.isOutOfStock();
+        } else if (status === "low_stock") {
+          return stockLevel.isLowStock() && !stockLevel.isOutOfStock();
+        } else if (status === "in_stock") {
+          return !stockLevel.isLowStock() && !stockLevel.isOutOfStock();
+        }
+        return true;
+      });
+    }
+
+    // Sort by available if requested (post-processing)
+    if (sortBy === "available") {
+      stockEntities.sort((a: Stock, b: Stock) => {
+        const availableA = a.getStockLevel().getAvailable();
+        const availableB = b.getStockLevel().getAvailable();
+        return sortOrder === "asc"
+          ? availableA - availableB
+          : availableB - availableA;
+      });
+    }
+
+    // Apply pagination after filtering when status filter is used
+    const finalTotal = stockEntities.length;
+    const paginatedStocks = shouldFetchAll
+      ? stockEntities.slice(offset, offset + limit)
+      : stockEntities;
+
     return {
-      stocks: stocks.map((stock: StockDatabaseRow) => {
-        const reservedInCart = reservationMap.get(stock.variantId) || 0;
-
-        // Create a modified row with updated reserved count
-        const modifiedRow = {
-          ...stock,
-          reserved: stock.reserved + reservedInCart,
-        };
-
-        return this.toEntity(modifiedRow);
-      }),
-      total,
+      stocks: paginatedStocks,
+      total: shouldFetchAll ? finalTotal : total,
     };
   }
 
