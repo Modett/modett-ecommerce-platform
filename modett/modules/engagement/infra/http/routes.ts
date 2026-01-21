@@ -18,6 +18,7 @@ import {
 import { authenticateUser } from "../../../user-management/infra/http/middleware/auth.middleware.js";
 import { optionalAuth } from "../../../user-management/infra/http/middleware/auth.middleware.js";
 import { authenticateAdmin } from "../../../user-management/infra/http/middleware/auth.middleware.js";
+import { PrismaClient } from "@prisma/client";
 
 // Common error response schema
 const errorResponseSchema = {
@@ -53,22 +54,32 @@ export async function registerEngagementRoutes(
     appointmentService: AppointmentService;
     productReviewService: ProductReviewService;
     newsletterService: NewsletterService;
-  }
+    prisma?: PrismaClient;
+  },
 ) {
+  // Check for Prisma availability
+  if (!services.prisma) {
+    console.error("[Engagement] Prisma client is missing provided services!");
+    throw new Error("Prisma client is required for Engagement module");
+  }
+
   // Initialize controllers
-  const wishlistController = new WishlistController(services.wishlistService);
+  const wishlistController = new WishlistController(
+    services.wishlistService,
+    services.prisma,
+  );
   const reminderController = new ReminderController(services.reminderService);
   const notificationController = new NotificationController(
-    services.notificationService
+    services.notificationService,
   );
   const appointmentController = new AppointmentController(
-    services.appointmentService
+    services.appointmentService,
   );
   const productReviewController = new ProductReviewController(
-    services.productReviewService
+    services.productReviewService,
   );
   const newsletterController = new NewsletterController(
-    services.newsletterService
+    services.newsletterService,
   );
 
   // ============================================================
@@ -137,7 +148,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    wishlistController.createWishlist.bind(wishlistController) as any
+    wishlistController.createWishlist.bind(wishlistController) as any,
   );
 
   // Get Wishlist
@@ -181,7 +192,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    wishlistController.getWishlist.bind(wishlistController) as any
+    wishlistController.getWishlist.bind(wishlistController) as any,
   );
 
   // Get User Wishlists
@@ -237,7 +248,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    wishlistController.getUserWishlists.bind(wishlistController) as any
+    wishlistController.getUserWishlists.bind(wishlistController) as any,
   );
 
   // Get Public Wishlists
@@ -285,7 +296,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    wishlistController.getPublicWishlists.bind(wishlistController) as any
+    wishlistController.getPublicWishlists.bind(wishlistController) as any,
   );
 
   // Get Wishlist Items
@@ -323,6 +334,7 @@ export async function registerEngagementRoutes(
                 type: "array",
                 items: {
                   type: "object",
+                  additionalProperties: true, // Allow product and variant objects
                   properties: {
                     wishlistItemId: { type: "string" },
                     wishlistId: { type: "string" },
@@ -330,6 +342,8 @@ export async function registerEngagementRoutes(
                     priority: { type: "number" },
                     notes: { type: "string" },
                     addedAt: { type: "string", format: "date-time" },
+                    product: { type: "object", additionalProperties: true },
+                    variant: { type: "object", additionalProperties: true },
                   },
                 },
               },
@@ -341,7 +355,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    wishlistController.getWishlistItems.bind(wishlistController) as any
+    wishlistController.getWishlistItems.bind(wishlistController) as any,
   );
 
   // Add to Wishlist
@@ -398,7 +412,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    wishlistController.addToWishlist.bind(wishlistController) as any
+    wishlistController.addToWishlist.bind(wishlistController) as any,
   );
 
   // Remove from Wishlist
@@ -448,7 +462,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    wishlistController.removeFromWishlist.bind(wishlistController) as any
+    wishlistController.removeFromWishlist.bind(wishlistController) as any,
   );
 
   // Update Wishlist
@@ -492,7 +506,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    wishlistController.updateWishlist.bind(wishlistController) as any
+    wishlistController.updateWishlist.bind(wishlistController) as any,
   );
 
   // Delete Wishlist
@@ -525,7 +539,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    wishlistController.deleteWishlist.bind(wishlistController) as any
+    wishlistController.deleteWishlist.bind(wishlistController) as any,
   );
 
   // ============================================================
@@ -595,7 +609,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    reminderController.createReminder.bind(reminderController) as any
+    reminderController.createReminder.bind(reminderController) as any,
   );
 
   // Get Reminder
@@ -642,7 +656,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    reminderController.getReminder.bind(reminderController) as any
+    reminderController.getReminder.bind(reminderController) as any,
   );
 
   // Get User Reminders
@@ -701,7 +715,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    reminderController.getUserReminders.bind(reminderController) as any
+    reminderController.getUserReminders.bind(reminderController) as any,
   );
 
   // Get Variant Reminders
@@ -760,7 +774,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    reminderController.getVariantReminders.bind(reminderController) as any
+    reminderController.getVariantReminders.bind(reminderController) as any,
   );
 
   // Update Reminder Status
@@ -804,7 +818,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    reminderController.updateReminderStatus.bind(reminderController) as any
+    reminderController.updateReminderStatus.bind(reminderController) as any,
   );
 
   // Unsubscribe Reminder
@@ -837,7 +851,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    reminderController.unsubscribeReminder.bind(reminderController) as any
+    reminderController.unsubscribeReminder.bind(reminderController) as any,
   );
 
   // Delete Reminder
@@ -870,7 +884,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    reminderController.deleteReminder.bind(reminderController) as any
+    reminderController.deleteReminder.bind(reminderController) as any,
   );
 
   // ============================================================
@@ -944,8 +958,8 @@ export async function registerEngagementRoutes(
       },
     },
     notificationController.scheduleNotification.bind(
-      notificationController
-    ) as any
+      notificationController,
+    ) as any,
   );
 
   // Send Notification
@@ -977,7 +991,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    notificationController.sendNotification.bind(notificationController) as any
+    notificationController.sendNotification.bind(notificationController) as any,
   );
 
   // Get Notification
@@ -1023,7 +1037,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    notificationController.getNotification.bind(notificationController) as any
+    notificationController.getNotification.bind(notificationController) as any,
   );
 
   // Get User Notifications
@@ -1081,8 +1095,8 @@ export async function registerEngagementRoutes(
       },
     },
     notificationController.getUserNotifications.bind(
-      notificationController
-    ) as any
+      notificationController,
+    ) as any,
   );
 
   // ============================================================
@@ -1155,7 +1169,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    appointmentController.createAppointment.bind(appointmentController) as any
+    appointmentController.createAppointment.bind(appointmentController) as any,
   );
 
   // Get Appointment
@@ -1202,7 +1216,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    appointmentController.getAppointment.bind(appointmentController) as any
+    appointmentController.getAppointment.bind(appointmentController) as any,
   );
 
   // Get User Appointments
@@ -1261,7 +1275,9 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    appointmentController.getUserAppointments.bind(appointmentController) as any
+    appointmentController.getUserAppointments.bind(
+      appointmentController,
+    ) as any,
   );
 
   // Get Location Appointments
@@ -1321,8 +1337,8 @@ export async function registerEngagementRoutes(
       },
     },
     appointmentController.getLocationAppointments.bind(
-      appointmentController
-    ) as any
+      appointmentController,
+    ) as any,
   );
 
   // Update Appointment
@@ -1363,7 +1379,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    appointmentController.updateAppointment.bind(appointmentController) as any
+    appointmentController.updateAppointment.bind(appointmentController) as any,
   );
 
   // Cancel Appointment
@@ -1395,7 +1411,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    appointmentController.cancelAppointment.bind(appointmentController) as any
+    appointmentController.cancelAppointment.bind(appointmentController) as any,
   );
 
   // ============================================================
@@ -1453,7 +1469,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    productReviewController.createReview.bind(productReviewController) as any
+    productReviewController.createReview.bind(productReviewController) as any,
   );
 
   // Get Product Review
@@ -1498,7 +1514,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    productReviewController.getReview.bind(productReviewController) as any
+    productReviewController.getReview.bind(productReviewController) as any,
   );
 
   // Get Product Reviews
@@ -1556,8 +1572,8 @@ export async function registerEngagementRoutes(
       },
     },
     productReviewController.getProductReviews.bind(
-      productReviewController
-    ) as any
+      productReviewController,
+    ) as any,
   );
 
   // Get User Reviews
@@ -1615,7 +1631,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    productReviewController.getUserReviews.bind(productReviewController) as any
+    productReviewController.getUserReviews.bind(productReviewController) as any,
   );
 
   // Update Review Status
@@ -1659,8 +1675,8 @@ export async function registerEngagementRoutes(
       },
     },
     productReviewController.updateReviewStatus.bind(
-      productReviewController
-    ) as any
+      productReviewController,
+    ) as any,
   );
 
   // Delete Product Review
@@ -1692,7 +1708,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    productReviewController.deleteReview.bind(productReviewController) as any
+    productReviewController.deleteReview.bind(productReviewController) as any,
   );
 
   // ============================================================
@@ -1742,7 +1758,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    newsletterController.subscribe.bind(newsletterController) as any
+    newsletterController.subscribe.bind(newsletterController) as any,
   );
 
   // Unsubscribe from Newsletter
@@ -1777,7 +1793,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    newsletterController.unsubscribe.bind(newsletterController) as any
+    newsletterController.unsubscribe.bind(newsletterController) as any,
   );
 
   // Unsubscribe from Newsletter (Link)
@@ -1806,7 +1822,7 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    newsletterController.unsubscribeViaLink.bind(newsletterController) as any
+    newsletterController.unsubscribeViaLink.bind(newsletterController) as any,
   );
 
   // Get Newsletter Subscription
@@ -1852,6 +1868,6 @@ export async function registerEngagementRoutes(
         },
       },
     },
-    newsletterController.getSubscription.bind(newsletterController) as any
+    newsletterController.getSubscription.bind(newsletterController) as any,
   );
 }
