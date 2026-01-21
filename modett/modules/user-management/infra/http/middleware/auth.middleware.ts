@@ -62,6 +62,10 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
     reply: FastifyReply
   ): Promise<void> {
     try {
+      console.log("[Auth Middleware] Path:", request.url);
+      console.log("[Auth Middleware] Authorization header:", request.headers.authorization ? "Present" : "Missing");
+      console.log("[Auth Middleware] Cookie header:", request.headers.cookie ? "Present" : "Missing");
+
       let authHeader = request.headers.authorization;
 
       if (!authHeader && request.headers.cookie) {
@@ -69,11 +73,13 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions = {}) {
           /(?:^|;\s*)token=([^;]+)/
         );
         if (cookieMatch) {
+          console.log("[Auth Middleware] Found token in cookie");
           authHeader = `Bearer ${cookieMatch[1]}`;
         }
       }
 
       if (!authHeader) {
+        console.log("[Auth Middleware] No auth header found, returning 401");
         if (optional) return;
         reply.status(401).send({
           success: false,
