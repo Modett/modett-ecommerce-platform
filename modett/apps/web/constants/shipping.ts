@@ -16,8 +16,8 @@ export type ShippingMethod = typeof SHIPPING_METHODS[keyof typeof SHIPPING_METHO
 export type ShippingOption = typeof SHIPPING_OPTIONS[keyof typeof SHIPPING_OPTIONS];
 
 export const SHIPPING_PRICES = {
-  [SHIPPING_OPTIONS.COLOMBO]: 250.00,
-  [SHIPPING_OPTIONS.SUBURBS]: 250.00,
+  [SHIPPING_OPTIONS.COLOMBO]: 3.00,
+  [SHIPPING_OPTIONS.SUBURBS]: 3.00,
 } as const;
 
 export const SHIPPING_DESCRIPTIONS = {
