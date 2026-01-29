@@ -4,6 +4,10 @@ export interface DashboardSummary {
   averageOrderValue: number;
   totalCustomers: number;
   newCustomersToday: number;
+  revenueChange: number;
+  ordersChange: number;
+  averageOrderValueChange: number;
+  conversionRate: number;
 }
 
 export interface StockAlertItem {

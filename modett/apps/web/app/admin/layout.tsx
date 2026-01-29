@@ -14,6 +14,7 @@ import {
   LogOut,
   User,
   Warehouse,
+  FileText,
 } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
@@ -42,6 +43,11 @@ const navigationItems = [
     name: "Inventory",
     href: "/admin/inventory",
     icon: Warehouse,
+  },
+  {
+    name: "Reports",
+    href: "/admin/inventory-reports",
+    icon: FileText,
   },
   {
     name: "Customers",

@@ -1,124 +1,6 @@
-export interface StockLocation {
-  locationId: string;
-  type: "warehouse" | "store" | "vendor";
-  name: string;
-  address?: {
-    street?: string;
-    city?: string;
-    state?: string;
-    postalCode?: string;
-    country?: string;
-  };
-}
-
-export interface InventorySupplier {
-  supplierId: string;
-  name: string;
-  leadTimeDays?: number;
-  contacts: Array<{
-    name: string;
-    email?: string;
-    phone?: string;
-  }>;
-}
-
-export interface StockItem {
-  stockId: string;
-  variantId: string;
-  locationId: string;
-  onHand: number;
-  reserved: number;
-  available: number; // calculated as onHand - reserved
-  lowStockThreshold?: number;
-  safetyStock?: number;
-  updatedAt: string;
-
-  // Relations (often included in list/get responses)
-  variant?: {
-    id: string; // backend variant id
-    sku: string;
-    price: number;
-    size?: string;
-    color?: string;
-    product?: {
-      title: string;
-      media?: Array<{
-        asset?: {
-          url?: string;
-          publicUrl?: string;
-          storageKey?: string;
-        };
-      }>;
-    };
-    attributes?: Record<string, string>; // size, color etc
-  };
-  location?: StockLocation;
-}
-
-export interface InventoryFilters {
-  limit?: number;
-  offset?: number; // pagination usually uses page/limit but backend routes.ts showed offset
-  variantId?: string;
-  locationId?: string;
-  search?: string;
-  status?: "low_stock" | "out_of_stock" | "in_stock";
-  sortBy?: "available" | "onHand" | "location" | "product";
-  sortOrder?: "asc" | "desc";
-}
-
-export interface StocksListResponse {
-  success: boolean;
-  data: {
-    stocks: StockItem[];
-    total: number;
-  };
-  error?: string;
-}
-
-export interface LocationsListResponse {
-  success: boolean;
-  data: {
-    locations: StockLocation[];
-    total: number;
-  };
-  error?: string;
-}
-
-export interface InventoryStatsResponse {
-  success: boolean;
-  data: {
-    totalItems: number;
-    lowStockCount: number;
-    outOfStockCount: number;
-    totalValue: number;
-  };
-  error?: string;
-}
-
-export interface AddStockRequest {
-  variantId: string;
-  locationId: string;
-  quantity: number;
-  reason: "rma" | "adjustment" | "po";
-}
-
-export interface TransferStockRequest {
-  variantId: string;
-  fromLocationId: string;
-  toLocationId: string;
-  quantity: number;
-}
-
-export interface AdjustStockRequest {
-  variantId: string;
-  locationId: string;
-  quantityDelta: number;
-  reason: string;
-}
-
-// ============================================
+// ============================================================================
 // INVENTORY REPORTS TYPES
-// ============================================
+// ============================================================================
 
 /**
  * Stock Level Report - Current inventory status across all products
@@ -149,7 +31,7 @@ export interface StockLevelReport {
     criticalCount: number;
     outOfStockCount: number;
   };
-  generatedAt: Date | string;
+  generatedAt: Date;
 }
 
 /**
@@ -165,8 +47,8 @@ export interface StockMovementItem {
   qtyDelta: number;
   reason: string;
   referenceType: string | null;
-  referenceId: string;
-  createdAt: Date | string;
+  referenceId: string | null;
+  createdAt: Date;
   runningBalance: number;
 }
 
@@ -185,12 +67,12 @@ export interface StockMovementReport {
     }>;
   };
   filters: {
-    startDate: Date | string;
-    endDate: Date | string;
+    startDate: Date;
+    endDate: Date;
     variantId?: string;
     locationId?: string;
   };
-  generatedAt: Date | string;
+  generatedAt: Date;
 }
 
 /**
@@ -205,7 +87,7 @@ export interface LowStockForecastItem {
   currentStock: number;
   averageDailySales: number;
   daysUntilStockout: number;
-  estimatedStockoutDate: Date | string | null;
+  estimatedStockoutDate: Date | null;
   recommendedOrderQuantity: number;
   urgency: 'immediate' | 'urgent' | 'soon' | 'monitor';
 }
@@ -218,12 +100,12 @@ export interface LowStockForecast {
     soonCount: number;
     monitorCount: number;
   };
-  forecastPeriod: number;
-  generatedAt: Date | string;
+  forecastPeriod: number; // days to forecast
+  generatedAt: Date;
 }
 
 /**
- * Inventory Valuation - Total value of current inventory with profit analysis
+ * Inventory Valuation - Total value of current inventory
  */
 export interface InventoryValuationItem {
   variantId: string;
@@ -255,7 +137,7 @@ export interface InventoryValuation {
     totalValue: number;
     itemCount: number;
   }>;
-  generatedAt: Date | string;
+  generatedAt: Date;
 }
 
 /**
@@ -269,10 +151,10 @@ export interface SlowMovingStockItem {
   locationName: string;
   onHand: number;
   daysInStock: number;
-  lastSoldDate: Date | string | null;
+  lastSoldDate: Date | null;
   daysSinceLastSale: number | null;
   totalSales: number;
-  turnoverRate: number;
+  turnoverRate: number; // sales per day
   inventoryValue: number;
   recommendation: 'discount' | 'promote' | 'bundle' | 'clearance';
 }
@@ -294,38 +176,5 @@ export interface SlowMovingStockReport {
     minimumDaysInStock: number;
     minimumInventoryValue: number;
   };
-  generatedAt: Date | string;
-}
-
-/**
- * Report API Response Wrappers
- */
-export interface StockLevelReportResponse {
-  success: boolean;
-  data: StockLevelReport;
-  error?: string;
-}
-
-export interface StockMovementReportResponse {
-  success: boolean;
-  data: StockMovementReport;
-  error?: string;
-}
-
-export interface LowStockForecastResponse {
-  success: boolean;
-  data: LowStockForecast;
-  error?: string;
-}
-
-export interface InventoryValuationResponse {
-  success: boolean;
-  data: InventoryValuation;
-  error?: string;
-}
-
-export interface SlowMovingStockReportResponse {
-  success: boolean;
-  data: SlowMovingStockReport;
-  error?: string;
+  generatedAt: Date;
 }

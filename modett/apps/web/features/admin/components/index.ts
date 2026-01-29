@@ -17,3 +17,4 @@ export { CustomerGrowthItem } from "./customer-growth-item";
 export { BestSellingProductItem } from "./best-selling-product-item";
 export { OrderStatusProgressBar } from "./order-status-progress-bar";
 export { InventoryFilter } from "./inventory-filter";
+export { ReportStatusBadge } from "./report-status-badge";
