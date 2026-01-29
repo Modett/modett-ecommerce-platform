@@ -55,13 +55,31 @@ export interface StockItem {
   location?: StockLocation;
 }
 
+export type StockStatus = "healthy" | "warning" | "critical";
+
+export interface InventoryItem {
+  id: string;
+  variantId: string;
+  productTitle: string;
+  productImage?: string;
+  sku: string;
+  size?: string;
+  color?: string;
+  inStock: number;
+  reserved: number;
+  available: number;
+  status: StockStatus;
+  updatedAt?: string;
+}
+
 export interface InventoryFilters {
   limit?: number;
   offset?: number; // pagination usually uses page/limit but backend routes.ts showed offset
+  page?: number;
   variantId?: string;
   locationId?: string;
   search?: string;
-  status?: "low_stock" | "out_of_stock" | "in_stock";
+  status?: StockStatus;
   sortBy?: "available" | "onHand" | "location" | "product";
   sortOrder?: "asc" | "desc";
 }
@@ -134,7 +152,7 @@ export interface StockLevelReportItem {
   available: number;
   lowStockThreshold: number | null;
   safetyStock: number | null;
-  status: 'healthy' | 'low' | 'critical' | 'out_of_stock';
+  status: "healthy" | "low" | "critical" | "out_of_stock";
   costPerUnit: number;
   totalValue: number;
 }
@@ -207,7 +225,7 @@ export interface LowStockForecastItem {
   daysUntilStockout: number;
   estimatedStockoutDate: Date | string | null;
   recommendedOrderQuantity: number;
-  urgency: 'immediate' | 'urgent' | 'soon' | 'monitor';
+  urgency: "immediate" | "urgent" | "soon" | "monitor";
 }
 
 export interface LowStockForecast {
@@ -274,7 +292,7 @@ export interface SlowMovingStockItem {
   totalSales: number;
   turnoverRate: number;
   inventoryValue: number;
-  recommendation: 'discount' | 'promote' | 'bundle' | 'clearance';
+  recommendation: "discount" | "promote" | "bundle" | "clearance";
 }
 
 export interface SlowMovingStockReport {
