@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -65,12 +66,13 @@ export function AlertCard({ pendingOrders, lowStockItems }: AlertCardProps) {
                 >
                   These orders need your attention to avoid shipping delays
                 </p>
-                <button
-                  className="text-xs font-semibold text-amber-800 hover:text-amber-900"
+                <Link
+                  href="/admin/orders"
+                  className="text-xs font-semibold text-amber-800 hover:text-amber-900 hover:underline"
                   style={{ fontFamily: "Raleway, sans-serif" }}
                 >
                   View Orders →
-                </button>
+                </Link>
               </div>
             </div>
           ) : (

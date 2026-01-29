@@ -12,7 +12,7 @@ export interface BestSellingProduct {
   revenue: number;
 }
 
-export interface CustomerGrowthItem {
+export interface CustomerGrowthMetric {
   date: string;
   newCustomers: number;
   totalCustomers: number;
@@ -27,7 +27,7 @@ export interface OrderStatusBreakdown {
 export interface AnalyticsOverview {
   salesTrends: SalesTrendItem[];
   bestSellingProducts: BestSellingProduct[];
-  customerGrowth: CustomerGrowthItem[];
+  customerGrowth: CustomerGrowthMetric[];
   orderStatusBreakdown: OrderStatusBreakdown[];
   totalRevenue: number;
   totalOrders: number;
@@ -37,7 +37,7 @@ export interface AnalyticsOverview {
 export interface AnalyticsFilters {
   startDate?: string;
   endDate?: string;
-  granularity?: 'day' | 'week' | 'month';
+  granularity?: "day" | "week" | "month";
 }
 
 export interface AnalyticsResponse {

@@ -6,15 +6,15 @@ import {
   CustomersTable,
   CustomerDetailsModal,
   DashboardHeader,
-} from "@/features/admin/components";
+} from "@/features/admin";
 import {
   getCustomers,
   toggleCustomerEmailVerification,
-} from "@/features/admin/api/customers.api";
+} from "@/features/admin";
 import type {
   AdminCustomer,
   CustomerFilters,
-} from "@/features/admin/types/customer.types";
+} from "@/features/admin";
 
 // ============================================================================
 // CUSTOMERS PAGE COMPONENT

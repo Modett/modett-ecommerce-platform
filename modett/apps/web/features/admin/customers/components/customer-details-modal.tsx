@@ -18,13 +18,13 @@ import {
   Lock,
   Unlock,
 } from "lucide-react";
-import type { AdminCustomer, UserStatus } from "../types/customer.types";
+import type { AdminCustomer, UserStatus } from "@/features/admin";
 import {
   getCustomerById,
   updateCustomerStatus,
   updateCustomerRole,
   deleteCustomer,
-} from "../api/customers.api";
+} from "@/features/admin";
 import axios from "axios";
 
 // ============================================================================

@@ -7,12 +7,12 @@ import type {
   CreateProductRequest,
   UpdateProductRequest,
   ProductCategory,
-} from "../types/product.types";
+} from "@/features/admin";
 import {
   createProduct,
   updateProduct,
   deleteProduct,
-} from "../api/products.api";
+} from "@/features/admin";
 
 // ============================================================================
 // TYPE DEFINITIONS

@@ -5,8 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DashboardHeader, StatCard } from "@/features/admin/components";
-import { getInventoryValuation } from "@/features/admin/api/inventory.api";
+import { DashboardHeader, StatCard, getInventoryValuation } from "@/features/admin";
 import { DollarSign, TrendingUp, Package, RefreshCw, Download } from "lucide-react";
 import { format } from "date-fns";
 

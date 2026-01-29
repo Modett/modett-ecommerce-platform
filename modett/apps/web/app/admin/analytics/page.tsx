@@ -11,9 +11,9 @@ import {
   CustomerGrowthItem,
   BestSellingProductItem,
   OrderStatusProgressBar,
-} from "@/features/admin/components";
-import { getAnalytics } from "@/features/admin/api/analytics.api";
-import type { AnalyticsFilters } from "@/features/admin/types/analytics.types";
+} from "@/features/admin";
+import { getAnalytics } from "@/features/admin";
+import type { AnalyticsFilters } from "@/features/admin";
 import { formatCurrency } from "@/lib/utils";
 
 export default function AnalyticsPage() {

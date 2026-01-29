@@ -12,8 +12,8 @@ import {
   AlertCircle,
   Trash,
 } from "lucide-react";
-import type { AdminOrder, OrderStatus } from "../types/order.types";
-import { updateOrderStatus, deleteOrder } from "../api/orders.api";
+import type { AdminOrder, OrderStatus } from "@/features/admin";
+import { updateOrderStatus, deleteOrder } from "@/features/admin";
 
 // ============================================================================
 // TYPE DEFINITIONS

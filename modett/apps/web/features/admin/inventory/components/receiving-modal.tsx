@@ -3,10 +3,8 @@
 import { useState, useEffect } from "react";
 import { X, Loader2, PackagePlus } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getLocations, addStock } from "../api/inventory.api";
-import { getProducts } from "../api/products.api";
-import type { StockLocation } from "../types/inventory.types";
-import { AdminProduct } from "../types/product.types";
+import { getLocations, addStock, getProducts } from "@/features/admin";
+import type { StockLocation, AdminProduct } from "@/features/admin";
 
 interface ReceivingModalProps {
   isOpen: boolean;

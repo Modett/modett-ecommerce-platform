@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { DashboardHeader } from "@/features/admin/components";
-import { InventoryTable } from "@/features/admin/components/inventory-table";
-import { ReceivingModal } from "@/features/admin/components/receiving-modal";
-import { StockAdjustmentModal } from "@/features/admin/components/stock-adjustment-modal";
-import { getStocks, getLocations } from "@/features/admin/api/inventory.api";
+import {
+  DashboardHeader,
+  InventoryTable,
+  ReceivingModal,
+  StockAdjustmentModal,
+  getStocks,
+  getLocations,
+} from "@/features/admin";
 import { PackagePlus, TrendingUp, AlertTriangle } from "lucide-react";
 import type {
   InventoryFilters,
   StockItem,
-} from "@/features/admin/types/inventory.types";
+} from "@/features/admin";
 
 export default function InventoryPage() {
   const [filters, setFilters] = useState<InventoryFilters>({
@@ -54,7 +57,7 @@ export default function InventoryPage() {
   const { data: statsData } = useQuery({
     queryKey: ["admin-inventory-stats"],
     queryFn: () =>
-      import("@/features/admin/api/inventory.api").then((m) =>
+      import("@/features/admin").then((m) =>
         m.getInventoryStats()
       ),
   });

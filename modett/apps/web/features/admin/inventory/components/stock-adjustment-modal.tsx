@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { X, Loader2, ClipboardEdit } from "lucide-react";
-import { adjustStock } from "../api/inventory.api";
-import type { StockItem } from "../types/inventory.types";
+import { adjustStock } from "@/features/admin";
+import type { StockItem } from "@/features/admin";
 
 interface StockAdjustmentModalProps {
   isOpen: boolean;
