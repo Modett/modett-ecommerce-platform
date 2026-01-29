@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ProductsTable } from "@/features/admin/components/products-table";
-import { ProductFormModal } from "@/features/admin/components/product-form-modal";
-import { DashboardHeader } from "@/features/admin/components";
-import { getProducts, getCategories } from "@/features/admin/api/products.api";
-import type {
-  AdminProduct,
-  ProductFilters,
-} from "@/features/admin/types/product.types";
+import {
+  ProductsTable,
+  ProductFormModal,
+  DashboardHeader,
+  getProducts,
+  getCategories,
+  type AdminProduct,
+  type ProductFilters,
+} from "@/features/admin";
 import { Plus } from "lucide-react";
 
 // ============================================================================

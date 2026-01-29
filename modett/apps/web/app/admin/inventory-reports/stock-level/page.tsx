@@ -16,8 +16,9 @@ import {
   DashboardHeader,
   StatCard,
   ReportStatusBadge,
-} from "@/features/admin/components";
-import { getStockLevelReport, getLocations } from "@/features/admin/api/inventory.api";
+  getStockLevelReport,
+  getLocations,
+} from "@/features/admin";
 import { Package, DollarSign, AlertTriangle, RefreshCw, Download, Search } from "lucide-react";
 import { format } from "date-fns";
 

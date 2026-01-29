@@ -1,15 +1,17 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getSettings } from "@/features/admin/api/settings.api";
+import {
+  getSettings,
+  GeneralSettingsForm,
+  AppearanceSettingsForm,
+  ShippingSettingsForm,
+  InventorySettingsForm,
+  AccountSettingsForm,
+} from "@/features/admin";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
-import GeneralSettingsForm from "@/features/admin/components/settings/GeneralSettingsForm";
-import AppearanceSettingsForm from "@/features/admin/components/settings/AppearanceSettingsForm";
-import ShippingSettingsForm from "@/features/admin/components/settings/ShippingSettingsForm";
-import InventorySettingsForm from "@/features/admin/components/settings/InventorySettingsForm";
-import { AccountSettingsForm } from "@/features/admin/components/settings/AccountSettingsForm";
 
 export default function SettingsPage() {
   const {

@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { OrdersTable } from "@/features/admin/components/orders-table";
-import { DashboardHeader } from "@/features/admin/components";
-import { OrderDetailsModal } from "@/features/admin/components/order-details-modal";
-import { getOrders } from "@/features/admin/api/orders.api";
-import type {
-  AdminOrder,
-  OrderFilters,
-} from "@/features/admin/types/order.types";
+import {
+  OrdersTable,
+  DashboardHeader,
+  OrderDetailsModal,
+  getOrders,
+  type AdminOrder,
+  type OrderFilters,
+} from "@/features/admin";
 
 // ============================================================================
 // ORDERS PAGE COMPONENT

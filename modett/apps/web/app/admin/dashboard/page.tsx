@@ -9,8 +9,8 @@ import {
   AlertCard,
   ActivityCard,
   QuickStats,
-} from "@/features/admin/components";
-import { DashboardHeader } from "@/features/admin/components/dashboard-header";
+  DashboardHeader,
+} from "@/features/admin";
 
 // ============================================================================
 // TYPE DEFINITIONS

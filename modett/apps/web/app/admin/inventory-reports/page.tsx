@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DashboardHeader } from "@/features/admin/components";
+import { DashboardHeader } from "@/features/admin";
 import {
   Package,
   TrendingUp,

@@ -6,8 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DashboardHeader, StatCard, ReportStatusBadge } from "@/features/admin/components";
-import { getSlowMovingStock } from "@/features/admin/api/inventory.api";
+import { DashboardHeader, StatCard, ReportStatusBadge, getSlowMovingStock } from "@/features/admin";
 import { Timer, DollarSign, Package, RefreshCw, Download } from "lucide-react";
 import { format } from "date-fns";
 

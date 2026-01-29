@@ -6,8 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DashboardHeader, StatCard } from "@/features/admin/components";
-import { getStockMovementReport } from "@/features/admin/api/inventory.api";
+import { DashboardHeader, StatCard, getStockMovementReport } from "@/features/admin";
 import { TrendingUp, TrendingDown, Activity, RefreshCw, Download, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { format, subDays } from "date-fns";
 
