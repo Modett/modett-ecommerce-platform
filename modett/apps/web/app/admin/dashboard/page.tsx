@@ -22,6 +22,10 @@ interface DashboardSummary {
   averageOrderValue: number;
   totalCustomers: number;
   newCustomersToday: number;
+  revenueChange: number;
+  ordersChange: number;
+  averageOrderValueChange: number;
+  conversionRate: number;
 }
 
 interface StockAlertItem {
@@ -104,8 +108,8 @@ export default function DashboardPage() {
           iconBg="bg-green-50"
           iconColor="text-green-600"
           trend={{
-            value: "+12.5%",
-            isPositive: true,
+            value: `${(summary?.revenueChange ?? 0) >= 0 ? '+' : ''}${(summary?.revenueChange ?? 0).toFixed(1)}%`,
+            isPositive: (summary?.revenueChange ?? 0) >= 0,
             label: "from yesterday",
           }}
         />
@@ -116,8 +120,8 @@ export default function DashboardPage() {
           iconBg="bg-blue-50"
           iconColor="text-blue-600"
           trend={{
-            value: "+8.2%",
-            isPositive: true,
+            value: `${(summary?.ordersChange ?? 0) >= 0 ? '+' : ''}${(summary?.ordersChange ?? 0).toFixed(1)}%`,
+            isPositive: (summary?.ordersChange ?? 0) >= 0,
             label: "from yesterday",
           }}
         />
@@ -128,8 +132,8 @@ export default function DashboardPage() {
           iconBg="bg-purple-50"
           iconColor="text-purple-600"
           trend={{
-            value: "-2.1%",
-            isPositive: false,
+            value: `${(summary?.averageOrderValueChange ?? 0) >= 0 ? '+' : ''}${(summary?.averageOrderValueChange ?? 0).toFixed(1)}%`,
+            isPositive: (summary?.averageOrderValueChange ?? 0) >= 0,
             label: "from yesterday",
           }}
         />
@@ -147,7 +151,7 @@ export default function DashboardPage() {
       {/* Quick Stats Section */}
       <QuickStats
         totalCustomers={summary?.totalCustomers?.toLocaleString() || "0"}
-        conversionRate="3.24%" // Hardcoded for now until analytics module is ready
+        conversionRate={`${(summary?.conversionRate ?? 0).toFixed(2)}%`}
         lowStockCount={alerts?.lowStock?.length || 0}
         pendingActionsCount={alerts?.pendingOrders || 0}
         newCustomersCount={summary?.newCustomersToday || 0}
