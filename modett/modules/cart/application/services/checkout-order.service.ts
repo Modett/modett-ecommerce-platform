@@ -302,6 +302,29 @@ export class CheckoutOrderService {
         },
       });
 
+      // Track purchase event in analytics
+      try {
+        await tx.analyticsEvent.create({
+          data: {
+            eventType: 'purchase',
+            userId: dto.userId || undefined,
+            guestToken: dto.guestToken || undefined,
+            sessionId: `purchase-${order.id}`,
+            eventTimestamp: new Date(),
+            eventData: {
+              orderId: order.id,
+              orderNo: orderNo,
+              amount: total,
+              currency: checkout.getCurrency().toString(),
+              itemCount: cartSnapshot.items?.length || 0
+            }
+          }
+        });
+      } catch (analyticsError) {
+        // Log but don't fail the order if analytics tracking fails
+        console.error('[Checkout] Failed to track purchase event:', analyticsError);
+      }
+
       await tx.orderStatusHistory.create({
         data: {
           orderId: order.id,
