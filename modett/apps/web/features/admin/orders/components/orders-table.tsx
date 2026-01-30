@@ -88,6 +88,11 @@ export function OrdersTable({
         text: "text-purple-800",
         label: "Processing",
       },
+      PAID: {
+        bg: "bg-teal-100",
+        text: "text-teal-800",
+        label: "Paid",
+      },
       SHIPPED: {
         bg: "bg-indigo-100",
         text: "text-indigo-800",
@@ -174,42 +179,105 @@ export function OrdersTable({
         {/* Filter Panel */}
         {showFilters && (
           <div className="mt-6 p-4 bg-[#F8F5F2]/50 border border-[#BBA496]/20 rounded-xl animate-in fade-in slide-in-from-top-2">
-            <p className="text-xs font-semibold text-[#8B7355] mb-3 uppercase tracking-wider">
-              Filter by Status
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => handleStatusFilter(undefined)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
-                  !filters.status
-                    ? "bg-[#232D35] text-white shadow-md"
-                    : "bg-white text-[#6B7280] hover:bg-[#E5E7EB]"
-                }`}
-              >
-                All
-              </button>
-              {(
-                [
-                  "PENDING",
-                  "CONFIRMED",
-                  "PROCESSING",
-                  "SHIPPED",
-                  "DELIVERED",
-                  "CANCELLED",
-                ] as OrderStatus[]
-              ).map((status) => (
-                <button
-                  key={status}
-                  onClick={() => handleStatusFilter(status)}
-                  className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
-                    filters.status === status
-                      ? "bg-[#232D35] text-white shadow-md"
-                      : "bg-white text-[#6B7280] hover:bg-[#E5E7EB]"
-                  }`}
-                >
-                  {status.charAt(0) + status.slice(1).toLowerCase()}
-                </button>
-              ))}
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Status Filter */}
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-[#8B7355] mb-3 uppercase tracking-wider">
+                  Filter by Status
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => handleStatusFilter(undefined)}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
+                      !filters.status
+                        ? "bg-[#232D35] text-white shadow-md"
+                        : "bg-white text-[#6B7280] hover:bg-[#E5E7EB]"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {(
+                    [
+                      "PENDING",
+                      "CONFIRMED",
+                      "PAID",
+                      "PROCESSING",
+                      "SHIPPED",
+                      "DELIVERED",
+                      "CANCELLED",
+                    ] as OrderStatus[]
+                  ).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => handleStatusFilter(status)}
+                      className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all ${
+                        filters.status === status
+                          ? "bg-[#232D35] text-white shadow-md"
+                          : "bg-white text-[#6B7280] hover:bg-[#E5E7EB]"
+                      }`}
+                    >
+                      {status.charAt(0) + status.slice(1).toLowerCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Date Filter */}
+              <div className="min-w-[200px]">
+                <p className="text-xs font-semibold text-[#8B7355] mb-3 uppercase tracking-wider">
+                  Filter by Date
+                </p>
+                <input
+                  type="date"
+                  value={
+                    filters.startDate
+                      ? (() => {
+                          // Convert ISO string back to local date for display
+                          const d = new Date(filters.startDate);
+                          const year = d.getFullYear();
+                          const month = String(d.getMonth() + 1).padStart(
+                            2,
+                            "0",
+                          );
+                          const day = String(d.getDate()).padStart(2, "0");
+                          return `${year}-${month}-${day}`;
+                        })()
+                      : ""
+                  }
+                  onChange={(e) => {
+                    const dateStr = e.target.value;
+                    if (dateStr) {
+                      // Robust local date construction to avoid UTC shifting
+                      // Input is YYYY-MM-DD
+                      const [year, month, day] = dateStr.split("-").map(Number);
+
+                      const start = new Date(year, month - 1, day, 0, 0, 0, 0);
+                      const end = new Date(
+                        year,
+                        month - 1,
+                        day,
+                        23,
+                        59,
+                        59,
+                        999,
+                      );
+
+                      onFilterChange({
+                        ...filters,
+                        startDate: start.toISOString(),
+                        endDate: end.toISOString(),
+                        page: 1,
+                      });
+                    } else {
+                      // Clear date filter
+                      const { startDate, endDate, ...rest } = filters;
+                      onFilterChange({ ...rest, page: 1 });
+                    }
+                  }}
+                  className="w-full px-4 py-2 bg-white border border-[#BBA496]/30 rounded-lg text-sm text-[#232D35] focus:outline-none focus:ring-2 focus:ring-[#BBA496]/50"
+                  style={{ fontFamily: "Raleway, sans-serif" }}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -417,7 +485,7 @@ export function OrdersTable({
                       {pg}
                     </button>
                   );
-                }
+                },
               )}
             </div>
             <button
