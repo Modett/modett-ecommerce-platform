@@ -39,8 +39,14 @@ export function InventoryTable({
   onAdjust,
 }: InventoryTableProps) {
   const [showFilters, setShowFilters] = useState(false);
+  const [searchInput, setSearchInput] = useState(filters.search || "");
   const currentPage = Math.floor(pagination.offset / pagination.limit) + 1;
   const totalPages = Math.ceil(pagination.total / pagination.limit);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    onFilterChange({ ...filters, search: searchInput, offset: 0 });
+  };
 
   const handlePageChange = (newPage: number) => {
     const newOffset = (newPage - 1) * pagination.limit;
@@ -69,18 +75,36 @@ export function InventoryTable({
     <div className="bg-white/80 backdrop-blur-md border border-[#BBA496]/30 rounded-2xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
       {/* Header with Search and Filters */}
       <div className="p-6 border-b border-[#BBA496]/20 bg-gradient-to-r from-white/50 to-transparent">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <h3
-            className="text-lg font-medium text-[#232D35]"
+            className="text-lg font-medium text-[#232D35] shrink-0"
             style={{ fontFamily: "var(--font-serif)" }}
           >
             Stock Overview
           </h3>
 
+          {/* Search */}
+          <form
+            onSubmit={handleSearch}
+            className="flex-1 max-w-md w-full md:mx-4"
+          >
+            <div className="relative group">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search by product, SKU..."
+                className="w-full h-10 pl-10 pr-4 bg-white/50 border border-[#BBA496]/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#BBA496]/20 focus:border-[#BBA496] transition-all"
+                style={{ fontFamily: "Raleway, sans-serif" }}
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A09B93] group-focus-within:text-[#232D35] transition-colors" />
+            </div>
+          </form>
+
           {/* Filter Toggle Button */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-medium transition-all shrink-0 ${
               showFilters || hasActiveFilters
                 ? "bg-[#232D35] text-white border-[#232D35]"
                 : "bg-white/50 text-[#232D35] border-[#BBA496]/50 hover:bg-[#F8F5F2]"
@@ -115,7 +139,10 @@ export function InventoryTable({
                     onFilterChange({
                       ...filters,
                       status: e.target.value
-                        ? (e.target.value as "low_stock" | "out_of_stock" | "in_stock")
+                        ? (e.target.value as
+                            | "low_stock"
+                            | "out_of_stock"
+                            | "in_stock")
                         : undefined,
                       offset: 0,
                     })
@@ -152,7 +179,10 @@ export function InventoryTable({
                 >
                   <option value="">All Locations</option>
                   {locations.map((location) => (
-                    <option key={location.locationId} value={location.locationId}>
+                    <option
+                      key={location.locationId}
+                      value={location.locationId}
+                    >
                       {location.name}
                     </option>
                   ))}
@@ -219,7 +249,9 @@ export function InventoryTable({
                   onFilterChange({
                     ...filters,
                     status:
-                      filters.status === "out_of_stock" ? undefined : "out_of_stock",
+                      filters.status === "out_of_stock"
+                        ? undefined
+                        : "out_of_stock",
                     offset: 0,
                   })
                 }
@@ -236,7 +268,8 @@ export function InventoryTable({
                 onClick={() =>
                   onFilterChange({
                     ...filters,
-                    status: filters.status === "low_stock" ? undefined : "low_stock",
+                    status:
+                      filters.status === "low_stock" ? undefined : "low_stock",
                     offset: 0,
                   })
                 }
@@ -253,7 +286,8 @@ export function InventoryTable({
                 onClick={() =>
                   onFilterChange({
                     ...filters,
-                    status: filters.status === "in_stock" ? undefined : "in_stock",
+                    status:
+                      filters.status === "in_stock" ? undefined : "in_stock",
                     offset: 0,
                   })
                 }
