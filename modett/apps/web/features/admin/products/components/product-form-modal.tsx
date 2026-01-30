@@ -8,11 +8,7 @@ import type {
   UpdateProductRequest,
   ProductCategory,
 } from "@/features/admin";
-import {
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} from "@/features/admin";
+import { createProduct, updateProduct, deleteProduct } from "@/features/admin";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -51,6 +47,7 @@ export function ProductFormModal({
     shortDesc: "",
     longDescHtml: "",
     status: "draft" as "draft" | "published" | "scheduled",
+    publishAt: "",
     categoryIds: [] as string[],
     countryOfOrigin: "",
     seoTitle: "",
@@ -66,6 +63,9 @@ export function ProductFormModal({
         shortDesc: product.shortDesc || "",
         longDescHtml: product.longDescHtml || "",
         status: product.status || "draft",
+        publishAt: product.publishAt
+          ? new Date(product.publishAt).toISOString().slice(0, 16)
+          : "",
         categoryIds: product.categories?.map((c) => c.id) || [],
         countryOfOrigin: product.countryOfOrigin || "",
         seoTitle: product.seoTitle || "",
@@ -79,6 +79,7 @@ export function ProductFormModal({
         shortDesc: "",
         longDescHtml: "",
         status: "draft",
+        publishAt: "",
         categoryIds: [],
         countryOfOrigin: "",
         seoTitle: "",
@@ -92,7 +93,10 @@ export function ProductFormModal({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+      if (
+        statusDropdownRef.current &&
+        !statusDropdownRef.current.contains(event.target as Node)
+      ) {
         setIsStatusDropdownOpen(false);
       }
     };
@@ -108,7 +112,7 @@ export function ProductFormModal({
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -138,6 +142,10 @@ export function ProductFormModal({
           shortDesc: formData.shortDesc || undefined,
           longDescHtml: formData.longDescHtml || undefined,
           status: formData.status,
+          publishAt:
+            formData.status === "scheduled" && formData.publishAt
+              ? new Date(formData.publishAt).toISOString()
+              : undefined,
           countryOfOrigin: formData.countryOfOrigin || undefined,
           seoTitle: formData.seoTitle || undefined,
           seoDescription: formData.seoDescription || undefined,
@@ -151,7 +159,12 @@ export function ProductFormModal({
           shortDesc: formData.shortDesc || undefined,
           longDescHtml: formData.longDescHtml || undefined,
           status: formData.status,
-          categoryIds: formData.categoryIds.length > 0 ? formData.categoryIds : undefined,
+          publishAt:
+            formData.status === "scheduled" && formData.publishAt
+              ? new Date(formData.publishAt).toISOString()
+              : undefined,
+          categoryIds:
+            formData.categoryIds.length > 0 ? formData.categoryIds : undefined,
           countryOfOrigin: formData.countryOfOrigin || undefined,
           seoTitle: formData.seoTitle || undefined,
           seoDescription: formData.seoDescription || undefined,
@@ -302,28 +315,35 @@ export function ProductFormModal({
                     <div className="relative" ref={statusDropdownRef}>
                       <button
                         type="button"
-                        onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                        onClick={() =>
+                          setIsStatusDropdownOpen(!isStatusDropdownOpen)
+                        }
                         className="w-full px-4 py-2 border border-[#BBA496] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA496]/20 focus:border-[#BBA496] bg-white text-[#232D35] cursor-pointer hover:border-[#BBA496]/80 transition-colors text-left flex items-center justify-between"
                         style={{ fontFamily: "Raleway, sans-serif" }}
                       >
                         <span className="capitalize">{formData.status}</span>
-                        <ChevronDown className={`w-5 h-5 text-[#BBA496] transition-transform ${isStatusDropdownOpen ? 'rotate-180' : ''}`} />
+                        <ChevronDown
+                          className={`w-5 h-5 text-[#BBA496] transition-transform ${isStatusDropdownOpen ? "rotate-180" : ""}`}
+                        />
                       </button>
 
                       {isStatusDropdownOpen && (
                         <div className="absolute z-10 w-full mt-1 bg-white border border-[#BBA496] rounded-lg shadow-lg overflow-hidden">
-                          {['draft', 'published', 'scheduled'].map((status) => (
+                          {["draft", "published", "scheduled"].map((status) => (
                             <button
                               key={status}
                               type="button"
                               onClick={() => {
-                                setFormData((prev) => ({ ...prev, status: status as any }));
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  status: status as any,
+                                }));
                                 setIsStatusDropdownOpen(false);
                               }}
                               className={`w-full px-4 py-2.5 text-left hover:bg-[#F8F5F2] transition-colors ${
                                 formData.status === status
-                                  ? 'bg-[#BBA496] text-white hover:bg-[#BBA496]/90'
-                                  : 'text-[#232D35]'
+                                  ? "bg-[#BBA496] text-white hover:bg-[#BBA496]/90"
+                                  : "text-[#232D35]"
                               }`}
                               style={{ fontFamily: "Raleway, sans-serif" }}
                             >
@@ -334,6 +354,34 @@ export function ProductFormModal({
                       )}
                     </div>
                   </div>
+
+                  {/* Publish At (shown only for scheduled status) */}
+                  {formData.status === "scheduled" && (
+                    <div>
+                      <label
+                        htmlFor="publishAt"
+                        className="block text-sm font-medium text-[#232D35] mb-2"
+                        style={{ fontFamily: "Raleway, sans-serif" }}
+                      >
+                        Publish Date & Time{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        id="publishAt"
+                        name="publishAt"
+                        type="datetime-local"
+                        required
+                        value={formData.publishAt}
+                        onChange={handleInputChange}
+                        min={new Date().toISOString().slice(0, 16)}
+                        className="w-full px-4 py-2 border border-[#BBA496] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#BBA496]/20 focus:border-[#BBA496]"
+                        style={{ fontFamily: "Raleway, sans-serif" }}
+                      />
+                      <p className="text-xs text-[#A09B93] mt-1">
+                        Select a future date and time for publication
+                      </p>
+                    </div>
+                  )}
 
                   {/* Short Description */}
                   <div className="md:col-span-2">
@@ -540,7 +588,11 @@ export function ProductFormModal({
                   </button>
                   <button
                     onClick={handleSave}
-                    disabled={isSaving || !formData.title}
+                    disabled={
+                      isSaving ||
+                      !formData.title ||
+                      (formData.status === "scheduled" && !formData.publishAt)
+                    }
                     className="flex items-center gap-2 min-w-[140px] px-6 py-2.5 bg-[#232D35] text-white text-sm font-medium rounded-lg hover:bg-black transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ fontFamily: "Raleway, sans-serif" }}
                   >
@@ -548,8 +600,8 @@ export function ProductFormModal({
                     {isSaving
                       ? "Saving..."
                       : product
-                      ? "Save Changes"
-                      : "Create Product"}
+                        ? "Save Changes"
+                        : "Create Product"}
                   </button>
                 </div>
               </div>
