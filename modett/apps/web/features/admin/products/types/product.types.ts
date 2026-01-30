@@ -5,10 +5,43 @@ export interface ProductVariant {
   sku: string;
   size?: string;
   color?: string;
-  price: number; // API might return string, we might need to cast
+  price: number;
   compareAtPrice?: number;
-  inventory: number;
+  inventory: number; // calculated from stock? or direct field? Backend has `stockLevel` on Stock entity, Variant entity doesn't seem to have direct inventory count unless computed.
+  // Backend Variant Model properties from route schema:
+  barcode?: string;
+  weightG?: number;
+  dims?: {
+    length?: number;
+    width?: number;
+    height?: number;
+  };
+  taxClass?: string;
+  allowBackorder?: boolean;
+  allowPreorder?: boolean;
+  restockEta?: string;
 }
+
+export interface CreateVariantRequest {
+  sku: string;
+  price: number;
+  size?: string;
+  color?: string;
+  barcode?: string;
+  compareAtPrice?: number;
+  weightG?: number;
+  dims?: {
+    length?: number;
+    width?: number;
+    height?: number;
+  };
+  taxClass?: string;
+  allowBackorder?: boolean;
+  allowPreorder?: boolean;
+  restockEta?: string;
+}
+
+export interface UpdateVariantRequest extends Partial<CreateVariantRequest> {}
 
 export interface ProductCategory {
   id: string;
