@@ -10,6 +10,9 @@ import type {
   CreateProductRequest,
   UpdateProductRequest,
   ProductCategory,
+  CreateVariantRequest,
+  UpdateVariantRequest,
+  ProductVariant,
 } from "../types/product.types";
 
 // Create axios instance for admin API
@@ -35,7 +38,7 @@ adminApiClient.interceptors.request.use((config) => {
  * Get all products with filters and pagination (Admin only)
  */
 export const getProducts = async (
-  filters: ProductFilters = {}
+  filters: ProductFilters = {},
 ): Promise<ProductsListResponse> => {
   try {
     const { data } = await adminApiClient.get("/catalog/products", {
@@ -71,7 +74,7 @@ export const getProducts = async (
  * Get single product by ID
  */
 export const getProductById = async (
-  productId: string
+  productId: string,
 ): Promise<ProductDetailsResponse> => {
   try {
     const { data } = await adminApiClient.get(`/catalog/products/${productId}`);
@@ -89,12 +92,12 @@ export const getProductById = async (
  * Create new product
  */
 export const createProduct = async (
-  productData: CreateProductRequest
+  productData: CreateProductRequest,
 ): Promise<ProductDetailsResponse> => {
   try {
     const { data } = await adminApiClient.post(
       "/catalog/products",
-      productData
+      productData,
     );
     return data;
   } catch (error: any) {
@@ -111,12 +114,12 @@ export const createProduct = async (
  */
 export const updateProduct = async (
   productId: string,
-  productData: UpdateProductRequest
+  productData: UpdateProductRequest,
 ): Promise<ProductDetailsResponse> => {
   try {
     const { data } = await adminApiClient.put(
       `/catalog/products/${productId}`,
-      productData
+      productData,
     );
     return data;
   } catch (error: any) {
@@ -132,11 +135,11 @@ export const updateProduct = async (
  * Delete product
  */
 export const deleteProduct = async (
-  productId: string
+  productId: string,
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     const { data } = await adminApiClient.delete(
-      `/catalog/products/${productId}`
+      `/catalog/products/${productId}`,
     );
     return data;
   } catch (error: any) {
@@ -168,6 +171,93 @@ export const getCategories = async (): Promise<{
       success: false,
       data: [],
       error: error.response?.data?.error || "Failed to fetch categories",
+    };
+  }
+};
+
+/**
+ * Get variants for a product
+ */
+export const getVariants = async (
+  productId: string,
+  params: any = {},
+): Promise<{ success: boolean; data: ProductVariant[]; error?: string }> => {
+  try {
+    const { data } = await adminApiClient.get(
+      `/catalog/products/${productId}/variants`,
+      { params },
+    );
+    return data;
+  } catch (error: any) {
+    console.error("Get variants error:", error);
+    return {
+      success: false,
+      data: [],
+      error: error.response?.data?.error || "Failed to fetch variants",
+    };
+  }
+};
+
+/**
+ * Create a new variant
+ */
+export const createVariant = async (
+  productId: string,
+  variantData: CreateVariantRequest,
+): Promise<{ success: boolean; data?: ProductVariant; error?: string }> => {
+  try {
+    const { data } = await adminApiClient.post(
+      `/catalog/products/${productId}/variants`,
+      variantData,
+    );
+    return data;
+  } catch (error: any) {
+    console.error("Create variant error:", error);
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to create variant",
+    };
+  }
+};
+
+/**
+ * Update a variant
+ */
+export const updateVariant = async (
+  variantId: string,
+  variantData: UpdateVariantRequest,
+): Promise<{ success: boolean; data?: ProductVariant; error?: string }> => {
+  try {
+    const { data } = await adminApiClient.put(
+      `/catalog/variants/${variantId}`,
+      variantData,
+    );
+    return data;
+  } catch (error: any) {
+    console.error("Update variant error:", error);
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to update variant",
+    };
+  }
+};
+
+/**
+ * Delete a variant
+ */
+export const deleteVariant = async (
+  variantId: string,
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const { data } = await adminApiClient.delete(
+      `/catalog/variants/${variantId}`,
+    );
+    return data;
+  } catch (error: any) {
+    console.error("Delete variant error:", error);
+    return {
+      success: false,
+      error: error.response?.data?.error || "Failed to delete variant",
     };
   }
 };
