@@ -41,16 +41,16 @@ export interface VariantStatistics {
 export class VariantManagementService {
   constructor(
     private readonly productVariantRepository: IProductVariantRepository,
-    private readonly productRepository: IProductRepository
+    private readonly productRepository: IProductRepository,
   ) {}
 
   async createVariant(
     productId: string,
-    data: Omit<CreateVariantData, "productId">
+    data: Omit<CreateVariantData, "productId">,
   ): Promise<ProductVariant> {
     // Verify product exists
     const product = await this.productRepository.findById(
-      ProductId.fromString(productId)
+      ProductId.fromString(productId),
     );
     if (!product) {
       throw new Error("Product not found");
@@ -59,7 +59,7 @@ export class VariantManagementService {
     // Check if SKU already exists
     if (data.sku) {
       const existingVariant = await this.productVariantRepository.findBySku(
-        SKU.fromString(data.sku)
+        SKU.fromString(data.sku),
       );
       if (existingVariant) {
         throw new Error("Variant with this SKU already exists");
@@ -111,7 +111,7 @@ export class VariantManagementService {
 
   async getVariantsByProduct(
     productId: string,
-    options: VariantServiceQueryOptions = {}
+    options: VariantServiceQueryOptions = {},
   ): Promise<ProductVariant[]> {
     const {
       page = 1,
@@ -194,7 +194,7 @@ export class VariantManagementService {
   }
 
   async getAllVariants(
-    options: VariantServiceQueryOptions = {}
+    options: VariantServiceQueryOptions = {},
   ): Promise<ProductVariant[]> {
     const {
       page = 1,
@@ -216,7 +216,7 @@ export class VariantManagementService {
   async getVariantsByPriceRange(
     minPrice: number,
     maxPrice: number,
-    options: VariantServiceQueryOptions = {}
+    options: VariantServiceQueryOptions = {},
   ): Promise<ProductVariant[]> {
     const {
       page = 1,
@@ -235,13 +235,13 @@ export class VariantManagementService {
     return await this.productVariantRepository.findByPriceRange(
       minPrice,
       maxPrice,
-      repositoryOptions
+      repositoryOptions,
     );
   }
 
   async getVariantsBySize(
     size: string,
-    options: VariantServiceQueryOptions = {}
+    options: VariantServiceQueryOptions = {},
   ): Promise<ProductVariant[]> {
     const {
       page = 1,
@@ -259,13 +259,13 @@ export class VariantManagementService {
 
     return await this.productVariantRepository.findBySize(
       size,
-      repositoryOptions
+      repositoryOptions,
     );
   }
 
   async getVariantsByColor(
     color: string,
-    options: VariantServiceQueryOptions = {}
+    options: VariantServiceQueryOptions = {},
   ): Promise<ProductVariant[]> {
     const {
       page = 1,
@@ -283,13 +283,13 @@ export class VariantManagementService {
 
     return await this.productVariantRepository.findByColor(
       color,
-      repositoryOptions
+      repositoryOptions,
     );
   }
 
   async updateVariant(
     id: string,
-    updateData: Partial<CreateVariantData>
+    updateData: Partial<CreateVariantData>,
   ): Promise<ProductVariant | null> {
     const variantId = VariantId.fromString(id);
     const variant = await this.productVariantRepository.findById(variantId);
@@ -300,7 +300,7 @@ export class VariantManagementService {
 
     // Update SKU if provided
     if (updateData.sku !== undefined) {
-      const newSku = SKU.fromString(updateData.sku);
+      const newSku = SKU.create(updateData.sku);
       // Check if new SKU already exists (excluding current variant)
       const existingVariant =
         await this.productVariantRepository.findBySku(newSku);
@@ -472,7 +472,7 @@ export class VariantManagementService {
 
     // Check if new SKU already exists
     const existingVariant = await this.productVariantRepository.findBySku(
-      SKU.fromString(newSku)
+      SKU.fromString(newSku),
     );
     if (existingVariant) {
       throw new Error("Variant with this SKU already exists");
@@ -543,7 +543,7 @@ export class VariantManagementService {
 
     // Check product exists
     const productExists = await this.productRepository.exists(
-      variant.getProductId()
+      variant.getProductId(),
     );
     if (!productExists) {
       issues.push("Associated product not found");
