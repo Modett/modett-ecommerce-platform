@@ -55,7 +55,13 @@ export interface StockItem {
   location?: StockLocation;
 }
 
-export type StockStatus = "healthy" | "warning" | "critical";
+export type StockStatus =
+  | "healthy"
+  | "warning"
+  | "critical"
+  | "low_stock"
+  | "out_of_stock"
+  | "in_stock";
 
 export interface InventoryItem {
   id: string;
@@ -117,7 +123,7 @@ export interface AddStockRequest {
   variantId: string;
   locationId: string;
   quantity: number;
-  reason: "rma" | "adjustment" | "po";
+  reason: "return" | "adjustment" | "po";
 }
 
 export interface TransferStockRequest {
