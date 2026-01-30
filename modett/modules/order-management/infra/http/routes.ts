@@ -63,26 +63,26 @@ export async function registerOrderManagementRoutes(
     orderEventService: OrderEventService;
     preorderService: PreorderManagementService;
     backorderService: BackorderManagementService;
-  }
+  },
 ) {
   // Initialize controllers
   const orderController = new OrderController(services.orderService);
   const orderAddressController = new OrderAddressController(
-    services.orderService
+    services.orderService,
   );
   const orderItemController = new OrderItemController(services.orderService);
   const orderShipmentController = new OrderShipmentController(
-    services.orderService
+    services.orderService,
   );
   const orderStatusHistoryController = new OrderStatusHistoryController(
-    services.orderService
+    services.orderService,
   );
   const orderEventController = new OrderEventController(
-    services.orderEventService
+    services.orderEventService,
   );
   const preorderController = new PreorderController(services.preorderService);
   const backorderController = new BackorderController(
-    services.backorderService
+    services.backorderService,
   );
 
   // =============================================================================
@@ -221,7 +221,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderController.trackOrder.bind(orderController) as any
+    orderController.trackOrder.bind(orderController) as any,
   );
 
   // Create new order
@@ -315,7 +315,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderController.createOrder.bind(orderController) as any
+    orderController.createOrder.bind(orderController) as any,
   );
 
   // Get order by order number (must be before /orders/:orderId to avoid route conflict)
@@ -399,7 +399,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderController.getOrderByOrderNumber.bind(orderController) as any
+    orderController.getOrderByOrderNumber.bind(orderController) as any,
   );
 
   // Get order by ID
@@ -483,7 +483,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderController.getOrder.bind(orderController) as any
+    orderController.getOrder.bind(orderController) as any,
   );
 
   // List orders with pagination and filters
@@ -505,11 +505,27 @@ export async function registerOrderManagementRoutes(
               type: "string",
               enum: [
                 "created",
+                "pending",
+                "confirmed",
                 "paid",
+                "processing",
+                "shipped",
+                "delivered",
                 "fulfilled",
                 "partially_returned",
                 "refunded",
                 "cancelled",
+                "CREATED",
+                "PENDING",
+                "CONFIRMED",
+                "PAID",
+                "PROCESSING",
+                "SHIPPED",
+                "DELIVERED",
+                "FULFILLED",
+                "PARTIALLY_RETURNED",
+                "REFUNDED",
+                "CANCELLED",
               ],
               description: "Filter by order status",
             },
@@ -622,7 +638,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderController.listOrders.bind(orderController) as any
+    orderController.listOrders.bind(orderController) as any,
   );
 
   // Update order status
@@ -700,7 +716,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderController.updateOrderStatus.bind(orderController) as any
+    orderController.updateOrderStatus.bind(orderController) as any,
   );
 
   // Update order totals
@@ -782,7 +798,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderController.updateOrderTotals.bind(orderController) as any
+    orderController.updateOrderTotals.bind(orderController) as any,
   );
 
   // Mark order as paid
@@ -826,7 +842,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderController.markOrderAsPaid.bind(orderController) as any
+    orderController.markOrderAsPaid.bind(orderController) as any,
   );
 
   // Mark order as fulfilled
@@ -870,7 +886,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderController.markOrderAsFulfilled.bind(orderController) as any
+    orderController.markOrderAsFulfilled.bind(orderController) as any,
   );
 
   // Cancel order
@@ -914,7 +930,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderController.cancelOrder.bind(orderController) as any
+    orderController.cancelOrder.bind(orderController) as any,
   );
 
   // Delete order
@@ -950,7 +966,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderController.deleteOrder.bind(orderController) as any
+    orderController.deleteOrder.bind(orderController) as any,
   );
 
   // =============================================================================
@@ -1082,7 +1098,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderAddressController.setAddresses.bind(orderAddressController) as any
+    orderAddressController.setAddresses.bind(orderAddressController) as any,
   );
 
   // Get order addresses
@@ -1151,7 +1167,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderAddressController.getAddresses.bind(orderAddressController) as any
+    orderAddressController.getAddresses.bind(orderAddressController) as any,
   );
 
   // Update billing address
@@ -1249,8 +1265,8 @@ export async function registerOrderManagementRoutes(
       },
     },
     orderAddressController.updateBillingAddress.bind(
-      orderAddressController
-    ) as any
+      orderAddressController,
+    ) as any,
   );
 
   // Update shipping address
@@ -1348,8 +1364,8 @@ export async function registerOrderManagementRoutes(
       },
     },
     orderAddressController.updateShippingAddress.bind(
-      orderAddressController
-    ) as any
+      orderAddressController,
+    ) as any,
   );
 
   // =============================================================================
@@ -1413,7 +1429,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderItemController.addItem.bind(orderItemController) as any
+    orderItemController.addItem.bind(orderItemController) as any,
   );
 
   // Get all items for an order
@@ -1475,7 +1491,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderItemController.getItems.bind(orderItemController) as any
+    orderItemController.getItems.bind(orderItemController) as any,
   );
 
   // Get single order item by ID
@@ -1534,7 +1550,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderItemController.getItem.bind(orderItemController) as any
+    orderItemController.getItem.bind(orderItemController) as any,
   );
 
   // Update order item
@@ -1588,7 +1604,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderItemController.updateItem.bind(orderItemController) as any
+    orderItemController.updateItem.bind(orderItemController) as any,
   );
 
   // Remove item from order
@@ -1626,7 +1642,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderItemController.removeItem.bind(orderItemController) as any
+    orderItemController.removeItem.bind(orderItemController) as any,
   );
 
   // =============================================================================
@@ -1715,7 +1731,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderShipmentController.createShipment.bind(orderShipmentController) as any
+    orderShipmentController.createShipment.bind(orderShipmentController) as any,
   );
 
   // Get all shipments for an order
@@ -1754,7 +1770,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderShipmentController.getShipments.bind(orderShipmentController) as any
+    orderShipmentController.getShipments.bind(orderShipmentController) as any,
   );
 
   // Get single shipment
@@ -1791,7 +1807,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderShipmentController.getShipment.bind(orderShipmentController) as any
+    orderShipmentController.getShipment.bind(orderShipmentController) as any,
   );
 
   // Mark shipment as shipped
@@ -1842,7 +1858,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderShipmentController.markShipped.bind(orderShipmentController) as any
+    orderShipmentController.markShipped.bind(orderShipmentController) as any,
   );
 
   // Update shipment tracking
@@ -1895,7 +1911,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderShipmentController.updateTracking.bind(orderShipmentController) as any
+    orderShipmentController.updateTracking.bind(orderShipmentController) as any,
   );
 
   // Mark shipment as delivered
@@ -1946,7 +1962,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderShipmentController.markDelivered.bind(orderShipmentController) as any
+    orderShipmentController.markDelivered.bind(orderShipmentController) as any,
   );
 
   // =============================================================================
@@ -2035,8 +2051,8 @@ export async function registerOrderManagementRoutes(
       },
     },
     orderStatusHistoryController.logStatusChange.bind(
-      orderStatusHistoryController
-    ) as any
+      orderStatusHistoryController,
+    ) as any,
   );
 
   // Get order status history
@@ -2100,8 +2116,8 @@ export async function registerOrderManagementRoutes(
       },
     },
     orderStatusHistoryController.getStatusHistory.bind(
-      orderStatusHistoryController
-    ) as any
+      orderStatusHistoryController,
+    ) as any,
   );
 
   // =============================================================================
@@ -2165,7 +2181,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderEventController.logEvent.bind(orderEventController) as any
+    orderEventController.logEvent.bind(orderEventController) as any,
   );
 
   // Get all events for an order
@@ -2243,7 +2259,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderEventController.getEvents.bind(orderEventController) as any
+    orderEventController.getEvents.bind(orderEventController) as any,
   );
 
   // Get single event by ID
@@ -2286,7 +2302,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    orderEventController.getEvent.bind(orderEventController) as any
+    orderEventController.getEvent.bind(orderEventController) as any,
   );
 
   // =============================================================================
@@ -2355,7 +2371,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    preorderController.createPreorder.bind(preorderController) as any
+    preorderController.createPreorder.bind(preorderController) as any,
   );
 
   // Get preorder by order item ID
@@ -2406,7 +2422,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    preorderController.getPreorder.bind(preorderController) as any
+    preorderController.getPreorder.bind(preorderController) as any,
   );
 
   // List preorders with filtering
@@ -2498,7 +2514,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    preorderController.listPreorders.bind(preorderController) as any
+    preorderController.listPreorders.bind(preorderController) as any,
   );
 
   // Update preorder release date
@@ -2564,7 +2580,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    preorderController.updateReleaseDate.bind(preorderController) as any
+    preorderController.updateReleaseDate.bind(preorderController) as any,
   );
 
   // Mark preorder customer as notified
@@ -2620,7 +2636,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    preorderController.markNotified.bind(preorderController) as any
+    preorderController.markNotified.bind(preorderController) as any,
   );
 
   // Delete preorder
@@ -2656,7 +2672,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    preorderController.deletePreorder.bind(preorderController) as any
+    preorderController.deletePreorder.bind(preorderController) as any,
   );
 
   // =============================================================================
@@ -2725,7 +2741,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    backorderController.createBackorder.bind(backorderController) as any
+    backorderController.createBackorder.bind(backorderController) as any,
   );
 
   // Get backorder by order item ID
@@ -2775,7 +2791,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    backorderController.getBackorder.bind(backorderController) as any
+    backorderController.getBackorder.bind(backorderController) as any,
   );
 
   // List backorders with filtering
@@ -2866,7 +2882,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    backorderController.listBackorders.bind(backorderController) as any
+    backorderController.listBackorders.bind(backorderController) as any,
   );
 
   // Update backorder promised ETA
@@ -2931,7 +2947,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    backorderController.updatePromisedEta.bind(backorderController) as any
+    backorderController.updatePromisedEta.bind(backorderController) as any,
   );
 
   // Mark backorder customer as notified
@@ -2986,7 +3002,7 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    backorderController.markNotified.bind(backorderController) as any
+    backorderController.markNotified.bind(backorderController) as any,
   );
 
   // Delete backorder
@@ -3022,6 +3038,6 @@ export async function registerOrderManagementRoutes(
         },
       },
     },
-    backorderController.deleteBackorder.bind(backorderController) as any
+    backorderController.deleteBackorder.bind(backorderController) as any,
   );
 }
