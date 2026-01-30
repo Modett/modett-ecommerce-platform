@@ -360,6 +360,7 @@ export interface VariantData {
   createdAt: Date;
   updatedAt: Date;
   onHand?: number;
+  inventory?: number;
 }
 
 export interface VariantRow {

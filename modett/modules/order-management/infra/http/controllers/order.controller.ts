@@ -31,7 +31,7 @@ export class OrderController {
 
   async getOrder(
     request: FastifyRequest<{ Params: { orderId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { orderId } = request.params;
@@ -98,7 +98,7 @@ export class OrderController {
 
   async getOrderByOrderNumber(
     request: FastifyRequest<{ Params: { orderNumber: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { orderNumber } = request.params;
@@ -253,8 +253,8 @@ export class OrderController {
   async listOrders(request: any, reply: FastifyReply) {
     try {
       const {
-        page = 1,
-        limit = 20,
+        page: pageQuery = 1,
+        limit: limitQuery = 20,
         status,
         startDate,
         endDate,
@@ -262,6 +262,9 @@ export class OrderController {
         sortOrder = "desc",
         search,
       } = request.query;
+
+      const page = parseInt(String(pageQuery), 10);
+      const limit = parseInt(String(limitQuery), 10);
 
       // Get userId and role from authenticated user
       const user = request.user;
@@ -313,7 +316,7 @@ export class OrderController {
           // Fetch address for customer details
           const orderAddress =
             await this.orderManagementService.getOrderAddress(
-              order.getOrderId().toString()
+              order.getOrderId().toString(),
             );
           const billing = orderAddress?.getBillingAddress()?.toJSON();
 
@@ -325,7 +328,7 @@ export class OrderController {
           } else if (order.getUserId()) {
             // Fallback to fetching user profile details for authenticated users without address
             const userDetails = await this.orderManagementService.getUserName(
-              order.getUserId()!
+              order.getUserId()!,
             );
             if (userDetails) {
               customerName = userDetails.name;
@@ -358,7 +361,7 @@ export class OrderController {
             createdAt: order.getCreatedAt() || null,
             updatedAt: order.getUpdatedAt() || null,
           };
-        })
+        }),
       );
 
       return reply.code(200).send({
@@ -388,7 +391,7 @@ export class OrderController {
       Params: { orderId: string };
       Body: { status: string };
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { orderId } = request.params;
@@ -413,7 +416,7 @@ export class OrderController {
 
       const order = await this.orderManagementService.updateOrderStatus(
         orderId,
-        status
+        status,
       );
 
       if (!order) {
@@ -482,7 +485,7 @@ export class OrderController {
         };
       };
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { orderId } = request.params;
@@ -490,7 +493,7 @@ export class OrderController {
 
       const order = await this.orderManagementService.updateOrderTotals(
         orderId,
-        totals
+        totals,
       );
 
       if (!order) {
@@ -540,7 +543,7 @@ export class OrderController {
 
   async markOrderAsPaid(
     request: FastifyRequest<{ Params: { orderId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { orderId } = request.params;
@@ -585,7 +588,7 @@ export class OrderController {
 
   async markOrderAsFulfilled(
     request: FastifyRequest<{ Params: { orderId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { orderId } = request.params;
@@ -631,7 +634,7 @@ export class OrderController {
 
   async cancelOrder(
     request: FastifyRequest<{ Params: { orderId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { orderId } = request.params;
@@ -676,7 +679,7 @@ export class OrderController {
 
   async deleteOrder(
     request: FastifyRequest<{ Params: { orderId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { orderId } = request.params;
@@ -727,7 +730,7 @@ export class OrderController {
         trackingNumber?: string;
       };
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ) {
     try {
       const { orderNumber, contact, trackingNumber } = request.query;
@@ -770,7 +773,7 @@ export class OrderController {
 
         // Get the order addresses to verify contact info
         const orderAddress = await this.orderManagementService.getOrderAddress(
-          order.orderId as string
+          order.orderId as string,
         );
 
         // Verify contact matches billing or shipping address
@@ -800,7 +803,7 @@ export class OrderController {
 
         // Get shipment information
         const shipments = await this.orderManagementService.getOrderShipments(
-          order.orderId as string
+          order.orderId as string,
         );
 
         return reply.code(200).send({

@@ -111,7 +111,7 @@ export class VariantController {
 
           return {
             ...data,
-            onHand: totalInventory,
+            inventory: totalInventory,
           };
         });
       }
@@ -186,7 +186,7 @@ export class VariantController {
 
         enrichedVariant = {
           ...enrichedVariant,
-          onHand: totalInventory,
+          inventory: totalInventory,
         };
       }
 
@@ -258,7 +258,7 @@ export class VariantController {
 
       return reply.code(201).send({
         success: true,
-        data: variant,
+        data: variant.toData(),
         message: "Variant created successfully",
       });
     } catch (error) {
@@ -325,11 +325,41 @@ export class VariantController {
 
       return reply.code(200).send({
         success: true,
-        data: variant,
+        data: variant.toData(),
         message: "Variant updated successfully",
       });
     } catch (error) {
       request.log.error(error, "Failed to update variant");
+
+      if (
+        error instanceof Error &&
+        (error.message.includes("duplicate") ||
+          error.message.includes("unique") ||
+          error.message.includes("already exists"))
+      ) {
+        return reply.code(409).send({
+          success: false,
+          error: "Conflict",
+          message: error.message || "Variant with this SKU already exists",
+        });
+      }
+
+      if (error instanceof Error && error.message.includes("found")) {
+        return reply.code(404).send({
+          success: false,
+          error: "Not Found",
+          message: error.message,
+        });
+      }
+
+      if (error instanceof Error) {
+        return reply.code(400).send({
+          success: false,
+          error: "Bad Request",
+          message: error.message,
+        });
+      }
+
       return reply.code(500).send({
         success: false,
         error: "Internal server error",

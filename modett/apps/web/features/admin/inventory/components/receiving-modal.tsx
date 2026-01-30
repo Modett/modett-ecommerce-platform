@@ -20,7 +20,7 @@ export function ReceivingModal({
   const [selectedVariantId, setSelectedVariantId] = useState("");
   const [selectedLocationId, setSelectedLocationId] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [reason, setReason] = useState<"rma" | "adjustment" | "po">("po");
+  const [reason, setReason] = useState<"return" | "adjustment" | "po">("po");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -208,7 +208,7 @@ export function ReceivingModal({
                   className="w-full h-11 px-4 bg-white border border-[#BBA496]/30 rounded-xl focus:ring-1 focus:ring-[#BBA496] focus:border-[#BBA496] outline-none transition-all"
                 >
                   <option value="po">Purchase Order (PO)</option>
-                  <option value="rma">Return (RMA)</option>
+                  <option value="return">Return (RMA)</option>
                   <option value="adjustment">Adjustment (Found)</option>
                 </select>
               </div>

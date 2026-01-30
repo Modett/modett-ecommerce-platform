@@ -15,7 +15,7 @@ import {
   StockMovementItem,
   LowStockForecastItem,
   InventoryValuationItem,
-  SlowMovingStockItem
+  SlowMovingStockItem,
 } from "../../../domain/inventory-report-types";
 
 export class DashboardRepositoryImpl implements IDashboardRepository {
@@ -28,8 +28,8 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    console.log('[Dashboard Stats] Today start:', today);
-    console.log('[Dashboard Stats] Yesterday start:', yesterday);
+    console.log("[Dashboard Stats] Today start:", today);
+    console.log("[Dashboard Stats] Yesterday start:", yesterday);
 
     // Get today's orders
     const orders = await this.prisma.order.findMany({
@@ -54,7 +54,9 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     for (const order of orders) {
       const totals = order.totals as any;
       revenue += Number(totals.total || 0);
-      console.log(`  - Order ${order.orderNo}: ${totals.total}, Created: ${order.createdAt}`);
+      console.log(
+        `  - Order ${order.orderNo}: ${totals.total}, Created: ${order.createdAt}`,
+      );
     }
 
     // Get yesterday's orders
@@ -78,31 +80,55 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     const yesterdayOrderCount = yesterdayOrders.length;
     let yesterdayRevenue = 0;
 
-    console.log('[Dashboard Stats] Yesterday orders:');
+    console.log("[Dashboard Stats] Yesterday orders:");
     for (const order of yesterdayOrders) {
       const totals = order.totals as any;
       yesterdayRevenue += Number(totals.total || 0);
-      console.log(`  - Order ${order.orderNo}: ${totals.total}, Created: ${order.createdAt}`);
+      console.log(
+        `  - Order ${order.orderNo}: ${totals.total}, Created: ${order.createdAt}`,
+      );
     }
 
-    console.log('[Dashboard Stats] Today - Orders:', orderCount, 'Revenue:', revenue);
-    console.log('[Dashboard Stats] Yesterday - Orders:', yesterdayOrderCount, 'Revenue:', yesterdayRevenue);
+    console.log(
+      "[Dashboard Stats] Today - Orders:",
+      orderCount,
+      "Revenue:",
+      revenue,
+    );
+    console.log(
+      "[Dashboard Stats] Yesterday - Orders:",
+      yesterdayOrderCount,
+      "Revenue:",
+      yesterdayRevenue,
+    );
 
     // Calculate percentage changes
-    const revenueChange = yesterdayRevenue > 0
-      ? ((revenue - yesterdayRevenue) / yesterdayRevenue) * 100
-      : revenue > 0 ? 100 : 0;
+    const revenueChange =
+      yesterdayRevenue > 0
+        ? ((revenue - yesterdayRevenue) / yesterdayRevenue) * 100
+        : revenue > 0
+          ? 100
+          : 0;
 
-    const ordersChange = yesterdayOrderCount > 0
-      ? ((orderCount - yesterdayOrderCount) / yesterdayOrderCount) * 100
-      : orderCount > 0 ? 100 : 0;
+    const ordersChange =
+      yesterdayOrderCount > 0
+        ? ((orderCount - yesterdayOrderCount) / yesterdayOrderCount) * 100
+        : orderCount > 0
+          ? 100
+          : 0;
 
     const todayAverageOrderValue = orderCount > 0 ? revenue / orderCount : 0;
-    const yesterdayAverageOrderValue = yesterdayOrderCount > 0 ? yesterdayRevenue / yesterdayOrderCount : 0;
+    const yesterdayAverageOrderValue =
+      yesterdayOrderCount > 0 ? yesterdayRevenue / yesterdayOrderCount : 0;
 
-    const averageOrderValueChange = yesterdayAverageOrderValue > 0
-      ? ((todayAverageOrderValue - yesterdayAverageOrderValue) / yesterdayAverageOrderValue) * 100
-      : todayAverageOrderValue > 0 ? 100 : 0;
+    const averageOrderValueChange =
+      yesterdayAverageOrderValue > 0
+        ? ((todayAverageOrderValue - yesterdayAverageOrderValue) /
+            yesterdayAverageOrderValue) *
+          100
+        : todayAverageOrderValue > 0
+          ? 100
+          : 0;
 
     // Get User Stats
     const totalCustomers = await this.prisma.user.count({
@@ -140,7 +166,8 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
 
     const viewCount = Number(productViews[0]?.count || 0);
     const purchaseCount = Number(purchases[0]?.count || 0);
-    const conversionRate = viewCount > 0 ? (purchaseCount / viewCount) * 100 : 0;
+    const conversionRate =
+      viewCount > 0 ? (purchaseCount / viewCount) * 100 : 0;
 
     const result = {
       revenue,
@@ -154,8 +181,18 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
       conversionRate,
     };
 
-    console.log('[Dashboard Stats] Conversion - Views:', viewCount, 'Purchases:', purchaseCount, 'Rate:', conversionRate.toFixed(2) + '%');
-    console.log('[Dashboard Stats] Returning result:', JSON.stringify(result, null, 2));
+    console.log(
+      "[Dashboard Stats] Conversion - Views:",
+      viewCount,
+      "Purchases:",
+      purchaseCount,
+      "Rate:",
+      conversionRate.toFixed(2) + "%",
+    );
+    console.log(
+      "[Dashboard Stats] Returning result:",
+      JSON.stringify(result, null, 2),
+    );
     return result;
   }
 
@@ -240,24 +277,24 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
   async getAnalyticsOverview(
     startDate: Date,
     endDate: Date,
-    granularity: 'day' | 'week' | 'month'
+    granularity: "day" | "week" | "month",
   ): Promise<any> {
     // Helper function to format dates for grouping
     const formatDateForGroup = (date: Date, gran: string): string => {
       const d = new Date(date);
       const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
 
       switch (gran) {
-        case 'day':
+        case "day":
           return `${year}-${month}-${day}`;
-        case 'month':
+        case "month":
           return `${year}-${month}`;
-        case 'week':
+        case "week":
           // Simple week grouping (first day of week)
           const weekStart = new Date(d.setDate(d.getDate() - d.getDay()));
-          return `${weekStart.getFullYear()}-W${String(Math.ceil(weekStart.getDate() / 7)).padStart(2, '0')}`;
+          return `${weekStart.getFullYear()}-W${String(Math.ceil(weekStart.getDate() / 7)).padStart(2, "0")}`;
         default:
           return `${year}-${month}-${day}`;
       }
@@ -271,7 +308,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
           lte: endDate,
         },
         status: {
-          not: 'cancelled',
+          not: "cancelled",
         },
       },
       select: {
@@ -280,7 +317,10 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
       },
     });
 
-    const salesTrendsMap = new Map<string, { revenue: number; orders: number }>();
+    const salesTrendsMap = new Map<
+      string,
+      { revenue: number; orders: number }
+    >();
     orders.forEach((order) => {
       const dateKey = formatDateForGroup(order.createdAt, granularity);
       const totals = order.totals as any;
@@ -310,7 +350,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
             lte: endDate,
           },
           status: {
-            notIn: ['cancelled', 'refunded'],
+            notIn: ["cancelled", "refunded"],
           },
         },
       },
@@ -332,7 +372,10 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
       },
     });
 
-    const productMap = new Map<string, { title: string; sku: string; units: number; revenue: number }>();
+    const productMap = new Map<
+      string,
+      { title: string; sku: string; units: number; revenue: number }
+    >();
     orderItems.forEach((item) => {
       const variantId = item.variantId;
       const units = item.qty;
@@ -343,8 +386,8 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
       const revenue = price * units;
 
       // Get product title and SKU from the actual product/variant relations
-      const title = item.variant.product.title || 'Unknown Product';
-      const sku = item.variant.sku || 'N/A';
+      const title = item.variant.product.title || "Unknown Product";
+      const sku = item.variant.sku || "N/A";
 
       const existing = productMap.get(variantId) || {
         title,
@@ -379,7 +422,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
           gte: startDate,
           lte: endDate,
         },
-        role: 'CUSTOMER',
+        role: "CUSTOMER",
       },
       select: {
         createdAt: true,
@@ -396,7 +439,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     // Calculate cumulative total customers
     let cumulativeCustomers = await this.prisma.user.count({
       where: {
-        role: 'CUSTOMER',
+        role: "CUSTOMER",
         createdAt: { lt: startDate },
       },
     });
@@ -414,7 +457,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
 
     // 4. ORDER STATUS BREAKDOWN - Distribution of order statuses
     const orderStatusRaw = await this.prisma.order.groupBy({
-      by: ['status'],
+      by: ["status"],
       where: {
         createdAt: {
           gte: startDate,
@@ -428,7 +471,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
 
     const totalOrdersForPercentage = orderStatusRaw.reduce(
       (sum, item) => sum + item._count.id,
-      0
+      0,
     );
 
     const orderStatusBreakdown = orderStatusRaw.map((item) => ({
@@ -448,7 +491,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
           lte: endDate,
         },
         status: {
-          not: 'cancelled',
+          not: "cancelled",
         },
       },
       _count: {
@@ -457,7 +500,10 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     });
 
     const totalOrders = totals._count.id || 0;
-    const totalRevenue = salesTrends.reduce((sum, item) => sum + item.revenue, 0);
+    const totalRevenue = salesTrends.reduce(
+      (sum, item) => sum + item.revenue,
+      0,
+    );
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
     return {
@@ -478,7 +524,10 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
   /**
    * Stock Level Report - Current inventory status across all products
    */
-  async getStockLevelReport(filters?: { locationId?: string; status?: string }): Promise<StockLevelReport> {
+  async getStockLevelReport(filters?: {
+    locationId?: string;
+    status?: string;
+  }): Promise<StockLevelReport> {
     const whereClause: any = {};
 
     if (filters?.locationId) {
@@ -513,13 +562,19 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
       const costPerUnit = Number(stock.variant.price) * 0.5; // Assume 50% cost-to-price ratio
       const totalValue = stock.onHand * costPerUnit;
 
-      let status: 'healthy' | 'low' | 'critical' | 'out_of_stock' = 'healthy';
+      let status: "healthy" | "low" | "critical" | "out_of_stock" = "healthy";
       if (stock.onHand === 0) {
-        status = 'out_of_stock';
-      } else if (stock.lowStockThreshold !== null && stock.onHand <= stock.lowStockThreshold * 0.5) {
-        status = 'critical';
-      } else if (stock.lowStockThreshold !== null && stock.onHand <= stock.lowStockThreshold) {
-        status = 'low';
+        status = "out_of_stock";
+      } else if (
+        stock.lowStockThreshold !== null &&
+        stock.onHand <= stock.lowStockThreshold * 0.5
+      ) {
+        status = "critical";
+      } else if (
+        stock.lowStockThreshold !== null &&
+        stock.onHand <= stock.lowStockThreshold
+      ) {
+        status = "low";
       }
 
       return {
@@ -541,17 +596,22 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
 
     // Apply status filter if provided
     const filteredItems = filters?.status
-      ? items.filter(item => item.status === filters.status)
+      ? items.filter((item) => item.status === filters.status)
       : items;
 
     // Calculate summary
     const summary = {
       totalProducts: filteredItems.length,
       totalValue: filteredItems.reduce((sum, item) => sum + item.totalValue, 0),
-      healthyCount: filteredItems.filter(item => item.status === 'healthy').length,
-      lowStockCount: filteredItems.filter(item => item.status === 'low').length,
-      criticalCount: filteredItems.filter(item => item.status === 'critical').length,
-      outOfStockCount: filteredItems.filter(item => item.status === 'out_of_stock').length,
+      healthyCount: filteredItems.filter((item) => item.status === "healthy")
+        .length,
+      lowStockCount: filteredItems.filter((item) => item.status === "low")
+        .length,
+      criticalCount: filteredItems.filter((item) => item.status === "critical")
+        .length,
+      outOfStockCount: filteredItems.filter(
+        (item) => item.status === "out_of_stock",
+      ).length,
     };
 
     return {
@@ -567,7 +627,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
   async getStockMovementReport(
     startDate: Date,
     endDate: Date,
-    filters?: { variantId?: string; locationId?: string }
+    filters?: { variantId?: string; locationId?: string },
   ): Promise<StockMovementReport> {
     const whereClause: any = {
       createdAt: {
@@ -602,7 +662,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
         },
       },
       orderBy: {
-        createdAt: 'asc',
+        createdAt: "asc",
       },
     });
 
@@ -632,15 +692,22 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     });
 
     // Calculate summary
-    const totalInbound = items.filter(item => item.qtyDelta > 0)
+    const totalInbound = items
+      .filter((item) => item.qtyDelta > 0)
       .reduce((sum, item) => sum + item.qtyDelta, 0);
-    const totalOutbound = Math.abs(items.filter(item => item.qtyDelta < 0)
-      .reduce((sum, item) => sum + item.qtyDelta, 0));
+    const totalOutbound = Math.abs(
+      items
+        .filter((item) => item.qtyDelta < 0)
+        .reduce((sum, item) => sum + item.qtyDelta, 0),
+    );
     const netChange = totalInbound - totalOutbound;
 
     // Most active products
-    const productActivityMap = new Map<string, { title: string; sku: string; count: number }>();
-    items.forEach(item => {
+    const productActivityMap = new Map<
+      string,
+      { title: string; sku: string; count: number }
+    >();
+    items.forEach((item) => {
       const existing = productActivityMap.get(item.variantId);
       if (existing) {
         existing.count++;
@@ -685,7 +752,9 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
   /**
    * Low Stock Forecast - Predict future stockouts based on sales trends
    */
-  async getLowStockForecast(forecastDays: number = 30): Promise<LowStockForecast> {
+  async getLowStockForecast(
+    forecastDays: number = 30,
+  ): Promise<LowStockForecast> {
     // Get current stock levels
     const stocks = await this.prisma.inventoryStock.findMany({
       where: {
@@ -717,14 +786,14 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const salesData = await this.prisma.orderItem.groupBy({
-      by: ['variantId'],
+      by: ["variantId"],
       where: {
         order: {
           createdAt: {
             gte: thirtyDaysAgo,
           },
           status: {
-            notIn: ['cancelled', 'refunded'],
+            notIn: ["cancelled", "refunded"],
           },
         },
       },
@@ -734,7 +803,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     });
 
     const salesMap = new Map(
-      salesData.map(item => [item.variantId, Number(item._sum.qty || 0)])
+      salesData.map((item) => [item.variantId, Number(item._sum.qty || 0)]),
     );
 
     const items: LowStockForecastItem[] = [];
@@ -742,32 +811,69 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     for (const stock of stocks) {
       const totalSalesLast30Days = salesMap.get(stock.variantId) || 0;
       const averageDailySales = totalSalesLast30Days / 30;
-
-      // Skip if no sales history
-      if (averageDailySales === 0) continue;
-
       const available = stock.onHand - stock.reserved;
-      const daysUntilStockout = averageDailySales > 0 ? available / averageDailySales : 999;
 
-      // Only include items that will run out within forecast period
-      if (daysUntilStockout > forecastDays) continue;
+      if (averageDailySales === 0) {
+        // Low stock threshold: consider items with <= 10 units as potentially low stock
+        const isLowStock = available <= 10;
+
+        if (isLowStock) {
+          // Include low-stock items even without sales history for manual review
+          items.push({
+            variantId: stock.variantId,
+            productTitle: stock.variant.product.title,
+            sku: stock.variant.sku,
+            locationId: stock.locationId,
+            locationName: stock.location.name,
+            currentStock: available,
+            averageDailySales: 0,
+            daysUntilStockout: 999, // Cannot calculate without sales data
+            estimatedStockoutDate: null,
+            recommendedOrderQuantity:
+              stock.safetyStock || Math.max(10, available * 2), // Default recommendation
+            urgency: "monitor", // Flag for manual review
+          });
+        }
+        continue;
+      }
+
+      const daysUntilStockout =
+        averageDailySales > 0 ? available / averageDailySales : 999;
+
+      const criticallyLowStock = available <= 5;
+      const shouldInclude =
+        daysUntilStockout <= forecastDays || criticallyLowStock;
+
+      if (!shouldInclude) continue;
 
       const estimatedStockoutDate = new Date();
-      estimatedStockoutDate.setDate(estimatedStockoutDate.getDate() + Math.floor(daysUntilStockout));
+      estimatedStockoutDate.setDate(
+        estimatedStockoutDate.getDate() + Math.floor(daysUntilStockout),
+      );
 
       // Calculate recommended order quantity (enough for next 30 days + safety stock)
       const recommendedOrderQuantity = Math.max(
         Math.ceil(averageDailySales * 30) - available,
-        stock.safetyStock || 0
+        stock.safetyStock || 0,
       );
 
-      let urgency: 'immediate' | 'urgent' | 'soon' | 'monitor' = 'monitor';
-      if (daysUntilStockout <= 3) {
-        urgency = 'immediate';
-      } else if (daysUntilStockout <= 7) {
-        urgency = 'urgent';
-      } else if (daysUntilStockout <= 14) {
-        urgency = 'soon';
+      let urgency: "immediate" | "urgent" | "soon" | "monitor" = "monitor";
+
+      // Critical: Very low stock OR running out in 3 days
+      if (available <= 3 || daysUntilStockout <= 3) {
+        urgency = "immediate";
+      }
+      // Urgent: Low stock OR running out in 7 days
+      else if (available <= 5 || daysUntilStockout <= 7) {
+        urgency = "urgent";
+      }
+      // Soon: Running out in 14 days
+      else if (daysUntilStockout <= 14) {
+        urgency = "soon";
+      }
+      // Monitor: Running out in 15-30 days (or beyond if critically low stock)
+      else if (daysUntilStockout <= 30 || criticallyLowStock) {
+        urgency = "monitor";
       }
 
       items.push({
@@ -779,23 +885,31 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
         currentStock: available,
         averageDailySales,
         daysUntilStockout: Math.floor(daysUntilStockout),
-        estimatedStockoutDate: daysUntilStockout < 999 ? estimatedStockoutDate : null,
+        estimatedStockoutDate:
+          daysUntilStockout < 999 ? estimatedStockoutDate : null,
         recommendedOrderQuantity,
         urgency,
       });
     }
 
-    // Sort by urgency
+    // Sort by urgency first, then by days until stockout
     items.sort((a, b) => {
       const urgencyOrder = { immediate: 0, urgent: 1, soon: 2, monitor: 3 };
-      return urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
+      const urgencyDiff = urgencyOrder[a.urgency] - urgencyOrder[b.urgency];
+
+      if (urgencyDiff !== 0) return urgencyDiff;
+
+      // If same urgency, sort by days until stockout (sooner first)
+      return a.daysUntilStockout - b.daysUntilStockout;
     });
 
     const summary = {
-      immediateActionRequired: items.filter(item => item.urgency === 'immediate').length,
-      urgentCount: items.filter(item => item.urgency === 'urgent').length,
-      soonCount: items.filter(item => item.urgency === 'soon').length,
-      monitorCount: items.filter(item => item.urgency === 'monitor').length,
+      immediateActionRequired: items.filter(
+        (item) => item.urgency === "immediate",
+      ).length,
+      urgentCount: items.filter((item) => item.urgency === "urgent").length,
+      soonCount: items.filter((item) => item.urgency === "soon").length,
+      monitorCount: items.filter((item) => item.urgency === "monitor").length,
     };
 
     return {
@@ -821,6 +935,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
           select: {
             sku: true,
             price: true,
+            costPrice: true, // ADDED: Get actual cost price
             product: {
               select: {
                 title: true,
@@ -838,12 +953,22 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
 
     const items: InventoryValuationItem[] = stocks.map((stock) => {
       const averageSellingPrice = Number(stock.variant.price);
-      // Estimate cost as 50% of selling price (in production, you'd have a separate cost field)
-      const costPerUnit = averageSellingPrice * 0.5;
+
+      // IMPROVED: Use actual cost price if available, otherwise estimate at 50%
+      let costPerUnit: number;
+      if (stock.variant.costPrice && Number(stock.variant.costPrice) > 0) {
+        // Use real cost from database
+        costPerUnit = Number(stock.variant.costPrice);
+      } else {
+        // Fallback: Estimate as 50% of selling price if cost not set
+        costPerUnit = averageSellingPrice * 0.5;
+      }
+
       const totalCost = stock.onHand * costPerUnit;
       const potentialRevenue = stock.onHand * averageSellingPrice;
       const potentialProfit = potentialRevenue - totalCost;
-      const profitMargin = potentialRevenue > 0 ? (potentialProfit / potentialRevenue) * 100 : 0;
+      const profitMargin =
+        potentialRevenue > 0 ? (potentialProfit / potentialRevenue) * 100 : 0;
 
       return {
         variantId: stock.variantId,
@@ -862,17 +987,30 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     });
 
     // Summary
-    const totalInventoryValue = items.reduce((sum, item) => sum + item.totalCost, 0);
-    const totalPotentialRevenue = items.reduce((sum, item) => sum + item.potentialRevenue, 0);
-    const totalPotentialProfit = items.reduce((sum, item) => sum + item.potentialProfit, 0);
-    const averageProfitMargin = totalPotentialRevenue > 0
-      ? (totalPotentialProfit / totalPotentialRevenue) * 100
-      : 0;
+    const totalInventoryValue = items.reduce(
+      (sum, item) => sum + item.totalCost,
+      0,
+    );
+    const totalPotentialRevenue = items.reduce(
+      (sum, item) => sum + item.potentialRevenue,
+      0,
+    );
+    const totalPotentialProfit = items.reduce(
+      (sum, item) => sum + item.potentialProfit,
+      0,
+    );
+    const averageProfitMargin =
+      totalPotentialRevenue > 0
+        ? (totalPotentialProfit / totalPotentialRevenue) * 100
+        : 0;
     const totalUnitsInStock = items.reduce((sum, item) => sum + item.onHand, 0);
 
     // By location
-    const locationMap = new Map<string, { name: string; value: number; count: number }>();
-    items.forEach(item => {
+    const locationMap = new Map<
+      string,
+      { name: string; value: number; count: number }
+    >();
+    items.forEach((item) => {
       const existing = locationMap.get(item.locationId);
       if (existing) {
         existing.value += item.totalCost;
@@ -886,12 +1024,14 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
       }
     });
 
-    const byLocation = Array.from(locationMap.entries()).map(([locationId, data]) => ({
-      locationId,
-      locationName: data.name,
-      totalValue: data.value,
-      itemCount: data.count,
-    }));
+    const byLocation = Array.from(locationMap.entries()).map(
+      ([locationId, data]) => ({
+        locationId,
+        locationName: data.name,
+        totalValue: data.value,
+        itemCount: data.count,
+      }),
+    );
 
     return {
       items,
@@ -912,7 +1052,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
    */
   async getSlowMovingStockReport(
     minimumDaysInStock: number = 90,
-    minimumValue: number = 0
+    minimumValue: number = 0,
   ): Promise<SlowMovingStockReport> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - minimumDaysInStock);
@@ -946,7 +1086,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     });
 
     // Get sales data for each variant - use Order's createdAt
-    const variantIds = stocks.map(s => s.variantId);
+    const variantIds = stocks.map((s) => s.variantId);
 
     // Get the most recent order for each variant
     const recentOrders = await this.prisma.order.findMany({
@@ -959,7 +1099,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
           },
         },
         status: {
-          notIn: ['cancelled', 'refunded'],
+          notIn: ["cancelled", "refunded"],
         },
       },
       include: {
@@ -972,19 +1112,25 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
     // Build sales map
-    const salesMap = new Map<string, { totalSales: number; lastSoldDate: Date | null }>();
+    const salesMap = new Map<
+      string,
+      { totalSales: number; lastSoldDate: Date | null }
+    >();
 
-    recentOrders.forEach(order => {
-      order.items.forEach(item => {
+    recentOrders.forEach((order) => {
+      order.items.forEach((item) => {
         const existing = salesMap.get(item.variantId);
         if (existing) {
           existing.totalSales += item.qty;
-          if (!existing.lastSoldDate || order.createdAt > existing.lastSoldDate) {
+          if (
+            !existing.lastSoldDate ||
+            order.createdAt > existing.lastSoldDate
+          ) {
             existing.lastSoldDate = order.createdAt;
           }
         } else {
@@ -1012,7 +1158,8 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
       // Calculate days in stock
       const productCreatedAt = stock.variant.createdAt;
       const daysInStock = Math.floor(
-        (new Date().getTime() - productCreatedAt.getTime()) / (1000 * 60 * 60 * 24)
+        (new Date().getTime() - productCreatedAt.getTime()) /
+          (1000 * 60 * 60 * 24),
       );
 
       // Skip if not in stock long enough
@@ -1020,20 +1167,24 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
 
       // Calculate days since last sale
       const daysSinceLastSale = lastSoldDate
-        ? Math.floor((new Date().getTime() - lastSoldDate.getTime()) / (1000 * 60 * 60 * 24))
+        ? Math.floor(
+            (new Date().getTime() - lastSoldDate.getTime()) /
+              (1000 * 60 * 60 * 24),
+          )
         : null;
 
       // Calculate turnover rate (sales per day)
       const turnoverRate = daysInStock > 0 ? totalSales / daysInStock : 0;
 
       // Determine recommendation
-      let recommendation: 'discount' | 'promote' | 'bundle' | 'clearance' = 'promote';
+      let recommendation: "discount" | "promote" | "bundle" | "clearance" =
+        "promote";
       if (turnoverRate < 0.01 && daysInStock > 180) {
-        recommendation = 'clearance';
+        recommendation = "clearance";
       } else if (turnoverRate < 0.02 && daysInStock > 120) {
-        recommendation = 'discount';
+        recommendation = "discount";
       } else if (turnoverRate < 0.05) {
-        recommendation = 'bundle';
+        recommendation = "bundle";
       }
 
       items.push({
@@ -1057,16 +1208,24 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     items.sort((a, b) => b.inventoryValue - a.inventoryValue);
 
     const summary = {
-      totalSlowMovingValue: items.reduce((sum, item) => sum + item.inventoryValue, 0),
+      totalSlowMovingValue: items.reduce(
+        (sum, item) => sum + item.inventoryValue,
+        0,
+      ),
       totalSlowMovingUnits: items.reduce((sum, item) => sum + item.onHand, 0),
-      averageDaysInStock: items.length > 0
-        ? items.reduce((sum, item) => sum + item.daysInStock, 0) / items.length
-        : 0,
+      averageDaysInStock:
+        items.length > 0
+          ? items.reduce((sum, item) => sum + item.daysInStock, 0) /
+            items.length
+          : 0,
       recommendedActions: {
-        discount: items.filter(item => item.recommendation === 'discount').length,
-        promote: items.filter(item => item.recommendation === 'promote').length,
-        bundle: items.filter(item => item.recommendation === 'bundle').length,
-        clearance: items.filter(item => item.recommendation === 'clearance').length,
+        discount: items.filter((item) => item.recommendation === "discount")
+          .length,
+        promote: items.filter((item) => item.recommendation === "promote")
+          .length,
+        bundle: items.filter((item) => item.recommendation === "bundle").length,
+        clearance: items.filter((item) => item.recommendation === "clearance")
+          .length,
       },
     };
 
