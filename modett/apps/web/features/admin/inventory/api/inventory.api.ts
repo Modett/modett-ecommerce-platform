@@ -11,30 +11,13 @@ import type {
   TransferStockRequest,
 } from "../types/inventory.types";
 
-// Create axios instance for admin API (reusing logic but separate file for clarity)
-const adminApiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1",
-  timeout: 30000,
-  headers: {
-    "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "true",
-  },
-});
-
-// Add auth token interceptor
-adminApiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("authToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import { backendApiClient as adminApiClient } from "../../../../lib/backend-api-client";
 
 /**
  * Get all stocks with filters/pagination
  */
 export const getStocks = async (
-  filters: InventoryFilters = {}
+  filters: InventoryFilters = {},
 ): Promise<StocksListResponse> => {
   try {
     const { data } = await adminApiClient.get("/inventory/stocks", {
@@ -113,13 +96,13 @@ export const getLocations = async (): Promise<LocationsListResponse> => {
  * Add stock (Receive Inventory)
  */
 export const addStock = async (
-  request: AddStockRequest
+  request: AddStockRequest,
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     // Backend expects { variantId, locationId, quantity, reason }
     const { data } = await adminApiClient.post(
       "/inventory/stocks/add",
-      request
+      request,
     );
     return {
       success: true, // Backend returns 201 created
@@ -128,7 +111,10 @@ export const addStock = async (
     console.error("Add stock error:", error);
     return {
       success: false,
-      error: error.response?.data?.error || "Failed to add stock",
+      error:
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to add stock",
     };
   }
 };
@@ -137,7 +123,7 @@ export const addStock = async (
  * Adjust stock
  */
 export const adjustStock = async (
-  request: import("../types/inventory.types").AdjustStockRequest
+  request: import("../types/inventory.types").AdjustStockRequest,
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     await adminApiClient.post("/inventory/stocks/adjust", request);
@@ -155,7 +141,7 @@ export const adjustStock = async (
  * Transfer stock
  */
 export const transferStock = async (
-  request: TransferStockRequest
+  request: TransferStockRequest,
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     await adminApiClient.post("/inventory/stocks/transfer", request);
@@ -186,12 +172,15 @@ import type {
  */
 export const getStockLevelReport = async (filters?: {
   locationId?: string;
-  status?: 'healthy' | 'low' | 'critical' | 'out_of_stock';
+  status?: "healthy" | "low" | "critical" | "out_of_stock";
 }): Promise<StockLevelReportResponse> => {
   try {
-    const { data } = await adminApiClient.get("/admin/reports/inventory/stock-level", {
-      params: filters,
-    });
+    const { data } = await adminApiClient.get(
+      "/admin/reports/inventory/stock-level",
+      {
+        params: filters,
+      },
+    );
     return data;
   } catch (error: any) {
     console.error("Get stock level report error:", error);
@@ -209,7 +198,8 @@ export const getStockLevelReport = async (filters?: {
         },
         generatedAt: new Date().toISOString(),
       },
-      error: error.response?.data?.error || "Failed to fetch stock level report",
+      error:
+        error.response?.data?.error || "Failed to fetch stock level report",
     };
   }
 };
@@ -220,16 +210,19 @@ export const getStockLevelReport = async (filters?: {
 export const getStockMovementReport = async (
   startDate: string,
   endDate: string,
-  filters?: { variantId?: string; locationId?: string }
+  filters?: { variantId?: string; locationId?: string },
 ): Promise<StockMovementReportResponse> => {
   try {
-    const { data } = await adminApiClient.get("/admin/reports/inventory/stock-movement", {
-      params: {
-        startDate,
-        endDate,
-        ...filters,
+    const { data } = await adminApiClient.get(
+      "/admin/reports/inventory/stock-movement",
+      {
+        params: {
+          startDate,
+          endDate,
+          ...filters,
+        },
       },
-    });
+    );
     return data;
   } catch (error: any) {
     console.error("Get stock movement report error:", error);
@@ -247,7 +240,8 @@ export const getStockMovementReport = async (
         filters: { startDate, endDate, ...filters },
         generatedAt: new Date().toISOString(),
       },
-      error: error.response?.data?.error || "Failed to fetch stock movement report",
+      error:
+        error.response?.data?.error || "Failed to fetch stock movement report",
     };
   }
 };
@@ -256,12 +250,15 @@ export const getStockMovementReport = async (
  * Get Low Stock Forecast - Predict future stockouts based on sales trends
  */
 export const getLowStockForecast = async (
-  forecastDays: number = 30
+  forecastDays: number = 30,
 ): Promise<LowStockForecastResponse> => {
   try {
-    const { data } = await adminApiClient.get("/admin/reports/inventory/low-stock-forecast", {
-      params: { forecastDays },
-    });
+    const { data } = await adminApiClient.get(
+      "/admin/reports/inventory/low-stock-forecast",
+      {
+        params: { forecastDays },
+      },
+    );
     return data;
   } catch (error: any) {
     console.error("Get low stock forecast error:", error);
@@ -278,7 +275,8 @@ export const getLowStockForecast = async (
         forecastPeriod: forecastDays,
         generatedAt: new Date().toISOString(),
       },
-      error: error.response?.data?.error || "Failed to fetch low stock forecast",
+      error:
+        error.response?.data?.error || "Failed to fetch low stock forecast",
     };
   }
 };
@@ -286,42 +284,49 @@ export const getLowStockForecast = async (
 /**
  * Get Inventory Valuation - Total value of current inventory
  */
-export const getInventoryValuation = async (): Promise<InventoryValuationResponse> => {
-  try {
-    const { data } = await adminApiClient.get("/admin/reports/inventory/valuation");
-    return data;
-  } catch (error: any) {
-    console.error("Get inventory valuation error:", error);
-    return {
-      success: false,
-      data: {
-        items: [],
-        summary: {
-          totalInventoryValue: 0,
-          totalPotentialRevenue: 0,
-          totalPotentialProfit: 0,
-          averageProfitMargin: 0,
-          totalUnitsInStock: 0,
+export const getInventoryValuation =
+  async (): Promise<InventoryValuationResponse> => {
+    try {
+      const { data } = await adminApiClient.get(
+        "/admin/reports/inventory/valuation",
+      );
+      return data;
+    } catch (error: any) {
+      console.error("Get inventory valuation error:", error);
+      return {
+        success: false,
+        data: {
+          items: [],
+          summary: {
+            totalInventoryValue: 0,
+            totalPotentialRevenue: 0,
+            totalPotentialProfit: 0,
+            averageProfitMargin: 0,
+            totalUnitsInStock: 0,
+          },
+          byLocation: [],
+          generatedAt: new Date().toISOString(),
         },
-        byLocation: [],
-        generatedAt: new Date().toISOString(),
-      },
-      error: error.response?.data?.error || "Failed to fetch inventory valuation",
-    };
-  }
-};
+        error:
+          error.response?.data?.error || "Failed to fetch inventory valuation",
+      };
+    }
+  };
 
 /**
  * Get Slow Moving Stock Report - Identify products with low turnover
  */
 export const getSlowMovingStock = async (
   minimumDaysInStock: number = 90,
-  minimumValue: number = 0
+  minimumValue: number = 0,
 ): Promise<SlowMovingStockReportResponse> => {
   try {
-    const { data } = await adminApiClient.get("/admin/reports/inventory/slow-moving", {
-      params: { minimumDaysInStock, minimumValue },
-    });
+    const { data } = await adminApiClient.get(
+      "/admin/reports/inventory/slow-moving",
+      {
+        params: { minimumDaysInStock, minimumValue },
+      },
+    );
     return data;
   } catch (error: any) {
     console.error("Get slow moving stock error:", error);
@@ -343,7 +348,9 @@ export const getSlowMovingStock = async (
         filters: { minimumDaysInStock, minimumInventoryValue: minimumValue },
         generatedAt: new Date().toISOString(),
       },
-      error: error.response?.data?.error || "Failed to fetch slow moving stock report",
+      error:
+        error.response?.data?.error ||
+        "Failed to fetch slow moving stock report",
     };
   }
 };
