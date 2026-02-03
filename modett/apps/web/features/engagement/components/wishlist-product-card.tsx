@@ -2,13 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, X, ShoppingBag } from "lucide-react";
+import { X } from "lucide-react";
 import { useState } from "react";
-import { useAddToCart } from "@/features/cart/queries";
 import { useRemoveFromWishlist } from "@/features/engagement/queries";
 import { toast } from "sonner";
-import { getColorHex } from "@/lib/colors";
-import { TEXT_STYLES, PRODUCT_CLASSES } from "@/features/cart/constants/styles";
+import { TEXT_STYLES } from "@/features/cart/constants/styles";
 
 interface Variant {
   id: string;
@@ -45,14 +43,7 @@ export function WishlistProductCard({
   onRemove,
 }: WishlistProductCardProps) {
   const [isRemoving, setIsRemoving] = useState(false);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
-
-  const addToCartMutation = useAddToCart();
   const removeFromWishlistMutation = useRemoveFromWishlist();
-
-  const availableColors = [
-    ...new Set(allVariants.map((v) => v.color).filter(Boolean)),
-  ];
 
   const handleRemoveFromWishlist = async () => {
     setIsRemoving(true);
@@ -71,25 +62,10 @@ export function WishlistProductCard({
     }
   };
 
-  const handleAddToCart = async () => {
-    setIsAddingToCart(true);
-    try {
-      await addToCartMutation.mutateAsync({
-        variantId: variant.id,
-        quantity: 1,
-      });
-      toast.success(`${title} added to cart!`);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to add to cart");
-    } finally {
-      setIsAddingToCart(false);
-    }
-  };
-
   return (
-    <div className="group bg-[#EFECE5] flex flex-col w-full gap-[16px]">
-      {/* Image Container */}
-      <div className="relative w-full h-[420px] overflow-hidden bg-transparent">
+    <div className="group flex w-full gap-[24px] bg-transparent">
+      {/* Image Container - Left Side */}
+      <div className="relative w-[240px] h-[320px] shrink-0 overflow-hidden bg-[#F0F0F0]">
         <Link
           href={`/product/${slug}`}
           className="block w-full h-full relative"
@@ -99,96 +75,108 @@ export function WishlistProductCard({
             alt={title}
             fill
             className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="(max-width: 768px) 100vw, 240px"
           />
         </Link>
 
-        {/* Remove button */}
+        {/* Remove button overlay on image if needed by design, or keep it separate. 
+            Design usually implies a clean image. Let's put remove button in content or keep as hover?
+            The image reference doesn't clearly show a remove 'button' on the card, but usually there is one. 
+            I'll keep the top-right overlay for UX, styled consistently.
+        */}
         <button
           onClick={handleRemoveFromWishlist}
           disabled={isRemoving}
-          className={`absolute top-3 right-3 z-20 w-[32px] h-[32px] flex items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95 bg-white/90 backdrop-blur-sm ${
-            isRemoving ? "opacity-50 cursor-wait" : "hover:bg-white"
+          className={`absolute top-2 right-2 z-20 w-[24px] h-[24px] flex items-center justify-center rounded-full bg-white/80 hover:bg-white transition-all ${
+            isRemoving ? "opacity-50 cursor-wait" : ""
           }`}
           title="Remove from wishlist"
         >
-          <X className="w-[18px] h-[18px] text-[#232D35]" strokeWidth={2} />
+          <X className="w-[14px] h-[14px] text-[#232D35]" />
         </button>
       </div>
 
-      {/* Product Info */}
-      <div className="flex flex-col gap-[12px] px-[20px] pb-[20px]">
-        <div className="flex flex-col gap-[4px]">
+      {/* Product Info - Right Side */}
+      <div className="flex flex-col flex-1 py-1 w-full">
+        <div className="flex flex-col gap-1 mb-6">
           <Link href={`/product/${slug}`}>
             <h3
-              className="text-[18px] leading-[28px] font-normal tracking-[0%] hover:underline cursor-pointer"
-              style={TEXT_STYLES.bodyGraphite}
+              className="text-[20px] leading-[26px] font-normal text-[#232D35]"
+              style={{ fontFamily: "Cormorant Garamond, serif" }}
             >
               {title}
             </h3>
           </Link>
-          <div className="flex items-center gap-2">
-            <p
-              className="text-[14px] leading-[24px] font-normal"
-              style={{ ...TEXT_STYLES.bodyGraphite, letterSpacing: "1.03px" }}
-            >
-              Rs {price.toFixed(2)}
-            </p>
-            {/* {variant.size && (
-              <span
-                className="text-[12px] text-gray-500"
-                style={{ fontFamily: "Raleway, sans-serif" }}
-              >
-                • Size {variant.size}
-              </span>
-            )} */}
-          </div>
+          {/* Collection/Category - Salmon color as per design */}
+          <span
+            className="text-[12px] text-[#D4A373] font-medium tracking-wide uppercase"
+            style={{ fontFamily: "Raleway, sans-serif" }}
+          >
+            Cotton
+          </span>
+          {/* SKU */}
+          <span
+            className="text-[10px] text-[#A69588] tracking-[0.15em] uppercase mt-1"
+            style={{ fontFamily: "Raleway, sans-serif" }}
+          >
+            {variant.sku}
+          </span>
         </div>
 
-        {/* Color swatches */}
-        {availableColors.length > 0 && (
-          <div className="flex gap-[9px]">
-            {availableColors.slice(0, 4).map((color, index) => (
-              <div
-                key={index}
-                className="w-[12px] h-[12px] rounded-full border"
-                style={{
-                  backgroundColor: getColorHex(color),
-                  borderColor: "#765C4D",
-                  borderWidth: "1px",
-                }}
-                title={color}
-              />
-            ))}
-            {availableColors.length > 4 && (
-              <span
-                className="text-[10px] text-gray-500 ml-1"
-                style={{ fontFamily: "Raleway, sans-serif" }}
-              >
-                +{availableColors.length - 4}
-              </span>
-            )}
-          </div>
-        )}
+        {/* Price Section */}
+        <div className="pb-4 border-b border-[#E5E0D6]">
+          <p
+            className="text-[14px] font-medium text-[#232D35]"
+            style={{
+              fontFamily: "Raleway, sans-serif",
+              letterSpacing: "0.5px",
+            }}
+          >
+            Rs{" "}
+            {price.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </p>
+        </div>
 
-        {/* Add to Cart Button */}
-        <button
-          onClick={handleAddToCart}
-          disabled={variant.inventory === 0 || isAddingToCart}
-          className={`h-[48px] ${PRODUCT_CLASSES.addToCartButton} bg-[#232D35] text-[#E5E0D6] text-[14px] font-medium leading-[16px] tracking-[2px] uppercase disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors w-full mt-2`}
-          style={TEXT_STYLES.button}
-        >
-          {isAddingToCart ? (
-            <span className="flex items-center justify-center gap-2">
-              <ShoppingBag className="h-4 w-4 animate-pulse" />
-              ADDING...
-            </span>
-          ) : variant.inventory === 0 ? (
-            "OUT OF STOCK"
-          ) : (
-            "ADD TO CART"
+        {/* Variants Info */}
+        <div className="flex flex-col">
+          {variant.color && (
+            <div
+              className="flex items-center gap-2 text-[13px] text-[#555555] py-3 border-b border-[#E5E0D6]"
+              style={{ fontFamily: "Raleway, sans-serif" }}
+            >
+              <span className="text-[#888888]">Color:</span>
+              <span>{variant.color}</span>
+            </div>
           )}
-        </button>
+          {
+            <div
+              className="flex items-center gap-2 text-[13px] text-[#555555] py-3 border-b border-[#E5E0D6]"
+              style={{ fontFamily: "Raleway, sans-serif" }}
+            >
+              <span className="text-[#888888]">Size:</span>
+              <span>{variant.size || "One Size"}</span>
+            </div>
+          }
+        </div>
+
+        {/* Footer Link */}
+        <div className="mt-4">
+          <div
+            className="flex items-center gap-1 text-[12px] text-[#888888]"
+            style={{ fontFamily: "Raleway, sans-serif" }}
+          >
+            <span>Access full product description:</span>
+            <Link
+              href={`/product/${slug}`}
+              className="text-[#D4A373] underline hover:text-[#b0825a] transition-colors decoration-[#D4A373]/50 underline-offset-4"
+            >
+              Product details
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

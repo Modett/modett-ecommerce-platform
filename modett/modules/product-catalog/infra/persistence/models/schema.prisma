@@ -12,6 +12,7 @@ enum ProductStatusEnum {
   draft
   published
   scheduled
+  archived
 
   @@map("product_status_enum")
   @@schema("product_catalog")

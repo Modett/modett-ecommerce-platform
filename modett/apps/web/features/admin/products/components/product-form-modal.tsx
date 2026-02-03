@@ -329,7 +329,7 @@ export function ProductFormModal({
 
                       {isStatusDropdownOpen && (
                         <div className="absolute z-10 w-full mt-1 bg-white border border-[#BBA496] rounded-lg shadow-lg overflow-hidden">
-                          {["draft", "published", "scheduled"].map((status) => (
+                          {["draft", "published", "scheduled", "archived"].map((status) => (
                             <button
                               key={status}
                               type="button"

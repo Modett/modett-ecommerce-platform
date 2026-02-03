@@ -109,7 +109,7 @@ export async function registerProductCatalogRoutes(
             limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
             status: {
               type: "string",
-              enum: ["draft", "published", "scheduled"],
+              enum: ["draft", "published", "scheduled", "archived"],
             },
             categoryId: { type: "string", format: "uuid" },
             brand: { type: "string" },
@@ -483,7 +483,7 @@ export async function registerProductCatalogRoutes(
             longDescHtml: { type: "string" },
             status: {
               type: "string",
-              enum: ["draft", "published", "scheduled"],
+              enum: ["draft", "published", "scheduled", "archived"],
             },
             publishAt: { type: "string", format: "date-time" },
             countryOfOrigin: { type: "string" },
