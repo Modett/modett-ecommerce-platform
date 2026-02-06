@@ -24,6 +24,7 @@ import { ProductSnapshot } from "../../domain/value-objects/product-snapshot.vo"
 import { AddressSnapshot } from "../../domain/value-objects/address-snapshot.vo";
 import { VariantManagementService } from "../../../product-catalog/application/services/variant-management.service";
 import { ProductManagementService } from "../../../product-catalog/application/services/product-management.service";
+import { ProductMediaManagementService } from "../../../product-catalog/application/services/product-media-management.service";
 import { StockManagementService } from "../../../inventory-management/application/services/stock-management.service";
 import { OrderEventService } from "./order-event.service";
 
@@ -52,8 +53,9 @@ export class OrderManagementService {
     private readonly orderStatusHistoryRepository: IOrderStatusHistoryRepository,
     private readonly variantManagementService: VariantManagementService,
     private readonly productManagementService: ProductManagementService,
+    private readonly productMediaService: ProductMediaManagementService,
     private readonly stockManagementService: StockManagementService,
-    private readonly orderEventService: OrderEventService
+    private readonly orderEventService: OrderEventService,
   ) {}
 
   async createOrder(data: CreateOrderData): Promise<Order> {
@@ -80,7 +82,7 @@ export class OrderManagementService {
       data.items.map(async (item) => {
         // Fetch variant from database
         const variant = await this.variantManagementService.getVariantById(
-          item.variantId
+          item.variantId,
         );
 
         if (!variant) {
@@ -89,11 +91,42 @@ export class OrderManagementService {
 
         // Fetch product details
         const product = await this.productManagementService.getProductById(
-          variant.getProductId().getValue()
+          variant.getProductId().getValue(),
         );
 
         if (!product) {
           throw new Error(`Product not found for variant: ${item.variantId}`);
+        }
+
+        // Fetch product media (cover image)
+        let imageUrl: string | undefined;
+        try {
+          const media = await this.productMediaService.getProductMedia(
+            product.getId().getValue(),
+            { coverOnly: true },
+          );
+
+          let coverAsset = media.mediaAssets.find((a) => a.isCover);
+          if (!coverAsset && media.mediaAssets.length > 0) {
+            coverAsset = media.mediaAssets[0];
+          }
+
+          if (coverAsset && coverAsset.storageKey) {
+            imageUrl = coverAsset.storageKey;
+            console.log('📸 ORDER IMAGE DEBUG:', {
+              productId: product.getId().getValue(),
+              storageKey: coverAsset.storageKey,
+              imageUrl
+            });
+          } else {
+            console.log('⚠️  NO IMAGE FOUND for product:', product.getId().getValue(), 'mediaAssets:', media.mediaAssets.length);
+          }
+        } catch (error) {
+          console.warn(
+            `Failed to fetch media for product ${product.getId().getValue()}`,
+            error,
+          );
+          // Continue without image
         }
 
         // Build variant name from size and color
@@ -127,7 +160,7 @@ export class OrderManagementService {
           name: product.getTitle(),
           variantName,
           price: variant.getPrice().getValue(),
-          imageUrl: undefined,
+          imageUrl,
           weight: variant.getWeightG() || undefined,
           dimensions,
           attributes: {
@@ -143,7 +176,7 @@ export class OrderManagementService {
           isGift: item.isGift,
           giftMessage: item.giftMessage,
         };
-      })
+      }),
     );
 
     const defaultLocationId =
@@ -151,12 +184,12 @@ export class OrderManagementService {
     for (const item of orderItems) {
       const stock = await this.stockManagementService.getStock(
         item.variantId,
-        defaultLocationId
+        defaultLocationId,
       );
       const available = stock?.getStockLevel().getAvailable() ?? 0;
       if (available < item.quantity) {
         throw new Error(
-          `Insufficient stock for variant ${item.variantId} at ${defaultLocationId}`
+          `Insufficient stock for variant ${item.variantId} at ${defaultLocationId}`,
         );
       }
     }
@@ -182,7 +215,7 @@ export class OrderManagementService {
         defaultLocationId,
         -item.quantity, // Negative to remove stock
         "order",
-        order.getOrderId().getValue() // Reference the order ID
+        order.getOrderId().getValue(), // Reference the order ID
       );
     }
 
@@ -194,7 +227,7 @@ export class OrderManagementService {
         itemCount: data.items.length,
         currency: data.currency,
         source: data.source,
-      }
+      },
     );
 
     return order;
@@ -231,7 +264,7 @@ export class OrderManagementService {
 
   async getOrdersByUserId(
     userId: string,
-    options?: OrderQueryOptions
+    options?: OrderQueryOptions,
   ): Promise<Order[]> {
     if (!userId || userId.trim().length === 0) {
       throw new Error("User ID is required");
@@ -242,7 +275,7 @@ export class OrderManagementService {
 
   async getOrdersByGuestToken(
     guestToken: string,
-    options?: OrderQueryOptions
+    options?: OrderQueryOptions,
   ): Promise<Order[]> {
     if (!guestToken || guestToken.trim().length === 0) {
       throw new Error("Guest token is required");
@@ -253,7 +286,7 @@ export class OrderManagementService {
 
   async getOrdersByStatus(
     status: string,
-    options?: OrderQueryOptions
+    options?: OrderQueryOptions,
   ): Promise<Order[]> {
     if (!status || status.trim().length === 0) {
       throw new Error("Status is required");
@@ -272,7 +305,7 @@ export class OrderManagementService {
       startDate?: Date;
       endDate?: Date;
       search?: string;
-    }
+    },
   ): Promise<{ items: Order[]; totalCount: number }> {
     const {
       page = 1,
@@ -312,7 +345,7 @@ export class OrderManagementService {
     if (Object.keys(filters).length > 0) {
       orders = await this.orderRepository.findWithFilters(
         filters,
-        queryOptions
+        queryOptions,
       );
       totalCount = await this.orderRepository.count(filters);
     } else {
@@ -328,7 +361,7 @@ export class OrderManagementService {
 
   async updateOrderStatus(
     id: string,
-    newStatus: string
+    newStatus: string,
   ): Promise<Order | null> {
     if (!id || id.trim().length === 0) {
       throw new Error("Order ID is required");
@@ -372,7 +405,7 @@ export class OrderManagementService {
         changedBy: "system",
         timestamp: new Date().toISOString(),
         reason: `Status changed from ${oldStatus} to ${order.getStatus().getValue()}`,
-      }
+      },
     );
 
     return order;
@@ -384,7 +417,7 @@ export class OrderManagementService {
       tax: number;
       shipping: number;
       discount: number;
-    }
+    },
   ): Promise<Order | null> {
     if (!id || id.trim().length === 0) {
       throw new Error("Order ID is required");
@@ -398,7 +431,7 @@ export class OrderManagementService {
     order.updateTotals(
       totalsData.tax,
       totalsData.shipping,
-      totalsData.discount
+      totalsData.discount,
     );
 
     await this.orderRepository.update(order);
@@ -428,11 +461,11 @@ export class OrderManagementService {
         await this.stockManagementService.reserveStock(
           item.getVariantId(),
           defaultLocationId,
-          item.getQuantity()
+          item.getQuantity(),
         );
       } catch (error) {
         console.error(
-          `Failed to reserve stock for item ${item.getOrderItemId()}: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to reserve stock for item ${item.getOrderItemId()}: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
       }
     }
@@ -451,7 +484,7 @@ export class OrderManagementService {
 
   async markOrderAsFulfilled(
     id: string,
-    changedBy?: string
+    changedBy?: string,
   ): Promise<Order | null> {
     if (!id || id.trim().length === 0) {
       throw new Error("Order ID is required");
@@ -484,13 +517,13 @@ export class OrderManagementService {
           fulfillmentLocationId,
           -item.getQuantity(), // Negative to remove stock
           "order",
-          order.getOrderId().getValue() // Reference the order ID
+          order.getOrderId().getValue(), // Reference the order ID
         );
       } catch (error) {
         // Log error but don't fail the entire fulfillment
         // This allows partial fulfillment if some items have stock issues
         console.error(
-          `Failed to adjust inventory for item ${item.getOrderItemId()}: ${error instanceof Error ? error.message : "Unknown error"}`
+          `Failed to adjust inventory for item ${item.getOrderItemId()}: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
       }
     }
@@ -534,12 +567,12 @@ export class OrderManagementService {
             defaultLocationId,
             item.getQuantity(), // Positive adjustment to release reserved stock
             "adjustment",
-            order.getOrderId().getValue() // Reference the cancelled order ID
+            order.getOrderId().getValue(), // Reference the cancelled order ID
           );
         } catch (error) {
           // Log error but don't fail the entire cancellation
           console.error(
-            `Failed to release reserved stock for item ${item.getOrderItemId()}: ${error instanceof Error ? error.message : "Unknown error"}`
+            `Failed to release reserved stock for item ${item.getOrderItemId()}: ${error instanceof Error ? error.message : "Unknown error"}`,
           );
         }
       }
@@ -586,7 +619,7 @@ export class OrderManagementService {
     } catch (error) {
       if (error instanceof Error && error.message.includes("constraint")) {
         throw new Error(
-          "Cannot delete order: it has associated items or other dependencies"
+          "Cannot delete order: it has associated items or other dependencies",
         );
       }
       throw error;
@@ -652,7 +685,7 @@ export class OrderManagementService {
       country: string;
       phone?: string;
       email?: string;
-    }
+    },
   ): Promise<OrderAddress> {
     if (!orderId || orderId.trim().length === 0) {
       throw new Error("Order ID is required");
@@ -667,7 +700,7 @@ export class OrderManagementService {
     // Only allow setting address for orders in 'created' status
     if (order.getStatus().getValue() !== "created") {
       throw new Error(
-        "Cannot set address for order that is not in created status"
+        "Cannot set address for order that is not in created status",
       );
     }
 
@@ -725,7 +758,7 @@ export class OrderManagementService {
       country: string;
       phone?: string;
       email?: string;
-    }
+    },
   ): Promise<OrderAddress> {
     if (!orderId || orderId.trim().length === 0) {
       throw new Error("Order ID is required");
@@ -765,7 +798,7 @@ export class OrderManagementService {
       country: string;
       phone?: string;
       email?: string;
-    }
+    },
   ): Promise<OrderAddress> {
     if (!orderId || orderId.trim().length === 0) {
       throw new Error("Order ID is required");
@@ -818,7 +851,7 @@ export class OrderManagementService {
     // Check stock
     const stock = await this.stockManagementService.getStock(
       data.variantId,
-      defaultLocationId
+      defaultLocationId,
     );
     const available = stock?.getStockLevel().getAvailable() ?? 0;
     if (available < data.quantity) {
@@ -827,12 +860,12 @@ export class OrderManagementService {
 
     // Fetch variant details to build snapshot
     const variant = await this.variantManagementService.getVariantById(
-      data.variantId
+      data.variantId,
     );
     if (!variant) throw new Error("Variant not found");
 
     const product = await this.productManagementService.getProductById(
-      variant.getProductId().getValue()
+      variant.getProductId().getValue(),
     );
     if (!product) throw new Error("Product not found");
 
@@ -865,7 +898,7 @@ export class OrderManagementService {
       defaultLocationId,
       -data.quantity,
       "order-add",
-      data.orderId
+      data.orderId,
     );
 
     return order;
@@ -873,7 +906,7 @@ export class OrderManagementService {
 
   // Helper to fetch user name for authenticated users without address
   async getUserName(
-    userId: string
+    userId: string,
   ): Promise<{ name: string; email: string } | null> {
     if (!userId) return null;
 
@@ -1084,7 +1117,7 @@ export class OrderManagementService {
 
     // Get shipment
     const shipment = await this.orderShipmentRepository.findById(
-      data.shipmentId
+      data.shipmentId,
     );
     if (!shipment) {
       throw new Error("Shipment not found");
@@ -1139,7 +1172,7 @@ export class OrderManagementService {
 
     // Get shipment
     const shipment = await this.orderShipmentRepository.findById(
-      data.shipmentId
+      data.shipmentId,
     );
     if (!shipment) {
       throw new Error("Shipment not found");
@@ -1180,7 +1213,7 @@ export class OrderManagementService {
 
     // Get shipment
     const shipment = await this.orderShipmentRepository.findById(
-      data.shipmentId
+      data.shipmentId,
     );
     if (!shipment) {
       throw new Error("Shipment not found");
@@ -1210,7 +1243,7 @@ export class OrderManagementService {
 
   async getShipment(
     orderId: string,
-    shipmentId: string
+    shipmentId: string,
   ): Promise<OrderShipment | null> {
     if (!orderId || orderId.trim().length === 0) {
       throw new Error("Order ID is required");
@@ -1278,7 +1311,7 @@ export class OrderManagementService {
         order.refund();
       } else {
         throw new Error(
-          `Cannot set status to ${data.toStatus}. Use specific methods for status transitions.`
+          `Cannot set status to ${data.toStatus}. Use specific methods for status transitions.`,
         );
       }
 
@@ -1303,7 +1336,7 @@ export class OrderManagementService {
 
   async getOrderStatusHistory(
     orderId: string,
-    options?: StatusHistoryQueryOptions
+    options?: StatusHistoryQueryOptions,
   ): Promise<OrderStatusHistory[]> {
     if (!orderId || orderId.trim().length === 0) {
       throw new Error("Order ID is required");
@@ -1311,12 +1344,12 @@ export class OrderManagementService {
 
     return await this.orderStatusHistoryRepository.findByOrderId(
       orderId,
-      options
+      options,
     );
   }
 
   async getStatusHistoryById(
-    historyId: number
+    historyId: number,
   ): Promise<OrderStatusHistory | null> {
     return await this.orderStatusHistoryRepository.findById(historyId);
   }
@@ -1344,7 +1377,7 @@ export class OrderManagementService {
 
     if (!warehouse) {
       throw new Error(
-        "No warehouse location found. Please configure DEFAULT_STOCK_LOCATION in .env or create a warehouse location in the database."
+        "No warehouse location found. Please configure DEFAULT_STOCK_LOCATION in .env or create a warehouse location in the database.",
       );
     }
 
