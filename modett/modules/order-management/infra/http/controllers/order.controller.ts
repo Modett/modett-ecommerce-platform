@@ -267,7 +267,7 @@ export class OrderController {
       const limit = parseInt(String(limitQuery), 10);
 
       // Get userId and role from authenticated user
-      const user = request.user;
+      const user = (request as any).user;
       const authenticatedUserId = user?.userId;
       const userRole = user?.role;
 
@@ -278,14 +278,26 @@ export class OrderController {
         "ANALYST",
       ].includes(userRole);
 
-      // Only filter by authenticated user's ID if proper customer (not admin/staff)
-      const filterUserId = isAdminOrStaff ? undefined : authenticatedUserId;
+      // Security: Regular users MUST only see their own orders
+      // Admins see all orders by default
+      let filterUserId: string | undefined = authenticatedUserId;
 
-      // Always filter by authenticated user's ID for security (unless admin)
+      if (isAdminOrStaff) {
+        filterUserId = undefined;
+      } else {
+        if (!authenticatedUserId) {
+          return reply.code(401).send({
+            success: false,
+            message: "Authentication required to list orders",
+          });
+        }
+        filterUserId = authenticatedUserId;
+      }
+
       const result = await this.orderManagementService.getAllOrders({
         page,
         limit,
-        userId: filterUserId, // Conditionally use authenticated user's ID
+        userId: filterUserId,
         status,
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined,
