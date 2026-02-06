@@ -34,6 +34,7 @@ export interface Product {
   compareAtPrice?: number;
   brand?: string;
   category?: string;
+  material?: string;
   images?: ProductImage[];
   variants?: ProductVariant[];
   categories?: ProductCategory[];
