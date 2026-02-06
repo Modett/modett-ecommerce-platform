@@ -6,6 +6,7 @@ export interface ProductSnapshotData {
   variantName?: string;
   price: number;
   imageUrl?: string;
+  images?: Array<{ storageKey: string; url?: string }>;
   weight?: number;
   dimensions?: {
     length: number;
@@ -23,6 +24,7 @@ export class ProductSnapshot {
   private readonly variantName?: string;
   private readonly price: number;
   private readonly imageUrl?: string;
+  private readonly images?: Array<{ storageKey: string; url?: string }>;
   private readonly weight?: number;
   private readonly dimensions?: {
     length: number;
@@ -39,6 +41,7 @@ export class ProductSnapshot {
     this.variantName = data.variantName;
     this.price = data.price;
     this.imageUrl = data.imageUrl;
+    this.images = data.images;
     this.weight = data.weight;
     this.dimensions = data.dimensions;
     this.attributes = data.attributes;
@@ -46,27 +49,27 @@ export class ProductSnapshot {
 
   static create(data: ProductSnapshotData): ProductSnapshot {
     if (!data.productId || data.productId.trim().length === 0) {
-      throw new Error('Product ID is required');
+      throw new Error("Product ID is required");
     }
 
     if (!data.variantId || data.variantId.trim().length === 0) {
-      throw new Error('Variant ID is required');
+      throw new Error("Variant ID is required");
     }
 
     if (!data.sku || data.sku.trim().length === 0) {
-      throw new Error('SKU is required');
+      throw new Error("SKU is required");
     }
 
     if (!data.name || data.name.trim().length === 0) {
-      throw new Error('Product name is required');
+      throw new Error("Product name is required");
     }
 
     if (data.price < 0) {
-      throw new Error('Price cannot be negative');
+      throw new Error("Price cannot be negative");
     }
 
     if (data.weight !== undefined && data.weight < 0) {
-      throw new Error('Weight cannot be negative');
+      throw new Error("Weight cannot be negative");
     }
 
     return new ProductSnapshot(data);
@@ -104,11 +107,17 @@ export class ProductSnapshot {
     return this.imageUrl;
   }
 
+  getImages(): Array<{ storageKey: string; url?: string }> | undefined {
+    return this.images;
+  }
+
   getWeight(): number | undefined {
     return this.weight;
   }
 
-  getDimensions(): { length: number; width: number; height: number } | undefined {
+  getDimensions():
+    | { length: number; width: number; height: number }
+    | undefined {
     return this.dimensions;
   }
 
@@ -125,22 +134,26 @@ export class ProductSnapshot {
       variantName: this.variantName,
       price: this.price,
       imageUrl: this.imageUrl,
+      images: this.images,
       weight: this.weight,
       dimensions: this.dimensions,
-      attributes: this.attributes
+      attributes: this.attributes,
     };
   }
 
   equals(other: ProductSnapshot): boolean {
-    return this.productId === other.productId &&
-           this.variantId === other.variantId &&
-           this.sku === other.sku &&
-           this.name === other.name &&
-           this.variantName === other.variantName &&
-           this.price === other.price &&
-           this.imageUrl === other.imageUrl &&
-           this.weight === other.weight &&
-           JSON.stringify(this.dimensions) === JSON.stringify(other.dimensions) &&
-           JSON.stringify(this.attributes) === JSON.stringify(other.attributes);
+    return (
+      this.productId === other.productId &&
+      this.variantId === other.variantId &&
+      this.sku === other.sku &&
+      this.name === other.name &&
+      this.variantName === other.variantName &&
+      this.price === other.price &&
+      this.imageUrl === other.imageUrl &&
+      JSON.stringify(this.images) === JSON.stringify(other.images) &&
+      this.weight === other.weight &&
+      JSON.stringify(this.dimensions) === JSON.stringify(other.dimensions) &&
+      JSON.stringify(this.attributes) === JSON.stringify(other.attributes)
+    );
   }
 }
