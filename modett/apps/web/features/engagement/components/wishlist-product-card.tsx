@@ -27,6 +27,7 @@ interface WishlistProductCardProps {
   image: string;
   variant: Variant;
   allVariants: Variant[];
+  material?: string;
   onRemove?: () => void;
 }
 
@@ -40,6 +41,7 @@ export function WishlistProductCard({
   image,
   variant,
   allVariants,
+  material,
   onRemove,
 }: WishlistProductCardProps) {
   const [isRemoving, setIsRemoving] = useState(false);
@@ -65,7 +67,7 @@ export function WishlistProductCard({
   return (
     <div className="group flex w-full gap-[24px] bg-transparent">
       {/* Image Container - Left Side */}
-      <div className="relative w-[240px] h-[320px] shrink-0 overflow-hidden bg-[#F0F0F0]">
+      <div className="relative w-[222.33px] h-[311.25px] shrink-0 overflow-hidden bg-[#F0F0F0]">
         <Link
           href={`/product/${slug}`}
           className="block w-full h-full relative"
@@ -78,12 +80,6 @@ export function WishlistProductCard({
             sizes="(max-width: 768px) 100vw, 240px"
           />
         </Link>
-
-        {/* Remove button overlay on image if needed by design, or keep it separate. 
-            Design usually implies a clean image. Let's put remove button in content or keep as hover?
-            The image reference doesn't clearly show a remove 'button' on the card, but usually there is one. 
-            I'll keep the top-right overlay for UX, styled consistently.
-        */}
         <button
           onClick={handleRemoveFromWishlist}
           disabled={isRemoving}
@@ -97,11 +93,11 @@ export function WishlistProductCard({
       </div>
 
       {/* Product Info - Right Side */}
-      <div className="flex flex-col flex-1 py-1 w-full">
+      <div className="flex flex-col flex-1 py-1 w-full max-w-[317.66px]">
         <div className="flex flex-col gap-1 mb-6">
           <Link href={`/product/${slug}`}>
             <h3
-              className="text-[20px] leading-[26px] font-normal text-[#232D35]"
+              className="text-[24px] leading-[30px] font-normal text-[#232D35]"
               style={{ fontFamily: "Cormorant Garamond, serif" }}
             >
               {title}
@@ -109,10 +105,10 @@ export function WishlistProductCard({
           </Link>
           {/* Collection/Category - Salmon color as per design */}
           <span
-            className="text-[12px] text-[#D4A373] font-medium tracking-wide uppercase"
+            className="text-[12px] text-[#C78869] font-medium tracking-wide uppercase"
             style={{ fontFamily: "Raleway, sans-serif" }}
           >
-            Cotton
+            {material || "Cotton"}
           </span>
           {/* SKU */}
           <span
@@ -124,12 +120,11 @@ export function WishlistProductCard({
         </div>
 
         {/* Price Section */}
-        <div className="pb-4 border-b border-[#E5E0D6]">
+        <div className="h-[48px] flex items-start border-b border-[#E5E0D6]">
           <p
-            className="text-[14px] font-medium text-[#232D35]"
+            className="text-[18px] font-normal text-[#232D35]"
             style={{
               fontFamily: "Raleway, sans-serif",
-              letterSpacing: "0.5px",
             }}
           >
             Rs{" "}
@@ -144,20 +139,21 @@ export function WishlistProductCard({
         <div className="flex flex-col">
           {variant.color && (
             <div
-              className="flex items-center gap-2 text-[13px] text-[#555555] py-3 border-b border-[#E5E0D6]"
+              className="h-[57px] w-[301.66px] flex items-center text-[16px] text-[#232D35] border-b border-[#E5E0D6]"
               style={{ fontFamily: "Raleway, sans-serif" }}
             >
-              <span className="text-[#888888]">Color:</span>
-              <span>{variant.color}</span>
+              <span className="text-[#232D35]">Color: {variant.color}</span>
             </div>
           )}
           {
+            /* Keep size for now but style broadly similar or auto if not specified */
             <div
-              className="flex items-center gap-2 text-[13px] text-[#555555] py-3 border-b border-[#E5E0D6]"
+              className="h-[57px] w-[301.66px] flex items-center text-[16px] text-[#232D35] border-b border-[#E5E0D6]"
               style={{ fontFamily: "Raleway, sans-serif" }}
             >
-              <span className="text-[#888888]">Size:</span>
-              <span>{variant.size || "One Size"}</span>
+              <span className="text-[#232D35]">
+                Size: {variant.size || "One Size"}
+              </span>
             </div>
           }
         </div>
@@ -165,13 +161,13 @@ export function WishlistProductCard({
         {/* Footer Link */}
         <div className="mt-4">
           <div
-            className="flex items-center gap-1 text-[12px] text-[#888888]"
+            className="flex items-center gap-1 text-[14px] leading-[24px] text-[#888888]"
             style={{ fontFamily: "Raleway, sans-serif" }}
           >
             <span>Access full product description:</span>
             <Link
               href={`/product/${slug}`}
-              className="text-[#D4A373] underline hover:text-[#b0825a] transition-colors decoration-[#D4A373]/50 underline-offset-4"
+              className="text-[#C78869] underline hover:text-[#a06d54] transition-colors"
             >
               Product details
             </Link>
