@@ -51,25 +51,25 @@ export class UsersController {
   constructor(
     userProfileService: UserProfileService,
     userRepository: IUserRepository,
-    addressRepository: IAddressRepository
+    addressRepository: IAddressRepository,
   ) {
     this.getProfileHandler = new GetUserProfileHandler(userProfileService);
     this.getUserDetailsHandler = new GetUserDetailsHandler(
       userRepository,
-      addressRepository
+      addressRepository,
     );
     this.listUsersHandler = new ListUsersHandler(userRepository);
     this.updateUserStatusHandler = new UpdateUserStatusHandler(userRepository);
     this.updateUserRoleHandler = new UpdateUserRoleHandler(userRepository);
     this.deleteUserHandler = new DeleteUserHandler(userRepository);
     this.toggleUserEmailVerifiedHandler = new ToggleUserEmailVerifiedHandler(
-      userRepository
+      userRepository,
     );
   }
 
   async getUser(
     request: FastifyRequest<{ Params: { userId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { userId } = request.params;
@@ -128,7 +128,7 @@ export class UsersController {
 
   async getCurrentUser(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       // Extract user info from JWT token (assuming middleware sets it)
@@ -198,7 +198,7 @@ export class UsersController {
         sortOrder?: string;
       };
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const {
@@ -313,7 +313,7 @@ export class UsersController {
       Params: { userId: string };
       Body: { status: string; notes?: string };
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { userId } = request.params;
@@ -332,7 +332,7 @@ export class UsersController {
         reply.status(400).send({
           success: false,
           error: `Invalid status. Must be one of: ${Object.values(
-            UserStatus
+            UserStatus,
           ).join(", ")}`,
           errors: ["status"],
         });
@@ -377,7 +377,7 @@ export class UsersController {
       Params: { userId: string };
       Body: { role: UserRole; reason?: string };
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { userId } = request.params;
@@ -440,7 +440,7 @@ export class UsersController {
       Params: { userId: string };
       Body: { isVerified: boolean; reason?: string };
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { userId } = request.params;
@@ -483,7 +483,7 @@ export class UsersController {
 
   async deleteUser(
     request: FastifyRequest<{ Params: { userId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { userId } = request.params;
