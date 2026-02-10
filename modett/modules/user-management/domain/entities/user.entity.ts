@@ -28,7 +28,13 @@ export class User {
     private updatedAt: Date,
     private twoFactorEnabled: boolean,
     private twoFactorSecret: string | null,
-    private twoFactorBackupCodes: string[]
+    private twoFactorBackupCodes: string[],
+    private firstName: string | null = null,
+    private lastName: string | null = null,
+    private title: string | null = null,
+    private dateOfBirth: Date | null = null,
+    private residentOf: string | null = null,
+    private nationality: string | null = null,
   ) {}
 
   // Factory methods for creation
@@ -52,7 +58,9 @@ export class User {
       now,
       false, // twoFactorEnabled
       null, // twoFactorSecret
-      [] // twoFactorBackupCodes
+      [], // twoFactorBackupCodes
+      data.firstName || null,
+      data.lastName || null,
     );
   }
 
@@ -64,18 +72,18 @@ export class User {
     return new User(
       userId,
       guestEmail,
-      "", // No password for guest
+      "",
       null,
-      UserRole.GUEST, // Guests have GUEST role
+      UserRole.GUEST,
       UserStatus.ACTIVE,
       false,
       false,
-      true, // Is guest
+      true,
       now,
       now,
-      false, // twoFactorEnabled
-      null, // twoFactorSecret
-      [] // twoFactorBackupCodes
+      false,
+      null,
+      [],
     );
   }
 
@@ -94,7 +102,13 @@ export class User {
       data.updatedAt,
       data.twoFactorEnabled,
       data.twoFactorSecret,
-      data.twoFactorBackupCodes
+      data.twoFactorBackupCodes,
+      data.firstName,
+      data.lastName,
+      data.title || null,
+      data.dateOfBirth || null,
+      data.residentOf || null,
+      data.nationality || null,
     );
   }
 
@@ -114,7 +128,13 @@ export class User {
       row.updated_at,
       row.two_factor_enabled,
       row.two_factor_secret,
-      row.two_factor_backup_codes
+      row.two_factor_backup_codes,
+      row.first_name || null,
+      row.last_name || null,
+      row.title || null,
+      row.date_of_birth || null,
+      row.resident_of || null,
+      row.nationality || null,
     );
   }
 
@@ -160,6 +180,24 @@ export class User {
   }
   getTwoFactorBackupCodes(): string[] {
     return this.twoFactorBackupCodes;
+  }
+  getFirstName(): string | null {
+    return this.firstName;
+  }
+  getLastName(): string | null {
+    return this.lastName;
+  }
+  getTitle(): string | null {
+    return this.title;
+  }
+  getDateOfBirth(): Date | null {
+    return this.dateOfBirth;
+  }
+  getResidentOf(): string | null {
+    return this.residentOf;
+  }
+  getNationality(): string | null {
+    return this.nationality;
   }
 
   // Business logic methods
@@ -318,6 +356,23 @@ export class User {
     this.touch();
   }
 
+  updateProfile(
+    firstName: string | null,
+    lastName: string | null,
+    title?: string | null,
+    dateOfBirth?: Date | null,
+    residentOf?: string | null,
+    nationality?: string | null,
+  ): void {
+    this.firstName = firstName;
+    this.lastName = lastName;
+    if (title !== undefined) this.title = title;
+    if (dateOfBirth !== undefined) this.dateOfBirth = dateOfBirth;
+    if (residentOf !== undefined) this.residentOf = residentOf;
+    if (nationality !== undefined) this.nationality = nationality;
+    this.touch();
+  }
+
   // Validation methods
   canLogin(): boolean {
     return this.status === UserStatus.ACTIVE && !this.isGuest;
@@ -361,6 +416,12 @@ export class User {
       twoFactorEnabled: this.twoFactorEnabled,
       twoFactorSecret: this.twoFactorSecret,
       twoFactorBackupCodes: this.twoFactorBackupCodes,
+      firstName: this.firstName,
+      lastName: this.lastName,
+      title: this.title,
+      dateOfBirth: this.dateOfBirth,
+      residentOf: this.residentOf,
+      nationality: this.nationality,
     };
   }
 
@@ -381,6 +442,12 @@ export class User {
       two_factor_enabled: this.twoFactorEnabled,
       two_factor_secret: this.twoFactorSecret,
       two_factor_backup_codes: this.twoFactorBackupCodes,
+      first_name: this.firstName,
+      last_name: this.lastName,
+      title: this.title,
+      date_of_birth: this.dateOfBirth,
+      resident_of: this.residentOf,
+      nationality: this.nationality,
     };
   }
 
@@ -402,6 +469,8 @@ export interface CreateUserData {
   phone?: string;
   role?: UserRole;
   isGuest?: boolean;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface UserData {
@@ -419,6 +488,12 @@ export interface UserData {
   twoFactorEnabled: boolean;
   twoFactorSecret: string | null;
   twoFactorBackupCodes: string[];
+  firstName: string | null;
+  lastName: string | null;
+  title?: string | null;
+  dateOfBirth?: Date | null;
+  residentOf?: string | null;
+  nationality?: string | null;
 }
 
 // Database row interface matching PostgreSQL schema
@@ -437,4 +512,10 @@ export interface UserRow {
   two_factor_enabled: boolean;
   two_factor_secret: string | null;
   two_factor_backup_codes: string[];
+  first_name?: string | null;
+  last_name?: string | null;
+  title?: string | null;
+  date_of_birth?: Date | null;
+  resident_of?: string | null;
+  nationality?: string | null;
 }
