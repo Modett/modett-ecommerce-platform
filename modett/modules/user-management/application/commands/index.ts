@@ -34,6 +34,7 @@ export { ChangePasswordHandler } from "./change-password.command.js";
 export { InitiatePasswordResetHandler } from "./initiate-password-reset.command.js";
 export { ResetPasswordHandler } from "./reset-password.command.js";
 export { VerifyEmailHandler } from "./verify-email.command.js";
+
 export { UpdateUserStatusHandler } from "./update-user-status.command.js";
 export { UpdateUserRoleHandler } from "./update-user-role.command.js";
 export { DeleteUserHandler } from "./delete-user.command.js";
