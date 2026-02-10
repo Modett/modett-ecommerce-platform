@@ -57,7 +57,7 @@ export class PurchaseOrder {
   updateStatus(newStatus: PurchaseOrderStatusVO): PurchaseOrder {
     if (!this.props.status.canTransitionTo(newStatus)) {
       throw new Error(
-        `Cannot transition from ${this.props.status.getValue()} to ${newStatus.getValue()}`
+        `Cannot transition from ${this.props.status.getValue()} to ${newStatus.getValue()}`,
       );
     }
     return new PurchaseOrder({
