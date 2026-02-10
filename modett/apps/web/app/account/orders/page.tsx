@@ -7,6 +7,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { AccountSidebar } from "@/features/account/components/account-sidebar";
 import { OrderList } from "@/features/account/components/order-list";
+import { BackToAccountLink } from "@/features/account/components/back-to-account-link";
 
 export default function OrderHistoryPage() {
   const [activeFilter, setActiveFilter] = useState("all");
@@ -26,19 +27,13 @@ export default function OrderHistoryPage() {
     <div className="w-full min-h-screen bg-[#EFECE5]">
       {/* Top Strip - Back Link */}
       <div className="w-full flex justify-center border-t border-b border-[#C3B0A5]/30">
-        <div className="w-full max-w-[1438px] px-[115px] py-[32px]">
-          <Link
-            href="/account"
-            className="text-[16px] text-[#765C4D] hover:text-[#5e493d] transition-colors w-fit flex items-center gap-2"
-            style={{ fontFamily: "Raleway, sans-serif" }}
-          >
-            Back to Modett Account
-          </Link>
+        <div className="w-full max-w-[1440px] px-4 md:px-[60px] py-[32px]">
+          <BackToAccountLink />
         </div>
       </div>
 
       {/* Main Content Layout */}
-      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[140px] pt-[56px] pb-20">
+      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-[60px] pt-[56px] pb-20">
         <div className="flex flex-col md:flex-row gap-6 lg:gap-12">
           {/* Left Sidebar */}
           <AccountSidebar />
