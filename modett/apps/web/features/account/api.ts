@@ -6,7 +6,7 @@ const accountApiClient = axios.create({
   baseURL:
     process.env.NEXT_PUBLIC_API_URL?.replace("/catalog", "") ||
     "http://localhost:3001/api/v1",
-  timeout: 30000,
+  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -26,7 +26,7 @@ const getAuthHeaders = async (): Promise<Record<string, string>> => {
 
 export const getUserProfile = async (): Promise<UserProfile> => {
   const headers = await getAuthHeaders();
-  const { data } = await accountApiClient.get("/auth/me", { headers });
+  const { data } = await accountApiClient.get("/users/me", { headers });
   return data.data;
 };
 
@@ -60,4 +60,89 @@ export const getMyOrders = async (params?: {
   }
 
   return [];
+};
+
+export const changePassword = async (passwordData: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<{ success: boolean; message: string }> => {
+  const headers = await getAuthHeaders();
+  const { data } = await accountApiClient.post(
+    "/auth/change-password",
+    passwordData,
+    { headers },
+  );
+  return data;
+};
+
+export const changeEmail = async (emailData: {
+  newEmail: string;
+  password: string;
+}): Promise<{ success: boolean; message: string }> => {
+  const headers = await getAuthHeaders();
+  const { data } = await accountApiClient.post(
+    "/auth/change-email",
+    emailData,
+    { headers },
+  );
+  return data;
+};
+
+export const deleteAccount = async (
+  password: string,
+): Promise<{ success: boolean; message: string }> => {
+  const headers = await getAuthHeaders();
+  const { data } = await accountApiClient.post(
+    "/auth/delete-account",
+    { password },
+    { headers },
+  );
+  return data;
+};
+
+// Address Management
+export const getProvinces = async () => {
+  const response = await accountApiClient.get("/master/provinces");
+  return response.data;
+};
+
+export const getAddresses = async () => {
+  const headers = await getAuthHeaders();
+  const { data } = await accountApiClient.get("/addresses/me", { headers });
+  // Ensure we return an array, handling potential wrapping in data property
+  return Array.isArray(data.data) ? data.data : [];
+};
+
+export const createAddress = async (addressData: any) => {
+  const headers = await getAuthHeaders();
+  const { data } = await accountApiClient.post("/addresses/me", addressData, {
+    headers,
+  });
+  return data.data;
+};
+
+export const updateAddress = async (id: string, addressData: any) => {
+  const headers = await getAuthHeaders();
+  const { data } = await accountApiClient.put(
+    `/addresses/me/${id}`,
+    addressData,
+    {
+      headers,
+    },
+  );
+  return data.data;
+};
+
+export const deleteAddress = async (id: string) => {
+  const headers = await getAuthHeaders();
+  await accountApiClient.delete(`/addresses/me/${id}`, { headers });
+};
+
+export const setDefaultAddress = async (
+  id: string,
+  type: "shipping" | "billing",
+) => {
+  // Reuse updateAddress since there is no dedicated set-default endpoint
+  return updateAddress(id, { type, isDefault: true });
 };

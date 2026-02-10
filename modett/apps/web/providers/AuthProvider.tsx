@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
-        }
+        },
       );
 
       const authData = await response.json();
@@ -115,13 +115,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const storedCartId = getStoredCartId();
       console.log(
         "🛒 [AuthProvider] Stored Cart ID after transfer:",
-        storedCartId
+        storedCartId,
       );
 
       if (!storedCartId) {
         try {
           console.log(
-            "🛒 [AuthProvider] No local cart found. Fetching active cart from backend..."
+            "🛒 [AuthProvider] No local cart found. Fetching active cart from backend...",
           );
           const restoredCart = await getActiveCartByUser(user.id);
           console.log("🛒 [AuthProvider] Restored cart result:", restoredCart);
@@ -161,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             tempToken: twoFactorChallenge.tempToken,
             token: code,
           }),
-        }
+        },
       );
 
       const authData = await response.json();
@@ -233,7 +233,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password, firstName, lastName }),
-        }
+        },
       );
 
       const authData = await response.json();
@@ -326,16 +326,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
 
-        if (!response.ok) {
-          // Token is invalid, clear it
+        // Only clear token on authentication errors (401, 403)
+        // Keep token for network errors or server errors (user stays logged in)
+        if (response.status === 401 || response.status === 403) {
+          console.log("Token is invalid or expired, logging out");
           localStorage.removeItem("authToken");
           setAuthState({
             user: null,
             isLoading: false,
             isAuthenticated: false,
+          });
+          return;
+        }
+
+        // If server error or network issue, keep user logged in but mark as loading complete
+        if (!response.ok) {
+          console.warn(
+            `Auth verification failed with status ${response.status}, keeping user logged in`,
+          );
+          setAuthState({
+            user: authState.user, // Keep existing user state
+            isLoading: false,
+            isAuthenticated: !!token, // Still authenticated if token exists
           });
           return;
         }
@@ -359,17 +374,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             isAuthenticated: true,
           });
         } else {
-          localStorage.removeItem("authToken");
+          // Invalid response format, but don't log out - might be temporary issue
+          console.warn("Invalid auth response format, keeping user logged in");
           setAuthState({
-            user: null,
+            user: authState.user,
             isLoading: false,
-            isAuthenticated: false,
+            isAuthenticated: !!token,
           });
         }
       } catch (error) {
-        console.error("Failed to restore auth:", error);
-        localStorage.removeItem("authToken");
-        setAuthState({ user: null, isLoading: false, isAuthenticated: false });
+        // Network error or server unavailable - keep user logged in
+        console.warn(
+          "Failed to restore auth (network error), keeping user logged in:",
+          error,
+        );
+        setAuthState({
+          user: authState.user,
+          isLoading: false,
+          isAuthenticated: !!token,
+        });
       }
     };
 

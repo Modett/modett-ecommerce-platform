@@ -2,7 +2,7 @@
 
 import { DashboardCard } from "./dashboard-card";
 import { AccountNavigation } from "./account-nav";
-import { ACCOUNT_CLASSES, ACCOUNT_COLORS } from "../constants/styles";
+import { ACCOUNT_CLASSES, ACCOUNT_COLORS } from "../../constants/styles";
 import { useWishlistId, useWishlistItems } from "@/features/engagement/queries";
 
 export const AccountDashboard = () => {

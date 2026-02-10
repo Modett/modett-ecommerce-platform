@@ -330,6 +330,78 @@ export class AuthenticationService {
     await this.userRepository.update(user);
   }
 
+  async changeEmail(
+    userId: string,
+    newEmail: string,
+    password: string
+  ): Promise<void> {
+    const userIdVo = UserId.fromString(userId);
+    const user = await this.userRepository.findById(userIdVo);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.getIsGuest()) {
+      throw new Error("Guest users cannot change email");
+    }
+
+    // Verify password for security
+    const currentPasswordHash = user.getPasswordHash();
+    if (!currentPasswordHash) {
+      throw new Error("User has no password set");
+    }
+
+    const isPasswordValid = await this.passwordHasher.verify(
+      password,
+      currentPasswordHash
+    );
+
+    if (!isPasswordValid) {
+      throw new Error("Password is incorrect");
+    }
+
+    // Check if new email is already in use
+    const emailVo = Email.fromString(newEmail);
+    const existingUser = await this.userRepository.findByEmail(emailVo);
+
+    if (existingUser && existingUser.getId().toString() !== userId) {
+      throw new Error("Email is already in use");
+    }
+
+    // Update email (this will also reset emailVerified to false)
+    user.updateEmail(newEmail);
+
+    await this.userRepository.update(user);
+  }
+
+  async verifyUserPassword(userId: string, password: string): Promise<void> {
+    const userIdVo = UserId.fromString(userId);
+    const user = await this.userRepository.findById(userIdVo);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.getIsGuest()) {
+      throw new Error("Guest users do not have passwords");
+    }
+
+    const currentPasswordHash = user.getPasswordHash();
+    if (!currentPasswordHash) {
+      throw new Error("User has no password set");
+    }
+
+    const isPasswordValid = await this.passwordHasher.verify(
+      password,
+      currentPasswordHash
+    );
+
+    if (!isPasswordValid) {
+      throw new Error("Password is incorrect");
+    }
+  }
+
   async register(userData: RegisterUserData): Promise<AuthResult> {
     const email = new Email(userData.email);
 

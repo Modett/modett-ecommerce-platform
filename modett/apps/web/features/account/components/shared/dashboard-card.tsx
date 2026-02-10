@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ACCOUNT_CLASSES } from "../constants/styles";
+import { ACCOUNT_CLASSES } from "../../constants/styles";
 
 interface DashboardCardProps {
   title: string;

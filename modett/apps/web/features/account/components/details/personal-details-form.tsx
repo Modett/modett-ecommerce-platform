@@ -10,10 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ACCOUNT_COLORS } from "../constants/styles";
-import { COUNTRIES, TITLES } from "../constants/form-options";
+import {
+  ACCOUNT_COLORS,
+  FORM_CLASSES,
+  FORM_FONT,
+} from "../../constants/styles";
+import { COUNTRIES, TITLES } from "../../constants/form-options";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getUserProfile, updateUserProfile } from "../api";
+import { getUserProfile, updateUserProfile } from "../../api";
 import { toast } from "sonner";
 import { useEffect } from "react";
 
@@ -57,6 +61,7 @@ export const PersonalDetailsForm = () => {
       reset({
         firstName: userProfile.firstName || "",
         lastName: userProfile.lastName || "",
+        currentEmail: userProfile.email || "",
       });
 
       // Set title if available
@@ -106,13 +111,13 @@ export const PersonalDetailsForm = () => {
       <div className="mb-12">
         <h2
           className="text-[20px] leading-[28px] font-normal text-[#765C4D] mb-6"
-          style={{ fontFamily: "Raleway, sans-serif" }}
+          style={FORM_FONT}
         >
           Personal Details
         </h2>
         <p
           className="text-[14px] leading-[24px] font-normal text-[#765C4D]"
-          style={{ fontFamily: "Raleway, sans-serif" }}
+          style={FORM_FONT}
         >
           Mr. Name update your account preferences below.
         </p>
@@ -122,26 +127,23 @@ export const PersonalDetailsForm = () => {
         <div className="flex justify-end">
           <span
             className="text-[12px] leading-[18px] font-normal text-[#765C4D]"
-            style={{ fontFamily: "Raleway, sans-serif" }}
+            style={FORM_FONT}
           >
             * Required fields
           </span>
         </div>
 
-        <div className="bg-[#F8F5F2] pt-[56px] px-[24px] pb-[32px] space-y-8">
+        <div className={FORM_CLASSES.sectionCard}>
           {/* Title */}
           <div className="space-y-0">
-            <label
-              className="text-[10px] leading-[16px] font-semibold text-[#765C4D] tracking-[1.03px] block"
-              style={{ fontFamily: "Raleway, sans-serif" }}
-            >
+            <label className={FORM_CLASSES.label} style={FORM_FONT}>
               * Title:
             </label>
             <Select
               value={watch("title")}
               onValueChange={(value) => setValue("title", value)}
             >
-              <SelectTrigger className="w-full h-[34px] border-0 border-b border-[#BBA496] rounded-none px-2 bg-transparent text-[#765C4D] focus:ring-0 focus:border-[#765C4D]">
+              <SelectTrigger className={FORM_CLASSES.selectTrigger}>
                 <SelectValue placeholder="Select title..." />
               </SelectTrigger>
               <SelectContent>
@@ -157,46 +159,50 @@ export const PersonalDetailsForm = () => {
           {/* Name Fields Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-0">
-              <label
-                className="text-[10px] leading-[16px] font-semibold text-[#765C4D] tracking-[1.03px] block"
-                style={{ fontFamily: "Raleway, sans-serif" }}
-              >
+              <label className={FORM_CLASSES.label} style={FORM_FONT}>
                 * First name:
               </label>
               <Input
-                className="h-[34px] border-0 border-b border-[#BBA496] rounded-none px-2 bg-transparent text-[#765C4D] focus-visible:ring-0 focus-visible:border-[#765C4D] placeholder:text-[#765C4D]/50"
+                className={FORM_CLASSES.input}
                 placeholder="Name"
                 {...register("firstName")}
               />
             </div>
             <div className="space-y-0">
-              <label
-                className="text-[10px] leading-[16px] font-semibold text-[#765C4D] tracking-[1.03px] block"
-                style={{ fontFamily: "Raleway, sans-serif" }}
-              >
+              <label className={FORM_CLASSES.label} style={FORM_FONT}>
                 * Surname:
               </label>
               <Input
-                className="h-[34px] border-0 border-b border-[#BBA496] rounded-none px-2 bg-transparent text-[#765C4D] focus-visible:ring-0 focus-visible:border-[#765C4D] placeholder:text-[#765C4D]/50"
+                className={FORM_CLASSES.input}
                 placeholder="Name"
                 {...register("lastName")}
               />
             </div>
           </div>
 
+          {/* Current Email */}
+          <div className="space-y-0">
+            <label className={FORM_CLASSES.label} style={FORM_FONT}>
+              * Current Email:
+            </label>
+            <Input
+              className={FORM_CLASSES.input}
+              placeholder="Email"
+              disabled
+              {...register("currentEmail")}
+            />
+          </div>
+
           {/* Resident of */}
           <div className="space-y-0">
-            <label
-              className="text-[10px] leading-[16px] font-semibold text-[#765C4D] tracking-[1.03px] block"
-              style={{ fontFamily: "Raleway, sans-serif" }}
-            >
+            <label className={FORM_CLASSES.label} style={FORM_FONT}>
               Resident of:
             </label>
             <Select
               value={watch("residentOf")}
               onValueChange={(value) => setValue("residentOf", value)}
             >
-              <SelectTrigger className="w-full h-[34px] border-0 border-b border-[#BBA496] rounded-none px-2 bg-transparent text-[#765C4D] focus:ring-0 focus:border-[#765C4D]">
+              <SelectTrigger className={FORM_CLASSES.selectTrigger}>
                 <SelectValue placeholder="Select country..." />
               </SelectTrigger>
               <SelectContent>
@@ -219,7 +225,7 @@ export const PersonalDetailsForm = () => {
                 value={watch("dobDay")}
                 onValueChange={(value) => setValue("dobDay", value)}
               >
-                <SelectTrigger className="w-full h-[34px] border-0 border-b border-[#BBA496] rounded-none px-2 bg-transparent text-[#765C4D] focus:ring-0 focus:border-[#765C4D]">
+                <SelectTrigger className={FORM_CLASSES.selectTrigger}>
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -239,7 +245,7 @@ export const PersonalDetailsForm = () => {
                 value={watch("dobMonth")}
                 onValueChange={(value) => setValue("dobMonth", value)}
               >
-                <SelectTrigger className="w-full h-[34px] border-0 border-b border-[#BBA496] rounded-none px-2 bg-transparent text-[#765C4D] focus:ring-0 focus:border-[#765C4D]">
+                <SelectTrigger className={FORM_CLASSES.selectTrigger}>
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -259,7 +265,7 @@ export const PersonalDetailsForm = () => {
                 value={watch("dobYear")}
                 onValueChange={(value) => setValue("dobYear", value)}
               >
-                <SelectTrigger className="w-full h-[34px] border-0 border-b border-[#BBA496] rounded-none px-2 bg-transparent text-[#765C4D] focus:ring-0 focus:border-[#765C4D]">
+                <SelectTrigger className={FORM_CLASSES.selectTrigger}>
                   <SelectValue placeholder="Select..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -275,17 +281,14 @@ export const PersonalDetailsForm = () => {
 
           {/* Nationality/Passport */}
           <div className="space-y-0">
-            <label
-              className="text-[10px] leading-[16px] font-semibold text-[#765C4D] tracking-[1.03px] block"
-              style={{ fontFamily: "Raleway, sans-serif" }}
-            >
+            <label className={FORM_CLASSES.label} style={FORM_FONT}>
               Nationality/Passport:
             </label>
             <Select
               value={watch("nationality")}
               onValueChange={(value) => setValue("nationality", value)}
             >
-              <SelectTrigger className="w-full h-[34px] border-0 border-b border-[#BBA496] rounded-none px-2 bg-transparent text-[#765C4D] focus:ring-0 focus:border-[#765C4D]">
+              <SelectTrigger className={FORM_CLASSES.selectTrigger}>
                 <SelectValue placeholder="Select nationality..." />
               </SelectTrigger>
               <SelectContent>
@@ -300,10 +303,7 @@ export const PersonalDetailsForm = () => {
 
           {/* Submit Button */}
           <div className="pt-8">
-            <Button
-              type="submit"
-              className="w-full h-[48px] bg-[#F5F3EF] border border-[#C0B8A9] text-[#765C4D] hover:bg-[#D3CDC1] hover:text-[#765C4D] uppercase tracking-[2px] text-[12px] font-medium"
-            >
+            <Button type="submit" className={FORM_CLASSES.submitBtn}>
               SAVE DETAILS
             </Button>
           </div>

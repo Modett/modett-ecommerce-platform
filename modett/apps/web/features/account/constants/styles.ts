@@ -12,6 +12,25 @@ export const ACCOUNT_FONTS = {
   sans: "var(--font-raleway), sans-serif",
 } as const;
 
+/* ── Shared form style tokens (used across all account forms) ── */
+export const FORM_FONT = { fontFamily: "Raleway, sans-serif" } as const;
+
+export const FORM_CLASSES = {
+  label:
+    "text-[10px] leading-[16px] font-semibold text-[#765C4D] tracking-[1.03px] block",
+  input:
+    "h-[34px] border-0 border-b border-[#BBA496] rounded-none px-2 bg-transparent text-[#765C4D] focus-visible:ring-0 focus-visible:border-[#765C4D] placeholder:text-[#765C4D]/50",
+  selectTrigger:
+    "w-full h-[34px] border-0 border-b border-[#BBA496] rounded-none px-2 bg-transparent text-[#765C4D] focus:ring-0 focus:border-[#765C4D]",
+  submitBtn:
+    "w-full h-[48px] bg-[#F5F3EF] border border-[#C0B8A9] text-[#765C4D] hover:bg-[#D3CDC1] hover:text-[#765C4D] uppercase tracking-[2px] text-[12px] font-medium",
+  saveBtn:
+    "w-full h-[48px] bg-[#C0A080] border border-[#C0A080] text-white hover:bg-[#a88a6c] uppercase tracking-[2px] text-[12px] font-medium",
+  sectionCard: "bg-[#F8F5F2] pt-[56px] px-[24px] pb-[32px] space-y-8",
+  sectionTitle: "text-[18px] leading-[26px] font-normal text-[#765C4D] mb-2",
+  sectionDesc: "text-[13px] leading-[22px] font-normal text-[#765C4D]/80",
+} as const;
+
 export const ACCOUNT_CLASSES = {
   pageContainer:
     "min-h-screen flex flex-col items-center pt-[126px] pb-[80px] px-8",

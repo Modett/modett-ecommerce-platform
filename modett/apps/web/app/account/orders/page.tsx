@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { useMyOrders } from "@/features/account/queries";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { AccountSidebar } from "@/features/account/components/account-sidebar";
-import { OrderList } from "@/features/account/components/order-list";
-import { BackToAccountLink } from "@/features/account/components/back-to-account-link";
+import { AccountSidebar } from "@/features/account/components/shared/account-sidebar";
+import { OrderList } from "@/features/account/components/orders/order-list";
+import { BackToAccountLink } from "@/features/account/components/shared/back-to-account-link";
 
 export default function OrderHistoryPage() {
   const [activeFilter, setActiveFilter] = useState("all");

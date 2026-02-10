@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { format } from "date-fns";
 import { ChevronRight } from "lucide-react";
-import { type OrderSummary } from "../types";
+import { type OrderSummary } from "../../types";
 import { useQuery } from "@tanstack/react-query";
 import { backendApiClient } from "@/lib/backend-api-client";
 
@@ -16,11 +16,14 @@ interface OrderListProps {
 // Helper component to fetch and display product image
 function OrderItemImage({ productId }: { productId: string }) {
   const { data, isLoading } = useQuery({
-    queryKey: ['product-image', productId],
+    queryKey: ["product-image", productId],
     queryFn: async () => {
-      const response = await backendApiClient.get(`/catalog/products/${productId}`);
-      const imageUrl = response.data?.data?.images?.[0]?.url || '/images/products/product-1.jpg';
-      console.log('🖼️ Product:', productId, '| Image URL:', imageUrl);
+      const response = await backendApiClient.get(
+        `/catalog/products/${productId}`,
+      );
+      const imageUrl =
+        response.data?.data?.images?.[0]?.url ||
+        "/images/products/product-1.jpg";
       return imageUrl;
     },
     staleTime: 1000 * 60 * 60, // Cache for 1 hour
@@ -31,13 +34,7 @@ function OrderItemImage({ productId }: { productId: string }) {
   }
 
   return (
-    <Image
-      src={data}
-      alt="Product"
-      fill
-      className="object-cover"
-      unoptimized
-    />
+    <Image src={data} alt="Product" fill className="object-cover" unoptimized />
   );
 }
 

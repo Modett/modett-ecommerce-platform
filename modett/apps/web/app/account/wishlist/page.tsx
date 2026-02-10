@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { useWishlistId, useWishlistItems } from "@/features/engagement/queries";
 import { WishlistProductCard } from "@/features/engagement/components/wishlist-product-card";
-import { BackToAccountLink } from "../../../features/account/components/back-to-account-link";
+import { BackToAccountLink } from "@/features/account/components/shared/back-to-account-link";
 
 interface WishlistItemWithProduct {
   variantId: string;

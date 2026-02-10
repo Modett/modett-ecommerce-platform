@@ -2,9 +2,9 @@
 
 import { AccountSidebar } from "@/features/account/components/shared/account-sidebar";
 import { BackToAccountLink } from "@/features/account/components/shared/back-to-account-link";
-import { PersonalDetailsForm } from "@/features/account/components/details/personal-details-form";
+import { LoginDetailsForm } from "@/features/account/components/user-details/login-details-form";
 
-export default function PersonalDetailsPage() {
+export default function UserDetailsPage() {
   return (
     <div className="w-full min-h-screen bg-[#EFECE5]">
       {/* Top Strip - Back Link */}
@@ -22,7 +22,7 @@ export default function PersonalDetailsPage() {
 
           {/* Right Content */}
           <div className="flex-1 max-w-[745px]">
-            <PersonalDetailsForm />
+            <LoginDetailsForm />
           </div>
         </div>
       </div>

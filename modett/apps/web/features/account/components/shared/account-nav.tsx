@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { ACCOUNT_CLASSES } from "../constants/styles";
+import { ACCOUNT_CLASSES } from "../../constants/styles";
 
 const NAV_ITEMS = [
   { label: "Personal Details", href: "/account/details" },
-  { label: "User Details", href: "/account/user-details" }, // Assuming a distinction or placeholder
+  { label: "User Details", href: "/account/user-details" },
   { label: "Addresses", href: "/account/addresses" },
 ];
 

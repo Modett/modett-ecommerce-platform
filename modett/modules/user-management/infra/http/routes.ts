@@ -38,7 +38,7 @@ export async function registerUserManagementRoutes(
   },
 ) {
   // Initialize controllers
-  const authController = new AuthController(services.authService);
+  const authController = new AuthController(services.authService, services.userRepository);
   const profileController = new ProfileController(services.userProfileService);
   const addressesController = new AddressesController(services.addressService);
   const usersController = new UsersController(
@@ -612,6 +612,118 @@ export async function registerUserManagementRoutes(
       },
     },
     authController.changePassword.bind(authController) as any,
+  );
+
+  fastify.post(
+    "/auth/change-email",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        tags: ["Authentication"],
+        summary: "Change Email",
+        description: "Change current user's email address",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          required: ["newEmail", "password"],
+          properties: {
+            newEmail: {
+              type: "string",
+              format: "email",
+              description: "New email address",
+            },
+            password: {
+              type: "string",
+              description: "Current password for verification",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Email changed successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: {
+                type: "string",
+                example: "Email changed successfully. Please verify your new email address.",
+              },
+            },
+          },
+          400: {
+            description: "Bad request",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+              errors: { type: "array", items: { type: "string" } },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Invalid access token" },
+            },
+          },
+        },
+      },
+    },
+    authController.changeEmail.bind(authController) as any,
+  );
+
+  fastify.post(
+    "/auth/delete-account",
+    {
+      preHandler: authenticateUser,
+      schema: {
+        tags: ["Authentication"],
+        summary: "Delete Account",
+        description: "Permanently delete the current user's account",
+        security: [{ bearerAuth: [] }],
+        body: {
+          type: "object",
+          required: ["password"],
+          properties: {
+            password: {
+              type: "string",
+              description: "Current password for verification",
+            },
+          },
+        },
+        response: {
+          200: {
+            description: "Account deleted successfully",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: true },
+              message: {
+                type: "string",
+                example: "Account has been deleted successfully.",
+              },
+            },
+          },
+          400: {
+            description: "Bad request",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string" },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            type: "object",
+            properties: {
+              success: { type: "boolean", example: false },
+              error: { type: "string", example: "Invalid access token" },
+            },
+          },
+        },
+      },
+    },
+    authController.deleteAccount.bind(authController) as any,
   );
 
   // User Routes (Protected)

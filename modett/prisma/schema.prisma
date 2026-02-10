@@ -65,6 +65,28 @@ model User {
   @@schema("user_management")
 }
 
+enum UserRole {
+  GUEST
+  CUSTOMER
+  ADMIN
+  INVENTORY_STAFF
+  CUSTOMER_SERVICE
+  ANALYST
+  VENDOR
+
+  @@map("user_role")
+  @@schema("user_management")
+}
+
+enum UserStatus {
+  active
+  inactive
+  blocked
+
+  @@map("user_status")
+  @@schema("user_management")
+}
+
 model SocialLogin {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @map("social_id") @db.Uuid
   userId         String   @map("user_id") @db.Uuid
@@ -1112,28 +1134,6 @@ model NewsletterSubscription {
 
   @@map("newsletter_subscriptions")
   @@schema("engagement")
-}
-
-enum UserStatus {
-  active
-  inactive
-  blocked
-
-  @@map("user_status_enum")
-  @@schema("user_management")
-}
-
-enum UserRole {
-  GUEST
-  CUSTOMER
-  ADMIN
-  INVENTORY_STAFF
-  CUSTOMER_SERVICE
-  ANALYST
-  VENDOR
-
-  @@map("user_role_enum")
-  @@schema("user_management")
 }
 
 enum ProductStatusEnum {
