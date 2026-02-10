@@ -35,7 +35,7 @@ export async function registerUserManagementRoutes(
     paymentMethodService?: PaymentMethodService;
     userRepository: IUserRepository;
     addressRepository: IAddressRepository;
-  }
+  },
 ) {
   // Initialize controllers
   const authController = new AuthController(services.authService);
@@ -44,10 +44,10 @@ export async function registerUserManagementRoutes(
   const usersController = new UsersController(
     services.userProfileService,
     services.userRepository,
-    services.addressRepository
+    services.addressRepository,
   );
   const paymentMethodsController = new PaymentMethodsController(
-    services.paymentMethodService
+    services.paymentMethodService,
   );
   const socialLoginController = new SocialLoginController();
 
@@ -170,7 +170,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.register.bind(authController)
+    authController.register.bind(authController),
   );
 
   fastify.post(
@@ -197,7 +197,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.login.bind(authController)
+    authController.login.bind(authController),
   );
 
   fastify.post(
@@ -230,7 +230,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.logout.bind(authController)
+    authController.logout.bind(authController),
   );
 
   fastify.post(
@@ -252,7 +252,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.refreshToken.bind(authController)
+    authController.refreshToken.bind(authController),
   );
 
   // 2FA Routes
@@ -284,7 +284,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.generateTwoFactorSecret.bind(authController) as any
+    authController.generateTwoFactorSecret.bind(authController) as any,
   );
 
   fastify.post(
@@ -331,7 +331,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.enableTwoFactor.bind(authController) as any
+    authController.enableTwoFactor.bind(authController) as any,
   );
 
   fastify.post(
@@ -366,7 +366,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.verifyTwoFactor.bind(authController) as any
+    authController.verifyTwoFactor.bind(authController) as any,
   );
 
   fastify.post(
@@ -421,7 +421,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.loginWith2fa.bind(authController) as any
+    authController.loginWith2fa.bind(authController) as any,
   );
 
   fastify.post(
@@ -452,7 +452,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.disableTwoFactor.bind(authController) as any
+    authController.disableTwoFactor.bind(authController) as any,
   );
 
   fastify.post(
@@ -481,7 +481,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.forgotPassword.bind(authController)
+    authController.forgotPassword.bind(authController),
   );
 
   fastify.post(
@@ -513,7 +513,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.resetPassword.bind(authController)
+    authController.resetPassword.bind(authController),
   );
 
   fastify.post(
@@ -535,7 +535,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.verifyEmail.bind(authController)
+    authController.verifyEmail.bind(authController),
   );
 
   fastify.post(
@@ -558,7 +558,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.resendVerification.bind(authController)
+    authController.resendVerification.bind(authController),
   );
 
   fastify.post(
@@ -611,7 +611,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    authController.changePassword.bind(authController) as any
+    authController.changePassword.bind(authController) as any,
   );
 
   // User Routes (Protected)
@@ -686,7 +686,7 @@ export async function registerUserManagementRoutes(
       },
       preHandler: authenticateUser,
     },
-    usersController.getCurrentUser.bind(usersController)
+    usersController.getCurrentUser.bind(usersController),
   );
 
   fastify.get(
@@ -816,7 +816,7 @@ export async function registerUserManagementRoutes(
       },
       preHandler: authenticateAdmin as any,
     },
-    usersController.listUsers.bind(usersController)
+    usersController.listUsers.bind(usersController),
   );
 
   fastify.get(
@@ -874,7 +874,7 @@ export async function registerUserManagementRoutes(
       // But creating a 'getUser' usually implies admin/owner access.
       preHandler: authenticateUser,
     },
-    usersController.getUser.bind(usersController) as any
+    usersController.getUser.bind(usersController) as any,
   );
 
   fastify.patch(
@@ -933,7 +933,7 @@ export async function registerUserManagementRoutes(
       },
       preHandler: authenticateAdmin as any,
     },
-    usersController.updateStatus.bind(usersController) as any
+    usersController.updateStatus.bind(usersController) as any,
   );
 
   fastify.patch(
@@ -1000,7 +1000,7 @@ export async function registerUserManagementRoutes(
       },
       preHandler: authenticateAdmin as any,
     },
-    usersController.updateRole.bind(usersController) as any
+    usersController.updateRole.bind(usersController) as any,
   );
 
   fastify.patch(
@@ -1057,7 +1057,7 @@ export async function registerUserManagementRoutes(
       },
       preHandler: authenticateAdmin as any,
     },
-    usersController.toggleEmailVerification.bind(usersController) as any
+    usersController.toggleEmailVerification.bind(usersController) as any,
   );
 
   fastify.delete(
@@ -1095,7 +1095,7 @@ export async function registerUserManagementRoutes(
       },
       preHandler: authenticateAdmin as any,
     },
-    usersController.deleteUser.bind(usersController) as any
+    usersController.deleteUser.bind(usersController) as any,
   );
 
   // Profile Routes (Protected)
@@ -1166,7 +1166,7 @@ export async function registerUserManagementRoutes(
       },
       preHandler: authenticateUser,
     },
-    profileController.getCurrentUserProfile.bind(profileController)
+    profileController.getCurrentUserProfile.bind(profileController),
   );
 
   fastify.put(
@@ -1216,6 +1216,42 @@ export async function registerUserManagementRoutes(
               type: "object",
               description: "User's preferred sizes for different categories",
               example: { clothing: "M", shoes: "9" },
+            },
+            firstName: {
+              type: "string",
+              description: "User's first name",
+              example: "John",
+            },
+            lastName: {
+              type: "string",
+              description: "User's last name",
+              example: "Doe",
+            },
+            phone: {
+              type: "string",
+              description: "User's phone number",
+              example: "+1234567890",
+            },
+            title: {
+              type: "string",
+              description: "User's title (Mr./Mrs./Ms./Dr.)",
+              example: "Mr.",
+            },
+            dateOfBirth: {
+              type: "string",
+              format: "date",
+              description: "User's date of birth (YYYY-MM-DD)",
+              example: "1990-01-15",
+            },
+            residentOf: {
+              type: "string",
+              description: "User's country of residence",
+              example: "United States",
+            },
+            nationality: {
+              type: "string",
+              description: "User's nationality/passport country",
+              example: "United States",
             },
           },
         },
@@ -1293,7 +1329,7 @@ export async function registerUserManagementRoutes(
       },
       preHandler: authenticateUser,
     },
-    profileController.updateCurrentUserProfile.bind(profileController) as any
+    profileController.updateCurrentUserProfile.bind(profileController) as any,
   );
 
   fastify.get(
@@ -1375,7 +1411,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    profileController.getProfile.bind(profileController) as any
+    profileController.getProfile.bind(profileController) as any,
   );
 
   fastify.put(
@@ -1439,6 +1475,42 @@ export async function registerUserManagementRoutes(
               type: "object",
               description: "User's preferred sizes for different categories",
               example: { clothing: "M", shoes: "9" },
+            },
+            firstName: {
+              type: "string",
+              description: "User's first name",
+              example: "John",
+            },
+            lastName: {
+              type: "string",
+              description: "User's last name",
+              example: "Doe",
+            },
+            phone: {
+              type: "string",
+              description: "User's phone number",
+              example: "+1234567890",
+            },
+            title: {
+              type: "string",
+              description: "User's title (Mr./Mrs./Ms./Dr.)",
+              example: "Mr.",
+            },
+            dateOfBirth: {
+              type: "string",
+              format: "date",
+              description: "User's date of birth (YYYY-MM-DD)",
+              example: "1990-01-15",
+            },
+            residentOf: {
+              type: "string",
+              description: "User's country of residence",
+              example: "United States",
+            },
+            nationality: {
+              type: "string",
+              description: "User's nationality/passport country",
+              example: "United States",
             },
           },
         },
@@ -1515,7 +1587,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    profileController.updateProfile.bind(profileController) as any
+    profileController.updateProfile.bind(profileController) as any,
   );
 
   // Address Routes (Protected)
@@ -1599,7 +1671,9 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    addressesController.getCurrentUserAddresses.bind(addressesController) as any
+    addressesController.getCurrentUserAddresses.bind(
+      addressesController,
+    ) as any,
   );
 
   fastify.post(
@@ -1680,7 +1754,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    addressesController.addCurrentUserAddress.bind(addressesController) as any
+    addressesController.addCurrentUserAddress.bind(addressesController) as any,
   );
 
   fastify.get(
@@ -1707,7 +1781,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    addressesController.listAddresses.bind(addressesController) as any
+    addressesController.listAddresses.bind(addressesController) as any,
   );
 
   fastify.post(
@@ -1746,7 +1820,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    addressesController.addAddress.bind(addressesController) as any
+    addressesController.addAddress.bind(addressesController) as any,
   );
 
   // Update and Delete Address Routes (Protected)
@@ -1786,8 +1860,8 @@ export async function registerUserManagementRoutes(
       },
     },
     addressesController.updateCurrentUserAddress.bind(
-      addressesController
-    ) as any
+      addressesController,
+    ) as any,
   );
 
   fastify.delete(
@@ -1809,8 +1883,8 @@ export async function registerUserManagementRoutes(
       },
     },
     addressesController.deleteCurrentUserAddress.bind(
-      addressesController
-    ) as any
+      addressesController,
+    ) as any,
   );
 
   fastify.put(
@@ -1848,7 +1922,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    addressesController.updateAddress.bind(addressesController) as any
+    addressesController.updateAddress.bind(addressesController) as any,
   );
 
   fastify.delete(
@@ -1869,7 +1943,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    addressesController.deleteAddress.bind(addressesController) as any
+    addressesController.deleteAddress.bind(addressesController) as any,
   );
 
   // Payment Methods Routes (Protected)
@@ -1937,8 +2011,8 @@ export async function registerUserManagementRoutes(
       preHandler: authenticateUser,
     },
     paymentMethodsController.getCurrentUserPaymentMethods.bind(
-      paymentMethodsController
-    )
+      paymentMethodsController,
+    ),
   );
 
   fastify.post(
@@ -2042,8 +2116,8 @@ export async function registerUserManagementRoutes(
       preHandler: authenticateUser,
     },
     paymentMethodsController.addCurrentUserPaymentMethod.bind(
-      paymentMethodsController
-    ) as any
+      paymentMethodsController,
+    ) as any,
   );
 
   fastify.put(
@@ -2072,8 +2146,8 @@ export async function registerUserManagementRoutes(
       },
     },
     paymentMethodsController.updateCurrentUserPaymentMethod.bind(
-      paymentMethodsController
-    ) as any
+      paymentMethodsController,
+    ) as any,
   );
 
   fastify.delete(
@@ -2095,8 +2169,8 @@ export async function registerUserManagementRoutes(
       },
     },
     paymentMethodsController.deleteCurrentUserPaymentMethod.bind(
-      paymentMethodsController
-    ) as any
+      paymentMethodsController,
+    ) as any,
   );
 
   fastify.get(
@@ -2117,8 +2191,8 @@ export async function registerUserManagementRoutes(
       },
     },
     paymentMethodsController.listPaymentMethods.bind(
-      paymentMethodsController
-    ) as any
+      paymentMethodsController,
+    ) as any,
   );
 
   fastify.post(
@@ -2156,8 +2230,8 @@ export async function registerUserManagementRoutes(
       },
     },
     paymentMethodsController.addPaymentMethod.bind(
-      paymentMethodsController
-    ) as any
+      paymentMethodsController,
+    ) as any,
   );
 
   fastify.put(
@@ -2186,8 +2260,8 @@ export async function registerUserManagementRoutes(
       },
     },
     paymentMethodsController.updatePaymentMethod.bind(
-      paymentMethodsController
-    ) as any
+      paymentMethodsController,
+    ) as any,
   );
 
   fastify.delete(
@@ -2209,8 +2283,8 @@ export async function registerUserManagementRoutes(
       },
     },
     paymentMethodsController.deletePaymentMethod.bind(
-      paymentMethodsController
-    ) as any
+      paymentMethodsController,
+    ) as any,
   );
 
   // Social Login Routes
@@ -2309,7 +2383,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    socialLoginController.socialLogin.bind(socialLoginController)
+    socialLoginController.socialLogin.bind(socialLoginController),
   );
 
   fastify.get(
@@ -2356,7 +2430,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    socialLoginController.initiateOAuthFlow.bind(socialLoginController)
+    socialLoginController.initiateOAuthFlow.bind(socialLoginController),
   );
 
   fastify.get(
@@ -2413,7 +2487,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    socialLoginController.handleOAuthCallback.bind(socialLoginController)
+    socialLoginController.handleOAuthCallback.bind(socialLoginController),
   );
 
   fastify.post(
@@ -2439,7 +2513,7 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    socialLoginController.linkSocialAccount.bind(socialLoginController) as any
+    socialLoginController.linkSocialAccount.bind(socialLoginController) as any,
   );
 
   fastify.get(
@@ -2454,8 +2528,8 @@ export async function registerUserManagementRoutes(
       },
     },
     socialLoginController.getCurrentUserSocialAccounts.bind(
-      socialLoginController
-    )
+      socialLoginController,
+    ),
   );
 
   fastify.delete(
@@ -2476,7 +2550,9 @@ export async function registerUserManagementRoutes(
         },
       },
     },
-    socialLoginController.unlinkSocialAccount.bind(socialLoginController) as any
+    socialLoginController.unlinkSocialAccount.bind(
+      socialLoginController,
+    ) as any,
   );
 
   fastify.get(
@@ -2497,7 +2573,7 @@ export async function registerUserManagementRoutes(
       },
       preHandler: authenticateAdmin as any,
     },
-    socialLoginController.getUserSocialAccounts.bind(socialLoginController)
+    socialLoginController.getUserSocialAccounts.bind(socialLoginController),
   );
 
   // Development/Testing endpoint
@@ -2518,7 +2594,7 @@ export async function registerUserManagementRoutes(
           },
         },
       },
-      authController.generateTestVerificationToken.bind(authController)
+      authController.generateTestVerificationToken.bind(authController),
     );
   }
 }
