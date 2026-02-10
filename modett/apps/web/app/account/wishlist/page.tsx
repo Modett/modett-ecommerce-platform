@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { useWishlistId, useWishlistItems } from "@/features/engagement/queries";
 import { WishlistProductCard } from "@/features/engagement/components/wishlist-product-card";
+import { BackToAccountLink } from "../../../features/account/components/back-to-account-link";
 
 interface WishlistItemWithProduct {
   variantId: string;
@@ -78,13 +79,7 @@ export default function WishlistPage() {
         {/* Top Navigation Strip - Full width container with max-width content */}
         <div className="w-full flex justify-center border-t border-b border-[#C3B0A5]/30">
           <div className="w-full max-w-[1440px] px-4 md:px-[60px] h-[94px] flex items-center">
-            <Link
-              href="/account"
-              className="text-[16px] font-medium leading-[20px] tracking-[0.02em] text-[#765C4D] hover:text-[#232D35] transition-colors"
-              style={{ fontFamily: "Raleway, sans-serif" }}
-            >
-              Back to Modett Account
-            </Link>
+            <BackToAccountLink />
           </div>
         </div>
 
