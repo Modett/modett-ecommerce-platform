@@ -25,6 +25,12 @@ model SystemSetting {
 
 model User {
   id                String             @id @default(dbgenerated("gen_random_uuid()")) @map("user_id") @db.Uuid
+  firstName         String?            @map("first_name")
+  lastName          String?            @map("last_name")
+  title             String?
+  dateOfBirth       DateTime?          @map("date_of_birth") @db.Date
+  residentOf        String?            @map("resident_of")
+  nationality       String?
   email             String             @unique
   passwordHash      String?            @map("password_hash")
   phone             String?
