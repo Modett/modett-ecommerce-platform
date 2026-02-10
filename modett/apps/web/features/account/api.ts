@@ -30,6 +30,16 @@ export const getUserProfile = async (): Promise<UserProfile> => {
   return data.data;
 };
 
+export const updateUserProfile = async (
+  data: Partial<UserProfile>,
+): Promise<UserProfile> => {
+  const headers = await getAuthHeaders();
+  const response = await accountApiClient.put("/profile/me", data, {
+    headers,
+  });
+  return response.data.data;
+};
+
 export const getMyOrders = async (params?: {
   status?: string;
   page?: number;
