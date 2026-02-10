@@ -38,6 +38,8 @@ export class UserRepository implements IUserRepository {
         twoFactorSecret: data.two_factor_secret,
         twoFactorEnabled: data.two_factor_enabled,
         twoFactorBackupCodes: data.two_factor_backup_codes,
+        firstName: data.first_name,
+        lastName: data.last_name,
       },
     });
   }
@@ -114,6 +116,12 @@ export class UserRepository implements IUserRepository {
         twoFactorSecret: data.two_factor_secret,
         twoFactorEnabled: data.two_factor_enabled,
         twoFactorBackupCodes: data.two_factor_backup_codes,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        title: data.title,
+        dateOfBirth: data.date_of_birth,
+        residentOf: data.resident_of,
+        nationality: data.nationality,
       },
     });
   }
