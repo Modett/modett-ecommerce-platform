@@ -3,6 +3,10 @@ export interface UserProfile {
   email: string;
   firstName?: string;
   lastName?: string;
+  title?: string;
+  dateOfBirth?: string;
+  residentOf?: string;
+  nationality?: string;
 }
 
 export interface OrderItem {
