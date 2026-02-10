@@ -16,6 +16,13 @@ export interface UpdateProfileRequest {
   currency?: string;
   stylePreferences?: Record<string, any>;
   preferredSizes?: Record<string, any>;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  title?: string;
+  dateOfBirth?: string;
+  residentOf?: string;
+  nationality?: string;
 }
 
 // Response DTOs
@@ -57,7 +64,7 @@ export class ProfileController {
 
   async getProfile(
     request: FastifyRequest<{ Params: { userId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { userId } = request.params;
@@ -106,7 +113,7 @@ export class ProfileController {
       Params: { userId: string };
       Body: UpdateProfileRequest;
     }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { userId } = request.params;
@@ -139,6 +146,13 @@ export class ProfileController {
         currency,
         stylePreferences,
         preferredSizes,
+        firstName: request.body.firstName,
+        lastName: request.body.lastName,
+        phone: request.body.phone,
+        title: request.body.title,
+        dateOfBirth: request.body.dateOfBirth,
+        residentOf: request.body.residentOf,
+        nationality: request.body.nationality,
         timestamp: new Date(),
       };
 
@@ -171,7 +185,7 @@ export class ProfileController {
 
   async getCurrentUserProfile(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       // Extract user ID from JWT token (assuming middleware sets it)
@@ -217,7 +231,7 @@ export class ProfileController {
 
   async updateCurrentUserProfile(
     request: FastifyRequest<{ Body: UpdateProfileRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       // Extract user ID from JWT token (assuming middleware sets it)
@@ -251,6 +265,13 @@ export class ProfileController {
         currency,
         stylePreferences,
         preferredSizes,
+        firstName: request.body.firstName,
+        lastName: request.body.lastName,
+        phone: request.body.phone,
+        title: request.body.title,
+        dateOfBirth: request.body.dateOfBirth,
+        residentOf: request.body.residentOf,
+        nationality: request.body.nationality,
         timestamp: new Date(),
       };
 
