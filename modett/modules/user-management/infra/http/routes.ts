@@ -16,11 +16,7 @@ import {
 import {
   authenticateUser,
   optionalAuth,
-  authenticateVerifiedUser,
   authenticateAdmin,
-  authenticateStaff,
-  requireRole,
-  UserRole,
 } from "./middleware/auth.middleware";
 import { IUserRepository } from "../../domain/repositories/iuser.repository";
 import { IAddressRepository } from "../../domain/repositories/iaddress.repository";
@@ -38,7 +34,10 @@ export async function registerUserManagementRoutes(
   },
 ) {
   // Initialize controllers
-  const authController = new AuthController(services.authService, services.userRepository);
+  const authController = new AuthController(
+    services.authService,
+    services.userRepository,
+  );
   const profileController = new ProfileController(services.userProfileService);
   const addressesController = new AddressesController(services.addressService);
   const usersController = new UsersController(
@@ -105,7 +104,6 @@ export async function registerUserManagementRoutes(
           },
         },
         response: {
-          // ✅ ADD RESPONSE SCHEMAS
           201: {
             description: "User registered successfully",
             type: "object",
@@ -646,7 +644,8 @@ export async function registerUserManagementRoutes(
               success: { type: "boolean", example: true },
               message: {
                 type: "string",
-                example: "Email changed successfully. Please verify your new email address.",
+                example:
+                  "Email changed successfully. Please verify your new email address.",
               },
             },
           },

@@ -59,14 +59,14 @@ export const generate2FA = async (): Promise<Generate2FAResponse> => {
 
 export const enable2FA = async (
   token: string,
-  secret: string
+  secret: string,
 ): Promise<Enable2FAResponse> => {
   const { data } = await authApiClient.post("/2fa/enable", { token, secret });
   return data.data;
 };
 
 export const verify2FA = async (
-  token: string
+  token: string,
 ): Promise<{ success: boolean; message: string }> => {
   const { data } = await authApiClient.post("/2fa/verify", { token });
   return data;
@@ -74,23 +74,15 @@ export const verify2FA = async (
 
 export const loginWith2FA = async (
   tempToken: string,
-  token: string
+  token: string,
 ): Promise<AuthResponse> => {
   const { data } = await authApiClient.post("/login/2fa", { tempToken, token });
   return data.data;
 };
 
 export const disable2FA = async (
-  password: string
+  password: string,
 ): Promise<{ success: boolean; message: string }> => {
   const { data } = await authApiClient.post("/2fa/disable", { password });
   return data;
-};
-
-export const login = async (
-  email: string,
-  password: string
-): Promise<AuthResponse> => {
-  const { data } = await authApiClient.post("/login", { email, password });
-  return data.data;
 };
