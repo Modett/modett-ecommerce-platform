@@ -25,6 +25,7 @@ export const useCart = (cartId: string | null) => {
       return result;
     },
     enabled: !!cartId,
+    retry: false, // Don't retry if cart not found (404), fail immediately
     staleTime: 30000, // 30 seconds - data is fresh for 30s
     gcTime: 300000, // 5 minutes - keep in cache for 5 min
   });

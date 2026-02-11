@@ -119,7 +119,9 @@ export const PersonalDetailsForm = () => {
           className="text-[14px] leading-[24px] font-normal text-[#765C4D]"
           style={FORM_FONT}
         >
-          Mr. Name update your account preferences below.
+          {userProfile?.title ? `${userProfile.title} ` : ""}
+          {userProfile?.firstName || "User"} update your account preferences
+          below.
         </p>
       </div>
 

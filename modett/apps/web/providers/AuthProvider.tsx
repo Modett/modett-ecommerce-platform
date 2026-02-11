@@ -329,8 +329,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
         );
 
-        // Only clear token on authentication errors (401, 403)
-        // Keep token for network errors or server errors (user stays logged in)
         if (response.status === 401 || response.status === 403) {
           console.log("Token is invalid or expired, logging out");
           localStorage.removeItem("authToken");

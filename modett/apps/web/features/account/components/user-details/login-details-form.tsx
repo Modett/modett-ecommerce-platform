@@ -29,7 +29,8 @@ export const LoginDetailsForm = () => {
           className="text-[14px] leading-[24px] font-normal text-[#765C4D]"
           style={FORM_FONT}
         >
-          Mr. Name, your login details are as follows.
+          {userProfile?.title ? `${userProfile.title} ` : ""}
+          {userProfile?.firstName || "User"}, your login details are as follows.
         </p>
       </div>
 
