@@ -6,18 +6,23 @@ import {
   LoginUserHandler,
   ChangePasswordCommand,
   ChangePasswordHandler,
+  ChangeEmailCommand,
+  ChangeEmailHandler,
   InitiatePasswordResetCommand,
   InitiatePasswordResetHandler,
   ResetPasswordCommand,
   ResetPasswordHandler,
   VerifyEmailCommand,
   VerifyEmailHandler,
+  DeleteUserCommand,
+  DeleteUserHandler,
 } from "../../../application";
 import {
   GetUserByEmailQuery,
   GetUserByEmailHandler,
 } from "../../../application/queries";
 import { AuthenticationService } from "../../../application/services/authentication.service";
+import { IUserRepository } from "../../../domain/repositories/iuser.repository";
 import {
   generateAuthTokens,
   verifyRefreshToken,
@@ -124,6 +129,15 @@ export interface ChangePasswordRequest {
   confirmPassword: string;
 }
 
+export interface ChangeEmailRequest {
+  newEmail: string;
+  password: string;
+}
+
+export interface DeleteAccountRequest {
+  password: string;
+}
+
 // 2FA Request DTOs
 export interface EnableTwoFactorRequest {
   token: string;
@@ -196,7 +210,7 @@ class AuthValidation {
 
     if (password.length < SECURITY_CONFIG.PASSWORD_MIN_LENGTH) {
       errors.push(
-        `Password must be at least ${SECURITY_CONFIG.PASSWORD_MIN_LENGTH} characters long`
+        `Password must be at least ${SECURITY_CONFIG.PASSWORD_MIN_LENGTH} characters long`,
       );
     }
 
@@ -267,17 +281,29 @@ export class AuthController {
   private registerHandler: RegisterUserHandler;
   private loginHandler: LoginUserHandler;
   private changePasswordHandler: ChangePasswordHandler;
+  private changeEmailHandler: ChangeEmailHandler;
+  private deleteUserHandler: DeleteUserHandler;
   private initiatePasswordResetHandler: InitiatePasswordResetHandler;
   private resetPasswordHandler: ResetPasswordHandler;
   private verifyEmailHandler: VerifyEmailHandler;
   private getUserByEmailHandler: GetUserByEmailHandler;
 
-  constructor(private readonly authService: AuthenticationService) {
+  constructor(
+    private readonly authService: AuthenticationService,
+    private readonly userRepository?: IUserRepository,
+  ) {
     this.registerHandler = new RegisterUserHandler(authService);
     this.loginHandler = new LoginUserHandler(authService);
     this.changePasswordHandler = new ChangePasswordHandler(authService);
+    this.changeEmailHandler = new ChangeEmailHandler(authService);
+    if (userRepository) {
+      this.deleteUserHandler = new DeleteUserHandler(userRepository);
+    } else {
+      // Create a placeholder that will throw if used
+      this.deleteUserHandler = null as any;
+    }
     this.initiatePasswordResetHandler = new InitiatePasswordResetHandler(
-      authService
+      authService,
     );
     this.resetPasswordHandler = new ResetPasswordHandler(authService);
     this.verifyEmailHandler = new VerifyEmailHandler(authService);
@@ -287,7 +313,7 @@ export class AuthController {
   private logSecurityEvent(
     event: string,
     details: any,
-    request: FastifyRequest
+    request: FastifyRequest,
   ): void {
     console.warn(`[SECURITY] ${event}:`, {
       timestamp: new Date().toISOString(),
@@ -308,7 +334,7 @@ export class AuthController {
 
   async register(
     request: FastifyRequest<{ Body: RegisterUserRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const rawData = request.body;
@@ -350,7 +376,7 @@ export class AuthController {
 
       // Validate password strength
       const passwordValidation = AuthValidation.validatePassword(
-        rawData.password
+        rawData.password,
       );
       if (!passwordValidation.isValid) {
         reply.status(HTTP_STATUS.BAD_REQUEST).send({
@@ -370,7 +396,7 @@ export class AuthController {
         phone,
         firstName,
         lastName,
-        role: rawData.role, // Pass role (defaults to CUSTOMER if not provided)
+        role: rawData.role,
         timestamp: new Date(),
       };
 
@@ -383,7 +409,7 @@ export class AuthController {
         TokenBlacklistService.storeVerificationToken(
           verificationToken,
           result.data.user.id,
-          email
+          email,
         );
 
         // Log security event
@@ -394,40 +420,31 @@ export class AuthController {
             email: email,
             deviceInfo,
           },
-          request
+          request,
         );
 
         // TODO: Send verification email with token
         console.log(
-          `Email verification token for ${email}: ${verificationToken}`
+          `Email verification token for ${email}: ${verificationToken}`,
         );
 
-        // Generate tokens for auto-login
-        const tokens = generateAuthTokens({
-          userId: result.data.user.id,
-          email: result.data.user.email,
-          role: result.data.user.role as UserRole,
-          status: "active",
-          isGuest: false,
-          emailVerified: false,
-          phoneVerified: false,
-        });
-
+        // Use tokens already generated by the authentication service
         reply.status(HTTP_STATUS.CREATED).send({
           success: true,
           data: {
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
+            accessToken: result.data.accessToken,
+            refreshToken: result.data.refreshToken,
             user: {
               id: result.data.user.id,
               email: email,
               role: result.data.user.role,
-              isGuest: false,
-              emailVerified: false,
-              phoneVerified: false,
+              isGuest: result.data.user.isGuest,
+              emailVerified: result.data.user.emailVerified,
+              phoneVerified: result.data.user.phoneVerified,
+              twoFactorEnabled: result.data.user.twoFactorEnabled,
               status: "active",
             },
-            expiresIn: 15 * 60, // 15 minutes
+            expiresIn: result.data.expiresIn,
             tokenType: "Bearer",
             message: "Registration successful",
             ...(process.env.NODE_ENV === "development" && {
@@ -455,7 +472,7 @@ export class AuthController {
 
   async login(
     request: FastifyRequest<{ Body: LoginUserRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { email: rawEmail, password, rememberMe } = request.body;
@@ -492,7 +509,7 @@ export class AuthController {
         this.logSecurityEvent(
           "LOGIN_ATTEMPT_ON_LOCKED_ACCOUNT",
           { email, deviceInfo },
-          request
+          request,
         );
 
         reply.status(HTTP_STATUS.TOO_MANY_REQUESTS).send({
@@ -535,17 +552,6 @@ export class AuthController {
         // Clear failed attempts on successful login
         TokenBlacklistService.clearFailedAttempts(email);
 
-        // Generate tokens (Standard flow)
-        const tokens = generateAuthTokens({
-          userId: result.data.user.id,
-          email: result.data.user.email,
-          role: result.data.user.role as UserRole,
-          status: "active", // Default status since AuthResult doesn't include status
-          isGuest: result.data.user.isGuest,
-          emailVerified: result.data.user.emailVerified,
-          phoneVerified: result.data.user.phoneVerified,
-        });
-
         // Log successful login
         this.logSecurityEvent(
           "USER_LOGIN_SUCCESS",
@@ -555,14 +561,15 @@ export class AuthController {
             deviceInfo,
             rememberMe,
           },
-          request
+          request,
         );
 
+        // Use tokens already generated by the authentication service
         reply.status(HTTP_STATUS.OK).send({
           success: true,
           data: {
-            accessToken: tokens.accessToken,
-            refreshToken: rememberMe ? tokens.refreshToken : undefined,
+            accessToken: result.data.accessToken,
+            refreshToken: rememberMe ? result.data.refreshToken : undefined,
             user: {
               id: result.data.user.id,
               email: result.data.user.email,
@@ -570,9 +577,10 @@ export class AuthController {
               isGuest: result.data.user.isGuest,
               emailVerified: result.data.user.emailVerified,
               phoneVerified: result.data.user.phoneVerified,
-              status: "active", // Default status since AuthResult doesn't include status
+              twoFactorEnabled: result.data.user.twoFactorEnabled,
+              status: "active",
             },
-            expiresIn: 15 * 60, // 15 minutes
+            expiresIn: result.data.expiresIn,
             tokenType: "Bearer" as const,
           },
         });
@@ -588,7 +596,7 @@ export class AuthController {
             reason: result.error,
             deviceInfo,
           },
-          request
+          request,
         );
 
         reply.status(HTTP_STATUS.UNAUTHORIZED).send({
@@ -607,7 +615,7 @@ export class AuthController {
 
   async generateTwoFactorSecret(
     request: FastifyRequest,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const userId = (request as any).user.userId;
@@ -628,7 +636,7 @@ export class AuthController {
 
   async enableTwoFactor(
     request: FastifyRequest<{ Body: EnableTwoFactorRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const userId = (request as any).user.userId;
@@ -637,7 +645,7 @@ export class AuthController {
       const result = await this.authService.enableTwoFactor(
         userId,
         token,
-        secret
+        secret,
       );
 
       this.logSecurityEvent("2FA_ENABLED", { userId }, request);
@@ -657,7 +665,7 @@ export class AuthController {
 
   async verifyTwoFactor(
     request: FastifyRequest<{ Body: VerifyTwoFactorRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const userId = (request as any).user.userId;
@@ -688,7 +696,7 @@ export class AuthController {
 
   async loginWith2fa(
     request: FastifyRequest<{ Body: LoginWith2faRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { tempToken, token } = request.body;
@@ -704,7 +712,7 @@ export class AuthController {
           email: result.user.email,
           deviceInfo,
         },
-        request
+        request,
       );
 
       reply.status(HTTP_STATUS.OK).send({
@@ -731,7 +739,7 @@ export class AuthController {
 
   async disableTwoFactor(
     request: FastifyRequest<{ Body: DisableTwoFactorRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const userId = (request as any).user.userId;
@@ -767,7 +775,7 @@ export class AuthController {
           const token = tokenMatch[1];
 
           console.log(
-            `[DEBUG] Logout - Blacklisting token: ${token.substring(0, 10)}...`
+            `[DEBUG] Logout - Blacklisting token: ${token.substring(0, 10)}...`,
           );
           // Blacklist the token
           TokenBlacklistService.blacklistToken(token);
@@ -782,7 +790,7 @@ export class AuthController {
                 deviceInfo,
                 tokenInvalidated: true,
               },
-              request
+              request,
             );
           }
         }
@@ -793,7 +801,7 @@ export class AuthController {
           {
             deviceInfo,
           },
-          request
+          request,
         );
       }
 
@@ -820,7 +828,7 @@ export class AuthController {
 
   async refreshToken(
     request: FastifyRequest<{ Body: RefreshTokenRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { refreshToken } = request.body;
@@ -840,7 +848,7 @@ export class AuthController {
         this.logSecurityEvent(
           "BLACKLISTED_TOKEN_USED",
           { token: refreshToken.substring(0, 10) + "...", deviceInfo },
-          request
+          request,
         );
 
         reply.status(HTTP_STATUS.UNAUTHORIZED).send({
@@ -857,7 +865,7 @@ export class AuthController {
         if (tokenMatch) {
           const currentAccessToken = tokenMatch[1];
           console.log(
-            `[DEBUG] Refresh - Blacklisting current access token: ${currentAccessToken.substring(0, 10)}...`
+            `[DEBUG] Refresh - Blacklisting current access token: ${currentAccessToken.substring(0, 10)}...`,
           );
           TokenBlacklistService.blacklistToken(currentAccessToken);
         }
@@ -913,7 +921,7 @@ export class AuthController {
           deviceInfo,
           oldTokensInvalidated: true,
         },
-        request
+        request,
       );
 
       reply.status(HTTP_STATUS.OK).send({
@@ -945,7 +953,7 @@ export class AuthController {
 
   async forgotPassword(
     request: FastifyRequest<{ Body: ForgotPasswordRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { email: rawEmail } = request.body;
@@ -995,7 +1003,7 @@ export class AuthController {
           TokenBlacklistService.storePasswordResetToken(
             resetResult.data.token,
             resetResult.data.userId,
-            email
+            email,
           );
 
           // Log password reset request
@@ -1006,12 +1014,12 @@ export class AuthController {
               deviceInfo,
               tokenGenerated: true,
             },
-            request
+            request,
           );
 
           // TODO: Send password reset email with resetResult.data.token
           console.log(
-            `Password reset token for ${email}: ${resetResult.data.token}`
+            `Password reset token for ${email}: ${resetResult.data.token}`,
           );
         } else {
           // Log failed attempt (email not found)
@@ -1021,7 +1029,7 @@ export class AuthController {
               email,
               deviceInfo,
             },
-            request
+            request,
           );
         }
       }
@@ -1045,7 +1053,7 @@ export class AuthController {
 
   async resetPassword(
     request: FastifyRequest<{ Body: ResetPasswordRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { token, newPassword, confirmPassword } = request.body;
@@ -1125,7 +1133,7 @@ export class AuthController {
           userId: tokenData.userId,
           deviceInfo,
         },
-        request
+        request,
       );
 
       reply.status(HTTP_STATUS.OK).send({
@@ -1147,7 +1155,7 @@ export class AuthController {
 
   async verifyEmail(
     request: FastifyRequest<{ Body: VerifyEmailRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { token } = request.body;
@@ -1190,7 +1198,7 @@ export class AuthController {
             email: tokenData.email,
             deviceInfo,
           },
-          request
+          request,
         );
 
         reply.status(HTTP_STATUS.OK).send({
@@ -1227,7 +1235,7 @@ export class AuthController {
 
   async resendVerification(
     request: FastifyRequest<{ Body: ResendVerificationRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { email: rawEmail } = request.body;
@@ -1296,7 +1304,7 @@ export class AuthController {
       TokenBlacklistService.storeVerificationToken(
         verificationToken,
         userInfo.userId,
-        email
+        email,
       );
 
       // Log verification resend
@@ -1306,12 +1314,12 @@ export class AuthController {
           email,
           deviceInfo,
         },
-        request
+        request,
       );
 
       // TODO: Send new verification email
       console.log(
-        `Resend verification token for ${email}: ${verificationToken}`
+        `Resend verification token for ${email}: ${verificationToken}`,
       );
 
       reply.status(HTTP_STATUS.OK).send({
@@ -1334,7 +1342,7 @@ export class AuthController {
 
   async changePassword(
     request: FastifyRequest<{ Body: ChangePasswordRequest }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     try {
       const { currentPassword, newPassword, confirmPassword } = request.body;
@@ -1410,7 +1418,7 @@ export class AuthController {
           userId,
           deviceInfo,
         },
-        request
+        request,
       );
 
       reply.status(HTTP_STATUS.OK).send({
@@ -1431,10 +1439,187 @@ export class AuthController {
     }
   }
 
+  async changeEmail(
+    request: FastifyRequest<{ Body: ChangeEmailRequest }>,
+    reply: FastifyReply,
+  ): Promise<void> {
+    try {
+      const { newEmail, password } = request.body;
+      const userId = (request as any).user?.userId;
+      const deviceInfo = AuthValidation.extractDeviceInfo(request);
+
+      if (!userId) {
+        reply.status(HTTP_STATUS.UNAUTHORIZED).send({
+          success: false,
+          error: "Authentication required",
+        });
+        return;
+      }
+
+      // Validate required fields
+      if (!newEmail || !password) {
+        reply.status(HTTP_STATUS.BAD_REQUEST).send({
+          success: false,
+          error: "New email and password are required",
+          errors: ["newEmail", "password"],
+        });
+        return;
+      }
+
+      // Validate email format
+      if (!AuthValidation.validateEmail(newEmail)) {
+        reply.status(HTTP_STATUS.BAD_REQUEST).send({
+          success: false,
+          error: ERROR_MESSAGES.INVALID_EMAIL,
+          errors: ["newEmail"],
+          code: "VALIDATION_ERROR",
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Create command
+      const command: ChangeEmailCommand = {
+        userId,
+        newEmail,
+        password,
+        timestamp: new Date(),
+      };
+
+      // Execute command
+      const result = await this.changeEmailHandler.handle(command);
+
+      if (!result.success) {
+        reply.status(HTTP_STATUS.BAD_REQUEST).send({
+          success: false,
+          error: result.error || "Failed to change email",
+          errors: result.errors,
+        });
+        return;
+      }
+
+      // Log email change
+      this.logSecurityEvent(
+        "EMAIL_CHANGED",
+        {
+          userId,
+          newEmail,
+          deviceInfo,
+        },
+        request,
+      );
+
+      reply.status(HTTP_STATUS.OK).send({
+        success: true,
+        message:
+          "Email has been changed successfully. Please verify your new email address.",
+      });
+    } catch (error) {
+      this.logError("changeEmail", error, {
+        userId: (request as any).user?.userId,
+      });
+      reply.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
+        success: false,
+        error: `${ERROR_MESSAGES.INTERNAL_ERROR} during email change`,
+      });
+    }
+  }
+
+  async deleteAccount(
+    request: FastifyRequest<{ Body: DeleteAccountRequest }>,
+    reply: FastifyReply,
+  ): Promise<void> {
+    try {
+      const { password } = request.body;
+      const userId = (request as any).user?.userId;
+      const deviceInfo = AuthValidation.extractDeviceInfo(request);
+
+      if (!userId) {
+        reply.status(HTTP_STATUS.UNAUTHORIZED).send({
+          success: false,
+          error: "Authentication required",
+        });
+        return;
+      }
+
+      // Validate required field
+      if (!password) {
+        reply.status(HTTP_STATUS.BAD_REQUEST).send({
+          success: false,
+          error: "Password is required for account deletion",
+          errors: ["password"],
+        });
+        return;
+      }
+
+      // Verify password before deleting account
+      // We'll use the authentication service to verify the user's password
+      try {
+        await this.authService.verifyUserPassword(userId, password);
+      } catch (error: any) {
+        reply.status(HTTP_STATUS.UNAUTHORIZED).send({
+          success: false,
+          error: error.message || "Password verification failed",
+        });
+        return;
+      }
+
+      // Create command
+      const command: DeleteUserCommand = {
+        userId,
+        timestamp: new Date(),
+      };
+
+      // Execute command
+      const result = await this.deleteUserHandler.handle(command);
+
+      if (!result.success) {
+        reply.status(HTTP_STATUS.BAD_REQUEST).send({
+          success: false,
+          error: result.error || "Failed to delete account",
+        });
+        return;
+      }
+
+      // Extract and blacklist the current token
+      const authHeader = request.headers.authorization;
+      if (authHeader) {
+        const tokenMatch = authHeader.match(/^Bearer\s+(.+)$/);
+        if (tokenMatch) {
+          const token = tokenMatch[1];
+          TokenBlacklistService.blacklistToken(token);
+        }
+      }
+
+      // Log account deletion
+      this.logSecurityEvent(
+        "ACCOUNT_DELETED",
+        {
+          userId,
+          deviceInfo,
+        },
+        request,
+      );
+
+      reply.status(HTTP_STATUS.OK).send({
+        success: true,
+        message: "Account has been deleted successfully.",
+      });
+    } catch (error) {
+      this.logError("deleteAccount", error, {
+        userId: (request as any).user?.userId,
+      });
+      reply.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send({
+        success: false,
+        error: `${ERROR_MESSAGES.INTERNAL_ERROR} during account deletion`,
+      });
+    }
+  }
+
   // Development/Testing helper endpoint
   async generateTestVerificationToken(
     request: FastifyRequest<{ Body: { email: string; userId: string } }>,
-    reply: FastifyReply
+    reply: FastifyReply,
   ): Promise<void> {
     if (process.env.NODE_ENV === "production") {
       return reply.status(404).send({ success: false, error: "Not found" });
@@ -1454,7 +1639,7 @@ export class AuthController {
       TokenBlacklistService.storeVerificationToken(
         verificationToken,
         userId,
-        email
+        email,
       );
 
       reply.status(200).send({

@@ -38,6 +38,8 @@ export class UserRepository implements IUserRepository {
         twoFactorSecret: data.two_factor_secret,
         twoFactorEnabled: data.two_factor_enabled,
         twoFactorBackupCodes: data.two_factor_backup_codes,
+        firstName: data.first_name,
+        lastName: data.last_name,
       },
     });
   }
@@ -66,6 +68,12 @@ export class UserRepository implements IUserRepository {
       two_factor_enabled: userData.twoFactorEnabled,
       two_factor_secret: userData.twoFactorSecret,
       two_factor_backup_codes: userData.twoFactorBackupCodes,
+      first_name: userData.firstName,
+      last_name: userData.lastName,
+      title: userData.title,
+      date_of_birth: userData.dateOfBirth,
+      resident_of: userData.residentOf,
+      nationality: userData.nationality,
     });
   }
 
@@ -93,6 +101,12 @@ export class UserRepository implements IUserRepository {
       two_factor_enabled: userData.twoFactorEnabled,
       two_factor_secret: userData.twoFactorSecret,
       two_factor_backup_codes: userData.twoFactorBackupCodes,
+      first_name: userData.firstName,
+      last_name: userData.lastName,
+      title: userData.title,
+      date_of_birth: userData.dateOfBirth,
+      resident_of: userData.residentOf,
+      nationality: userData.nationality,
     });
   }
 
@@ -114,6 +128,12 @@ export class UserRepository implements IUserRepository {
         twoFactorSecret: data.two_factor_secret,
         twoFactorEnabled: data.two_factor_enabled,
         twoFactorBackupCodes: data.two_factor_backup_codes,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        title: data.title,
+        dateOfBirth: data.date_of_birth,
+        residentOf: data.resident_of,
+        nationality: data.nationality,
       },
     });
   }
@@ -164,6 +184,12 @@ export class UserRepository implements IUserRepository {
       two_factor_enabled: userData.twoFactorEnabled,
       two_factor_secret: userData.twoFactorSecret,
       two_factor_backup_codes: userData.twoFactorBackupCodes,
+      first_name: userData.firstName,
+      last_name: userData.lastName,
+      title: userData.title,
+      date_of_birth: userData.dateOfBirth,
+      resident_of: userData.residentOf,
+      nationality: userData.nationality,
     });
   }
 
@@ -194,6 +220,12 @@ export class UserRepository implements IUserRepository {
         two_factor_enabled: userData.twoFactorEnabled,
         two_factor_secret: userData.twoFactorSecret,
         two_factor_backup_codes: userData.twoFactorBackupCodes,
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        title: userData.title,
+        date_of_birth: userData.dateOfBirth,
+        resident_of: userData.residentOf,
+        nationality: userData.nationality,
       }),
     );
   }
@@ -222,6 +254,12 @@ export class UserRepository implements IUserRepository {
         two_factor_enabled: userData.twoFactorEnabled,
         two_factor_secret: userData.twoFactorSecret,
         two_factor_backup_codes: userData.twoFactorBackupCodes,
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        title: userData.title,
+        date_of_birth: userData.dateOfBirth,
+        resident_of: userData.residentOf,
+        nationality: userData.nationality,
       }),
     );
   }
@@ -253,6 +291,12 @@ export class UserRepository implements IUserRepository {
         two_factor_enabled: userData.twoFactorEnabled,
         two_factor_secret: userData.twoFactorSecret,
         two_factor_backup_codes: userData.twoFactorBackupCodes,
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        title: userData.title,
+        date_of_birth: userData.dateOfBirth,
+        resident_of: userData.residentOf,
+        nationality: userData.nationality,
       }),
     );
   }
@@ -309,6 +353,12 @@ export class UserRepository implements IUserRepository {
         two_factor_enabled: userData.twoFactorEnabled,
         two_factor_secret: userData.twoFactorSecret,
         two_factor_backup_codes: userData.twoFactorBackupCodes,
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        title: userData.title,
+        date_of_birth: userData.dateOfBirth,
+        resident_of: userData.residentOf,
+        nationality: userData.nationality,
       }),
     );
   }
@@ -394,6 +444,12 @@ export class UserRepository implements IUserRepository {
         two_factor_enabled: userData.twoFactorEnabled,
         two_factor_secret: userData.twoFactorSecret,
         two_factor_backup_codes: userData.twoFactorBackupCodes,
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        title: userData.title,
+        date_of_birth: userData.dateOfBirth,
+        resident_of: userData.residentOf,
+        nationality: userData.nationality,
       }),
     );
 

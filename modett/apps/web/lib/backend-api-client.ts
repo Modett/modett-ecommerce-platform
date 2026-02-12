@@ -3,7 +3,7 @@ import axios from "axios";
 // Create shared axios instance for backend API
 export const backendApiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1",
-  timeout: 30000,
+  timeout: 10000, // Reduced to 10s for faster failure
   headers: {
     "Content-Type": "application/json",
     "ngrok-skip-browser-warning": "true",

@@ -15,6 +15,10 @@ export interface GetUserDetailsResult {
     phone: string | null;
     firstName: string | null;
     lastName: string | null;
+    title: string | null;
+    dateOfBirth: Date | null;
+    residentOf: string | null;
+    nationality: string | null;
     role: string;
     status: string;
     emailVerified: boolean;
@@ -65,16 +69,17 @@ export class GetUserDetailsHandler {
 
       const userData = user.toData();
 
-      // Get firstName and lastName from the address value object
-      let firstName: string | null = null;
-      let lastName: string | null = null;
-      let phone: string | null = null;
+      // Get firstName and lastName from user data first, fallback to address if not available
+      let firstName: string | null = userData.firstName;
+      let lastName: string | null = userData.lastName;
+      let phone: string | null = userData.phone;
 
-      if (addressToUse) {
+      // If firstName/lastName not in user entity, try to get from address
+      if ((!firstName || !lastName) && addressToUse) {
         const addressValue = addressToUse.getAddressValue();
-        firstName = addressValue.getFirstName() || null;
-        lastName = addressValue.getLastName() || null;
-        phone = addressValue.getPhone() || null;
+        firstName = firstName || addressValue.getFirstName() || null;
+        lastName = lastName || addressValue.getLastName() || null;
+        phone = phone || addressValue.getPhone() || null;
       }
 
       return {
@@ -85,6 +90,10 @@ export class GetUserDetailsHandler {
           phone: phone,
           firstName: firstName,
           lastName: lastName,
+          title: userData.title,
+          dateOfBirth: userData.dateOfBirth,
+          residentOf: userData.residentOf,
+          nationality: userData.nationality,
           role: userData.role,
           status: userData.status,
           emailVerified: userData.emailVerified,

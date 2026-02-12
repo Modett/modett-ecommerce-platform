@@ -109,6 +109,9 @@ export class ProductRepository implements IProductRepository {
       whereClause.status = status;
     } else if (!includeDrafts) {
       whereClause.status = { in: ["published", "scheduled"] };
+    } else {
+      // Include drafts but always exclude archived
+      whereClause.status = { in: ["draft", "published", "scheduled"] };
     }
 
     const products = await this.prisma.product.findMany({
@@ -401,8 +404,11 @@ export class ProductRepository implements IProductRepository {
   }
 
   async delete(id: ProductId): Promise<void> {
-    await this.prisma.product.delete({
+    // Soft delete: Change status to 'archived' instead of hard delete
+    // This preserves historical data (orders, transactions, reports)
+    await this.prisma.product.update({
       where: { id: id.getValue() },
+      data: { status: 'archived' },
     });
   }
 

@@ -1,4 +1,8 @@
-import { ICommand, ICommandHandler, CommandResult } from "../stock/add-stock.command";
+import {
+  ICommand,
+  ICommandHandler,
+  CommandResult,
+} from "../stock/add-stock.command";
 import { PurchaseOrderManagementService } from "../../services/purchase-order-management.service";
 import { PurchaseOrderItem } from "../../../domain/entities/purchase-order-item.entity";
 
@@ -14,7 +18,7 @@ export class AddPOItemCommandHandler
   constructor(private readonly poService: PurchaseOrderManagementService) {}
 
   async handle(
-    command: AddPOItemCommand
+    command: AddPOItemCommand,
   ): Promise<CommandResult<PurchaseOrderItem>> {
     try {
       const errors: string[] = [];
@@ -33,21 +37,24 @@ export class AddPOItemCommandHandler
       }
 
       if (errors.length > 0) {
-        return CommandResult.failure<PurchaseOrderItem>("Validation failed", errors);
+        return CommandResult.failure<PurchaseOrderItem>(
+          "Validation failed",
+          errors,
+        );
       }
 
       // Execute service
       const item = await this.poService.addPurchaseOrderItem(
         command.poId,
         command.variantId,
-        command.orderedQty
+        command.orderedQty,
       );
 
       return CommandResult.success(item);
     } catch (error) {
       return CommandResult.failure<PurchaseOrderItem>(
         error instanceof Error ? error.message : "Unknown error occurred",
-        [error instanceof Error ? error.message : "Unknown error"]
+        [error instanceof Error ? error.message : "Unknown error"],
       );
     }
   }

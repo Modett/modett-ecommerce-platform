@@ -30,7 +30,7 @@ export function Header() {
   };
 
   return (
-    <header className="w-full bg-[#EFECE5] sticky top-0 z-50 overflow-x-hidden">
+    <header className="w-full bg-[#EFECE5] sticky top-0 z-50 overflow-x-hidden border-t border-b border-[#C3B0A5]/30">
       {/* Announcement Bar */}
       {settings.announcement_enabled && (
         <div

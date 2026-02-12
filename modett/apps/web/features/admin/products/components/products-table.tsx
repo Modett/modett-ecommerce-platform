@@ -11,7 +11,9 @@ import {
   Copy,
   Check,
   ImageIcon,
+  Eye,
 } from "lucide-react";
+import Link from "next/link";
 import type {
   AdminProduct,
   ProductStatus,
@@ -172,7 +174,7 @@ export function ProductsTable({
                     >
                       {status.charAt(0).toUpperCase() + status.slice(1)}
                     </button>
-                  )
+                  ),
                 )}
               </div>
             </div>
@@ -294,7 +296,7 @@ export function ProductsTable({
                 const stockTotal =
                   product.variants?.reduce(
                     (sum, v) => sum + (v.inventory || 0),
-                    0
+                    0,
                   ) || 0;
                 // Assuming price is from the first variant if strictly variants based, or product price itself if available
                 // AdminProduct has price, using that.
@@ -305,7 +307,10 @@ export function ProductsTable({
                     className="group hover:bg-[#F8F5F2]/40 transition-colors border-b border-[#BBA496]/10 last:border-0"
                   >
                     <td className="px-3 py-4 whitespace-nowrap">
-                      <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center">
+                      <Link
+                        href={`/admin/products/${product.productId}`}
+                        className="block w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center hover:opacity-80 transition-opacity"
+                      >
                         {mainImage ? (
                           <img
                             src={mainImage}
@@ -315,16 +320,17 @@ export function ProductsTable({
                         ) : (
                           <ImageIcon className="w-5 h-5 text-gray-400" />
                         )}
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-3 py-4">
                       <div className="flex flex-col max-w-[250px]">
-                        <span
-                          className="text-sm font-medium text-[#232D35] truncate"
+                        <Link
+                          href={`/admin/products/${product.productId}`}
+                          className="text-sm font-medium text-[#232D35] truncate hover:text-[#8B7355] transition-colors"
                           title={product.title}
                         >
                           {product.title}
-                        </span>
+                        </Link>
                         <div className="flex items-center gap-2 text-xs text-[#8B7355] truncate max-w-full">
                           {product.brand && (
                             <span className="flex-shrink-0">
@@ -339,17 +345,6 @@ export function ProductsTable({
                     </td>
                     <td className="px-3 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-[#232D35]">
-                        {/* Check if variants have different prices? For now display product price */}
-                        {/* Wait, the product types has price but variants might override. */}
-                        {/* Displaying raw product price from API response */}
-                        {/* Since I haven't seen the exact data, fallback to 0 */}
-                        {/* The AdminProduct type I updated has 'variants' with price, but the top-level 'price' field was removed in my type update? NO, I removed it? Let me check type update. */}
-                        {/* I removed `price` from top level AdminProduct in my type update block? */}
-                        {/* Checking previous replace_file_content... */}
-                        {/* I see `productId`, `title`, ..., `variants` ... I did NOT include `price` at top level in my update block! */}
-                        {/* So I should calculate from variants or check if API sends it. */}
-                        {/* Typically Dashboard shows a range or "From $X". */}
-                        {/* I'll use `variants[0]?.price` for now or a range. */}
                         {product.variants?.length > 0
                           ? formatCurrency(product.variants[0].price)
                           : "-"}
@@ -371,18 +366,27 @@ export function ProductsTable({
                           product.publishAt ||
                             (product.status === "published"
                               ? product.updatedAt
-                              : "")
+                              : ""),
                         )}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => onEditProduct(product)}
-                        className="inline-flex items-center justify-center w-8 h-8 text-[#232D35] hover:bg-[#232D35] hover:text-white rounded-full transition-colors"
-                        title="Edit Product"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <Link
+                          href={`/admin/products/${product.productId}`}
+                          className="inline-flex items-center justify-center w-8 h-8 text-[#232D35] hover:bg-[#F8F5F2] hover:text-[#8B7355] rounded-full transition-colors"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={() => onEditProduct(product)}
+                          className="inline-flex items-center justify-center w-8 h-8 text-[#232D35] hover:bg-[#232D35] hover:text-white rounded-full transition-colors"
+                          title="Edit Product"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

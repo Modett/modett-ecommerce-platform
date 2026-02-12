@@ -1,6 +1,9 @@
 import { IAddressRepository } from "../../domain/repositories/iaddress.repository";
 import { Address } from "../../domain/entities/address.entity";
-import { AddressType, AddressData } from "../../domain/value-objects/address.vo";
+import {
+  AddressType,
+  AddressData,
+} from "../../domain/value-objects/address.vo";
 import { UserId } from "../../domain/value-objects/user-id.vo";
 
 export interface AddAddressDto {
@@ -47,50 +50,36 @@ export class AddressManagementService {
   constructor(private readonly addressRepository: IAddressRepository) {}
 
   async addAddress(dto: AddAddressDto): Promise<AddressResponseDto> {
-    console.log('🔵 SERVICE - AddAddress called with:', dto);
-
     const userId = UserId.fromString(dto.userId);
-    console.log('🔵 SERVICE - UserId object:', userId);
 
     // Check if user already has addresses
-    console.log('🔵 SERVICE - Checking existing addresses...');
     const existingAddresses = await this.addressRepository.findByUserId(userId);
-    console.log('🔵 SERVICE - Existing addresses count:', existingAddresses.length);
 
     // If this is their first address, make it default regardless of the flag
     const shouldBeDefault = dto.isDefault || existingAddresses.length === 0;
-    console.log('🔵 SERVICE - Should be default:', shouldBeDefault);
 
-    console.log('🔵 SERVICE - Creating Address entity...');
     const address = Address.create({
       userId: dto.userId,
       addressData: dto.addressData,
       type: dto.type,
       isDefault: shouldBeDefault,
     });
-    console.log('🔵 SERVICE - Address entity created:', address.getId());
 
     // Check for conflicting addresses
-    console.log('🔵 SERVICE - Checking for conflicts...');
-    const conflictingAddress = await this.addressRepository.findConflictingAddress(userId, address);
+    const conflictingAddress =
+      await this.addressRepository.findConflictingAddress(userId, address);
     if (conflictingAddress) {
-      console.log('🔴 SERVICE - Conflict found, throwing error');
       throw new Error("A similar address already exists for this user");
     }
-    console.log('🔵 SERVICE - No conflicts found');
 
     // If setting as default, remove default from other addresses
     if (shouldBeDefault) {
-      console.log('🔵 SERVICE - Removing default from other addresses...');
       await this.addressRepository.removeDefault(userId);
     }
 
-    console.log('🔵 SERVICE - About to save address to repository...');
     await this.addressRepository.save(address);
-    console.log('✅ SERVICE - Address saved successfully!');
 
     const result = this.mapToResponseDto(address);
-    console.log('🔵 SERVICE - Mapped response:', result);
     return result;
   }
 
@@ -151,9 +140,13 @@ export class AddressManagementService {
 
     // If this was the default address, we might want to set another as default
     if (address.getIsDefault()) {
-      const remainingAddresses = await this.addressRepository.findByUserId(userIdVo);
+      const remainingAddresses =
+        await this.addressRepository.findByUserId(userIdVo);
       if (remainingAddresses.length > 0) {
-        await this.addressRepository.setAsDefault(remainingAddresses[0].getId(), userIdVo);
+        await this.addressRepository.setAsDefault(
+          remainingAddresses[0].getId(),
+          userIdVo,
+        );
       }
     }
   }
@@ -162,14 +155,20 @@ export class AddressManagementService {
     const userIdVo = UserId.fromString(userId);
     const addresses = await this.addressRepository.findByUserId(userIdVo);
 
-    return addresses.map(address => this.mapToResponseDto(address));
+    return addresses.map((address) => this.mapToResponseDto(address));
   }
 
-  async getUserAddressesByType(userId: string, type: AddressType): Promise<AddressResponseDto[]> {
+  async getUserAddressesByType(
+    userId: string,
+    type: AddressType,
+  ): Promise<AddressResponseDto[]> {
     const userIdVo = UserId.fromString(userId);
-    const addresses = await this.addressRepository.findByUserIdAndType(userIdVo, type);
+    const addresses = await this.addressRepository.findByUserIdAndType(
+      userIdVo,
+      type,
+    );
 
-    return addresses.map(address => this.mapToResponseDto(address));
+    return addresses.map((address) => this.mapToResponseDto(address));
   }
 
   async getDefaultAddress(userId: string): Promise<AddressResponseDto | null> {
@@ -219,13 +218,17 @@ export class AddressManagementService {
       if (!tempAddress.isValidForBilling()) {
         errors.push("Address is not complete for billing");
       }
-
     } catch (error) {
-      errors.push(error instanceof Error ? error.message : "Invalid address format");
+      errors.push(
+        error instanceof Error ? error.message : "Invalid address format",
+      );
     }
 
     // Add suggestions for common issues
-    if (!addressData.postalCode && ["US", "CA", "UK"].includes(addressData.country)) {
+    if (
+      !addressData.postalCode &&
+      ["US", "CA", "UK"].includes(addressData.country)
+    ) {
       suggestions.push("Postal code is recommended for this country");
     }
 
@@ -240,16 +243,22 @@ export class AddressManagementService {
     };
   }
 
-  async findSimilarAddresses(addressData: AddressData, threshold: number = 0.8): Promise<AddressResponseDto[]> {
+  async findSimilarAddresses(
+    addressData: AddressData,
+    threshold: number = 0.8,
+  ): Promise<AddressResponseDto[]> {
     const tempAddress = Address.create({
       userId: "temp-user-id",
       addressData,
       type: AddressType.SHIPPING,
     });
 
-    const similarAddresses = await this.addressRepository.findSimilarAddresses(tempAddress, threshold);
+    const similarAddresses = await this.addressRepository.findSimilarAddresses(
+      tempAddress,
+      threshold,
+    );
 
-    return similarAddresses.map(address => this.mapToResponseDto(address));
+    return similarAddresses.map((address) => this.mapToResponseDto(address));
   }
 
   async getUserAddressStats(userId: string): Promise<AddressStatsDto> {
@@ -257,7 +266,9 @@ export class AddressManagementService {
     return await this.addressRepository.getUserAddressStats(userIdVo);
   }
 
-  async getAddressStatsByCountry(): Promise<Array<{ country: string; count: number }>> {
+  async getAddressStatsByCountry(): Promise<
+    Array<{ country: string; count: number }>
+  > {
     return await this.addressRepository.getAddressStatsByCountry();
   }
 

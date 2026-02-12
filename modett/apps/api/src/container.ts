@@ -560,6 +560,7 @@ export function createServiceContainer(): ServiceContainer {
     orderStatusHistoryRepository,
     variantManagementService,
     productManagementService,
+    productMediaManagementService,
     stockManagementService,
     orderEventService,
   );

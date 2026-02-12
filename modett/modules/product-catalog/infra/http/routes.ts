@@ -109,7 +109,7 @@ export async function registerProductCatalogRoutes(
             limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
             status: {
               type: "string",
-              enum: ["draft", "published", "scheduled"],
+              enum: ["draft", "published", "scheduled", "archived"],
             },
             categoryId: { type: "string", format: "uuid" },
             brand: { type: "string" },
@@ -261,6 +261,22 @@ export async function registerProductCatalogRoutes(
                   seoDescription: { type: "string", nullable: true },
                   createdAt: { type: "string", format: "date-time" },
                   updatedAt: { type: "string", format: "date-time" },
+                  images: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        url: { type: "string" },
+                        alt: { type: "string", nullable: true },
+                        width: { type: "integer", nullable: true },
+                        height: { type: "integer", nullable: true },
+                      },
+                    },
+                  },
+                  media: {
+                    type: "array",
+                    items: { type: "object" },
+                  },
                 },
               },
             },
@@ -483,7 +499,7 @@ export async function registerProductCatalogRoutes(
             longDescHtml: { type: "string" },
             status: {
               type: "string",
-              enum: ["draft", "published", "scheduled"],
+              enum: ["draft", "published", "scheduled", "archived"],
             },
             publishAt: { type: "string", format: "date-time" },
             countryOfOrigin: { type: "string" },

@@ -935,7 +935,6 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
           select: {
             sku: true,
             price: true,
-            costPrice: true, // ADDED: Get actual cost price
             product: {
               select: {
                 title: true,
@@ -954,15 +953,9 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
     const items: InventoryValuationItem[] = stocks.map((stock) => {
       const averageSellingPrice = Number(stock.variant.price);
 
-      // IMPROVED: Use actual cost price if available, otherwise estimate at 50%
-      let costPerUnit: number;
-      if (stock.variant.costPrice && Number(stock.variant.costPrice) > 0) {
-        // Use real cost from database
-        costPerUnit = Number(stock.variant.costPrice);
-      } else {
-        // Fallback: Estimate as 50% of selling price if cost not set
-        costPerUnit = averageSellingPrice * 0.5;
-      }
+      // Fallback: Estimate as 50% of selling price since cost is not tracked
+      // TODO: Add costPrice to ProductVariant schema for accurate valuation
+      const costPerUnit = averageSellingPrice * 0.5;
 
       const totalCost = stock.onHand * costPerUnit;
       const potentialRevenue = stock.onHand * averageSellingPrice;
@@ -1155,17 +1148,25 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
       const totalSales = salesInfo?.totalSales || 0;
       const lastSoldDate = salesInfo?.lastSoldDate || null;
 
-      // Calculate days in stock
+      // Calculate age of product (Lifetime)
       const productCreatedAt = stock.variant.createdAt;
-      const daysInStock = Math.floor(
+      const productAgeDays = Math.floor(
         (new Date().getTime() - productCreatedAt.getTime()) /
           (1000 * 60 * 60 * 24),
       );
 
-      // Skip if not in stock long enough
+      // User Request: Days in Stock = Days since last sale (or creation if never sold)
+      // This represents "Days Idle"
+      const daysIdleReference = lastSoldDate || productCreatedAt;
+      const daysInStock = Math.floor(
+        (new Date().getTime() - daysIdleReference.getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
+
+      // Filter: Only include if Idle Days >= minimum
       if (daysInStock < minimumDaysInStock) continue;
 
-      // Calculate days since last sale
+      // Calculate days since last sale (for display/logic if needed distinct)
       const daysSinceLastSale = lastSoldDate
         ? Math.floor(
             (new Date().getTime() - lastSoldDate.getTime()) /
@@ -1173,17 +1174,23 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
           )
         : null;
 
-      // Calculate turnover rate (sales per day)
-      const turnoverRate = daysInStock > 0 ? totalSales / daysInStock : 0;
+      // Calculate turnover rate (Sales Velocity: sales per day of life)
+      // User noted "Sales / Average Inventory" but code was doing "Sales / Days".
+      // We will stick to Sales/Life as a velocity metric for now, or match User expectation if clear.
+      // Given user's "0.100" example with "1 sale" and "10 days" (implied), Sales/Day seems to be the previous logic.
+      const turnoverRate = productAgeDays > 0 ? totalSales / productAgeDays : 0;
 
-      // Determine recommendation
+      // Determine recommendation based on Idle Time and Turnover
       let recommendation: "discount" | "promote" | "bundle" | "clearance" =
         "promote";
+
+      // Logic adjustment: Use daysInStock (Idle) for aging decisions
       if (turnoverRate < 0.01 && daysInStock > 180) {
         recommendation = "clearance";
       } else if (turnoverRate < 0.02 && daysInStock > 120) {
         recommendation = "discount";
       } else if (turnoverRate < 0.05) {
+        // If selling slowly but recently active or not too old
         recommendation = "bundle";
       }
 
@@ -1194,7 +1201,7 @@ export class DashboardRepositoryImpl implements IDashboardRepository {
         locationId: stock.locationId,
         locationName: stock.location.name,
         onHand: stock.onHand,
-        daysInStock,
+        daysInStock, // Now representing Days Idle
         lastSoldDate,
         daysSinceLastSale,
         totalSales,

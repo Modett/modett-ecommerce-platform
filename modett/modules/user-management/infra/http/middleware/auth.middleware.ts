@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import jwt from "jsonwebtoken";
+import jwt, { type SignOptions } from "jsonwebtoken";
 
 // User role enum
 export enum UserRole {
@@ -32,9 +32,11 @@ declare module "fastify" {
   }
 }
 
-// JWT configuration (should be moved to environment variables)
+// JWT configuration from environment variables
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
-const JWT_ALGORITHM = "HS256";
+const JWT_ALGORITHM = "HS256" as const;
+const JWT_ACCESS_TOKEN_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "6h";
+const JWT_REFRESH_TOKEN_EXPIRES_IN = "7d";
 
 export interface AuthMiddlewareOptions {
   optional?: boolean; // Allow requests without authentication
@@ -320,9 +322,8 @@ export function generateAuthTokens(user: Partial<AuthenticatedUser>): {
   };
 
   const accessToken = jwt.sign(payload, JWT_SECRET, {
-    algorithm: JWT_ALGORITHM,
-    expiresIn: "120m",
-  });
+    expiresIn: JWT_ACCESS_TOKEN_EXPIRES_IN,
+  } as SignOptions);
 
   const refreshToken = jwt.sign(
     {
@@ -333,9 +334,8 @@ export function generateAuthTokens(user: Partial<AuthenticatedUser>): {
     },
     JWT_SECRET,
     {
-      algorithm: JWT_ALGORITHM,
-      expiresIn: "7d",
-    },
+      expiresIn: JWT_REFRESH_TOKEN_EXPIRES_IN,
+    } as SignOptions,
   );
 
   return { accessToken, refreshToken };

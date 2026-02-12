@@ -72,7 +72,7 @@ export class AuthenticationService {
       refreshTokenSecret: string;
       accessTokenExpiresIn?: string;
       refreshTokenExpiresIn?: string;
-    }
+    },
   ) {
     if (!config.accessTokenSecret || !config.refreshTokenSecret) {
       throw new Error("JWT secrets are required");
@@ -102,7 +102,7 @@ export class AuthenticationService {
 
     const isPasswordValid = await this.passwordHasher.verify(
       credentials.password,
-      passwordHash
+      passwordHash,
     );
 
     if (!isPasswordValid) {
@@ -194,7 +194,7 @@ export class AuthenticationService {
     try {
       const payload = jwt.verify(
         refreshToken,
-        this.refreshTokenSecret
+        this.refreshTokenSecret,
       ) as TokenPayload;
 
       if (payload.type !== "refresh") {
@@ -263,7 +263,7 @@ export class AuthenticationService {
       try {
         const payload = jwt.verify(
           refreshToken,
-          this.refreshTokenSecret
+          this.refreshTokenSecret,
         ) as TokenPayload;
         if (payload.type !== "refresh" || payload.userId !== userId) {
           throw new Error("Invalid refresh token");
@@ -286,7 +286,7 @@ export class AuthenticationService {
   async changePassword(
     userId: string,
     currentPassword: string,
-    newPassword: string
+    newPassword: string,
   ): Promise<void> {
     const userIdVo = UserId.fromString(userId);
     const user = await this.userRepository.findById(userIdVo);
@@ -306,7 +306,7 @@ export class AuthenticationService {
 
     const isCurrentPasswordValid = await this.passwordHasher.verify(
       currentPassword,
-      currentPasswordHash
+      currentPasswordHash,
     );
 
     if (!isCurrentPasswordValid) {
@@ -317,7 +317,7 @@ export class AuthenticationService {
       this.passwordHasher.validatePasswordStrength(newPassword);
     if (!passwordValidation.isValid) {
       throw new Error(
-        `Password is not strong enough: ${passwordValidation.feedback.join(", ")}`
+        `Password is not strong enough: ${passwordValidation.feedback.join(", ")}`,
       );
     }
 
@@ -328,6 +328,78 @@ export class AuthenticationService {
     user.updatePassword(newPasswordHash);
 
     await this.userRepository.update(user);
+  }
+
+  async changeEmail(
+    userId: string,
+    newEmail: string,
+    password: string,
+  ): Promise<void> {
+    const userIdVo = UserId.fromString(userId);
+    const user = await this.userRepository.findById(userIdVo);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.getIsGuest()) {
+      throw new Error("Guest users cannot change email");
+    }
+
+    // Verify password for security
+    const currentPasswordHash = user.getPasswordHash();
+    if (!currentPasswordHash) {
+      throw new Error("User has no password set");
+    }
+
+    const isPasswordValid = await this.passwordHasher.verify(
+      password,
+      currentPasswordHash,
+    );
+
+    if (!isPasswordValid) {
+      throw new Error("Password is incorrect");
+    }
+
+    // Check if new email is already in use
+    const emailVo = Email.fromString(newEmail);
+    const existingUser = await this.userRepository.findByEmail(emailVo);
+
+    if (existingUser && existingUser.getId().toString() !== userId) {
+      throw new Error("Email is already in use");
+    }
+
+    // Update email (this will also reset emailVerified to false)
+    user.updateEmail(newEmail);
+
+    await this.userRepository.update(user);
+  }
+
+  async verifyUserPassword(userId: string, password: string): Promise<void> {
+    const userIdVo = UserId.fromString(userId);
+    const user = await this.userRepository.findById(userIdVo);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.getIsGuest()) {
+      throw new Error("Guest users do not have passwords");
+    }
+
+    const currentPasswordHash = user.getPasswordHash();
+    if (!currentPasswordHash) {
+      throw new Error("User has no password set");
+    }
+
+    const isPasswordValid = await this.passwordHasher.verify(
+      password,
+      currentPasswordHash,
+    );
+
+    if (!isPasswordValid) {
+      throw new Error("Password is incorrect");
+    }
   }
 
   async register(userData: RegisterUserData): Promise<AuthResult> {
@@ -341,11 +413,11 @@ export class AuthenticationService {
 
     // Validate password strength
     const passwordValidation = this.passwordHasher.validatePasswordStrength(
-      userData.password
+      userData.password,
     );
     if (!passwordValidation.isValid) {
       throw new Error(
-        `Password is not strong enough: ${passwordValidation.feedback.join(", ")}`
+        `Password is not strong enough: ${passwordValidation.feedback.join(", ")}`,
       );
     }
 
@@ -358,13 +430,11 @@ export class AuthenticationService {
     // Create or convert user
     let user: User;
     if (existingUser && existingUser.getIsGuest()) {
-      // Convert guest to regular user (role will be CUSTOMER by default after conversion)
       existingUser.convertFromGuest(userData.email, passwordHash);
       if (userData.phone) {
         existingUser.updatePhone(userData.phone);
       }
-      // Note: Role assignment not supported for guest conversion
-      // If you need a specific role (ADMIN, STAFF, etc.), create a new account instead
+
       user = existingUser;
       await this.userRepository.update(user);
     } else {
@@ -373,7 +443,7 @@ export class AuthenticationService {
         email: userData.email,
         passwordHash,
         phone: userData.phone,
-        role: userData.role || UserRole.CUSTOMER, // Use provided role or default to CUSTOMER
+        role: userData.role || UserRole.CUSTOMER,
         isGuest: false,
       });
       await this.userRepository.save(user);
@@ -383,7 +453,7 @@ export class AuthenticationService {
   }
 
   async initiatePasswordReset(
-    email: string
+    email: string,
   ): Promise<{ exists: boolean; token?: string; userId?: string }> {
     const emailVo = Email.fromString(email);
     const user = await this.userRepository.findByEmail(emailVo);
@@ -418,7 +488,7 @@ export class AuthenticationService {
       this.passwordHasher.validatePasswordStrength(newPassword);
     if (!passwordValidation.isValid) {
       throw new Error(
-        `Password is not strong enough: ${passwordValidation.feedback.join(", ")}`
+        `Password is not strong enough: ${passwordValidation.feedback.join(", ")}`,
       );
     }
 
@@ -432,7 +502,7 @@ export class AuthenticationService {
   }
 
   async getUserByEmail(
-    email: string
+    email: string,
   ): Promise<{ userId: string; emailVerified: boolean } | null> {
     const emailVo = Email.fromString(email);
     const user = await this.userRepository.findByEmail(emailVo);
@@ -468,7 +538,7 @@ export class AuthenticationService {
   // =================================================================
 
   async generateTwoFactorSecret(
-    userId: string
+    userId: string,
   ): Promise<{ secret: string; otpauthUrl: string; qrCode: string }> {
     const userIdVo = UserId.fromString(userId);
     const user = await this.userRepository.findById(userIdVo);
@@ -493,7 +563,7 @@ export class AuthenticationService {
   async enableTwoFactor(
     userId: string,
     token: string,
-    secret: string
+    secret: string,
   ): Promise<{ backupCodes: string[] }> {
     const userIdVo = UserId.fromString(userId);
     const user = await this.userRepository.findById(userIdVo);
@@ -516,7 +586,7 @@ export class AuthenticationService {
 
     // Generate backup codes
     const backupCodes = Array.from({ length: 10 }, () =>
-      crypto.randomBytes(4).toString("hex")
+      crypto.randomBytes(4).toString("hex"),
     );
 
     // Encrypt secret before saving (Using accessTokenSecret as encryption key for MVP)
@@ -589,7 +659,7 @@ export class AuthenticationService {
     if (!passwordHash) throw new Error("User has no password");
     const isPasswordValid = await this.passwordHasher.verify(
       password,
-      passwordHash
+      passwordHash,
     );
     if (!isPasswordValid) throw new Error("Invalid password");
 
@@ -664,7 +734,7 @@ export class AuthenticationService {
     console.log("[AUTH SERVICE] Generating access token...");
     console.log(
       "[AUTH SERVICE] Secret:",
-      this.accessTokenSecret.substring(0, 5) + "..."
+      this.accessTokenSecret.substring(0, 5) + "...",
     );
     console.log("[AUTH SERVICE] Payload:", JSON.stringify(payload, null, 2));
 
@@ -674,7 +744,7 @@ export class AuthenticationService {
 
     console.log(
       "[AUTH SERVICE] Token generated:",
-      token.substring(0, 50) + "..."
+      token.substring(0, 50) + "...",
     );
     return token;
   }

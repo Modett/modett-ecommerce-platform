@@ -1,5 +1,9 @@
-import { AuthenticationService, RegisterUserData, AuthResult } from '../services/authentication.service';
-import { UserRole } from '../../domain/entities/user.entity';
+import {
+  AuthenticationService,
+  RegisterUserData,
+  AuthResult,
+} from "../services/authentication.service";
+import { UserRole } from "../../domain/entities/user.entity";
 
 // Base interfaces
 export interface ICommand {
@@ -16,7 +20,7 @@ export class CommandResult<T = any> {
     public success: boolean,
     public data?: T,
     public error?: string,
-    public errors?: string[]
+    public errors?: string[],
   ) {}
 
   static success<T>(data?: T): CommandResult<T> {
@@ -37,18 +41,20 @@ export interface RegisterUserCommand extends ICommand {
   role?: UserRole; // Optional role assignment for creating admin/staff users
 }
 
-export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand, CommandResult<AuthResult>> {
-  constructor(
-    private readonly authService: AuthenticationService
-  ) {}
+export class RegisterUserHandler
+  implements ICommandHandler<RegisterUserCommand, CommandResult<AuthResult>>
+{
+  constructor(private readonly authService: AuthenticationService) {}
 
-  async handle(command: RegisterUserCommand): Promise<CommandResult<AuthResult>> {
+  async handle(
+    command: RegisterUserCommand,
+  ): Promise<CommandResult<AuthResult>> {
     try {
       // Validate command
       if (!command.email || !command.password) {
         return CommandResult.failure<AuthResult>(
-          'Email and password are required',
-          ['email', 'password']
+          "Email and password are required",
+          ["email", "password"],
         );
       }
 
@@ -57,7 +63,7 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand,
         email: command.email,
         password: command.password,
         phone: command.phone,
-        role: command.role // Pass role to service (defaults to CUSTOMER if not provided)
+        role: command.role,
       };
 
       // Register user through authentication service
@@ -66,14 +72,13 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand,
       return CommandResult.success<AuthResult>(authResult);
     } catch (error) {
       if (error instanceof Error) {
-        return CommandResult.failure<AuthResult>(
-          'User registration failed',
-          [error.message]
-        );
+        return CommandResult.failure<AuthResult>("User registration failed", [
+          error.message,
+        ]);
       }
 
       return CommandResult.failure<AuthResult>(
-        'An unexpected error occurred during registration'
+        "An unexpected error occurred during registration",
       );
     }
   }
