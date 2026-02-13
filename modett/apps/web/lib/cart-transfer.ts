@@ -1,5 +1,5 @@
 import { transferGuestCartToUser } from "@/features/cart/api";
-import { getStoredGuestToken } from "@/features/cart/utils";
+import { getStoredGuestToken, clearGuestToken } from "@/features/cart/utils";
 import { handleError } from "@/lib/error-handler";
 
 export async function handleCartTransfer(
@@ -10,7 +10,7 @@ export async function handleCartTransfer(
     onSuccess?: () => void;
     onError?: (error: Error) => void;
     silent?: boolean; // If true, don't throw errors
-  }
+  },
 ): Promise<boolean> {
   const {
     mergeWithExisting = true,
@@ -36,13 +36,13 @@ export async function handleCartTransfer(
       guestToken,
       userId,
       userAuthToken,
-      mergeWithExisting
+      mergeWithExisting,
     );
 
     console.log("[Cart Transfer] ✓ Cart transferred successfully!");
 
     // Remove guest token after successful transfer
-    localStorage.removeItem("guestToken");
+    clearGuestToken();
 
     // Call success callback if provided
     if (onSuccess) {
@@ -69,9 +69,9 @@ export async function handleCartTransfer(
 
     if (isBenignError) {
       console.log(
-        "[Cart Transfer] Guest cart not found or expired - clearing token"
+        "[Cart Transfer] Guest cart not found or expired - clearing token",
       );
-      localStorage.removeItem("guestToken");
+      clearGuestToken();
       return true;
     }
 

@@ -797,7 +797,11 @@ export class AuthenticationService {
       case "d":
         return value * 60 * 60 * 24;
       default:
-        return 900; // 15 minutes default
+        return 900;
     }
+  }
+
+  public getAccessTokenExpirationTimeInSeconds(): number {
+    return this.getTokenExpirationTime(this.accessTokenExpiresIn);
   }
 }

@@ -1,4 +1,4 @@
-import { AuthenticationService, LoginCredentials, AuthResult } from '../services/authentication.service';
+import { AuthenticationService, LoginCredentials, LoginResult } from '../services/authentication.service';
 import { ICommand, ICommandHandler, CommandResult } from './register-user.command';
 
 export interface LoginUserCommand extends ICommand {
@@ -12,16 +12,16 @@ export interface LoginUserCommand extends ICommand {
   };
 }
 
-export class LoginUserHandler implements ICommandHandler<LoginUserCommand, CommandResult<AuthResult>> {
+export class LoginUserHandler implements ICommandHandler<LoginUserCommand, CommandResult<LoginResult>> {
   constructor(
     private readonly authService: AuthenticationService
   ) {}
 
-  async handle(command: LoginUserCommand): Promise<CommandResult<AuthResult>> {
+  async handle(command: LoginUserCommand): Promise<CommandResult<LoginResult>> {
     try {
       // Validate command
       if (!command.email || !command.password) {
-        return CommandResult.failure<AuthResult>(
+        return CommandResult.failure<LoginResult>(
           'Email and password are required',
           ['email', 'password']
         );
@@ -34,18 +34,18 @@ export class LoginUserHandler implements ICommandHandler<LoginUserCommand, Comma
       };
 
       // Authenticate user through authentication service
-      const authResult = await this.authService.login(loginCredentials);
+      const loginResult = await this.authService.login(loginCredentials);
 
-      return CommandResult.success<AuthResult>(authResult);
+      return CommandResult.success<LoginResult>(loginResult);
     } catch (error) {
       if (error instanceof Error) {
-        return CommandResult.failure<AuthResult>(
+        return CommandResult.failure<LoginResult>(
           'User authentication failed',
           [error.message]
         );
       }
 
-      return CommandResult.failure<AuthResult>(
+      return CommandResult.failure<LoginResult>(
         'An unexpected error occurred during authentication'
       );
     }

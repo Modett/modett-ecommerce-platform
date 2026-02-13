@@ -9,8 +9,13 @@ import { getStoredCartId } from "@/features/cart/utils";
 import {
   clearWishlistData,
   persistWishlistId,
+  getStoredWishlistId,
 } from "@/features/engagement/utils";
-import { getUserWishlists } from "@/features/engagement/api";
+import {
+  getUserWishlists,
+  getWishlistItems,
+  addToWishlistInternal,
+} from "@/features/engagement/api";
 
 interface User {
   id: string;
@@ -53,6 +58,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userId: string;
     tempToken: string;
   } | null>(null);
+
+  /**
+   * Merge guest wishlist items with authenticated user wishlist
+   * This preserves guest browsing session items when user logs in
+   */
+  const handleWishlistMerge = async (userId: string) => {
+    try {
+      // Get guest wishlist ID from localStorage
+      const guestWishlistId = getStoredWishlistId();
+
+      if (!guestWishlistId) {
+        // Just restore user's wishlist
+        const wishlists = await getUserWishlists(userId);
+        if (wishlists.length > 0) {
+          persistWishlistId(wishlists[0].wishlistId);
+        }
+        return;
+      }
+
+      const guestItems = await getWishlistItems(guestWishlistId);
+
+      const userWishlists = await getUserWishlists(userId);
+      let userWishlistId: string;
+
+      if (userWishlists.length > 0) {
+        userWishlistId = userWishlists[0].wishlistId;
+      } else {
+        userWishlistId = guestWishlistId;
+      }
+
+      // Get existing user wishlist items to avoid duplicates
+      const userItems =
+        userWishlists.length > 0 ? await getWishlistItems(userWishlistId) : [];
+
+      const existingVariantIds = new Set(
+        userItems.map((item) => item.variantId),
+      );
+
+      // Merge: Add guest items to user wishlist (skip duplicates)
+      for (const item of guestItems) {
+        if (existingVariantIds.has(item.variantId)) {
+          continue;
+        }
+
+        try {
+          if (userWishlists.length > 0) {
+            await addToWishlistInternal(userWishlistId, item.variantId);
+          }
+        } catch (error) {
+          // Silently continue on error
+        }
+      }
+
+      // Update stored wishlist ID to user's wishlist
+      if (userWishlists.length > 0) {
+        persistWishlistId(userWishlistId);
+      }
+    } catch (error) {}
+  };
 
   const login = async (email: string, password: string) => {
     try {
@@ -98,9 +162,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       localStorage.setItem("authToken", accessToken);
 
-      // Clear guest wishlist data on login (user will get their saved wishlist)
-      localStorage.removeItem("wishlistId");
-
       setAuthState({
         user,
         isLoading: false,
@@ -108,37 +169,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       // 🛒 Transfer guest cart to user
-      console.log("🛒 [AuthProvider] Attempting cart transfer...");
       await handleCartTransfer(user.id, accessToken);
 
       // If no cart ID is stored (transfer failed or skipped), try to restore active user cart
       const storedCartId = getStoredCartId();
-      console.log(
-        "🛒 [AuthProvider] Stored Cart ID after transfer:",
-        storedCartId,
-      );
 
       if (!storedCartId) {
         try {
-          console.log(
-            "🛒 [AuthProvider] No local cart found. Fetching active cart from backend...",
-          );
-          const restoredCart = await getActiveCartByUser(user.id);
-          console.log("🛒 [AuthProvider] Restored cart result:", restoredCart);
+          await getActiveCartByUser(user.id);
         } catch (err) {
-          console.warn("🛒 [AuthProvider] Failed to restore active cart:", err);
+          // Failed to restore active cart - ignore
         }
       }
 
-      // RESTORE USER WISHLIST
-      try {
-        const wishlists = await getUserWishlists(user.id);
-        if (wishlists.length > 0) {
-          persistWishlistId(wishlists[0].wishlistId);
-        }
-      } catch (err) {
-        console.warn("Failed to restore user wishlist", err);
-      }
+      await handleWishlistMerge(user.id);
 
       // Invalidate queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ["wishlist"] });
@@ -203,15 +247,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // RESTORE USER WISHLIST
-      try {
-        const wishlists = await getUserWishlists(user.id);
-        if (wishlists.length > 0) {
-          persistWishlistId(wishlists[0].wishlistId);
-        }
-      } catch (err) {
-        console.warn("Failed to restore user wishlist", err);
-      }
+      await handleWishlistMerge(user.id);
 
       await queryClient.invalidateQueries({ queryKey: ["wishlist"] });
     } catch (error) {
@@ -261,9 +297,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       localStorage.setItem("authToken", accessToken);
 
-      // Clear guest wishlist data on registration (user will get a new wishlist with user_id)
-      localStorage.removeItem("wishlistId");
-
       setAuthState({
         user,
         isLoading: false,
@@ -281,6 +314,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // No active cart found or error - ignore
         }
       }
+
+      await handleWishlistMerge(user.id);
 
       // Invalidate queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ["wishlist"] });
@@ -330,7 +365,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
 
         if (response.status === 401 || response.status === 403) {
-          console.log("Token is invalid or expired, logging out");
           localStorage.removeItem("authToken");
           setAuthState({
             user: null,
@@ -342,9 +376,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // If server error or network issue, keep user logged in but mark as loading complete
         if (!response.ok) {
-          console.warn(
-            `Auth verification failed with status ${response.status}, keeping user logged in`,
-          );
           setAuthState({
             user: authState.user, // Keep existing user state
             isLoading: false,
@@ -373,7 +404,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
         } else {
           // Invalid response format, but don't log out - might be temporary issue
-          console.warn("Invalid auth response format, keeping user logged in");
           setAuthState({
             user: authState.user,
             isLoading: false,
@@ -382,10 +412,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         // Network error or server unavailable - keep user logged in
-        console.warn(
-          "Failed to restore auth (network error), keeping user logged in:",
-          error,
-        );
         setAuthState({
           user: authState.user,
           isLoading: false,
